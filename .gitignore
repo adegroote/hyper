@@ -7,3 +7,5 @@ test/test_hyper
 Testing
 build/
 *.a
+.*.sw*
+*~
