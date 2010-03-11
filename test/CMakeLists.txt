@@ -1,5 +1,5 @@
 file(GLOB test_sources *.cc)
-include_directories(${HYPER_SRC_DIR}/include)
+include_directories(${HYPER_SOURCE_DIR}/include)
 link_directories(${HYPER_BINARY_DIR}/src/compiler)
 add_executable(test_hyper ${test_sources})
 target_link_libraries(test_hyper ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})

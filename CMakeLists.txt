@@ -16,7 +16,7 @@ endif()
 
 cmake_minimum_required(VERSION 2.6.4 FATAL_ERROR)
 
-project(Hyper CXX)
+project(HYPER CXX)
 
 #set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Byuilding type, choose either Debug or Release")
 #set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE LIST)
