@@ -21,7 +21,7 @@ symbolList::add(const std::string &name, const std::string& tname)
 }
 
 std::pair< bool, symbol > 
-symbolList::get(const std::string &name)
+symbolList::get(const std::string &name) const
 {
 	sMap::const_iterator it = symbols.find(name);
 	if (it == symbols.end())

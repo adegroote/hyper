@@ -4,6 +4,8 @@
 
 #include <string>
 
+#include <boost/noncopyable.hpp>
+
 #include <compiler/types.hh>
 
 namespace hyper {
@@ -17,7 +19,7 @@ namespace hyper {
 			symbol(const std::string name_, typeList::typeId t_) : name(name_), t(t_) {};
 		};
 
-		struct symbolList {
+		struct symbolList : public boost::noncopyable {
 			public:
 				enum symbolAddError {
 					noError,
@@ -45,7 +47,7 @@ namespace hyper {
 				 * < true, s > means success
 				 * < false, _ > means the symbol does not exist in the table
 				 */
-				std::pair < bool, symbol > get(const std::string& name);
+				std::pair < bool, symbol > get(const std::string& name) const;
 		};
 	};
 };
