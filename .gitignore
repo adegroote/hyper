@@ -5,3 +5,5 @@ test/test_hyper
 *.cmake
 *.so*
 Testing
+build/
+*.a
