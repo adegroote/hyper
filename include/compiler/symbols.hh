@@ -32,7 +32,19 @@ namespace hyper {
 
 			public:
 				symbolList(const typeList & lists_): tlist(lists_) {} ;
+				/*
+				 * Add a symbol to the symbol list
+				 * < true, noError > means success
+				 * < false, alreadyExist > means the symbol already exists
+				 * < false, unknowType > means the type used to define the symbol is not know
+				 */
 				std::pair < bool, symbolAddError> add(const std::string& name, const std::string& tname);
+
+				/*
+				 * Retrieve a symbol from the symbol table
+				 * < true, s > means success
+				 * < false, _ > means the symbol does not exist in the table
+				 */
 				std::pair < bool, symbol > get(const std::string& name);
 		};
 	};
