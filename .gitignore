@@ -1,0 +1,7 @@
+Makefile
+CMakeFiles
+CMakeCache.txt
+test/test_hyper
+*.cmake
+*.so*
+Testing
