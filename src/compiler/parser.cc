@@ -197,7 +197,9 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
 			   >> lit('(')
 			   > -(
 					identifier		    [push_back(at_c<2>(_val),_1)]
-					>> *(lit(',') > identifier [push_back(at_c<2>(_val),_1)])
+					>> -identifier
+					>> *(lit(',') > identifier [push_back(at_c<2>(_val),_1)]
+								  > -identifier)
 				  )
 			   > lit(')')				[function_decl_add(_val)]
 			   > -lit(';')

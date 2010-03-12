@@ -16,4 +16,5 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	r = P.parse("double g(int , string);");
 	r = P.parse("root k(int, string, toto)");
 	r = P.parse("double k(int, string, toto);");
+	r = P.parse("double distance(double x1, double y1, double x2, double y2);");
 }
