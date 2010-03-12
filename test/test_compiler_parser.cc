@@ -9,6 +9,7 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	bool r;
 	r = P.parse("int toto ;");
 	r = P.parse("bool titi;");
+	r = P.parse("bool b1, _b2;");
 	r = P.parse("root root;");
 	r = P.parse("double myDoubleX, myDoubleY , myDoubleZ;");
 	r = P.parse("int f(double, double);");

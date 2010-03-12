@@ -176,13 +176,13 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
 	    using qi::lit;
         using qi::lexeme;
         using ascii::char_;
-		using ascii::alpha;
         using namespace qi::labels;
 
 		using phoenix::at_c;
         using phoenix::push_back;
 
-		identifier = lexeme[+alpha		[_val += _1]];
+		identifier = lexeme[(ascii::alpha|char_('_'))		[_val += _1]
+							>> *((ascii::alnum|char_('_'))  [_val += _1])];
 
 		v_decl   = identifier			[at_c<0>(_val) = _1]
 				 >> identifier			[at_c<1>(_val) = _1]
