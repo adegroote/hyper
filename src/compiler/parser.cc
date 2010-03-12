@@ -169,7 +169,7 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
     typedef white_space<Iterator> white_space_;
 
     expression(symbolList &s, functionDefList& f) :
-								expression::base_type(statement_list),
+								expression::base_type(statement_list, "statement_list"),
 								symbol_add(s),
 								function_decl_add(f)
 	{
@@ -186,6 +186,9 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
 
 		v_decl   = identifier			[at_c<0>(_val) = _1]
 				 >> identifier			[at_c<1>(_val) = _1]
+				 >> 
+					   *(lit(',')			[symbol_add(_val)]
+						 >> identifier	[at_c<1>(_val) = _1])
 				 >> lit(';')			[symbol_add(_val)]
 		;
 
