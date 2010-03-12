@@ -17,4 +17,7 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	r = P.parse("root k(int, string, toto)");
 	r = P.parse("double k(int, string, toto);");
 	r = P.parse("double distance(double x1, double y1, double x2, double y2);");
+	r = P.parse("toto = struct { double x; double y; };");
+	r = P.parse("position = struct { double x, y, z; string robot; }");
+	r = P.parse("length = newtype double;");
 }

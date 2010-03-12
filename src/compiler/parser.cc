@@ -162,6 +162,49 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::vector < std::string>, argsName)
 );
 
+struct struct_decl {
+	std::string name;
+	std::vector < var_decl > vars;
+};
+
+BOOST_FUSION_ADAPT_STRUCT(
+	struct_decl,
+	(std::string, name)
+	(std::vector < var_decl >, vars)
+);
+
+struct struct_adder {
+	template<typename>
+	struct result { typedef void type; };
+
+	void operator() (const struct_decl& s) const 
+	{
+		std::cout << "struct " << s.name << " contains :" << std::endl;
+		for (size_t i = 0; i < s.vars.size(); ++i)
+			std::cout << "\t" << s.vars[i].type << " " << s.vars[i].sym << std::endl;
+	}
+};
+
+struct newtype_decl {
+	std::string newname;
+	std::string oldname;
+};
+
+BOOST_FUSION_ADAPT_STRUCT(
+	newtype_decl,
+	(std::string, newname)
+	(std::string, oldname)
+);
+
+struct newtype_adder {
+	template<typename>
+	struct result { typedef void type; };
+
+	void operator() (const newtype_decl& s) const 
+	{
+		std::cout << "type " << s.newname << " is synonym of " << s.oldname << std::endl;
+	};
+};
 
 template <typename Iterator>
 struct expression : qi::grammar<Iterator, white_space<Iterator> >
@@ -171,7 +214,8 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
     expression(symbolList &s, functionDefList& f) :
 								expression::base_type(statement_list, "statement_list"),
 								symbol_add(s),
-								function_decl_add(f)
+								function_decl_add(f),
+								struct_decl_add()
 	{
 	    using qi::lit;
         using qi::lexeme;
@@ -206,28 +250,62 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
 			   
 	    ;
 
+		structure_decl = identifier	    [at_c<0>(_val) = _1]
+					  >> lit('=')
+					  >> qi::string("struct")
+					  >> lit('{')
+						>> *(identifier	[at_c<0>(_a) = _1]
+						>> identifier   [at_c<1>(_a) = _1]
+						>>
+							*(lit(',')	[push_back(at_c<1>(_val), _a)]
+							>> identifier [at_c<1>(_a) = _1])
+						>> lit(';')		[push_back(at_c<1>(_val), _a)])
+					  >> lit('}')		[struct_decl_add(_val)]
+					  >> -lit(';')		  
+					  ;
+
+		new_type_decl = identifier		[at_c<0>(_val) = _1]
+					 >> lit('=')
+					 >> qi::string("newtype")
+					 >> identifier		[at_c<1>(_val) = _1]
+					 >> lit(';')		[newtype_decl_adder(_val)]
+					 ;
+
+		type_decl =
+					structure_decl
+				   |new_type_decl
+				   ;
+
 		statement_ = 
 					v_decl
 				   |f_decl
+				   |type_decl
 				   ;
 		statement_list = +statement_;
 	
 		identifier.name("identifier");
 		v_decl.name("var decl");
 		f_decl.name("function declation");
+		type_decl.name("type declaration");
+		structure_decl.name("struct declaration");
+		new_type_decl.name("newtype declaration");
 		statement_.name("statement");
 		statement_list.name("statement-list");
 
 		qi::on_error<qi::fail> (statement_list, error_handler(_4, _3, _2));
 	};
 
-	qi::rule<Iterator, white_space_> statement_, statement_list;
+	qi::rule<Iterator, white_space_> statement_, statement_list, type_decl; 
 	qi::rule<Iterator, var_decl(), white_space_> v_decl;
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
+	qi::rule<Iterator, struct_decl(), qi::locals<var_decl>, white_space_> structure_decl;
+	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
 	qi::rule<Iterator, std::string(), white_space_> identifier;
 
 	function<symbol_adder> symbol_add;
 	function<function_adder> function_decl_add;
+	function<struct_adder> struct_decl_add;
+	function<newtype_adder> newtype_decl_adder;
 };
 
 
