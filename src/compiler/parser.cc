@@ -250,6 +250,11 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
 			   
 	    ;
 
+		/* 
+		 * XXX
+		 * structure_decl and v_decl are more or less the same, so maybe there
+		 * is a way to share the code between them. For moment, it works as it
+		 */
 		structure_decl = identifier	    [at_c<0>(_val) = _1]
 					  >> lit('=')
 					  >> qi::string("struct")
