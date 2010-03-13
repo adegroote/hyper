@@ -2,6 +2,7 @@
 #include <compiler/parser.hh>
 
 #include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/lex_lexertl.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_container.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
@@ -17,6 +18,7 @@ using namespace hyper::compiler;
 
 
 namespace qi = boost::spirit::qi;
+namespace lex = boost::spirit::lex;
 namespace ascii = boost::spirit::ascii;
 namespace fusion = boost::fusion;
 namespace phoenix = boost::phoenix;
@@ -56,21 +58,30 @@ struct error_handler_
 
 function<error_handler_> const error_handler = error_handler_();
 
-template <typename Iterator>
-struct white_space : qi::grammar<Iterator>
+template <typename Lexer>
+struct hyper_lexer : lex::lexer<Lexer>
 {
-    white_space() : white_space::base_type(start)
-    {
-        using boost::spirit::ascii::char_;
+	hyper_lexer() 
+	{
+        identifier = "[a-zA-Z_][a-zA-Z0-9_]*";
+		scoped_identifier = "[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_])*";
+		struct_ = "struct";
+		newtype_ = "newtype";
 
-        start =
-                ascii::space                         // tab/space/cr/lf
-            |   "/*" >> *(char_ - "*/") >> "*/"     // C-style comments
-			|   "//" >> *(char_ - '\n') >> '\n'     // C++ comment
+		/* identifier must be the last if you want to not match keyword */
+        this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',';
+		this->self += struct_ | newtype_ | identifier | scoped_identifier;
+
+        // define the whitespace to ignore (spaces, tabs, newlines and C-style 
+        // comments)
+        this->self("WS")
+            =   lex::token_def<>("[ \\t\\n]+") 
+            |   "\\/\\*[^*]*\\*+([^/*][^*]*\\*+)*\\/"
             ;
-    }
+	};
 
-	qi::rule<Iterator> start;
+    lex::token_def<> struct_, newtype_;
+    lex::token_def<std::string> identifier, scoped_identifier;
 };
 
 struct var_decl {
@@ -206,12 +217,13 @@ struct newtype_adder {
 	};
 };
 
-template <typename Iterator>
-struct expression : qi::grammar<Iterator, white_space<Iterator> >
+template <typename Iterator, typename Lexer>
+struct expression : qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 {
-    typedef white_space<Iterator> white_space_;
+    typedef qi::in_state_skipper<Lexer> white_space_;
 
-    expression(symbolList &s, functionDefList& f) :
+	template <typename TokenDef>
+    expression(const TokenDef& tok, symbolList &s, functionDefList& f) :
 								expression::base_type(statement_list, "statement_list"),
 								symbol_add(s),
 								function_decl_add(f),
@@ -225,25 +237,22 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
 		using phoenix::at_c;
         using phoenix::push_back;
 
-		identifier = lexeme[(ascii::alpha|char_('_'))		[_val += _1]
-							>> *((ascii::alnum|char_('_'))  [_val += _1])];
-
-		v_decl   = identifier			[at_c<0>(_val) = _1]
-				 >> identifier			[at_c<1>(_val) = _1]
+		v_decl   = tok.identifier			[at_c<0>(_val) = _1]
+				 >> tok.identifier			[at_c<1>(_val) = _1]
 				 >> 
 					   *(lit(',')			[symbol_add(_val)]
-						 >> identifier	[at_c<1>(_val) = _1])
+						 >> tok.identifier	[at_c<1>(_val) = _1])
 				 >> lit(';')			[symbol_add(_val)]
 		;
 
-		f_decl = identifier				[at_c<1>(_val) = _1]
-			   >> identifier			[at_c<0>(_val) = _1]
+		f_decl = tok.identifier				[at_c<1>(_val) = _1]
+			   >> tok.identifier			[at_c<0>(_val) = _1]
 			   >> lit('(')
 			   > -(
-					identifier		    [push_back(at_c<2>(_val),_1)]
-					>> -identifier
-					>> *(lit(',') > identifier [push_back(at_c<2>(_val),_1)]
-								  > -identifier)
+					tok.identifier		    [push_back(at_c<2>(_val),_1)]
+					>> -tok.identifier
+					>> *(lit(',') > tok.identifier [push_back(at_c<2>(_val),_1)]
+								  > -tok.identifier)
 				  )
 			   > lit(')')				[function_decl_add(_val)]
 			   > -lit(';')
@@ -255,24 +264,24 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
 		 * structure_decl and v_decl are more or less the same, so maybe there
 		 * is a way to share the code between them. For moment, it works as it
 		 */
-		structure_decl = identifier	    [at_c<0>(_val) = _1]
+		structure_decl = tok.identifier	    [at_c<0>(_val) = _1]
 					  >> lit('=')
-					  >> qi::string("struct")
+					  >> tok.struct_
 					  >> lit('{')
-						>> *(identifier	[at_c<0>(_a) = _1]
-						>> identifier   [at_c<1>(_a) = _1]
+						>> *(tok.identifier	[at_c<0>(_a) = _1]
+						>> tok.identifier   [at_c<1>(_a) = _1]
 						>>
 							*(lit(',')	[push_back(at_c<1>(_val), _a)]
-							>> identifier [at_c<1>(_a) = _1])
+							>> tok.identifier [at_c<1>(_a) = _1])
 						>> lit(';')		[push_back(at_c<1>(_val), _a)])
 					  >> lit('}')		[struct_decl_add(_val)]
 					  >> -lit(';')		  
 					  ;
 
-		new_type_decl = identifier		[at_c<0>(_val) = _1]
+		new_type_decl = tok.identifier		[at_c<0>(_val) = _1]
 					 >> lit('=')
-					 >> qi::string("newtype")
-					 >> identifier		[at_c<1>(_val) = _1]
+					 >> tok.newtype_
+					 >> tok.identifier		[at_c<1>(_val) = _1]
 					 >> lit(';')		[newtype_decl_adder(_val)]
 					 ;
 
@@ -288,7 +297,6 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
 				   ;
 		statement_list = +statement_;
 	
-		identifier.name("identifier");
 		v_decl.name("var decl");
 		f_decl.name("function declation");
 		type_decl.name("type declaration");
@@ -305,7 +313,6 @@ struct expression : qi::grammar<Iterator, white_space<Iterator> >
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
 	qi::rule<Iterator, struct_decl(), qi::locals<var_decl>, white_space_> structure_decl;
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
-	qi::rule<Iterator, std::string(), white_space_> identifier;
 
 	function<symbol_adder> symbol_add;
 	function<function_adder> function_decl_add;
@@ -350,14 +357,45 @@ struct HyperGrammar : qi::grammar<Iterator, white_space<Iterator> >
 
 bool parser::parse(const std::string & expr) 
 {
-    typedef white_space<std::string::const_iterator> white_space;
-	white_space ws;
+    // iterator type used to expose the underlying input stream
+    typedef std::string::const_iterator base_iterator_type;
 
-	expression<std::string::const_iterator> g(sList, fList);
+    // This is the lexer token type to use. The second template parameter lists 
+    // all attribute types used for token_def's during token definition (see 
+    // calculator_tokens<> above). Here we use the predefined lexertl token 
+    // type, but any compatible token type may be used instead.
+    //
+    // If you don't list any token attribute types in the following declaration 
+    // (or just use the default token type: lexertl_token<base_iterator_type>)  
+    // it will compile and work just fine, just a bit less efficient. This is  
+    // because the token attribute will be generated from the matched input  
+    // sequence every time it is requested. But as soon as you specify at 
+    // least one token attribute type you'll have to list all attribute types 
+    // used for token_def<> declarations in the token definition class above, 
+    // otherwise compilation errors will occur.
+    typedef lex::lexertl::token<
+        base_iterator_type, boost::mpl::vector<std::string> 
+    > token_type;
 
-    std::string::const_iterator iter = expr.begin();
-    std::string::const_iterator end = expr.end();
-    bool r = phrase_parse(iter, end, g, ws);
+    // Here we use the lexertl based lexer engine.
+    typedef lex::lexertl::lexer<token_type> lexer_type;
+
+    // This is the token definition type (derived from the given lexer type).
+    typedef hyper_lexer<lexer_type> hyper_lexer;
+
+    // this is the iterator type exposed by the lexer 
+    typedef hyper_lexer::iterator_type iterator_type;
+
+    // this is the type of the grammar to parse
+    typedef expression<iterator_type, hyper_lexer::lexer_def> hyper_grammar;
+
+	hyper_lexer our_lexer;
+	hyper_grammar g(our_lexer, sList, fList);
+
+	base_iterator_type it = expr.begin();
+	iterator_type iter = our_lexer.begin(it, expr.end());
+	iterator_type end = our_lexer.end();
+    bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self]);
 
 	if (r && iter == end)
     {
