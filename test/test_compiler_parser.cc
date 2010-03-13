@@ -7,6 +7,7 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 
 	parser P;
 	bool r;
+#if 0
 	r = P.parse("int toto ;");
 	r = P.parse("bool titi;");
 	r = P.parse("bool b1, _b2;");
@@ -20,4 +21,7 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	r = P.parse("toto = struct { double x; double y; };");
 	r = P.parse("position = struct { double x, y, z; string robot; }");
 	r = P.parse("length = newtype double;");
+#endif
+
+	r = P.parse_ability_file("./example.ability");
 }

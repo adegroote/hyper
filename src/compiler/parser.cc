@@ -1,3 +1,6 @@
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 #include <compiler/parser.hh>
 
@@ -64,13 +67,18 @@ struct hyper_lexer : lex::lexer<Lexer>
 	hyper_lexer() 
 	{
         identifier = "[a-zA-Z_][a-zA-Z0-9_]*";
-		scoped_identifier = "[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_])*";
+		scoped_identifier = "[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*";
 		struct_ = "struct";
 		newtype_ = "newtype";
+		ability_ = "ability";
+		context_ = "context";
+		tasks_ = "tasks";
+		export_ = "export";
 
 		/* identifier must be the last if you want to not match keyword */
         this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',';
-		this->self += struct_ | newtype_ | identifier | scoped_identifier;
+		this->self += struct_ | newtype_ | ability_ | context_ | tasks_ | export_;
+		this->self += identifier | scoped_identifier;
 
         // define the whitespace to ignore (spaces, tabs, newlines and C-style 
         // comments)
@@ -80,13 +88,19 @@ struct hyper_lexer : lex::lexer<Lexer>
             ;
 	};
 
-    lex::token_def<> struct_, newtype_;
+    lex::token_def<> struct_, newtype_, ability_, context_, tasks_, export_;
     lex::token_def<std::string> identifier, scoped_identifier;
 };
 
 struct var_decl {
 	std::string type;
 	std::string sym;
+};
+
+std::ostream& operator << (std::ostream& os, const var_decl& decl)
+{
+	os << "declaration of variable " << decl.sym << " of type " << decl.type << " ";
+	return os;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -129,6 +143,12 @@ struct function_decl {
 	std::string fName;
 	std::string returnName;
 	std::vector < std::string > argsName;
+};
+
+std::ostream& operator << (std::ostream& os, const function_decl& decl)
+{
+	os << "function declaration of " << decl.fName << " ";
+	return os;
 };
 
 struct function_adder {
@@ -178,6 +198,12 @@ struct struct_decl {
 	std::vector < var_decl > vars;
 };
 
+std::ostream& operator << (std::ostream& os, const struct_decl &decl)
+{
+	os << "struct declaration for " << decl.name << " ";
+	return os;
+}
+
 BOOST_FUSION_ADAPT_STRUCT(
 	struct_decl,
 	(std::string, name)
@@ -200,6 +226,12 @@ struct newtype_decl {
 	std::string newname;
 	std::string oldname;
 };
+
+std::ostream& operator << (std::ostream& os, const newtype_decl &decl)
+{
+	os << "newtype from " << decl.oldname << " to " << decl.newname << " ";
+	return os;
+}
 
 BOOST_FUSION_ADAPT_STRUCT(
 	newtype_decl,
@@ -320,6 +352,192 @@ struct expression : qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	function<newtype_adder> newtype_decl_adder;
 };
 
+
+template <typename Iterator, typename Lexer>
+struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
+{
+    typedef qi::in_state_skipper<Lexer> white_space_;
+
+	template <typename TokenDef>
+    ability(const TokenDef& tok, symbolList& s, functionDefList& f) :
+								   ability::base_type(ability_, "ability"),
+								   symbol_add(s),
+								   function_decl_add(f),
+								   struct_decl_add()
+	{
+	    using qi::lit;
+        using qi::lexeme;
+        using ascii::char_;
+        using namespace qi::labels;
+
+		using phoenix::at_c;
+        using phoenix::push_back;
+		
+		ability_ = 
+				  tok.identifier 
+				  >> lit('=')
+				  >> tok.ability_ 
+				  >> lit('{')
+				  >> ability_description
+				  >> lit('}')
+				  >> -lit(';')
+				  ;
+
+		ability_description = 
+				        block_context
+					>> -block_tasks
+				    >> -block_definition
+					;	
+
+		block_context =
+				  tok.context_
+				  >> lit('=')
+				  >> lit('{')
+				  >> block_variable
+				  >> block_variable
+				  >> block_variable
+				  >> lit('}')
+				  ;
+
+		block_variable =
+				  lit('{')
+				  >> *(v_decl)
+				  >> lit('}')
+				  ;
+
+		block_tasks = 
+				  tok.tasks_
+				  >> lit('=')
+				  >> lit('{')
+				  >> lit('}')
+				  ;
+
+		block_definition =
+				 tok.export_
+				 >> lit('=')
+				 >> lit('{')
+				 >> block_type_decl
+				 >> block_function_decl
+				 >> lit('}')
+				 ;
+
+		block_type_decl =
+				lit('{')
+				>> *(type_decl)
+				>> lit('}')
+				;
+
+		block_function_decl =
+				lit('{')
+				>> *(f_decl)
+				>> lit('}')
+				;
+
+
+		v_decl   = (tok.identifier|tok.scoped_identifier)	
+											[at_c<0>(_val) = _1]
+				 >> tok.identifier			[at_c<1>(_val) = _1]
+				 >> 
+					   *(lit(',')			[symbol_add(_val)]
+						 >> tok.identifier	[at_c<1>(_val) = _1])
+				 >> lit(';')			[symbol_add(_val)]
+		;
+
+		f_decl = (tok.identifier|tok.scoped_identifier)								[at_c<1>(_val) = _1]
+			   >> tok.identifier													[at_c<0>(_val) = _1]
+			   >> lit('(')
+			   > -(
+					(tok.identifier|tok.scoped_identifier)							[push_back(at_c<2>(_val),_1)]
+					>> -tok.identifier
+					>> *(lit(',') > (tok.identifier|tok.scoped_identifier)			[push_back(at_c<2>(_val),_1)]
+								  > -tok.identifier)
+				  )
+			   > lit(')')				[function_decl_add(_val)]
+			   > -lit(';')
+			   
+	    ;
+
+		type_decl =
+					structure_decl
+				   |new_type_decl
+				   ;
+		/* 
+		 * XXX
+		 * structure_decl and v_decl are more or less the same, so maybe there
+		 * is a way to share the code between them. For moment, it works as it
+		 */
+		structure_decl = tok.identifier	    [at_c<0>(_val) = _1]
+					  >> lit('=')
+					  >> tok.struct_
+					  >> lit('{')
+						>> *((tok.identifier|tok.scoped_identifier)	[at_c<0>(_a) = _1]
+						>> tok.identifier   [at_c<1>(_a) = _1]
+						>>
+							*(lit(',')	[push_back(at_c<1>(_val), _a)]
+							>> tok.identifier [at_c<1>(_a) = _1])
+						>> lit(';')		[push_back(at_c<1>(_val), _a)])
+					  >> lit('}')		[struct_decl_add(_val)]
+					  >> -lit(';')		  
+					  ;
+
+		new_type_decl = tok.identifier		[at_c<0>(_val) = _1]
+					 >> lit('=')
+					 >> tok.newtype_
+					 >> (tok.identifier|tok.scoped_identifier)	[at_c<1>(_val) = _1]
+					 >> lit(';')		[newtype_decl_adder(_val)]
+					 ;
+
+
+		ability_.name("ability declaration");
+		ability_description.name("ability description");
+		block_context.name("context block");
+		block_tasks.name("block_tasks");
+		block_definition.name("block_definition");
+		block_variable.name("block_variable");
+		block_type_decl.name("block_type_decl");
+		block_function_decl.name("block_function_decl");
+		v_decl.name("var decl");
+		f_decl.name("function declation");
+		type_decl.name("type declaration");
+		structure_decl.name("struct declaration");
+		new_type_decl.name("newtype declaration");
+
+		qi::on_error<qi::fail> (ability_, error_handler(_4, _3, _2));
+
+#ifdef HYPER_DEBUG_RULES
+		debug(ability_);
+		debug(ability_description);
+		debug(block_context);
+		debug(block_tasks);
+		debug(block_definition);
+		debug(block_variable);
+		debug(block_type_decl);
+		debug(block_function_decl);
+		debug(v_decl);
+		debug(f_decl);
+		debug(type_decl);
+		debug(structure_decl);
+		debug(new_type_decl);
+#endif
+	};
+
+	qi::rule<Iterator, white_space_> ability_, ability_description;
+	qi::rule<Iterator, white_space_> block_context, block_tasks, block_definition, block_variable;
+	qi::rule<Iterator, white_space_> block_type_decl, block_function_decl;
+	qi::rule<Iterator, white_space_>  type_decl; 
+	qi::rule<Iterator, var_decl(), white_space_> v_decl;
+	qi::rule<Iterator, function_decl(), white_space_> f_decl;
+	qi::rule<Iterator, struct_decl(), qi::locals<var_decl>, white_space_> structure_decl;
+	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
+
+	function<symbol_adder> symbol_add;
+	function<function_adder> function_decl_add;
+	function<struct_adder> struct_decl_add;
+	function<newtype_adder> newtype_decl_adder;
+};
+
+
+
 bool parser::parse(const std::string & expr) 
 {
 	// Stolen from boost/libs/spirit/examples/lex/example4.cpp
@@ -359,6 +577,66 @@ bool parser::parse(const std::string & expr)
 	hyper_lexer our_lexer;
 	hyper_grammar g(our_lexer, sList, fList);
 
+	base_iterator_type it = expr.begin();
+	iterator_type iter = our_lexer.begin(it, expr.end());
+	iterator_type end = our_lexer.end();
+    bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self]);
+
+	if (r && iter == end)
+    {
+        std::cout << "-------------------------\n";
+        std::cout << "Parsing succeeded\n";
+        std::cout << "-------------------------\n";
+        return true;
+    }
+    else
+    {
+        std::cout << "-------------------------\n";
+        std::cout << "Parsing failed\n";
+        std::cout << "-------------------------\n";
+        return false;
+    }
+}
+
+std::string 
+read_from_file(const std::string& filename)
+{
+    std::ifstream instream(filename.c_str());
+    if (!instream.is_open()) {
+        std::cerr << "Couldn't open file: " << filename << std::endl;
+        exit(-1);
+    }
+    instream.unsetf(std::ios::skipws);      // No white space skipping!
+    return std::string(std::istreambuf_iterator<char>(instream.rdbuf()),
+                       std::istreambuf_iterator<char>());
+}
+
+
+bool parser::parse_ability_file(const std::string & filename) 
+{
+    typedef std::string::iterator base_iterator_type;
+
+    typedef lex::lexertl::token<
+        base_iterator_type, boost::mpl::vector<std::string> 
+    > token_type;
+
+    // Here we use the lexertl based lexer engine.
+    typedef lex::lexertl::lexer<token_type> lexer_type;
+
+    // This is the token definition type (derived from the given lexer type).
+    typedef hyper_lexer<lexer_type> hyper_lexer;
+
+    // this is the iterator type exposed by the lexer 
+    typedef hyper_lexer::iterator_type iterator_type;
+
+    // this is the type of the grammar to parse
+    typedef ability<iterator_type, hyper_lexer::lexer_def> hyper_ability;
+
+	hyper_lexer our_lexer;
+	hyper_ability g(our_lexer, sList, fList);
+
+	std::string expr = read_from_file(filename);
+	std::cout << expr << std::endl;
 	base_iterator_type it = expr.begin();
 	iterator_type iter = our_lexer.begin(it, expr.end());
 	iterator_type end = our_lexer.end();

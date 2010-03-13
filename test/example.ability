@@ -1,0 +1,41 @@
+first = ability 
+{
+	context = 
+	{
+		{
+			/* Here, the controlable variable */
+			position p;
+			bool isOk;
+			otherability::coolstruct s;
+		} 
+		{
+			/* Here, the read-only variable */
+			double thresold;
+			int i, j, k;
+		} 
+		{
+			/* Here, the private variable */
+			double myPrivatevariable;
+		}
+	}
+
+	tasks = {}
+
+	export = 
+	{
+		{
+			/* Here, define your own type */
+			length = newtype double;
+			position = struct { double x;
+								double y;
+								double z;
+							  };
+		}
+		{
+			/* Here, define your fonction */
+			length distance(position A, position B);
+			double square(double);
+		}
+	}
+}
+
