@@ -320,43 +320,10 @@ struct expression : qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	function<newtype_adder> newtype_decl_adder;
 };
 
-
-
-#if 0
-template <typename Iterator>
-struct HyperGrammar : qi::grammar<Iterator, white_space<Iterator> >
-{
-	    HyperGrammar() : HyperGrammar::base_type(expression)
-        {
-
-            expression =
-                term
-                >> *(   ('+' >> term)
-                    |   ('-' >> term)
-                    )
-                ;
-
-            term =
-                factor
-                >> *(   ('*' >> factor)
-                    |   ('/' >> factor)
-                    )
-                ;
-
-            factor =
-                qi::uint_
-                |   '(' >> expression >> ')'
-                |   ('-' >> factor)
-                |   ('+' >> factor)
-                ;
-        }
-
-		qi::rule<Iterator, white_space<Iterator> > expression, term, factor;
-};
-#endif
-
 bool parser::parse(const std::string & expr) 
 {
+	// Stolen from boost/libs/spirit/examples/lex/example4.cpp
+	//
     // iterator type used to expose the underlying input stream
     typedef std::string::const_iterator base_iterator_type;
 
