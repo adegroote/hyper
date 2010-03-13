@@ -1,3 +1,5 @@
+import "other.ability"
+
 first = ability 
 {
 	context = 

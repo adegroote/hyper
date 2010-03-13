@@ -68,17 +68,20 @@ struct hyper_lexer : lex::lexer<Lexer>
 	{
         identifier = "[a-zA-Z_][a-zA-Z0-9_]*";
 		scoped_identifier = "[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*";
+		constant_string = "\\\".*\\\"";
 		struct_ = "struct";
 		newtype_ = "newtype";
 		ability_ = "ability";
 		context_ = "context";
 		tasks_ = "tasks";
 		export_ = "export";
+		import_ = "import";
 
 		/* identifier must be the last if you want to not match keyword */
-        this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',';
-		this->self += struct_ | newtype_ | ability_ | context_ | tasks_ | export_;
+        this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',' ;
+		this->self += struct_ | newtype_ | ability_ | context_ | tasks_ | export_ | import_;
 		this->self += identifier | scoped_identifier;
+		this->self += constant_string;
 
         // define the whitespace to ignore (spaces, tabs, newlines and C-style 
         // comments)
@@ -88,8 +91,9 @@ struct hyper_lexer : lex::lexer<Lexer>
             ;
 	};
 
-    lex::token_def<> struct_, newtype_, ability_, context_, tasks_, export_;
+    lex::token_def<> struct_, newtype_, ability_, context_, tasks_, export_, import_;
     lex::token_def<std::string> identifier, scoped_identifier;
+	lex::token_def<std::string> constant_string;
 };
 
 struct var_decl {
@@ -374,7 +378,8 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
         using phoenix::push_back;
 		
 		ability_ = 
-				  tok.identifier 
+				  import_list
+				  >> tok.identifier 
 				  >> lit('=')
 				  >> tok.ability_ 
 				  >> lit('{')
@@ -432,6 +437,13 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 				>> *(f_decl)
 				>> lit('}')
 				;
+
+		import_list =
+				*import;
+
+		import =	tok.import_ 
+					>> tok.constant_string 
+					>> -lit(';');
 
 
 		v_decl   = (tok.identifier|tok.scoped_identifier)	
@@ -496,6 +508,8 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		block_variable.name("block_variable");
 		block_type_decl.name("block_type_decl");
 		block_function_decl.name("block_function_decl");
+		import_list.name("import_list");
+		import.name("import");
 		v_decl.name("var decl");
 		f_decl.name("function declation");
 		type_decl.name("type declaration");
@@ -513,6 +527,8 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		debug(block_variable);
 		debug(block_type_decl);
 		debug(block_function_decl);
+		debug(import_list);
+		debug(import);
 		debug(v_decl);
 		debug(f_decl);
 		debug(type_decl);
@@ -524,6 +540,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	qi::rule<Iterator, white_space_> ability_, ability_description;
 	qi::rule<Iterator, white_space_> block_context, block_tasks, block_definition, block_variable;
 	qi::rule<Iterator, white_space_> block_type_decl, block_function_decl;
+	qi::rule<Iterator, white_space_> import_list, import;
 	qi::rule<Iterator, white_space_>  type_decl; 
 	qi::rule<Iterator, var_decl(), white_space_> v_decl;
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
