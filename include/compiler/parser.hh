@@ -16,7 +16,6 @@ namespace hyper {
 
 			public:
 				parser();
-				bool parse(const std::string &);
 				bool parse_ability_file(const std::string&);
 		};
 	};
