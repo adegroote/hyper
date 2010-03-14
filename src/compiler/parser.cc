@@ -653,7 +653,6 @@ bool parser::parse_ability_file(const std::string & filename)
 	hyper_ability g(our_lexer, sList, fList);
 
 	std::string expr = read_from_file(filename);
-	std::cout << expr << std::endl;
 	base_iterator_type it = expr.begin();
 	iterator_type iter = our_lexer.begin(it, expr.end());
 	iterator_type end = our_lexer.end();
