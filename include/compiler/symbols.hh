@@ -8,6 +8,7 @@
 #include <boost/noncopyable.hpp>
 
 #include <compiler/types.hh>
+#include <compiler/symbols_parser.hh>
 
 namespace hyper {
 	namespace compiler {
@@ -21,20 +22,6 @@ namespace hyper {
 		};
 
 
-		/* Structs used by parser */
-
-		struct symbol_decl {
-			std::string typeName;
-			std::string name;
-		};
-
-		std::ostream& operator << (std::ostream& os, const symbol_decl&);
-
-		struct symbol_decl_list {
-			std::vector < symbol_decl> l;
-		};
-
-		std::ostream& operator << (std::ostream& os, const symbol_decl_list&);
 
 		struct symbolList : public boost::noncopyable {
 			public:

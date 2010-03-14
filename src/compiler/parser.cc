@@ -7,6 +7,7 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/lex_lexertl.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
+#include <boost/spirit/include/phoenix_algorithm.hpp>
 #include <boost/spirit/include/phoenix_container.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
 #include <boost/spirit/include/phoenix_statement.hpp>
@@ -197,21 +198,11 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::vector < std::string>, argsName)
 );
 
-struct struct_decl {
-	std::string name;
-	std::vector < symbol_decl > vars;
-};
-
-std::ostream& operator << (std::ostream& os, const struct_decl &decl)
-{
-	os << "struct declaration for " << decl.name << " ";
-	return os;
-}
 
 BOOST_FUSION_ADAPT_STRUCT(
 	struct_decl,
 	(std::string, name)
-	(std::vector < symbol_decl >, vars)
+	(symbol_decl_list, vars)
 );
 
 struct struct_adder {
@@ -220,22 +211,9 @@ struct struct_adder {
 
 	void operator() (const struct_decl& s) const 
 	{
-		std::cout << "struct " << s.name << " contains :" << std::endl;
-		for (size_t i = 0; i < s.vars.size(); ++i)
-			std::cout << "\t" << s.vars[i].typeName << " " << s.vars[i].name << std::endl;
+		std::cout << s << std::endl;
 	}
 };
-
-struct newtype_decl {
-	std::string newname;
-	std::string oldname;
-};
-
-std::ostream& operator << (std::ostream& os, const newtype_decl &decl)
-{
-	os << "newtype from " << decl.oldname << " to " << decl.newname << " ";
-	return os;
-}
 
 BOOST_FUSION_ADAPT_STRUCT(
 	newtype_decl,
@@ -249,7 +227,7 @@ struct newtype_adder {
 
 	void operator() (const newtype_decl& s) const 
 	{
-		std::cout << "type " << s.newname << " is synonym of " << s.oldname << std::endl;
+		std::cout << s << std::endl;
 	};
 };
 
@@ -272,6 +250,10 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 		using phoenix::at_c;
         using phoenix::push_back;
+		using phoenix::insert;
+		using phoenix::begin;
+		using phoenix::end;
+		using phoenix::swap;
 		
 		ability_ = 
 				  import_list
@@ -302,7 +284,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 		block_variable =
 				  lit('{')
-				  >> *(v_decl)
+				  >> v_decl_list
 				  >> lit('}')
 				  ;
 
@@ -339,16 +321,20 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 		import =	tok.import_ 
 					>> tok.constant_string 
-					>> -lit(';');
+					>> -lit(';')
+					;
 
+		v_decl_list = (*v_decl			    [insert(at_c<0>(_val), end(at_c<0>(_val)), 
+											  begin(at_c<0>(_1)), end(at_c<0>(_1)))])
+				   ;
 
-		v_decl   = (tok.identifier|tok.scoped_identifier)	
-											[at_c<0>(_val) = _1]
-				 >> tok.identifier			[at_c<1>(_val) = _1]
+		v_decl   =  (tok.identifier|tok.scoped_identifier)	
+											[at_c<0>(_a) = _1]
+				 >> tok.identifier			[at_c<1>(_a) = _1]
 				 >> 
-					   *(lit(',')			[symbol_add(_val)]
-						 >> tok.identifier	[at_c<1>(_val) = _1])
-				 >> lit(';')			[symbol_add(_val)]
+					   *(lit(',')			[push_back(at_c<0>(_val), _a)]
+						 >> tok.identifier	[at_c<1>(_a) = _1])
+				 >> lit(';')				[push_back(at_c<0>(_val), _a)]
 		;
 
 		f_decl = (tok.identifier|tok.scoped_identifier)								[at_c<1>(_val) = _1]
@@ -378,13 +364,8 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 					  >> lit('=')
 					  >> tok.struct_
 					  >> lit('{')
-						>> *((tok.identifier|tok.scoped_identifier)	[at_c<0>(_a) = _1]
-						>> tok.identifier   [at_c<1>(_a) = _1]
-						>>
-							*(lit(',')	[push_back(at_c<1>(_val), _a)]
-							>> tok.identifier [at_c<1>(_a) = _1])
-						>> lit(';')		[push_back(at_c<1>(_val), _a)])
-					  >> lit('}')		[struct_decl_add(_val)]
+					  >> v_decl_list		[swap(at_c<1>(_val) , _1)]
+					  >> lit('}')			[struct_decl_add(_val)]
 					  >> -lit(';')		  
 					  ;
 
@@ -438,7 +419,8 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	qi::rule<Iterator, white_space_> block_type_decl, block_function_decl;
 	qi::rule<Iterator, white_space_> import_list, import;
 	qi::rule<Iterator, white_space_>  type_decl; 
-	qi::rule<Iterator, symbol_decl(), white_space_> v_decl;
+	qi::rule<Iterator, symbol_decl_list(), qi::locals<symbol_decl>, white_space_> v_decl;
+	qi::rule<Iterator, symbol_decl_list(), white_space_> v_decl_list;
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
 	qi::rule<Iterator, struct_decl(), qi::locals<symbol_decl>, white_space_> structure_decl;
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;

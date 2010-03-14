@@ -7,6 +7,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <compiler/types_parser.hh>
+
 namespace hyper {
 	namespace compiler {
 
