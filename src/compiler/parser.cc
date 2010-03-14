@@ -96,21 +96,15 @@ struct hyper_lexer : lex::lexer<Lexer>
 	lex::token_def<std::string> constant_string;
 };
 
-struct var_decl {
-	std::string type;
-	std::string sym;
-};
-
-std::ostream& operator << (std::ostream& os, const var_decl& decl)
-{
-	os << "declaration of variable " << decl.sym << " of type " << decl.type << " ";
-	return os;
-};
+BOOST_FUSION_ADAPT_STRUCT(
+    symbol_decl,
+    (std::string, typeName)
+	(std::string, name)
+);
 
 BOOST_FUSION_ADAPT_STRUCT(
-    var_decl,
-    (std::string, type)
-	(std::string, sym)
+	symbol_decl_list,
+	(std::vector<symbol_decl>, l)
 );
 
 struct symbol_adder {
@@ -118,19 +112,18 @@ struct symbol_adder {
 
 	template <typename>
     struct result { typedef void type; };
-	
+
 	symbol_adder(symbolList & s_) : s(s_) {};
-	void operator()(const var_decl & decl) const
+
+	void print_diagnostic(const symbolList::add_result & res, const symbol_decl& decl) const
 	{
-		std::pair < bool, symbolList::symbolAddError > p;
-		p = s.add(decl.sym, decl.type);
-		if ( p.first == false ) {
-			switch ( p.second ) {
+		if ( res.first == false ) {
+			switch ( res.second ) {
 				case symbolList::alreadyExist: 
-					std::cerr << "variable " << decl.sym << " already defined" << std::endl;
+					std::cerr << "variable " << decl.name << " already defined" << std::endl;
 					break;
 				case symbolList::unknowType:
-					std::cerr << "type " << decl.type << " used to declare " << decl.sym;
+					std::cerr << "type " << decl.typeName << " used to declare " << decl.name;
 					std::cerr << " is undefined" << std::endl;
 					break;
 				case symbolList::noError:
@@ -138,8 +131,15 @@ struct symbol_adder {
 					;
 			}
 		} else {
-			std::cout << "Successfully add var " << decl.sym << std::endl;
+			std::cout << "Successfully add var " << decl.name << std::endl;
 		}
+	}
+
+	void operator()(const symbol_decl& decl) const
+	{
+		symbolList::add_result p;
+		p = s.add(decl);
+		print_diagnostic(p, decl);
 	};
 };
 
@@ -199,7 +199,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 struct struct_decl {
 	std::string name;
-	std::vector < var_decl > vars;
+	std::vector < symbol_decl > vars;
 };
 
 std::ostream& operator << (std::ostream& os, const struct_decl &decl)
@@ -211,7 +211,7 @@ std::ostream& operator << (std::ostream& os, const struct_decl &decl)
 BOOST_FUSION_ADAPT_STRUCT(
 	struct_decl,
 	(std::string, name)
-	(std::vector < var_decl >, vars)
+	(std::vector < symbol_decl >, vars)
 );
 
 struct struct_adder {
@@ -222,7 +222,7 @@ struct struct_adder {
 	{
 		std::cout << "struct " << s.name << " contains :" << std::endl;
 		for (size_t i = 0; i < s.vars.size(); ++i)
-			std::cout << "\t" << s.vars[i].type << " " << s.vars[i].sym << std::endl;
+			std::cout << "\t" << s.vars[i].typeName << " " << s.vars[i].name << std::endl;
 	}
 };
 
@@ -345,9 +345,9 @@ struct expression : qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	};
 
 	qi::rule<Iterator, white_space_> statement_, statement_list, type_decl; 
-	qi::rule<Iterator, var_decl(), white_space_> v_decl;
+	qi::rule<Iterator, symbol_decl(), white_space_> v_decl;
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
-	qi::rule<Iterator, struct_decl(), qi::locals<var_decl>, white_space_> structure_decl;
+	qi::rule<Iterator, struct_decl(), qi::locals<symbol_decl>, white_space_> structure_decl;
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
 
 	function<symbol_adder> symbol_add;
@@ -542,9 +542,9 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	qi::rule<Iterator, white_space_> block_type_decl, block_function_decl;
 	qi::rule<Iterator, white_space_> import_list, import;
 	qi::rule<Iterator, white_space_>  type_decl; 
-	qi::rule<Iterator, var_decl(), white_space_> v_decl;
+	qi::rule<Iterator, symbol_decl(), white_space_> v_decl;
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
-	qi::rule<Iterator, struct_decl(), qi::locals<var_decl>, white_space_> structure_decl;
+	qi::rule<Iterator, struct_decl(), qi::locals<symbol_decl>, white_space_> structure_decl;
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
 
 	function<symbol_adder> symbol_add;
