@@ -7,10 +7,15 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <boost/shared_ptr.hpp>
+#include <boost/variant.hpp>
+#include <boost/tuple/tuple.hpp>
+
 #include <compiler/types_parser.hh>
 
 namespace hyper {
 	namespace compiler {
+
 
 		enum typeOfType {
 			noType,
@@ -22,16 +27,34 @@ namespace hyper {
 			structType
 		};
 
+		namespace detail {
+			typedef std::size_t typeId;
+		};
+
+		struct Nothing {};
+
+		struct symbolList;
+
+		typedef boost::variant< Nothing, 
+								detail::typeId,
+								boost::shared_ptr<symbolList>
+							  > typeInternal;
+
 		struct type {
 			std::string name;
 			typeOfType t;
+			typeInternal internal;
 
-			type(const std::string& name_, typeOfType t_): name(name_), t(t_) {};
+			type(const std::string& name_, typeOfType t_): name(name_), t(t_), internal(Nothing()) {};
+		};
+
+		struct struct_type : public type {
+			symbolList* s;
 		};
 
 		class typeList : public boost::noncopyable {
 			public:
-				typedef std::size_t typeId;
+				typedef detail::typeId typeId;
 
 			private:
 				typedef std::vector<type> typeV;
@@ -41,13 +64,47 @@ namespace hyper {
 				typeMap mapsId; 
 
 			public:
+
+
+				// XXX duplicate part of symbol error value ...
+				enum addTypeError {
+					noError, 
+					notTested,
+					typeAlreadyExist,
+					symAlreadyExist,
+					unknowType
+				};
+
+				struct native_decl_error {
+					addTypeError err;
+				};
+
+				struct struct_decl_error {
+					addTypeError local_err;
+					std::vector < addTypeError > var_err;
+				};
+
+				struct new_decl_error {
+					addTypeError new_name_error;
+					addTypeError old_name_error;
+				};
+
+				typedef boost::variant< native_decl_error, struct_decl_error, new_decl_error > 
+						add_error;
+
+				typedef boost::tuple<bool, typeList::typeId, add_error> add_result;
+
 				typeList() {};
 				/* 
 				 * Add a type to the typeList
 				 * return < true, id> if the type is really created
 				 * return < false, id> if the type already exists
 				 */
-				std::pair < bool, typeList::typeId > add(const std::string & name, typeOfType t);
+				add_result add(const std::string & name, typeOfType t);
+
+				add_result add(const type_decl& decl);
+
+				std::vector<add_result> add(const type_decl_list& list);
 
 				/*
 				 * Get a typeId of a type on the base of its name
@@ -61,6 +118,8 @@ namespace hyper {
 				 * Pre : id is a valid typeId, from add or getId
 				 */
 				type get(typeList::typeId id) const;
+
+				type& get(typeList::typeId);
 		};
 	};
 };

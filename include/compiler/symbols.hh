@@ -3,6 +3,7 @@
 #define _SYMBOLS_HH_
 
 #include <iostream>
+#include <map>
 #include <string>
 
 #include <boost/noncopyable.hpp>
@@ -12,6 +13,8 @@
 
 namespace hyper {
 	namespace compiler {
+
+		typedef std::size_t typeId;
 
 		struct symbol {
 			std::string name;

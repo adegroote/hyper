@@ -7,32 +7,33 @@ BOOST_AUTO_TEST_CASE ( Compiler_types_test)
 
 	typeList list;
 
-	std::pair < bool, typeList::typeId > p;
+	typeList::add_result p;
 
 	// typeList::add check
 	p = list.add("double", doubleType);
-	BOOST_CHECK(p.first == true);
-	BOOST_CHECK(p.second == 0);
+	BOOST_CHECK(p.get<0>() == true);
+	BOOST_CHECK(p.get<1>() == 0);
 
 	p = list.add("int", intType);
-	BOOST_CHECK(p.first == true);
-	BOOST_CHECK(p.second == 1);
+	BOOST_CHECK(p.get<0>() == true);
+	BOOST_CHECK(p.get<1>() == 1);
 
 	p = list.add("string", stringType);
-	BOOST_CHECK(p.first == true);
-	BOOST_CHECK(p.second == 2);
+	BOOST_CHECK(p.get<0>() == true);
+	BOOST_CHECK(p.get<1>() == 2);
 
 	p = list.add("int", stringType);
-	BOOST_CHECK(p.first == false);
-	BOOST_CHECK(p.second == 1);
+	BOOST_CHECK(p.get<0>() == false);
+	BOOST_CHECK(p.get<1>() == 1);
 
+	std::pair < bool, typeList::typeId > p1;
 	// typeList::getId check
-	p = list.getId("int");
-	BOOST_CHECK(p.first == true);
-	BOOST_CHECK(p.second == 1);
+	p1 = list.getId("int");
+	BOOST_CHECK(p1.first == true);
+	BOOST_CHECK(p1.second == 1);
 
-	p = list.getId("long");
-	BOOST_CHECK(p.first == false);
+	p1 = list.getId("long");
+	BOOST_CHECK(p1.first == false);
 	// don't care about p.second
 	
 	type t = list.get(1);
