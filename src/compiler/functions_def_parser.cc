@@ -6,7 +6,7 @@ using namespace hyper::compiler;
 std::ostream& hyper::compiler::operator << (std::ostream& os, const function_decl& decl)
 {
 	os << "declaring function " << decl.fName << " returning type " << decl.returnName;
-	os << "with args of type : " << std::endl;;
+	os << " with args of type : " << std::endl;;
 
 	std::vector < std::string >::const_iterator it;
 	for (it = decl.argsName.begin(); it != decl.argsName.end(); ++it)
