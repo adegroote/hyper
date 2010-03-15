@@ -1,3 +1,6 @@
+#include <algorithm>
+
+#include <boost/bind.hpp>
 
 #include <compiler/functions_def.hh>
 
@@ -5,7 +8,7 @@ using namespace hyper::compiler;
 using std::make_pair;
 using boost::make_tuple;
 
-boost::tuple< bool, functionDefList::addErrorType, int>
+functionDefList::add_result
 functionDefList::add(const std::string &name, 
 						  const std::string &return_name,
 						  const std::vector < std::string > & argsName)
@@ -33,6 +36,27 @@ functionDefList::add(const std::string &name,
 
 	functionDefs[name] = functionDef(name, v, returnTypeId);
 	return make_tuple(true, noError, 0);
+}
+
+functionDefList::add_result
+functionDefList::add(const function_decl& decl)
+{
+	return add(decl.fName, decl.returnName, decl.argsName);
+}
+
+std::vector<functionDefList::add_result>
+functionDefList::add(const function_decl_list& list)
+{
+	std::vector<functionDefList::add_result> res(list.l.size());
+
+	// help the compiler to find the right overloading
+	functionDefList::add_result (functionDefList::*add) (const function_decl&) =
+	   	&functionDefList::add;
+
+	std::transform(list.l.begin(), list.l.end(), res.begin(),
+				   boost::bind(add, this, _1));
+				   
+	return res;
 }
 
 std::pair <bool, functionDef> 

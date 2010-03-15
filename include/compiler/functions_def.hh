@@ -61,6 +61,8 @@ namespace hyper {
 					unknowArgsType
 				};
 
+				typedef boost::tuple<bool, addErrorType, int> add_result;
+
 				functionDefList(const typeList & list_) : tlist(list_) {};
 				/*
 				 * Add a function definition to the list of known function
@@ -73,9 +75,14 @@ namespace hyper {
 				 * return < false, unknowArgsType, i > if the args i uses an
 				 * undefined type
 				 */
-				boost::tuple<bool, addErrorType, int> 
+				add_result
 				add(const std::string& name, const std::string& return_name,
 					const std::vector< std::string > & argsName);
+
+				add_result add(const function_decl& decl);
+
+				std::vector<add_result> add(const function_decl_list &l);
+
 				/*
 				 * Return the definition of a function, knowing its name
 				 * return < true, def > if the function exists
