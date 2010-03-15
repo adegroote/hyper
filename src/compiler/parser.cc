@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include <compiler/parser.hh>
+#include <compiler/ability_parser.hh>
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/lex_lexertl.hpp>
@@ -220,6 +221,21 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::vector < type_decl >, l)
 );
 
+BOOST_FUSION_ADAPT_STRUCT(
+	programming_decl,
+	(type_decl_list, types)
+	(function_decl_list, funcs)
+);
+
+BOOST_FUSION_ADAPT_STRUCT(
+	ability_decl,
+	(std::string, name)				    // 0
+	(symbol_decl_list, controlables)    // 1
+	(symbol_decl_list, readables)       // 2
+	(symbol_decl_list, privates)        // 3
+	(programming_decl, env)				// 4
+);	
+
 struct newtype_adder {
 	template<typename>
 	struct result { typedef void type; };
@@ -266,24 +282,24 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 				  ;
 
 		ability_description = 
-				        block_context
+				        block_context		[swap(_val, _1)]
 					>> -block_tasks
-				    >> -block_definition
+				    >> -block_definition	[swap(at_c<4>(_val), _1)]
 					;	
 
 		block_context =
 				  tok.context_
 				  >> lit('=')
 				  >> lit('{')
-				  >> block_variable
-				  >> block_variable
-				  >> block_variable
+				  >> block_variable		[swap(at_c<1>(_val), _1)]
+				  >> block_variable		[swap(at_c<2>(_val), _1)]
+				  >> block_variable		[swap(at_c<3>(_val), _1)]
 				  >> lit('}')
 				  ;
 
 		block_variable =
 				  lit('{')
-				  >> v_decl_list
+				  >> v_decl_list		 [swap(_val, _1)]
 				  >> lit('}')
 				  ;
 
@@ -298,8 +314,8 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 				 tok.export_
 				 >> lit('=')
 				 >> lit('{')
-				 >> block_type_decl
-				 >> block_function_decl
+				 >> block_type_decl			[swap(at_c<0>(_val), _1)]
+				 >> block_function_decl     [swap(at_c<1>(_val), _1)]
 				 >> lit('}')
 				 ;
 
@@ -428,13 +444,15 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 #endif
 	};
 
-	qi::rule<Iterator, white_space_> ability_, ability_description;
-	qi::rule<Iterator, white_space_> block_context, block_tasks, block_definition, block_variable;
+	qi::rule<Iterator, white_space_> ability_;
+	qi::rule<Iterator, white_space_> block_tasks;
 	qi::rule<Iterator, white_space_> import_list, import;
+	qi::rule<Iterator, programming_decl(), white_space_> block_definition; 
+	qi::rule<Iterator, ability_decl(), white_space_> block_context, ability_description;
 	qi::rule<Iterator, type_decl(), white_space_>  type_decl_; 
 	qi::rule<Iterator, type_decl_list(), white_space_> type_decl_list_, block_type_decl;
 	qi::rule<Iterator, symbol_decl_list(), qi::locals<symbol_decl>, white_space_> v_decl;
-	qi::rule<Iterator, symbol_decl_list(), white_space_> v_decl_list;
+	qi::rule<Iterator, symbol_decl_list(), white_space_> v_decl_list, block_variable;
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
 	qi::rule<Iterator, function_decl_list(), white_space_> f_decl_list, block_function_decl;
 	qi::rule<Iterator, struct_decl(), qi::locals<symbol_decl>, white_space_> structure_decl;
