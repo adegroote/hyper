@@ -6,6 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 
+#include <compiler/functions_def_parser.hh>
 #include <compiler/types.hh>
 
 #include <boost/tuple/tuple.hpp>

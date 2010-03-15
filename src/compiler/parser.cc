@@ -146,18 +146,6 @@ struct symbol_adder {
 	};
 };
 
-struct function_decl {
-	std::string fName;
-	std::string returnName;
-	std::vector < std::string > argsName;
-};
-
-std::ostream& operator << (std::ostream& os, const function_decl& decl)
-{
-	os << "function declaration of " << decl.fName << " ";
-	return os;
-};
-
 struct function_adder {
 
 	functionDefList & f;
@@ -200,6 +188,10 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::vector < std::string>, argsName)
 );
 
+BOOST_FUSION_ADAPT_STRUCT(
+	function_decl_list,
+	(std::vector<function_decl> , l)
+);
 
 BOOST_FUSION_ADAPT_STRUCT(
 	struct_decl,
@@ -319,7 +311,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 		block_function_decl =
 				lit('{')
-				>> *(f_decl)
+				>> f_decl_list		    [swap(_val, _1)]
 				>> lit('}')
 				;
 
@@ -343,6 +335,10 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 						 >> tok.identifier	[at_c<1>(_a) = _1])
 				 >> lit(';')				[push_back(at_c<0>(_val), _a)]
 		;
+
+		f_decl_list =
+				(*f_decl							  [push_back(at_c<0>(_val), _1)])
+				;
 
 		f_decl = (tok.identifier|tok.scoped_identifier)								[at_c<1>(_val) = _1]
 			   >> tok.identifier													[at_c<0>(_val) = _1]
@@ -400,8 +396,11 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		import_list.name("import_list");
 		import.name("import");
 		v_decl.name("var decl");
+		v_decl_list.name("var declaration list");
 		f_decl.name("function declation");
+		f_decl_list.name("function declaration list");
 		type_decl_.name("type declaration");
+		type_decl_list_.name("type declaration list");
 		structure_decl.name("struct declaration");
 		new_type_decl.name("newtype declaration");
 
@@ -419,8 +418,11 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		debug(import_list);
 		debug(import);
 		debug(v_decl);
+		debug(v_decl_list);
 		debug(f_decl);
+		debug(f_decl_list);
 		debug(type_decl_);
+		debug(type_decl_list_);
 		debug(structure_decl);
 		debug(new_type_decl);
 #endif
@@ -428,13 +430,13 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 	qi::rule<Iterator, white_space_> ability_, ability_description;
 	qi::rule<Iterator, white_space_> block_context, block_tasks, block_definition, block_variable;
-	qi::rule<Iterator, white_space_> block_function_decl;
 	qi::rule<Iterator, white_space_> import_list, import;
 	qi::rule<Iterator, type_decl(), white_space_>  type_decl_; 
 	qi::rule<Iterator, type_decl_list(), white_space_> type_decl_list_, block_type_decl;
 	qi::rule<Iterator, symbol_decl_list(), qi::locals<symbol_decl>, white_space_> v_decl;
 	qi::rule<Iterator, symbol_decl_list(), white_space_> v_decl_list;
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
+	qi::rule<Iterator, function_decl_list(), white_space_> f_decl_list, block_function_decl;
 	qi::rule<Iterator, struct_decl(), qi::locals<symbol_decl>, white_space_> structure_decl;
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
 
