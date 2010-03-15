@@ -14,6 +14,8 @@
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
+#define HYPER_DEBUG_RULES
+
 using boost::phoenix::function;
 using boost::phoenix::ref;
 using boost::phoenix::size;
@@ -221,6 +223,11 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::string, oldname)
 );
 
+BOOST_FUSION_ADAPT_STRUCT(
+	type_decl_list,
+	(std::vector < type_decl >, l)
+);
+
 struct newtype_adder {
 	template<typename>
 	struct result { typedef void type; };
@@ -306,7 +313,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 		block_type_decl =
 				lit('{')
-				>> *(type_decl)
+				>> type_decl_list_		[swap(_val, _1)]
 				>> lit('}')
 				;
 
@@ -351,10 +358,15 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 			   
 	    ;
 
-		type_decl =
-					structure_decl
-				   |new_type_decl
+		type_decl_ = 
+					structure_decl						[_val =  _1]
+				   |new_type_decl						[_val =  _1]
 				   ;
+
+		type_decl_list_ = 
+					 (*type_decl_					    [push_back(at_c<0>(_val), _1)])
+					;
+
 		/* 
 		 * XXX
 		 * structure_decl and v_decl are more or less the same, so maybe there
@@ -389,7 +401,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		import.name("import");
 		v_decl.name("var decl");
 		f_decl.name("function declation");
-		type_decl.name("type declaration");
+		type_decl_.name("type declaration");
 		structure_decl.name("struct declaration");
 		new_type_decl.name("newtype declaration");
 
@@ -408,7 +420,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		debug(import);
 		debug(v_decl);
 		debug(f_decl);
-		debug(type_decl);
+		debug(type_decl_);
 		debug(structure_decl);
 		debug(new_type_decl);
 #endif
@@ -416,9 +428,10 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 	qi::rule<Iterator, white_space_> ability_, ability_description;
 	qi::rule<Iterator, white_space_> block_context, block_tasks, block_definition, block_variable;
-	qi::rule<Iterator, white_space_> block_type_decl, block_function_decl;
+	qi::rule<Iterator, white_space_> block_function_decl;
 	qi::rule<Iterator, white_space_> import_list, import;
-	qi::rule<Iterator, white_space_>  type_decl; 
+	qi::rule<Iterator, type_decl(), white_space_>  type_decl_; 
+	qi::rule<Iterator, type_decl_list(), white_space_> type_decl_list_, block_type_decl;
 	qi::rule<Iterator, symbol_decl_list(), qi::locals<symbol_decl>, white_space_> v_decl;
 	qi::rule<Iterator, symbol_decl_list(), white_space_> v_decl_list;
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
