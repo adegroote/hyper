@@ -111,77 +111,6 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::vector<symbol_decl>, l)
 );
 
-struct symbol_adder {
-	symbolList & s;
-
-	template <typename>
-    struct result { typedef void type; };
-
-	symbol_adder(symbolList & s_) : s(s_) {};
-
-	void print_diagnostic(const symbolList::add_result & res, const symbol_decl& decl) const
-	{
-		if ( res.first == false ) {
-			switch ( res.second ) {
-				case symbolList::alreadyExist: 
-					std::cerr << "variable " << decl.name << " already defined" << std::endl;
-					break;
-				case symbolList::unknowType:
-					std::cerr << "type " << decl.typeName << " used to declare " << decl.name;
-					std::cerr << " is undefined" << std::endl;
-					break;
-				case symbolList::noError:
-				default:
-					;
-			}
-		} else {
-			std::cout << "Successfully add var " << decl.name << std::endl;
-		}
-	}
-
-	void operator()(const symbol_decl& decl) const
-	{
-		symbolList::add_result p;
-		p = s.add(decl);
-		print_diagnostic(p, decl);
-	};
-};
-
-struct function_adder {
-
-	functionDefList & f;
-
-	template<typename>
-	struct result { typedef void type; };
-
-	function_adder(functionDefList & fList) : f(fList) {};
-	void operator()(const function_decl & decl) const
-	{
-		boost::tuple< bool, functionDefList::addErrorType, int> r;
-		r = f.add(decl.fName, decl.returnName, decl.argsName);
-		if ( r.get<0>() == false ) {
-			switch (r.get<1>()) {
-				case functionDefList::alreadyExist:
-					std::cerr << "function " << decl.fName << " is already defined " << std::endl;
-					break;
-				case functionDefList::unknowReturnType:
-					std::cerr << "type " << decl.returnName << " is used in definition of ";
-					std::cerr << decl.fName << " but it nos defined " << std::endl;
-					break;
-				case functionDefList::unknowArgsType:
-					std::cerr << "type " << decl.argsName[r.get<2>()] << " is used in definition of ";
-					std::cerr << decl.fName << " but it nos defined " << std::endl;
-					break;
-				case functionDefList::noError:
-				default:
-					;
-			}
-		} else {
-			std::cout << "Succesfully add definition function for " << decl.fName << std::endl;
-		}
-	};
-};
-
 BOOST_FUSION_ADAPT_STRUCT(
     function_decl,
     (std::string, fName)
@@ -199,16 +128,6 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::string, name)
 	(symbol_decl_list, vars)
 );
-
-struct struct_adder {
-	template<typename>
-	struct result { typedef void type; };
-
-	void operator() (const struct_decl& s) const 
-	{
-		std::cout << s << std::endl;
-	}
-};
 
 BOOST_FUSION_ADAPT_STRUCT(
 	newtype_decl,
@@ -236,27 +155,13 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(programming_decl, env)				// 4
 );	
 
-struct newtype_adder {
-	template<typename>
-	struct result { typedef void type; };
-
-	void operator() (const newtype_decl& s) const 
-	{
-		std::cout << s << std::endl;
-	};
-};
-
 template <typename Iterator, typename Lexer>
 struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 {
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
-    ability(const TokenDef& tok, symbolList& s, functionDefList& f) :
-								   ability::base_type(ability_, "ability"),
-								   symbol_add(s),
-								   function_decl_add(f),
-								   struct_decl_add()
+    ability(const TokenDef& tok) : ability::base_type(ability_, "ability")
 	{
 	    using qi::lit;
         using qi::lexeme;
@@ -365,7 +270,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 					>> *(lit(',') > (tok.identifier|tok.scoped_identifier)			[push_back(at_c<2>(_val),_1)]
 								  > -tok.identifier)
 				  )
-			   > lit(')')				[function_decl_add(_val)]
+			   > lit(')')				
 			   > -lit(';')
 			   
 	    ;
@@ -389,7 +294,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 					  >> tok.struct_
 					  >> lit('{')
 					  >> v_decl_list		[swap(at_c<1>(_val) , _1)]
-					  >> lit('}')			[struct_decl_add(_val)]
+					  >> lit('}')			
 					  >> -lit(';')		  
 					  ;
 
@@ -397,7 +302,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 					 >> lit('=')
 					 >> tok.newtype_
 					 >> (tok.identifier|tok.scoped_identifier)	[at_c<1>(_val) = _1]
-					 >> lit(';')		[newtype_decl_adder(_val)]
+					 >> lit(';')		
 					 ;
 
 
@@ -457,11 +362,6 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	qi::rule<Iterator, function_decl_list(), white_space_> f_decl_list, block_function_decl;
 	qi::rule<Iterator, struct_decl(), qi::locals<symbol_decl>, white_space_> structure_decl;
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
-
-	function<symbol_adder> symbol_add;
-	function<function_adder> function_decl_add;
-	function<struct_adder> struct_decl_add;
-	function<newtype_adder> newtype_decl_adder;
 };
 
 std::string 
@@ -513,7 +413,7 @@ bool parser::parse_ability_file(const std::string & filename)
     typedef ability<iterator_type, hyper_lexer::lexer_def> hyper_ability;
 
 	hyper_lexer our_lexer;
-	hyper_ability g(our_lexer, sList, fList);
+	hyper_ability g(our_lexer);
 
 	std::string expr = read_from_file(filename);
 	base_iterator_type it = expr.begin();
