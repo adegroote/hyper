@@ -135,12 +135,17 @@ BOOST_FUSION_ADAPT_STRUCT(
 );
 
 BOOST_FUSION_ADAPT_STRUCT(
+	ability_blocks_decl,
+	(symbol_decl_list, controlables)    // 0
+	(symbol_decl_list, readables)       // 1
+	(symbol_decl_list, privates)        // 2
+	(programming_decl, env)				// 3
+);
+
+BOOST_FUSION_ADAPT_STRUCT(
 	ability_decl,
 	(std::string, name)				    // 0
-	(symbol_decl_list, controlables)    // 1
-	(symbol_decl_list, readables)       // 2
-	(symbol_decl_list, privates)        // 3
-	(programming_decl, env)				// 4
+	(ability_blocks_decl, blocks)		// 1
 );	
 
 struct ability_add_adaptator {
@@ -164,7 +169,7 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 	template <typename TokenDef>
     grammar_ability(const TokenDef& tok, universe& u_) : 
-		grammar_ability::base_type(ability_, "ability"), ability_adder(u_)
+		grammar_ability::base_type(statement, "ability"), ability_adder(u_)
 	{
 	    using qi::lit;
         using qi::lexeme;
@@ -178,13 +183,18 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		using phoenix::end;
 		using phoenix::swap;
 		
+		statement =
+				  import_list
+				  >> ability_			   [ability_adder(_1)]
+				  ;
+
 		ability_ = 
 				  import_list
-				  >> tok.identifier 
+				  >> tok.identifier			[swap(at_c<0>(_val), _1)] 
 				  >> lit('=')
 				  >> tok.ability_ 
 				  >> lit('{')
-				  >> ability_description	[ability_adder(_1)]
+				  >> ability_description	[swap(at_c<1>(_val), _1)]
 				  >> lit('}')
 				  >> -lit(';')
 				  ;
@@ -192,16 +202,16 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		ability_description = 
 				        block_context		[swap(_val, _1)]
 					>> -block_tasks
-				    >> -block_definition	[swap(at_c<4>(_val), _1)]
+				    >> -block_definition	[swap(at_c<3>(_val), _1)]
 					;	
 
 		block_context =
 				  tok.context_
 				  >> lit('=')
 				  >> lit('{')
+				  >> block_variable		[swap(at_c<0>(_val), _1)]
 				  >> block_variable		[swap(at_c<1>(_val), _1)]
 				  >> block_variable		[swap(at_c<2>(_val), _1)]
-				  >> block_variable		[swap(at_c<3>(_val), _1)]
 				  >> lit('}')
 				  ;
 
@@ -352,11 +362,12 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 #endif
 	};
 
-	qi::rule<Iterator, white_space_> ability_;
+	qi::rule<Iterator, white_space_> statement;
 	qi::rule<Iterator, white_space_> block_tasks;
 	qi::rule<Iterator, white_space_> import_list, import;
+	qi::rule<Iterator, ability_decl(), white_space_> ability_;
 	qi::rule<Iterator, programming_decl(), white_space_> block_definition; 
-	qi::rule<Iterator, ability_decl(), white_space_> block_context, ability_description;
+	qi::rule<Iterator, ability_blocks_decl(), white_space_> block_context, ability_description;
 	qi::rule<Iterator, type_decl(), white_space_>  type_decl_; 
 	qi::rule<Iterator, type_decl_list(), white_space_> type_decl_list_, block_type_decl;
 	qi::rule<Iterator, symbol_decl_list(), qi::locals<symbol_decl>, white_space_> v_decl;

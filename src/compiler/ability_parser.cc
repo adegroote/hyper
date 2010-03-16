@@ -10,13 +10,18 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const programming_
 	return os;
 }
 
+std::ostream& hyper::compiler::operator << (std::ostream& os, const ability_blocks_decl& d)
+{
+	os << " with controlable variables : " << std::endl << d.controlables;
+	os << " with readable variables : " << std::endl << d.readables;
+	os << " with private variables : " << std::endl << d.privates;
+	os << d.env;
+}
+
 std::ostream& hyper::compiler::operator << (std::ostream& os, const ability_decl& a)
 {
 	os << "ability " << a.name << "{" << std::endl;
-	os << " with controlable variables : " << std::endl << a.controlables;
-	os << " with readable variables : " << std::endl << a.readables;
-	os << " with private variables : " << std::endl << a.privates;
-	os << a.env;
+	os << a.blocks;
 	os << "}" << std::endl;
 	return os;
 }

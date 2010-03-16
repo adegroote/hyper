@@ -178,6 +178,6 @@ universe::add_types(const std::string& scope, const type_decl_list& t)
 bool
 universe::add(const ability_decl& decl)
 {
-	bool res = add_types(decl.name, decl.env.types);
+	bool res = add_types(decl.name, decl.blocks.env.types);
 	return res;
 }
