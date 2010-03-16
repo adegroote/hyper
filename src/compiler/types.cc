@@ -115,7 +115,7 @@ typeList::add_result
 typeList::add(const type_decl& decl)
 {
 	add_type add(*this);
-	boost::apply_visitor(add, decl);
+	return boost::apply_visitor(add, decl);
 }
 
 std::vector < typeList::add_result >
@@ -129,7 +129,7 @@ typeList::add(const type_decl_list& list)
 
 	std::transform(list.l.begin(), list.l.end(), res.begin(),
 				   boost::bind(add, this, _1));
-				   
+
 	return res;
 }
 
