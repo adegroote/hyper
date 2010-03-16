@@ -30,6 +30,19 @@ namespace hyper {
 
 		typedef boost::variant<struct_decl, newtype_decl> type_decl;
 
+		struct type_decl_name : boost::static_visitor<std::string>
+		{
+			std::string operator()(const struct_decl& decl) const
+			{
+				return decl.name;
+			}
+
+			std::string operator()(const newtype_decl& decl) const
+			{
+				return decl.newname;
+			}
+		};
+
 		struct type_decl_list {
 			std::vector < type_decl > l;
 		};

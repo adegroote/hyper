@@ -2,20 +2,16 @@
 #ifndef _PARSER_HH_
 #define _PARSER_HH_
 
-#include <compiler/types.hh>
-#include <compiler/symbols.hh>
-#include <compiler/functions_def.hh>
+#include <compiler/universe.hh>
 
 namespace hyper {
 	namespace compiler {
 		class parser {
 			private:
-				typeList tList;
-				symbolList sList;
-				functionDefList fList;
+				universe &u;
 
 			public:
-				parser();
+				parser(universe & u_) : u(u_) {};
 				bool parse_ability_file(const std::string&);
 		};
 	};

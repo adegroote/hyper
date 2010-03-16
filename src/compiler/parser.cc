@@ -15,7 +15,7 @@
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
-#define HYPER_DEBUG_RULES
+//#define HYPER_DEBUG_RULES
 
 using boost::phoenix::function;
 using boost::phoenix::ref;
@@ -29,18 +29,6 @@ namespace lex = boost::spirit::lex;
 namespace ascii = boost::spirit::ascii;
 namespace fusion = boost::fusion;
 namespace phoenix = boost::phoenix;
-
-parser::parser() : tList(), sList(tList), fList(tList)
-{
-	// Add basic native types
-	
-	tList.add("bool", boolType);
-	tList.add("double", doubleType);
-	tList.add("int", intType);
-	tList.add("string", stringType);
-	tList.add("void", noType);
-}
-
 
 struct error_handler_
 {
@@ -155,13 +143,28 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(programming_decl, env)				// 4
 );	
 
+struct ability_add_adaptator {
+	universe &u;
+
+	template <typename>
+    struct result { typedef bool type; };
+
+	ability_add_adaptator(universe & u_) : u(u_) {};
+
+	bool operator()(const ability_decl& decl) const
+	{
+		return u.add(decl);
+	}
+};
+
 template <typename Iterator, typename Lexer>
-struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
+struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 {
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
-    ability(const TokenDef& tok) : ability::base_type(ability_, "ability")
+    grammar_ability(const TokenDef& tok, universe& u_) : 
+		grammar_ability::base_type(ability_, "ability"), ability_adder(u_)
 	{
 	    using qi::lit;
         using qi::lexeme;
@@ -181,7 +184,7 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 				  >> lit('=')
 				  >> tok.ability_ 
 				  >> lit('{')
-				  >> ability_description
+				  >> ability_description	[ability_adder(_1)]
 				  >> lit('}')
 				  >> -lit(';')
 				  ;
@@ -362,6 +365,8 @@ struct ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	qi::rule<Iterator, function_decl_list(), white_space_> f_decl_list, block_function_decl;
 	qi::rule<Iterator, struct_decl(), qi::locals<symbol_decl>, white_space_> structure_decl;
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
+
+	function<ability_add_adaptator> ability_adder;
 };
 
 std::string 
@@ -410,10 +415,10 @@ bool parser::parse_ability_file(const std::string & filename)
     typedef hyper_lexer::iterator_type iterator_type;
 
     // this is the type of the grammar to parse
-    typedef ability<iterator_type, hyper_lexer::lexer_def> hyper_ability;
+    typedef grammar_ability<iterator_type, hyper_lexer::lexer_def> hyper_ability;
 
 	hyper_lexer our_lexer;
-	hyper_ability g(our_lexer);
+	hyper_ability g(our_lexer, u);
 
 	std::string expr = read_from_file(filename);
 	base_iterator_type it = expr.begin();
