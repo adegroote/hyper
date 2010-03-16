@@ -43,5 +43,6 @@ std::ostream& hyper::compiler::operator << (std::ostream& os,
 	std::vector<type_decl>::const_iterator it;
 	for (it = l.l.begin(); it != l.l.end(); ++it) 
 		os << boost::apply_visitor(print_visitor(), *it);
+	return os;
 }
 

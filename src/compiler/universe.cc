@@ -117,6 +117,7 @@ struct functions_def_add_scope {
 		
 		std::transform(res.argsName.begin(), res.argsName.end(),
 					   res.argsName.begin(), boost::bind(&universe::add_scope, &u, scope, _1));
+		return res
 	}
 };
 

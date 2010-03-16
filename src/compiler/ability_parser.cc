@@ -16,6 +16,7 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const ability_bloc
 	os << " with readable variables : " << std::endl << d.readables;
 	os << " with private variables : " << std::endl << d.privates;
 	os << d.env;
+	return os;
 }
 
 std::ostream& hyper::compiler::operator << (std::ostream& os, const ability_decl& a)
