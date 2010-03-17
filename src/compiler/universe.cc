@@ -129,7 +129,7 @@ struct type_diagnostic_visitor : public boost::static_visitor<void>
 
 	void operator() (const typeList::native_decl_error& error) const
 	{
-		std::cerr << "what the fuck : type_diagnostic_visitor with native_decl_error !!! " << std::endl;
+		assert(false);
 	}
 
 	void operator() (const typeList::struct_decl_error& error) const
@@ -175,10 +175,41 @@ universe::add_types(const std::string& scope, const type_decl_list& t)
 	return isOk;
 }
 
+bool
+universe::add_functions(const std::string& scope, const function_decl_list& f)
+{
+	function_decl_list f_scoped;
+	f_scoped.l.resize(f.l.size());
+	functions_def_add_scope add_scope(scope, *this);
+
+	std::transform(f.l.begin(), f.l.end(),
+				   f_scoped.l.begin(), add_scope);
+
+	std::vector<functionDefList::add_result> res = fList.add(f_scoped);
+
+	bool isOk = true;
+	std::vector<functionDefList::add_result>::const_iterator it;
+	std::vector<function_decl>::const_iterator it1 = f_scoped.l.begin();
+
+	for (it = res.begin(); it != res.end(); ++it, ++it1)
+	{
+		bool isSuccess = (*it).get<0>();
+		isOk = isOk && isSuccess;
+		if (isSuccess) {
+			std::cout << "Succesfully adding function " << it1->fName << std::endl;
+		} else {
+			std::cerr << fList.get_diagnostic(*it1, *it);
+		}
+	}
+
+	return isOk;
+}
+
 
 bool
 universe::add(const ability_decl& decl)
 {
 	bool res = add_types(decl.name, decl.blocks.env.types);
+	res = res && add_functions(decl.name, decl.blocks.env.funcs);
 	return res;
 }

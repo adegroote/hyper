@@ -81,6 +81,9 @@ namespace hyper {
 
 				add_result add(const function_decl& decl);
 
+				std::string 
+			    get_diagnostic(const function_decl& decl, const add_result& res);
+
 				std::vector<add_result> add(const function_decl_list &l);
 
 				/*

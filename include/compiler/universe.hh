@@ -39,6 +39,8 @@ namespace hyper {
 
 				bool add_types(const std::string&, const type_decl_list& decl);
 
+				bool add_functions(const std::string&, const function_decl_list& decl);
+
 			public:
 				universe();
 

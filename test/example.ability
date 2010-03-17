@@ -37,6 +37,7 @@ first = ability
 			/* Here, define your fonction */
 			length distance(position A, position B);
 			double square(double);
+			bool   isToto(test);
 		}
 	}
 }

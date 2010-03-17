@@ -68,3 +68,29 @@ functionDefList::get(const std::string &name) const
 
 	return make_pair(true, it->second);
 }
+std::string			    
+functionDefList::get_diagnostic(const function_decl& decl, const add_result& res)
+{
+	if (res.get<0>())
+		return "";
+	
+	std::ostringstream oss;
+	switch (res.get<1>()) {
+		case functionDefList::alreadyExist:
+			oss << decl.fName << " is already defined " << std::endl;
+			break;
+		case functionDefList::unknowReturnType:
+			oss << "type " << decl.returnName << " used in definition of ";
+			oss << decl.fName << " is not defined " << std::endl;
+			break;
+		case functionDefList::unknowArgsType:
+			oss << "type " << decl.argsName[res.get<2>()];
+			oss << " used in definition of " << decl.fName << " is not defined ";
+			oss << std::endl;
+			break;
+		case functionDefList::noError:
+		default:
+			assert(false);
+	}
+	return oss.str();
+}
