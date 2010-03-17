@@ -205,11 +205,47 @@ universe::add_functions(const std::string& scope, const function_decl_list& f)
 	return isOk;
 }
 
+bool
+universe::add_symbols(const std::string& scope, const symbol_decl_list& d,
+					  symbolList& s)
+{
+	symbol_decl_list d_scoped;
+	d_scoped.l.resize(d.l.size());
+	sym_add_scope add_scope(scope, *this);
+
+	std::transform(d.l.begin(), d.l.end(),
+				   d_scoped.l.begin(), add_scope);
+
+	std::vector< symbolList::add_result> res = s.add(d_scoped);
+
+	bool isOk = true;
+	std::vector<symbolList::add_result>::const_iterator it;
+	std::vector<symbol_decl>::const_iterator it1 = d_scoped.l.begin();
+
+	for (it = res.begin(); it != res.end(); ++it, ++it1)
+	{
+		bool isSuccess = (*it).first;
+		isOk = isOk && isSuccess;
+		if (isSuccess) {
+			std::cout << "Succesfully adding symbol " << it1->name << std::endl;
+		} else {
+			std::cerr << s.get_diagnostic(*it1, *it);
+		}
+	}
+
+	return isOk;
+}
 
 bool
 universe::add(const ability_decl& decl)
 {
 	bool res = add_types(decl.name, decl.blocks.env.types);
-	res = res && add_functions(decl.name, decl.blocks.env.funcs);
+	res = add_functions(decl.name, decl.blocks.env.funcs) && res;
+	symbolList controlables(tList); 
+	symbolList readables(tList);
+	symbolList privates(tList);
+	res = add_symbols(decl.name, decl.blocks.controlables, controlables) && res;
+	res = add_symbols(decl.name, decl.blocks.readables, readables) && res;
+	res = add_symbols(decl.name, decl.blocks.privates, privates) && res;
 	return res;
 }

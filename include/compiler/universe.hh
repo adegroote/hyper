@@ -41,6 +41,9 @@ namespace hyper {
 
 				bool add_functions(const std::string&, const function_decl_list& decl);
 
+				bool add_symbols(const std::string&, const symbol_decl_list& decl, 
+						symbolList& s);
+
 			public:
 				universe();
 

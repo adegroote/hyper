@@ -1,9 +1,9 @@
-
-#include <compiler/symbols.hh>
-
+#include <sstream>
 #include <algorithm>
 
 #include <boost/bind.hpp>
+
+#include <compiler/symbols.hh>
 
 using namespace hyper::compiler;
 using std::make_pair;
@@ -52,5 +52,29 @@ symbolList::get(const std::string &name) const
 		return make_pair(false, symbol());
 
 	return make_pair(true, it->second);
+}
+
+std::string
+symbolList::get_diagnostic(const symbol_decl& decl, const symbolList::add_result& res)
+{
+	if (res.first)
+		return "";
+
+	std::ostringstream oss;
+	switch (res.second)
+	{
+		case symbolList::alreadyExist:
+			oss << "symbol " << decl.name << " is already defined " << std::endl;
+			break;
+		case symbolList::unknowType:
+			oss << "type " << decl.typeName << " used to define " << decl.name;
+			oss << " is not defined " << std::endl;
+			break;
+		case symbolList::noError:
+		default:
+			assert(false);
+	};
+
+	return oss.str();
 }
 

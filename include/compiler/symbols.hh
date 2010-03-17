@@ -56,6 +56,8 @@ namespace hyper {
 
 				std::vector<add_result> add(const symbol_decl_list& l);
 
+				std::string get_diagnostic(const symbol_decl& decl, const add_result& res);
+
 				/*
 				 * Retrieve a symbol from the symbol table
 				 * < true, s > means success
