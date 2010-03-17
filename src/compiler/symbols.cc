@@ -78,3 +78,23 @@ symbolList::get_diagnostic(const symbol_decl& decl, const symbolList::add_result
 	return oss.str();
 }
 
+std::vector<std::string>
+symbolList::intersection(const symbolList &s) const
+{
+	std::vector<std::string> s1, s2, s_res;
+	sMap::const_iterator it;
+
+	for (it = symbols.begin(); it != symbols.end(); ++it)
+		s1.push_back(it->first);
+	for (it = s.symbols.begin(); it != s.symbols.end(); ++it)
+		s2.push_back(it->first);
+
+	std::sort(s1.begin(), s1.end());
+	std::sort(s2.begin(), s2.end());
+
+	std::set_intersection(s1.begin(), s1.end(), s2.begin(), s2.end(), std::back_inserter(s_res));
+
+	return s_res;
+}
+
+

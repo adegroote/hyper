@@ -64,6 +64,11 @@ namespace hyper {
 				 * < false, _ > means the symbol does not exist in the table
 				 */
 				std::pair < bool, symbol > get(const std::string& name) const;
+
+				/*
+				 * Returns a list of commun symbol into the two symbolList (this and s)
+				 */
+				std::vector<std::string> intersection(const symbolList& s) const;
 		};
 	};
 };

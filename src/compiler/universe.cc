@@ -236,6 +236,20 @@ universe::add_symbols(const std::string& scope, const symbol_decl_list& d,
 	return isOk;
 }
 
+struct print_symbol {
+	std::string s1, s2;
+
+	print_symbol(const std::string &set1, const std::string &set2) : 
+		s1(set1), s2(set2) {}
+
+	void operator() (const std::string & s)
+	{
+		std::cerr << "symbol " << s << " is duplicated in ";
+		std::cerr << s1 << " variables and ";
+		std::cerr << s2 << " variables " << std::endl;
+	}
+};
+
 bool
 universe::add(const ability_decl& decl)
 {
@@ -247,5 +261,28 @@ universe::add(const ability_decl& decl)
 	res = add_symbols(decl.name, decl.blocks.controlables, controlables) && res;
 	res = add_symbols(decl.name, decl.blocks.readables, readables) && res;
 	res = add_symbols(decl.name, decl.blocks.privates, privates) && res;
+
+	std::vector<std::string> intersect;
+	intersect = controlables.intersection(readables);
+	if (! intersect.empty()) {
+		print_symbol print("controlables", "readables");
+		res = false;
+		std::for_each(intersect.begin(), intersect.end(), print);
+	}
+
+	intersect = controlables.intersection(privates);
+	if (! intersect.empty()) {
+		print_symbol print("controlables", "privates");
+		res = false;
+		std::for_each(intersect.begin(), intersect.end(), print);
+	}
+
+	intersect = readables.intersection(privates);
+	if (! intersect.empty()) {
+		print_symbol print("readables", "privates");
+		res = false;
+		std::for_each(intersect.begin(), intersect.end(), print);
+	}
+
 	return res;
 }

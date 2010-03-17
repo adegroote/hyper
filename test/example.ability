@@ -18,6 +18,7 @@ first = ability
 		{
 			/* Here, the private variable */
 			double myPrivatevariable;
+			int i; /* oups duplicate variable */
 		}
 	}
 
