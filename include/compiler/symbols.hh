@@ -26,7 +26,7 @@ namespace hyper {
 
 
 
-		struct symbolList : public boost::noncopyable {
+		struct symbolList {
 			public:
 				enum symbolAddError {
 					noError,
