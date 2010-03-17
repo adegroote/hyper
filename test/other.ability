@@ -1,0 +1,31 @@
+other = ability 
+{
+	context = 
+	{
+		{
+			/* Here, the controlable variable */
+			bool isEmpty;
+		} 
+		{
+			/* Here, the read-only variable */
+			double thresold;
+		} 
+		{
+			/* Here, the private variable */
+			double myPrivatevariable;
+		}
+	}
+
+	tasks = {}
+
+	export = 
+	{
+		{
+			other_type = struct { string x, y; };
+		}
+		{
+			/* Here, define your fonction */
+		}
+	}
+}
+

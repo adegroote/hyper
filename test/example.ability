@@ -9,6 +9,9 @@ first = ability
 			position p;
 			bool isOk;
 			otherability::coolstruct s;
+			
+			/* Ok, defined in other.ability */
+			other::other_type r;
 		} 
 		{
 			/* Here, the read-only variable */

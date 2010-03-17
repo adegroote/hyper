@@ -162,14 +162,32 @@ struct ability_add_adaptator {
 	}
 };
 
+struct parse_import {
+
+	parser &p;
+
+	template <typename>
+	struct result { typedef bool type; };
+
+	parse_import(parser & p_) : p(p_) {};
+
+	bool operator()(const std::string& filename) const
+	{
+		// remove first and last "
+		std::string f = filename.substr(1, filename.size() - 2);
+		return p.parse_ability_file(f);
+	}
+};
+
 template <typename Iterator, typename Lexer>
 struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 {
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
-    grammar_ability(const TokenDef& tok, universe& u_) : 
-		grammar_ability::base_type(statement, "ability"), ability_adder(u_)
+    grammar_ability(const TokenDef& tok, universe& u_, parser &p_) : 
+		grammar_ability::base_type(statement, "ability"), 
+		ability_adder(u_), import_adder(p_)
 	{
 	    using qi::lit;
         using qi::lexeme;
@@ -250,10 +268,11 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 				;
 
 		import_list =
-				*import;
+				*(import				[import_adder(_1)])
+				;
 
 		import =	tok.import_ 
-					>> tok.constant_string 
+					>> tok.constant_string	[swap(_val, _1)]
 					>> -lit(';')
 					;
 
@@ -364,7 +383,8 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 	qi::rule<Iterator, white_space_> statement;
 	qi::rule<Iterator, white_space_> block_tasks;
-	qi::rule<Iterator, white_space_> import_list, import;
+	qi::rule<Iterator, white_space_> import_list;
+	qi::rule<Iterator, std::string(), white_space_> import;
 	qi::rule<Iterator, ability_decl(), white_space_> ability_;
 	qi::rule<Iterator, programming_decl(), white_space_> block_definition; 
 	qi::rule<Iterator, ability_blocks_decl(), white_space_> block_context, ability_description;
@@ -378,6 +398,7 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
 
 	function<ability_add_adaptator> ability_adder;
+	function<parse_import> import_adder;
 };
 
 std::string 
@@ -396,6 +417,20 @@ read_from_file(const std::string& filename)
 
 bool parser::parse_ability_file(const std::string & filename) 
 {
+	std::cout << "parsing " << filename << std::endl;
+	// Avoid to parse twice or more the same files
+	using namespace boost::filesystem;
+
+	path base(filename);
+	path full = complete(base);
+
+	std::vector<path>::const_iterator it_parsed;
+	it_parsed = std::find(parsed_files.begin(), parsed_files.end(), full);
+	if (it_parsed != parsed_files.end()) {
+		std::cout << "already parsed " << filename << " : skip it !!! " << std::endl;
+		return true; // already parsed
+	}
+
     // This is the lexer token type to use. The second template parameter lists 
     // all attribute types used for token_def's during token definition (see 
     // calculator_tokens<> above). Here we use the predefined lexertl token 
@@ -429,13 +464,15 @@ bool parser::parse_ability_file(const std::string & filename)
     typedef grammar_ability<iterator_type, hyper_lexer::lexer_def> hyper_ability;
 
 	hyper_lexer our_lexer;
-	hyper_ability g(our_lexer, u);
+	hyper_ability g(our_lexer, u, *this);
 
 	std::string expr = read_from_file(filename);
 	base_iterator_type it = expr.begin();
 	iterator_type iter = our_lexer.begin(it, expr.end());
 	iterator_type end = our_lexer.end();
     bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self]);
+
+	parsed_files.push_back(full);
 
 	if (r && iter == end)
     {

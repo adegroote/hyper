@@ -40,7 +40,7 @@ endif()
 
 include(CheckIncludeFile)
 
-find_package(Boost 1.34 REQUIRED COMPONENTS unit_test_framework)
+find_package(Boost 1.34 REQUIRED COMPONENTS unit_test_framework filesystem)
 set(BOOST_FOUND ${Boost_FOUND})
 include_directories(${Boost_INCLUDE_DIRS})
 message(STATUS "boost libraries "${Boost_LIBRARIES})
