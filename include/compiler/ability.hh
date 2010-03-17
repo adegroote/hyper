@@ -10,7 +10,6 @@ namespace hyper {
 
 		class ability : public boost::noncopyable {
 			private:
-				typeList & tList;
 				symbolList controlable_list;
 				symbolList readable_list;
 				symbolList private_list;
@@ -18,11 +17,12 @@ namespace hyper {
 				std::string name;
 
 			public:
-				ability(typeList& tlist, const std::string &name_) :
-					tList(tList), controlable_list(tList), 
-					readable_list(tList), private_list(tList),
-					name(name_) {};
-					
+				ability(const std::string& name_, const symbolList& controlables,
+						const symbolList& readables, const symbolList& privates) :
+							controlable_list(controlables),
+							readable_list(readables),
+							private_list(privates),
+							name(name_) {};
 		};
 	};
 };

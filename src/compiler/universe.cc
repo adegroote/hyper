@@ -1,4 +1,5 @@
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 
 #include <compiler/universe.hh>
 
@@ -253,6 +254,14 @@ struct print_symbol {
 bool
 universe::add(const ability_decl& decl)
 {
+	// XXX It is an error ? In case we are using import from different files, it can happens
+	// Does parser handle it correctly ?
+	abilityMap::const_iterator it = abilities.find(decl.name);
+	if (it != abilities.end()) {
+		std::cerr << "ability " << decl.name << " already defined  " << std::endl;
+		return false;
+	}
+	
 	bool res = add_types(decl.name, decl.blocks.env.types);
 	res = add_functions(decl.name, decl.blocks.env.funcs) && res;
 	symbolList controlables(tList); 
@@ -283,6 +292,9 @@ universe::add(const ability_decl& decl)
 		res = false;
 		std::for_each(intersect.begin(), intersect.end(), print);
 	}
+
+	abilities[decl.name] = 
+		boost::make_shared<ability>(decl.name, controlables, readables, privates);
 
 	return res;
 }
