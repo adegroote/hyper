@@ -12,6 +12,7 @@
 #include <boost/spirit/include/phoenix_container.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
 #include <boost/spirit/include/phoenix_statement.hpp>
+#include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
@@ -127,13 +128,15 @@ struct  grammar_expression : qi::grammar<Iterator, node(), qi::in_state_skipper<
 		using phoenix::begin;
 		using phoenix::end;
 		using phoenix::swap;
+		using phoenix::construct;
+		using phoenix::val;
 		
 		node_ = (
-				  cst_int				   
+				  func_call
+				| cst_int				   
 				| cst_double			   
 				| cst_string			   
 				| var_inst 			   
-				| func_call
 				)			   [_val = _1]
 			 ;
 
@@ -150,10 +153,13 @@ struct  grammar_expression : qi::grammar<Iterator, node(), qi::in_state_skipper<
 			;
 
 		func_call = tok.identifier		[at_c<0>(_val) = _1]
-				  >> lit("(")
-				  >> *(node_			[push_back(at_c<1>(_val), _1)]
-					  >> lit(","))
-				  >> lit(")")
+				  >> lit('(')
+				  >> -(
+					   node_			[push_back(at_c<1>(_val), _1)]
+					   >> *( lit(',') >
+						     node_			[push_back(at_c<1>(_val), _1)])
+					  )
+				  >> lit(')')
 				  ;
 
 		node_.name("node declaration");
