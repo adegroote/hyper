@@ -19,6 +19,7 @@ namespace hyper {
 			public:
 				parser(universe & u_) : u(u_) {};
 				bool parse_ability_file(const std::string&);
+				bool parse_expression(const std::string&);
 		};
 	};
 };
