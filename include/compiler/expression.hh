@@ -20,6 +20,7 @@ namespace hyper {
 			Constant<int>,					// constant of type int
 			Constant<double>,				// constant of type double
 			Constant<std::string>,			// constant of type string
+			Constant<bool>,					// constant of type bool
 			std::string,					// variable identifier
 			boost::recursive_wrapper<function_call> // function call
 		> node;

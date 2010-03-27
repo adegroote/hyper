@@ -64,6 +64,8 @@ struct hyper_lexer : lex::lexer<Lexer>
 		constant_int = "[0-9]+";
 		// XXX We don't support local, nor scientific notation atm
 		constant_double = "[0-9]*\\.[0-9]*";
+		true_ = "true";
+		false_ = "false";
 
 		/* identifier must be the last if you want to not match keyword */
         this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',' ;
@@ -71,6 +73,7 @@ struct hyper_lexer : lex::lexer<Lexer>
 		this->self += constant_string;
 		this->self += constant_int;
 		this->self += constant_double;
+		this->self += true_ | false_;
 
         // define the whitespace to ignore (spaces, tabs, newlines and C-style 
         // comments)
@@ -80,6 +83,7 @@ struct hyper_lexer : lex::lexer<Lexer>
             ;
 	};
 
+	lex::token_def<> true_, false_;
     lex::token_def<std::string> identifier, scoped_identifier;
 	lex::token_def<std::string> constant_string;
 	lex::token_def<int> constant_int;
@@ -99,6 +103,11 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
 		Constant<std::string>,
 		(std::string, value)
+);
+
+BOOST_FUSION_ADAPT_STRUCT(
+		Constant<bool>,
+		(bool, value)
 );
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -136,6 +145,7 @@ struct  grammar_expression : qi::grammar<Iterator, node(), qi::in_state_skipper<
 				| cst_int				   
 				| cst_double			   
 				| cst_string			   
+				| cst_bool
 				| var_inst 			   
 				)			   [_val = _1]
 			 ;
@@ -148,6 +158,10 @@ struct  grammar_expression : qi::grammar<Iterator, node(), qi::in_state_skipper<
 
 		cst_string = tok.constant_string [at_c<0>(_val) = _1]
 				;
+
+		cst_bool = tok.true_		    [at_c<0>(_val) = true]
+				 | tok.false_			[at_c<0>(_val) = false]
+				 ;
 
 		var_inst = tok.identifier		[_val = _1]
 			;
@@ -166,6 +180,7 @@ struct  grammar_expression : qi::grammar<Iterator, node(), qi::in_state_skipper<
 		cst_int.name("const int");
 		cst_double.name("const double");
 		cst_string.name("const string");
+		cst_bool.name("const bool");
 		var_inst.name("var instance");
 		func_call.name("function declaration instance");
 
@@ -176,6 +191,7 @@ struct  grammar_expression : qi::grammar<Iterator, node(), qi::in_state_skipper<
 	qi::rule<Iterator, node(), white_space_> node_;
 	qi::rule<Iterator, Constant<int>(), white_space_> cst_int;
 	qi::rule<Iterator, Constant<double>(), white_space_> cst_double;
+	qi::rule<Iterator, Constant<bool>(), white_space_> cst_bool;
 	qi::rule<Iterator, Constant<std::string>(), white_space_> cst_string;
 	qi::rule<Iterator, std::string(), white_space_> var_inst;
 	qi::rule<Iterator, function_call(), white_space_> func_call;

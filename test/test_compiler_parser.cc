@@ -17,4 +17,6 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	r = P.parse_expression("f");
 	r = P.parse_expression("f ()");
 	r = P.parse_expression("f(g(42), 42.0, k(\"some string\"), l(i, j))");
+	r = P.parse_expression("true");
+	r = P.parse_expression("g(false)");
 }

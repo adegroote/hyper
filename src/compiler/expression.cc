@@ -28,6 +28,13 @@ struct node_print : public boost::static_visitor<std::string>
 		return oss.str();
 	};
 
+	std::string operator() (const Constant<bool>& b) const
+	{
+		std::ostringstream oss;
+		oss << "Constant bool of value : " << b.value;
+		return oss.str();
+	}
+
 	std::string operator() (const std::string& s) const
 	{
 		std::ostringstream oss;
