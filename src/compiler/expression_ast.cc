@@ -83,10 +83,11 @@ struct expression_ast_print : public boost::static_visitor<std::string>
 	std::string operator() (const binary_op& op) const
 	{
 		std::ostringstream oss;
-		oss << boost::apply_visitor(expression_ast_print(indent+1), op.left.expr) << std::endl;
+		oss << boost::apply_visitor(expression_ast_print(indent+1), op.left.expr);
+	    oss	<< std::endl;
 		add_indent(oss);
 		oss << op.op << std::endl;
-		oss << boost::apply_visitor(expression_ast_print(indent+1), op.right.expr) << std::endl;
+		oss << boost::apply_visitor(expression_ast_print(indent+1), op.right.expr); 
 		return oss.str();
 	}
 
@@ -120,6 +121,30 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const binary_op_ki
 			break;
 		case DIV:
 			os << " / ";
+			break;
+		case EQ:
+			os << " == ";
+			break;
+		case NEQ:
+			os << " != ";
+			break;
+		case LT:
+			os << " < " ;
+			break;
+		case LTE:
+			os << " <= ";
+			break;
+		case GT:
+			os << " > ";
+			break;
+		case GTE:
+			os << " >= ";
+			break;
+		case AND:
+			os << " && ";
+			break;
+		case OR:
+			os << " || ";
 			break;
 		default:
 			os << "You forget to implement me !!";
@@ -164,6 +189,54 @@ expression_ast& expression_ast::mult(const expression_ast& left)
 expression_ast& expression_ast::div(const expression_ast& left)
 {
 	expr = binary_op(DIV, expr, left);
+	return *this;
+}
+
+expression_ast& expression_ast::eq(const expression_ast& left)
+{
+	expr = binary_op(EQ, expr, left);
+	return *this;
+}
+
+expression_ast& expression_ast::neq(const expression_ast& left)
+{
+	expr = binary_op(NEQ, expr, left);
+	return *this;
+}
+
+expression_ast& expression_ast::lt(const expression_ast& left)
+{
+	expr = binary_op(LT, expr, left);
+	return *this;
+}
+
+expression_ast& expression_ast::lte(const expression_ast& left)
+{
+	expr = binary_op(LTE, expr, left);
+	return *this;
+}
+
+expression_ast& expression_ast::gt(const expression_ast& left)
+{
+	expr = binary_op(GT, expr, left);
+	return *this;
+}
+
+expression_ast& expression_ast::gte(const expression_ast& left)
+{
+	expr = binary_op(GTE, expr, left);
+	return *this;
+}
+
+expression_ast& expression_ast::logical_and(const expression_ast& left)
+{
+	expr = binary_op(AND, expr, left);
+	return *this;
+}
+
+expression_ast& expression_ast::logical_or(const expression_ast& left)
+{
+	expr = binary_op(OR, expr, left);
 	return *this;
 }
 

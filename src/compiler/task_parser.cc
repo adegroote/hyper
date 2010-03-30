@@ -66,6 +66,17 @@ struct hyper_lexer : lex::lexer<Lexer>
 		constant_double = "[0-9]*\\.[0-9]*";
 		true_ = "true";
 		false_ = "false";
+		or_ = "\\|\\|";
+		and_ = "&&";
+		eq_ = "==";
+		neq_ = "!=";
+		lt_ = "<";
+		gt_ = ">";
+		lte_ = "<=";
+		gte_ = ">=";
+
+
+
 
 		/* identifier must be the last if you want to not match keyword */
         this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',' ;
@@ -75,6 +86,7 @@ struct hyper_lexer : lex::lexer<Lexer>
 		this->self += constant_int;
 		this->self += constant_double;
 		this->self += true_ | false_;
+		this->self += or_ | and_ | eq_ | neq_ | lt_ | gt_ | lte_ | gte_;
 
         // define the whitespace to ignore (spaces, tabs, newlines and C-style 
         // comments)
@@ -84,7 +96,7 @@ struct hyper_lexer : lex::lexer<Lexer>
             ;
 	};
 
-	lex::token_def<> true_, false_;
+	lex::token_def<> true_, false_, or_, and_, eq_, neq_, lt_, gt_, lte_, gte_;
     lex::token_def<std::string> identifier, scoped_identifier;
 	lex::token_def<std::string> constant_string;
 	lex::token_def<int> constant_int;
@@ -132,19 +144,37 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
         using namespace qi::labels;
 
 		using phoenix::at_c;
-        using phoenix::push_back;
-		using phoenix::insert;
-		using phoenix::begin;
-		using phoenix::end;
-		using phoenix::swap;
-		using phoenix::construct;
 		using phoenix::val;
+		using phoenix::push_back;
 
 		expression =
-			additivite_expr.alias()
+			equality_expr.alias()
 				;
+
+		equality_expr =
+			relational_expr								[_val = _1]
+			>> *(		(tok.eq_ > relational_expr      [bind(&expression_ast::eq, _val, _1)])
+					|   (tok.neq_ > relational_expr     [bind(&expression_ast::neq, _val, _1)])
+				)
+			;
+
+		relational_expr =
+			logical_expr								[_val = _1]
+			>> *(		(tok.lte_ > logical_expr        [bind(&expression_ast::lte, _val, _1)])
+					|   (tok.lt_ > logical_expr         [bind(&expression_ast::lt, _val, _1)])
+					|   (tok.gte_ > logical_expr        [bind(&expression_ast::gte, _val, _1)])
+					|   (tok.gt_ > logical_expr         [bind(&expression_ast::gt, _val, _1)])
+				)
+			;
+
+		logical_expr =
+			additive_expr								[_val = _1]
+			>> *(		(tok.and_ > additive_expr       [bind(&expression_ast::logical_and, _val, _1)])
+					|   (tok.or_ > additive_expr        [bind(&expression_ast::logical_or, _val, _1)])
+				)
+			;
 				
-		additivite_expr =
+		additive_expr =
 			multiplicative_expr						[_val = _1]
 			>> *(		('+' > multiplicative_expr	[bind(&expression_ast::add, _val, _1)])
 					|   ('-' > multiplicative_expr  [bind(&expression_ast::sub, _val, _1)])
@@ -213,7 +243,10 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 		primary_expr.name("primary expr declaration");
 		unary_expr.name("unary expr declaration");
 		multiplicative_expr.name("multiplicative expr declaration");
-		additivite_expr.name("additive expr declaration");
+		additive_expr.name("additive expr declaration");
+		logical_expr.name("logical expr declaration");
+		relational_expr.name("relational expr declaration");
+		equality_expr.name("equality expr declaration");
 		node_.name("node declaration");
 		cst_int.name("const int");
 		cst_double.name("const double");
@@ -223,25 +256,13 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 		func_call.name("function declaration instance");
 
 
-#if 0
-		debug(expression);
-		debug(primary_expr);
-		debug(unary_expr);
-		debug(multiplicative_expr);
-		debug(additivite_expr);
-		debug(node_);
-//		debug(cst_int);
-//		debug(cst_double);
-//		debug(cst_string);
-		debug(var_inst);
-		debug(func_call);
-#endif
 
 		qi::on_error<qi::fail> (expression, error_handler(_4, _3, _2));
 	};
 
 	qi::rule<Iterator, expression_ast(), white_space_> expression, primary_expr, unary_expr;
-	qi::rule<Iterator, expression_ast(), white_space_> multiplicative_expr, additivite_expr;
+	qi::rule<Iterator, expression_ast(), white_space_> multiplicative_expr, additive_expr;
+	qi::rule<Iterator, expression_ast(), white_space_> logical_expr, relational_expr, equality_expr;
 	qi::rule<Iterator, node_ast(), white_space_> node_;
 	qi::rule<Iterator, Constant<int>(), white_space_> cst_int;
 	qi::rule<Iterator, Constant<double>(), white_space_> cst_double;

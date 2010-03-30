@@ -26,5 +26,8 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	r = P.parse_expression("var1 + var2");
 	r = P.parse_expression("(var1 + var2) * -6");
 	r = P.parse_expression("f(g(42)) * l(12+3)");
-
+	r = P.parse_expression("42 < 3");
+	r = P.parse_expression("(42 > 3) == (14*3 > 2)");
+	r = P.parse_expression("(42 > 3) == (14*3 > 2) && f(42) > 11");
+	r = P.parse_expression("((42 > 3) == (14*3 > 2)) && (f(42) > 11)");
 }

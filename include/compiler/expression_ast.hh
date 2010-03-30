@@ -52,16 +52,26 @@ namespace hyper {
 
 			type expr;
 
+			// XXX Any intelligent way to factorize this stuff ...
 			expression_ast& add(const expression_ast& right);
 			expression_ast& sub(const expression_ast& right);
 			expression_ast& mult(const expression_ast& right);
 			expression_ast& div(const expression_ast& right);
+			expression_ast& eq(const expression_ast& right);
+			expression_ast& neq(const expression_ast& right);
+			expression_ast& lt(const expression_ast& right);
+			expression_ast& lte(const expression_ast& right);
+			expression_ast& gt(const expression_ast& right);
+			expression_ast& gte(const expression_ast& right);
+			expression_ast& logical_and(const expression_ast& right);
+			expression_ast& logical_or(const expression_ast& right);
+
 			expression_ast& neg(const expression_ast& subject);
 		};
 
 		std::ostream& operator << (std::ostream& os, const expression_ast& e);
 
-		enum binary_op_kind { ADD, SUB, MUL, DIV };
+		enum binary_op_kind { ADD, SUB, MUL, DIV , EQ, NEQ, LT, LTE, GT, GTE, AND, OR };
 
 		std::ostream& operator << (std::ostream& os, const binary_op_kind& k);
 			
