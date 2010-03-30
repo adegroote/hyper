@@ -58,7 +58,6 @@ struct hyper_lexer : lex::lexer<Lexer>
 {
 	hyper_lexer() 
 	{
-        identifier = "[a-zA-Z_][a-zA-Z0-9_]*";
 		scoped_identifier = "[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*";
 		constant_string = "\\\".*\\\"";
 		constant_int = "[0-9]+";
@@ -75,13 +74,10 @@ struct hyper_lexer : lex::lexer<Lexer>
 		lte_ = "<=";
 		gte_ = ">=";
 
-
-
-
 		/* identifier must be the last if you want to not match keyword */
         this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',' ;
 		this->self += lex::token_def<>('+') | '-' | '*' | '/' ;
-		this->self += identifier | scoped_identifier;
+		this->self += scoped_identifier;
 		this->self += constant_string;
 		this->self += constant_int;
 		this->self += constant_double;
@@ -97,7 +93,7 @@ struct hyper_lexer : lex::lexer<Lexer>
 	};
 
 	lex::token_def<> true_, false_, or_, and_, eq_, neq_, lt_, gt_, lte_, gte_;
-    lex::token_def<std::string> identifier, scoped_identifier;
+    lex::token_def<std::string> scoped_identifier;
 	lex::token_def<std::string> constant_string;
 	lex::token_def<int> constant_int;
 	lex::token_def<double> constant_double;
@@ -232,10 +228,10 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 				 | tok.false_			[at_c<0>(_val) = false]
 				 ;
 
-		var_inst = tok.identifier		[_val = _1]
+		var_inst = tok.scoped_identifier [_val = _1]
 			;
 
-		func_call = tok.identifier		[at_c<0>(_val) = _1]
+		func_call = tok.scoped_identifier [at_c<0>(_val) = _1]
 				  >> lit('(')
 				  >> -(
 					   expression		[push_back(at_c<1>(_val), _1)]
@@ -274,7 +270,6 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 	qi::rule<Iterator, Constant<std::string>(), white_space_> cst_string;
 	qi::rule<Iterator, std::string(), white_space_> var_inst;
 	qi::rule<Iterator, function_call(), white_space_> func_call;
-
 };
 
 bool parser::parse_expression(const std::string& expr)
