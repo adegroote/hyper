@@ -167,11 +167,17 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 				)
 			;
 
-		logical_expr =
+		logical_and_expr =
 			additive_expr								[_val = _1]
-			>> *(		(tok.and_ > additive_expr       [bind(&expression_ast::logical_and, _val, _1)])
-					|   (tok.or_ > additive_expr        [bind(&expression_ast::logical_or, _val, _1)])
-				)
+			>> *(	   tok.and_ > additive_expr			[bind(&expression_ast::logical_and, _val, _1)])
+			;
+
+		logical_or_expr =
+			logical_and_expr							[_val = _1]
+			>> *(	tok.or_ > logical_and_expr			[bind(&expression_ast::logical_or, _val, _1)])
+			;
+
+		logical_expr = logical_or_expr.alias()
 			;
 				
 		additive_expr =
@@ -244,7 +250,6 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 		unary_expr.name("unary expr declaration");
 		multiplicative_expr.name("multiplicative expr declaration");
 		additive_expr.name("additive expr declaration");
-		logical_expr.name("logical expr declaration");
 		relational_expr.name("relational expr declaration");
 		equality_expr.name("equality expr declaration");
 		node_.name("node declaration");
@@ -255,14 +260,13 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 		var_inst.name("var instance");
 		func_call.name("function declaration instance");
 
-
-
 		qi::on_error<qi::fail> (expression, error_handler(_4, _3, _2));
 	};
 
 	qi::rule<Iterator, expression_ast(), white_space_> expression, primary_expr, unary_expr;
 	qi::rule<Iterator, expression_ast(), white_space_> multiplicative_expr, additive_expr;
-	qi::rule<Iterator, expression_ast(), white_space_> logical_expr, relational_expr, equality_expr;
+	qi::rule<Iterator, expression_ast(), white_space_> logical_expr, logical_and_expr, logical_or_expr;
+    qi::rule<Iterator, expression_ast(), white_space_> relational_expr, equality_expr;
 	qi::rule<Iterator, node_ast(), white_space_> node_;
 	qi::rule<Iterator, Constant<int>(), white_space_> cst_int;
 	qi::rule<Iterator, Constant<double>(), white_space_> cst_double;
