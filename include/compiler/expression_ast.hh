@@ -23,14 +23,14 @@ namespace hyper {
 			Constant<bool>,					// constant of type bool
 			std::string,					// variable identifier
 			boost::recursive_wrapper<function_call> // function call
-		> node;
+		> node_ast;
 
 		struct function_call {
 			std::string fName;
-			std::vector< node > args;
+			std::vector< node_ast > args;
 		};
 
-		std::ostream& operator << (std::ostream& os, const node& n);
+		std::ostream& operator << (std::ostream& os, const node_ast& n);
 	};
 };
 

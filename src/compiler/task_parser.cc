@@ -2,7 +2,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <compiler/expression.hh>
+#include <compiler/expression_ast.hh>
 #include <compiler/parser.hh>
 
 #include <boost/spirit/include/qi.hpp>
@@ -113,12 +113,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
 		function_call,
 		(std::string, fName)
-		(std::vector<node>, args)
+		(std::vector<node_ast>, args)
 );
 
 
 template <typename Iterator, typename Lexer>
-struct  grammar_expression : qi::grammar<Iterator, node(), qi::in_state_skipper<Lexer> >
+struct  grammar_expression : qi::grammar<Iterator, node_ast(), qi::in_state_skipper<Lexer> >
 {
     typedef qi::in_state_skipper<Lexer> white_space_;
 
@@ -188,7 +188,7 @@ struct  grammar_expression : qi::grammar<Iterator, node(), qi::in_state_skipper<
 
 	};
 
-	qi::rule<Iterator, node(), white_space_> node_;
+	qi::rule<Iterator, node_ast(), white_space_> node_;
 	qi::rule<Iterator, Constant<int>(), white_space_> cst_int;
 	qi::rule<Iterator, Constant<double>(), white_space_> cst_double;
 	qi::rule<Iterator, Constant<bool>(), white_space_> cst_bool;
@@ -238,7 +238,7 @@ bool parser::parse_expression(const std::string& expr)
 	base_iterator_type it = expr.begin();
 	iterator_type iter = our_lexer.begin(it, expr.end());
 	iterator_type end = our_lexer.end();
-	node result;
+	node_ast result;
     bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
 
 	if (r && iter == end)

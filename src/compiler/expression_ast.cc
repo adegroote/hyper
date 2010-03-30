@@ -1,11 +1,11 @@
 #include <sstream>
 
-#include <compiler/expression.hh>
+#include <compiler/expression_ast.hh>
 
 using namespace hyper::compiler;
 
 
-struct node_print : public boost::static_visitor<std::string>
+struct node_ast_print : public boost::static_visitor<std::string>
 {
 	std::string operator() (const Constant<int>& i) const
 	{
@@ -47,7 +47,7 @@ struct node_print : public boost::static_visitor<std::string>
 		std::ostringstream oss;
 		oss << "function call for function " << f.fName << " with args " << std::endl;
 		for (size_t i = 0; i < f.args.size(); i++) {
-			oss << boost::apply_visitor(node_print(), f.args[i]);
+			oss << boost::apply_visitor(node_ast_print(), f.args[i]);
 			if ( i != f.args.size() - 1)
 				oss << " ";
 		}
@@ -55,9 +55,9 @@ struct node_print : public boost::static_visitor<std::string>
 	}
 };
 
-std::ostream& hyper::compiler::operator << (std::ostream& os, const node& n)
+std::ostream& hyper::compiler::operator << (std::ostream& os, const node_ast& n)
 {
-	os << boost::apply_visitor(node_print(), n) << std::endl;
+	os << boost::apply_visitor(node_ast_print(), n) << std::endl;
 	return os;
 };
 
