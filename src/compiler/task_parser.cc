@@ -69,6 +69,7 @@ struct hyper_lexer : lex::lexer<Lexer>
 
 		/* identifier must be the last if you want to not match keyword */
         this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',' ;
+		this->self += lex::token_def<>('+') | '-' | '*' | '/' ;
 		this->self += identifier | scoped_identifier;
 		this->self += constant_string;
 		this->self += constant_int;
@@ -113,18 +114,17 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
 		function_call,
 		(std::string, fName)
-		(std::vector<node_ast>, args)
+		(std::vector<expression_ast>, args)
 );
 
-
 template <typename Iterator, typename Lexer>
-struct  grammar_expression : qi::grammar<Iterator, node_ast(), qi::in_state_skipper<Lexer> >
+struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_state_skipper<Lexer> >
 {
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
     grammar_expression(const TokenDef& tok) : 
-		grammar_expression::base_type(node_, "node")
+		grammar_expression::base_type(expression, "expression")
 	{
 	    using qi::lit;
         using qi::lexeme;
@@ -139,10 +139,43 @@ struct  grammar_expression : qi::grammar<Iterator, node_ast(), qi::in_state_skip
 		using phoenix::swap;
 		using phoenix::construct;
 		using phoenix::val;
-		
-		node_ = (
-				  func_call
-				| cst_int				   
+
+		expression =
+			additivite_expr.alias()
+				;
+				
+		additivite_expr =
+			multiplicative_expr						[_val = _1]
+			>> *(		('+' > multiplicative_expr	[bind(&expression_ast::add, _val, _1)])
+					|   ('-' > multiplicative_expr  [bind(&expression_ast::sub, _val, _1)])
+				)
+			;
+
+		multiplicative_expr =
+			unary_expr							[_val = _1]
+			>> *(		('*' > unary_expr		[bind(&expression_ast::mult, _val, _1)])
+					|   ('/' > unary_expr       [bind(&expression_ast::div, _val, _1)])
+				)
+			;
+
+
+		unary_expr =
+			primary_expr						[_val = _1]
+			|   ('-' > primary_expr             [bind(&expression_ast::neg, _val, _1)])
+			|   ('+' > primary_expr				[_val = _1])
+			;
+
+
+		primary_expr =
+					func_call						[_val = _1]
+			    |	(node_							[_val = _1])
+				|   ('(' > expression				[_val = _1] > ')')
+			;
+
+
+		node_ = 
+				(
+				  cst_int				   
 				| cst_double			   
 				| cst_string			   
 				| cst_bool
@@ -169,13 +202,18 @@ struct  grammar_expression : qi::grammar<Iterator, node_ast(), qi::in_state_skip
 		func_call = tok.identifier		[at_c<0>(_val) = _1]
 				  >> lit('(')
 				  >> -(
-					   node_			[push_back(at_c<1>(_val), _1)]
-					   >> *( lit(',') >
-						     node_			[push_back(at_c<1>(_val), _1)])
+					   expression		[push_back(at_c<1>(_val), _1)]
+					   >> *( ',' >
+						     expression	[push_back(at_c<1>(_val), _1)])
 					  )
 				  >> lit(')')
 				  ;
 
+		expression.name("expression declaration");
+		primary_expr.name("primary expr declaration");
+		unary_expr.name("unary expr declaration");
+		multiplicative_expr.name("multiplicative expr declaration");
+		additivite_expr.name("additive expr declaration");
 		node_.name("node declaration");
 		cst_int.name("const int");
 		cst_double.name("const double");
@@ -184,10 +222,26 @@ struct  grammar_expression : qi::grammar<Iterator, node_ast(), qi::in_state_skip
 		var_inst.name("var instance");
 		func_call.name("function declaration instance");
 
-		qi::on_error<qi::fail> (node_, error_handler(_4, _3, _2));
 
+#if 0
+		debug(expression);
+		debug(primary_expr);
+		debug(unary_expr);
+		debug(multiplicative_expr);
+		debug(additivite_expr);
+		debug(node_);
+//		debug(cst_int);
+//		debug(cst_double);
+//		debug(cst_string);
+		debug(var_inst);
+		debug(func_call);
+#endif
+
+		qi::on_error<qi::fail> (expression, error_handler(_4, _3, _2));
 	};
 
+	qi::rule<Iterator, expression_ast(), white_space_> expression, primary_expr, unary_expr;
+	qi::rule<Iterator, expression_ast(), white_space_> multiplicative_expr, additivite_expr;
 	qi::rule<Iterator, node_ast(), white_space_> node_;
 	qi::rule<Iterator, Constant<int>(), white_space_> cst_int;
 	qi::rule<Iterator, Constant<double>(), white_space_> cst_double;
@@ -238,7 +292,7 @@ bool parser::parse_expression(const std::string& expr)
 	base_iterator_type it = expr.begin();
 	iterator_type iter = our_lexer.begin(it, expr.end());
 	iterator_type end = our_lexer.end();
-	node_ast result;
+	expression_ast result;
     bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
 
 	if (r && iter == end)
@@ -247,7 +301,7 @@ bool parser::parse_expression(const std::string& expr)
         std::cout << "Parsing succeeded\n";
         std::cout << "-------------------------\n";
 
-		std::cout << "Node : " << result << std::endl;
+		std::cout << "Expr : " << std::endl << result << std::endl;
         return true;
     }
     else

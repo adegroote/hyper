@@ -19,4 +19,12 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	r = P.parse_expression("f(g(42), 42.0, k(\"some string\"), l(i, j))");
 	r = P.parse_expression("true");
 	r = P.parse_expression("g(false)");
+	r = P.parse_expression("-42");
+	r = P.parse_expression("+42");
+	r = P.parse_expression("42 * 3");
+	r = P.parse_expression("42 + 14 * 3");
+	r = P.parse_expression("var1 + var2");
+	r = P.parse_expression("(var1 + var2) * -6");
+	r = P.parse_expression("f(g(42)) * l(12+3)");
+
 }
