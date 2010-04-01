@@ -263,7 +263,7 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 	qi::rule<Iterator, expression_ast(), white_space_> multiplicative_expr, additive_expr;
 	qi::rule<Iterator, expression_ast(), white_space_> logical_expr, logical_and_expr, logical_or_expr;
     qi::rule<Iterator, expression_ast(), white_space_> relational_expr, equality_expr;
-	qi::rule<Iterator, node_ast(), white_space_> node_;
+	qi::rule<Iterator, expression_ast(), white_space_> node_;
 	qi::rule<Iterator, Constant<int>(), white_space_> cst_int;
 	qi::rule<Iterator, Constant<double>(), white_space_> cst_double;
 	qi::rule<Iterator, Constant<bool>(), white_space_> cst_bool;

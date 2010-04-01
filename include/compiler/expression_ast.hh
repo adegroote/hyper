@@ -14,17 +14,6 @@ namespace hyper {
 			T value;
 		};
 
-
-		typedef boost::variant <
-			Constant<int>,					// constant of type int
-			Constant<double>,				// constant of type double
-			Constant<std::string>,			// constant of type string
-			Constant<bool>,					// constant of type bool
-			std::string						// variable identifier
-		> node_ast;
-
-		std::ostream& operator << (std::ostream& os, const node_ast& n);
-
 		struct empty {};
 		struct function_call;
 		struct binary_op;
@@ -34,8 +23,12 @@ namespace hyper {
 		{
 			typedef
 				boost::variant<
-				  empty // can't happen
-				, node_ast
+				  empty								// can't happen
+				, Constant<int>						// constant of type int
+				, Constant<double>					// constant of type double
+				, Constant<std::string>				// constant of type string
+				, Constant<bool>					// constant of type bool
+				, std::string						// variable identifier
 				, boost::recursive_wrapper<function_call>
 				, boost::recursive_wrapper<expression_ast>
 				, boost::recursive_wrapper<binary_op>

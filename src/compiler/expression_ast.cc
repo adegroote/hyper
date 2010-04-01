@@ -7,30 +7,6 @@
 
 using namespace hyper::compiler;
 
-struct node_ast_print : public boost::static_visitor<std::string>
-{
-	template <typename T>
-	std::string operator() (const Constant<T>& c) const
-	{
-		std::ostringstream oss;
-		oss << c.value;
-		return oss.str();
-	}
-
-	std::string operator() (const std::string& s) const
-	{
-		std::ostringstream oss;
-		oss << s;
-		return oss.str();
-	}
-};
-
-std::ostream& hyper::compiler::operator << (std::ostream& os, const node_ast& n)
-{
-	os << boost::apply_visitor(node_ast_print(), n);
-	return os;
-};
-
 struct expression_ast_print : public boost::static_visitor<std::string>
 {
 	const int indent;
@@ -50,11 +26,18 @@ struct expression_ast_print : public boost::static_visitor<std::string>
 		return "Empty";
 	}
 
-	std::string operator() (const node_ast&e) const
+	template <typename T>
+	std::string operator() (const Constant<T>& c) const
 	{
 		std::ostringstream oss;
-		add_indent(oss);
-		oss << e;
+		oss << c.value;
+		return oss.str();
+	}
+
+	std::string operator() (const std::string& s) const
+	{
+		std::ostringstream oss;
+		oss << s;
 		return oss.str();
 	}
 
