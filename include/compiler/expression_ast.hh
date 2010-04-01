@@ -19,6 +19,8 @@ namespace hyper {
 		struct Constant
 		{
 			T value;
+			Constant() {};
+			Constant(T value_) : value(value_) {};
 		};
 
 		struct empty {};
@@ -89,6 +91,8 @@ namespace hyper {
 				expr = unary_op<T>(subject);
 				return *this;
 			}
+
+			void reduce();
 		};
 
 		std::ostream& operator << (std::ostream& os, const expression_ast& e);

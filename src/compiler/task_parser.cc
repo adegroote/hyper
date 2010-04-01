@@ -314,6 +314,7 @@ bool parser::parse_expression(const std::string& expr)
 	iterator_type end = our_lexer.end();
 	expression_ast result;
     bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
+	result.reduce();
 
 	if (r && iter == end)
     {

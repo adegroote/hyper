@@ -2,6 +2,7 @@
 #include <compiler/universe.hh>
 #include <boost/test/unit_test.hpp>
 
+
 BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 {
 	using namespace hyper::compiler;
@@ -21,18 +22,19 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	r = P.parse_expression("g(false)");
 	r = P.parse_expression("-42");
 	r = P.parse_expression("+42");
-	r = P.parse_expression("42 * 3");
-	r = P.parse_expression("42 + 14 * 3");
+    r = P.parse_expression("42 * 3");
+    r = P.parse_expression("42 + 14 * 3");
 	r = P.parse_expression("var1 + var2");
 	r = P.parse_expression("(var1 + var2) * -6");
 	r = P.parse_expression("f(g(42)) * l(12+3)");
-	r = P.parse_expression("42 < 3");
-	r = P.parse_expression("(42 > 3) == (14*3 > 2)");
-	r = P.parse_expression("(42 > 3) == (14*3 > 2) && f(42) > 11");
+    r = P.parse_expression("42 < 3");
+    r = P.parse_expression("(42 > 3) == (14*3 > 2)");
+    r = P.parse_expression("(42 > 3) == (14*3 > 2) && f(42) > 11");
 	r = P.parse_expression("((42 > 3) == (14*3 > 2)) && (f(42) > 11)");
 	r = P.parse_expression("a && b || c");
 	r = P.parse_expression("a || b && c");
 	r = P.parse_expression("toto::titi");
 	r = P.parse_expression("(pos::computeDistance(Dtm::lastMerged, Pos::currentPosition) < threshold) &&"
 						   "(Path3D::goal == currentGoal)");
+
 }
