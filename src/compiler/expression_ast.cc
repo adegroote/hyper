@@ -1,8 +1,5 @@
 #include <sstream>
 
-#include <boost/variant/recursive_variant.hpp>
-#include <boost/variant/apply_visitor.hpp>
-
 #include <compiler/expression_ast.hh>
 
 using namespace hyper::compiler;
@@ -30,6 +27,7 @@ struct expression_ast_print : public boost::static_visitor<std::string>
 	std::string operator() (const Constant<T>& c) const
 	{
 		std::ostringstream oss;
+		add_indent(oss);
 		oss << c.value;
 		return oss.str();
 	}
@@ -37,6 +35,7 @@ struct expression_ast_print : public boost::static_visitor<std::string>
 	std::string operator() (const std::string& s) const
 	{
 		std::ostringstream oss;
+		add_indent(oss);
 		oss << s;
 		return oss.str();
 	}
@@ -63,7 +62,8 @@ struct expression_ast_print : public boost::static_visitor<std::string>
 		return boost::apply_visitor(expression_ast_print(indent+1), e.expr);
 	}
 
-	std::string operator() (const binary_op& op) const
+	template <binary_op_kind T>
+	std::string operator() (const binary_op<T> & op) const
 	{
 		std::ostringstream oss;
 		oss << boost::apply_visitor(expression_ast_print(indent+1), op.left.expr);
@@ -74,7 +74,8 @@ struct expression_ast_print : public boost::static_visitor<std::string>
 		return oss.str();
 	}
 
-	std::string operator() (const unary_op& op) const
+	template <unary_op_kind T>
+	std::string operator() (const unary_op<T>& op) const
 	{
 		std::ostringstream oss;
 		add_indent(oss);
@@ -148,83 +149,4 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const unary_op_kin
 			os << "You forget to implement me !!";
 	}
 	return os;
-}
-
-
-expression_ast& expression_ast::add(const expression_ast& left)
-{
-	expr = binary_op(ADD, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::sub(const expression_ast& left)
-{
-	expr = binary_op(SUB, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::mult(const expression_ast& left)
-{
-	expr = binary_op(MUL, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::div(const expression_ast& left)
-{
-	expr = binary_op(DIV, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::eq(const expression_ast& left)
-{
-	expr = binary_op(EQ, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::neq(const expression_ast& left)
-{
-	expr = binary_op(NEQ, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::lt(const expression_ast& left)
-{
-	expr = binary_op(LT, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::lte(const expression_ast& left)
-{
-	expr = binary_op(LTE, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::gt(const expression_ast& left)
-{
-	expr = binary_op(GT, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::gte(const expression_ast& left)
-{
-	expr = binary_op(GTE, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::logical_and(const expression_ast& left)
-{
-	expr = binary_op(AND, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::logical_or(const expression_ast& left)
-{
-	expr = binary_op(OR, expr, left);
-	return *this;
-}
-
-expression_ast& expression_ast::neg(const expression_ast& subject)
-{
-	expr = unary_op(NEG, subject);
-	return *this;
 }
