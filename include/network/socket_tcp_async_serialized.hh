@@ -197,6 +197,16 @@ namespace hyper {
 							 * handler with an invalid_argument error code
 							 */
 
+							/* XXX TODO
+							 * This code is pretty bad, there is probably a way to compute from
+							 *  the definition of @AuthorizedMessages and @message_types a way to
+							 * generate a run-time structure instead of generating this infamous
+							 * switch-case with PreProcessor. 
+							 *
+							 * If we find a way to fix it, we can remove the depends on
+							 *  MESSAGE_TYPE_MAX, and on @message_types (it will become a template
+							 * parameter).
+							 */
 					#define DECL(z, n, text) \
 						case n : {			 \
 							select_read_data_dispatch<AuthorizedMessages, Handler, n> s ## n(this);	\
