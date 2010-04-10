@@ -90,6 +90,10 @@ namespace hyper {
 						return socket_;
 					}
 
+					void close() {
+						return socket_.close();
+					}
+
 					/*
 					 * This function take a message @t of type T, encode it, and then sent it
 					 * On completion, @handler is called
