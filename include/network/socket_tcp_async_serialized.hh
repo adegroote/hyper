@@ -30,13 +30,13 @@ namespace hyper {
 		namespace tcp_async {
 
 			template <typename AuthorizedMessages>
-			struct serializated_socket;
+			struct serialized_socket;
 
 			/* Meta-struct to call async_read with the right @T. 
 			 * @index here is the index in @AuthorizedMessages
 			 * @valid tells if it must really be extented or not (valid type ..)
 			 *
-			 * Implementation is after the definition of serializated_socket,
+			 * Implementation is after the definition of serialized_socket,
 			 * as we need to know its internals.
 			 */
 			template <typename AuthorizedMessages, typename T, typename Handler, int index, bool valid>
@@ -50,7 +50,7 @@ namespace hyper {
 			{
 				typedef typename boost::make_variant_over<AuthorizedMessages>::type msg_variant;
 
-				select_read_data_dispatch(serializated_socket<AuthorizedMessages> * socket) :
+				select_read_data_dispatch(serialized_socket<AuthorizedMessages> * socket) :
 					socket_(socket) {};
 
 				void operator () (msg_variant& m, boost::tuple<Handler> handler) 
@@ -73,16 +73,16 @@ namespace hyper {
 					s(m, handler);
 				};
 
-				serializated_socket<AuthorizedMessages>* socket_;
+				serialized_socket<AuthorizedMessages>* socket_;
 			};
 
 			template <typename AuthorizedMessages> // expect mpl::vector of authorized msg
-			class serializated_socket{
+			class serialized_socket{
 				public:
 					typedef typename boost::make_variant_over<AuthorizedMessages>::type
 								msg_variant;
 
-					serializated_socket(boost::asio::io_service& io_service) :
+					serialized_socket(boost::asio::io_service& io_service) :
 						socket_(io_service)
 					{};
 
@@ -97,6 +97,7 @@ namespace hyper {
 					 * Handler must be a compatible with operation
 					 *			void (*)(const boost::system::error_code&, unsigned long int)
 					 */
+
 					template <typename T, typename Handler>
 					void async_write(const T& t, Handler handler)
 					{
@@ -145,10 +146,10 @@ namespace hyper {
 					void async_read(T& t, Handler handler)
 					{
 						// Issue a read operation to read exactly the number of bytes in a header.
-						void (serializated_socket::*f)(
+						void (serialized_socket::*f)(
 								const boost::system::error_code&,
 								T&, boost::tuple<Handler>)
-							= &serializated_socket::handle_read_header<T, Handler>;
+							= &serialized_socket::handle_read_header<T, Handler>;
 
 						boost::asio::async_read(socket_, boost::asio::buffer(inbound_header_),
 								boost::bind(f,
@@ -160,10 +161,10 @@ namespace hyper {
 					void async_read(msg_variant& m, Handler handler)
 					{
 						// Issue a read operation to read exactly the number of bytes in a header.
-						void (serializated_socket::*f)(
+						void (serialized_socket::*f)(
 								const boost::system::error_code&,
 								msg_variant&, boost::tuple<Handler>)
-							= &serializated_socket::handle_read_header<Handler>;
+							= &serialized_socket::handle_read_header<Handler>;
 
 						boost::asio::async_read(socket_, boost::asio::buffer(inbound_header_),
 								boost::bind(f,
@@ -248,10 +249,10 @@ namespace hyper {
 
 							// Issue a read operation to read exactly the number of bytes of the struct
 							inbound_data_.resize(head.size);
-							void (serializated_socket::*f)(
+							void (serialized_socket::*f)(
 									const boost::system::error_code&,
 									T&, boost::tuple<Handler>)
-								= &serializated_socket::handle_read_data<T, Handler>;
+								= &serialized_socket::handle_read_data<T, Handler>;
 
 							boost::asio::async_read(socket_, boost::asio::buffer(inbound_data_),
 									boost::bind(f,
@@ -347,7 +348,7 @@ namespace hyper {
 			{
 				typedef typename boost::make_variant_over<AuthorizedMessages>::type msg_variant;
 
-				select_read_data(serializated_socket<AuthorizedMessages> * socket) 
+				select_read_data(serialized_socket<AuthorizedMessages> * socket) 
 				{
 					(void) socket;
 				};
@@ -364,7 +365,7 @@ namespace hyper {
 			template <typename AuthorizedMessages, typename T, typename Handler, int index>
 			struct select_read_data<AuthorizedMessages, T, Handler, index, true> 
 			{
-				typedef serializated_socket<AuthorizedMessages> socket_type;
+				typedef serialized_socket<AuthorizedMessages> socket_type;
 				typedef typename socket_type::msg_variant msg_variant;
 
 				select_read_data(socket_type * socket) :
