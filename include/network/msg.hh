@@ -1,6 +1,8 @@
 #ifndef _NETWORK_MSG_HH_
 #define _NETWORK_MSG_HH_
 
+#include <stdint.h>
+
 #include <string>
 
 #include <boost/asio.hpp>
@@ -9,6 +11,12 @@
 
 namespace hyper {
 	namespace network {
+
+		struct header
+		{
+			uint32_t type;
+			uint32_t size;
+		};
 
 		struct request_name
 		{
@@ -137,6 +145,8 @@ namespace hyper {
 			register_name,
 			register_name_answer
 		> message_types;
+
+#define MESSAGE_TYPE_MAX	20
 
 	};
 };
