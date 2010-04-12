@@ -94,16 +94,10 @@ namespace hyper {
 						return socket_.close();
 					}
 
-					/*
-					 * This function take a message @t of type T, encode it, and then sent it
-					 * On completion, @handler is called
-					 *
-					 * Handler must be a compatible with operation
-					 *			void (*)(const boost::system::error_code&, unsigned long int)
-					 */
-
-					template <typename T, typename Handler>
-					void async_write(const T& t, Handler handler)
+				private:
+					template <typename T>
+					void prepare_write(const T& t,
+							std::vector<boost::asio::const_buffer>& buffers)
 					{
 						typedef typename boost::mpl::find<message_types, T>::type iter;
 
@@ -124,10 +118,38 @@ namespace hyper {
 						 *  Write the serialized data to the socket. We use "gather-write" to send
 						 *  both the header and the data in a single write operation.
 						 */
-						 std::vector<boost::asio::const_buffer> buffers;
 						 buffers.push_back(boost::asio::buffer(outbound_header_));
 						 buffers.push_back(boost::asio::buffer(outbound_data_));
+					}
+					
+
+				public:
+					/*
+					 * This function take a message @t of type T, encode it, and then sent it
+					 * On completion, @handler is called
+					 *
+					 * Handler must be a compatible with operation
+					 *			void (*)(const boost::system::error_code&, unsigned long int)
+					 */
+					template <typename T, typename Handler>
+					void async_write(const T& t, Handler handler)
+					{
+						 std::vector<boost::asio::const_buffer> buffers;
+						 prepare_write(t, buffers);
 						 boost::asio::async_write(socket_, buffers, handler);
+					}
+
+
+					/*
+					 * This function takes a message @t of type T, encode it,
+					 * and then sent it.
+					 */
+					template <typename T>
+					void sync_write(const T& t)
+					{
+						 std::vector<boost::asio::const_buffer> buffers;
+						 prepare_write(t, buffers);
+						 boost::asio::write(socket_, buffers);
 					}
 
 					/*
@@ -174,6 +196,46 @@ namespace hyper {
 								boost::bind(f,
 									this, boost::asio::placeholders::error, boost::ref(m),
 									boost::make_tuple(handler)));
+					}
+
+					/*
+					 * Synchronously read a @T data
+					 * Will throw a boost::system::error in failure case
+					 */
+					template <typename T>
+					void sync_read(T& t)
+					{
+						boost::asio::read(socket_, boost::asio::buffer(inbound_header_));
+						header head;
+						memcpy(&head, inbound_header_, sizeof(head));
+
+						inbound_data_.resize(head.size);
+
+						typedef typename boost::mpl::find<message_types, T>::type right_index;
+
+						if (head.type != right_index::pos::value)
+						{
+							std::cerr << "sync_read : Not acceptable msg : " << head.type << std::endl;
+							boost::system::error_code error(boost::asio::error::invalid_argument);
+							throw boost::system::system_error(error);
+						}
+
+						boost::asio::read(socket_, boost::asio::buffer(inbound_data_));
+
+						try
+						{
+							std::string archive_data(&inbound_data_[0], inbound_data_.size());
+							std::istringstream archive_stream(archive_data);
+							boost::archive::text_iarchive archive(archive_stream);
+							archive >> t;
+						}
+						catch (std::exception& e)
+						{
+							/* Unable to decode data. */
+							std::cerr << "Unable to decode data : " << std::endl;
+							boost::system::error_code error(boost::asio::error::invalid_argument);
+							throw boost::system::system_error(error);
+						}
 					}
 
 				private:
@@ -243,7 +305,7 @@ namespace hyper {
 
 							typedef typename boost::mpl::find<message_types, T>::type right_index;
 
-							if (head.type == right_index::pos::value)
+							if (head.type != right_index::pos::value)
 							{
 								std::cerr << "Not acceptable msg : " << head.type << std::endl;
 								boost::system::error_code error(boost::asio::error::invalid_argument);
