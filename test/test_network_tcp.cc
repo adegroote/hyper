@@ -43,6 +43,42 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 
 	BOOST_CHECK(rn1.name == rn2.name);
 
+	struct request_name_answer request_name_answer1, request_name_answer2;
+	request_name_answer1.success = true;
+	request_name_answer1.name = "myAbility";
+	request_name_answer1.endpoint = boost::asio::ip::tcp::endpoint(
+										boost::asio::ip::address::from_string("127.0.0.1"), 4242);
+
+	c.sync_request(request_name_answer1, request_name_answer2);
+
+	BOOST_CHECK(request_name_answer1.name == request_name_answer2.name);
+	BOOST_CHECK(request_name_answer1.success == request_name_answer2.success);
+	BOOST_CHECK(request_name_answer1.endpoint == request_name_answer2.endpoint);
+
+	struct register_name register_name1, register_name2;
+	register_name1.name = "myAbility";
+	register_name1.endpoint = boost::asio::ip::tcp::endpoint(
+							  boost::asio::ip::address::from_string("227.0.52.1"), 4242);
+
+	c.sync_request(register_name1, register_name2);
+
+	BOOST_CHECK(register_name1.name == register_name2.name);
+	BOOST_CHECK(register_name1.endpoint == register_name2.endpoint);
+
+	struct register_name_answer register_name_answer1, register_name_answer2;
+	register_name_answer1.name = "otherAbility";
+	register_name_answer1.success = false;
+
+	c.sync_request(register_name_answer1, register_name_answer2);
+
+	BOOST_CHECK(register_name_answer1.name == register_name_answer2.name);
+	BOOST_CHECK(register_name_answer1.success == register_name_answer2.success);
+
+	/* It is an echo server, so expecting a struct in output different than the
+	 * one in input must lead to an exception boost::system::system_error
+	 */
+	BOOST_CHECK_THROW(c.sync_request(register_name1, rn2), boost::system::system_error);
+
 	s.stop();
 	c.close();
 	thr.join();
