@@ -14,7 +14,7 @@
 
 namespace hyper {
 	namespace network {
-		namespace tcp_async {
+		namespace tcp {
 
 			template <typename InputM, typename OutputM, typename Answer>
 			class connection_manager;

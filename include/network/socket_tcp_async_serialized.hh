@@ -27,7 +27,7 @@
 
 namespace hyper {
 	namespace network {
-		namespace tcp_async {
+		namespace tcp {
 
 			template <typename AuthorizedMessages>
 			struct serialized_socket;
