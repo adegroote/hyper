@@ -23,21 +23,6 @@ void try_archive_interface(const T& src, T& dest)
 	}
 }
 
-struct empty_read_handler 
-{
-	void operator() (const boost::system::error_code& e) { (void) e; };
-};
-
-struct empty_write_handler
-{
-	void operator() (const boost::system::error_code& e, long unsigned int s)
-	{
-		(void) e;
-		(void) s;
-	}
-};
-
-
 BOOST_AUTO_TEST_CASE ( network_msg_test )
 {
 
@@ -81,16 +66,4 @@ BOOST_AUTO_TEST_CASE ( network_msg_test )
 
 	BOOST_CHECK(register_name_answer1.name == register_name_answer2.name);
 	BOOST_CHECK(register_name_answer1.success == register_name_answer2.success);
-
-	boost::asio::io_service service_;
-	typedef boost::mpl::vector<request_name, register_name>::type authorized;
-	typedef boost::make_variant_over<authorized>::type msg_variant;
-
-	msg_variant m;
-	request_name r;
-	hyper::network::tcp_async::serializated_socket<authorized> s(service_);
-	s.async_read(m, empty_read_handler());
-	s.async_read(r, empty_read_handler());
-	s.async_write(r, empty_write_handler());
 }
-
