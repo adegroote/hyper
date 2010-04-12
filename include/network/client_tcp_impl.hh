@@ -6,7 +6,7 @@
 #include <boost/bind.hpp>
 #include <boost/noncopyable.hpp>
 
-#include <network/socket_tcp_async_serialized.hh>
+#include <network/socket_tcp_serialized.hh>
 
 namespace hyper {
 	namespace network {

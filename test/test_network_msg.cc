@@ -1,5 +1,4 @@
 #include <network/msg.hh>
-#include <network/socket_tcp_async_serialized.hh>
 #include <boost/test/unit_test.hpp>
 
 #include <boost/archive/text_iarchive.hpp>
