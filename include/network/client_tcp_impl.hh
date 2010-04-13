@@ -14,17 +14,25 @@ namespace hyper {
 		namespace tcp {
 
 			template <typename OutputM>
-			class sync_client 
+			class client 
 			{
 				public:
-					explicit sync_client(boost::asio::io_service& io_service,
-							const std::string& server, const std::string& port):
+					explicit client(boost::asio::io_service& io_service):
 						resolver_(io_service),
 						socket_(io_service)
 					{
+					}
+
+					/*
+					 * Try to connect to the addr specified by @addr and @port
+					 *
+					 * Throw a boost::system::system_error exception in failure case
+					 */
+					void connect(const std::string& addr, const std::string& port)
+					{
 						/* resolv the name and connect to the requested server
 						 * in synchronous way */ 
-						boost::asio::ip::tcp::resolver::query query(server, port);
+						boost::asio::ip::tcp::resolver::query query(addr, port);
 						boost::asio::ip::tcp::resolver::iterator endpoint_iterator;
 						endpoint_iterator = resolver_.resolve(query);
 						boost::asio::ip::tcp::resolver::iterator end;
@@ -38,51 +46,30 @@ namespace hyper {
 						}
 						if (error)
 							throw boost::system::system_error(error);
-					};
-
-					void close()
-					{
-						socket_.close();
 					}
 
 					/*
-					 * Send a request @in and wait for an answer @out
-					 * The method can throw a boost::system::system_error in failure case
+					 * Try to connect asynchronously to the addr specified by
+					 * @addr and @port. Will call handler on completion
+					 *
+					 * Handler must implement
+					 *		void (*)(const boost::system::error_code&)
 					 */
-					template <typename Input, typename Output>
-					void sync_request(const Input& in, Output& out)
-					{
-						socket_.sync_write(in);
-						socket_.sync_read(out);
-					}
-
-				private:
-					boost::asio::ip::tcp::resolver resolver_;
-					serialized_socket<OutputM> socket_;
-			};
-
-			template <typename OutputM>
-			class async_client
-			{
-				public:
-					async_client(boost::asio::io_service& io_service):
-						  resolver_(io_service),
-						  socket_(io_service)
-					{
-					}
-
 					template <typename Handler>
-					void connect(const std::string& addr, const std::string& port, Handler handler)
+					void async_connect(const std::string& addr, const std::string& port, 
+										Handler handler)
 					{
-					// Start an asynchronous resolve to translate the server and service names
-					// into a list of endpoints.
+					/* 
+					 * Start an asynchronous resolve to translate the server
+					 * and service names into a list of endpoints.
+					 */
 						boost::asio::ip::tcp::resolver::query query(addr, port);
 
-						void (async_client::*f)(
+						void (client::*f)(
 								const boost::system::error_code& e,
 								boost::asio::ip::tcp::resolver::iterator,
 								boost::tuple<Handler>)
-							= &async_client::handle_resolve<Handler>;
+							= &client::handle_resolve<Handler>;
 
 						resolver_.async_resolve(query,
 								boost::bind(f, this,
@@ -91,15 +78,40 @@ namespace hyper {
 									boost::make_tuple(handler)));
 					}
 
-					template <typename Input, typename Output, typename Handler>
-					void request(const Input& in, Output& out, Handler handler)
+					void close()
 					{
-						void (async_client::*f)(
+						socket_.close();
+					}
+
+					/*
+					 * Send a request @in and wait for an answer @out The
+					 * method can throw a boost::system::system_error in
+					 * failure case
+					 */
+					template <typename Input, typename Output>
+					void request(const Input& in, Output& out)
+					{
+						socket_.sync_write(in);
+						socket_.sync_read(out);
+					}
+
+					/*
+					 * Send a request asynchronously @in. On completion,
+					 * @handler is called. If the call is a success, @out is
+					 * set with a correct value
+					 *
+					 * Handler must implement
+					 *		void (*)(const boost::system::error_code&)
+					 */
+					template <typename Input, typename Output, typename Handler>
+					void async_request(const Input& in, Output& out, Handler handler)
+					{
+						void (client::*f)(
 								const boost::system::error_code& e,
 								unsigned long int,
 								Output&,
 								boost::tuple<Handler>)
-							= &async_client::handle_write<Output, Handler>;
+							= &client::handle_write<Output, Handler>;
 
 						socket_.async_write(in, 
 								boost::bind(f, this,
@@ -121,11 +133,11 @@ namespace hyper {
 							// will be tried until we successfully establish a connection.
 							boost::asio::ip::tcp::endpoint endpoint = *endpoint_iterator;
 
-							void (async_client::*f)(
+							void (client::*f)(
 									const boost::system::error_code& e,
 									boost::asio::ip::tcp::resolver::iterator,
 									boost::tuple<Handler>)
-								= &async_client::handle_connect<Handler>;
+								= &client::handle_connect<Handler>;
 
 							socket_.socket().async_connect(endpoint,
 									boost::bind(f, this,
@@ -154,11 +166,11 @@ namespace hyper {
 							socket_.close();
 							boost::asio::ip::tcp::endpoint endpoint = *endpoint_iterator;
 
-							void (async_client::*f)(
+							void (client::*f)(
 									const boost::system::error_code& e,
 									boost::asio::ip::tcp::resolver::iterator,
 									boost::tuple<Handler>)
-								= &async_client::handle_connect<Handler>;
+								= &client::handle_connect<Handler>;
 
 							socket_.socket().async_connect(endpoint,
 									boost::bind(f, this,
@@ -191,7 +203,6 @@ namespace hyper {
 					boost::asio::ip::tcp::resolver resolver_;
 					serialized_socket<OutputM> socket_;
 			};
-
 		};
 	};
 };

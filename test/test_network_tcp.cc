@@ -26,7 +26,7 @@ struct echo_visitor : public boost::static_visitor<output_variant>
 
 typedef server<input_msg, output_msg, echo_visitor>  echo_server;
 
-typedef sync_client<output_msg> echo_client;
+typedef client<output_msg> echo_client;
 
 template <typename T>
 void are_equal(const T& a, const T&b) {};
@@ -65,13 +65,13 @@ void are_equal<register_name_answer> (const register_name_answer&a,
 template <typename OutputM>
 struct test_async_client
 {
-	async_client<OutputM> client;
+	client<OutputM> c;
 	
 	explicit test_async_client(boost::asio::io_service &io_s,
 			const std::string &addr, const std::string& port):
-		client(io_s)
+		c(io_s)
 	{
-		client.connect(addr, port,
+		c.async_connect(addr, port,
 				boost::bind(&test_async_client::handle_connect, 
 							this,
 							boost::asio::placeholders::error));
@@ -88,7 +88,7 @@ struct test_async_client
 			std::cerr << "Can't connect : " << std::endl;
 		} else {
 
-			client.request(r1, r2,
+			c.async_request(r1, r2,
 						   boost::bind(&test_async_client::handle_request_name_test,
 									   this,
 									   boost::asio::placeholders::error));
@@ -102,7 +102,7 @@ struct test_async_client
 			std::cerr << "Error processing msg" << std::endl;
 		} else {
 			are_equal(r1, r2);
-			client.request(rn1, rn2, 
+			c.async_request(rn1, rn2, 
 					boost::bind(&test_async_client::handle_request_register_name,
 								this,
 								boost::asio::placeholders::error));
@@ -132,11 +132,18 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 	boost::thread thr( boost::bind(& echo_server::run, &s));
 
 	boost::asio::io_service io_s;
-	echo_client c(io_s, "127.0.0.1", "4242");
+	echo_client c(io_s);
+
+
 
 	request_name rn1, rn2;
 	rn1.name = "one ability";
-	c.sync_request(rn1, rn2);
+
+	/* Exception launched if no connection */
+	BOOST_CHECK_THROW(c.request(rn1, rn2), boost::system::system_error);
+
+	c.connect("127.0.0.1", "4242");
+	c.request(rn1, rn2);
 	are_equal(rn1, rn2);
 
 	struct request_name_answer request_name_answer1, request_name_answer2;
@@ -145,7 +152,7 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 	request_name_answer1.endpoint = boost::asio::ip::tcp::endpoint(
 										boost::asio::ip::address::from_string("127.0.0.1"), 4242);
 
-	c.sync_request(request_name_answer1, request_name_answer2);
+	c.request(request_name_answer1, request_name_answer2);
 	are_equal(request_name_answer1, request_name_answer2);
 
 	struct register_name register_name1, register_name2;
@@ -153,7 +160,7 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 	register_name1.endpoint = boost::asio::ip::tcp::endpoint(
 							  boost::asio::ip::address::from_string("227.0.52.1"), 4242);
 
-	c.sync_request(register_name1, register_name2);
+	c.request(register_name1, register_name2);
 	are_equal(register_name1, register_name2);
 
 
@@ -161,13 +168,17 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 	register_name_answer1.name = "otherAbility";
 	register_name_answer1.success = false;
 
-	c.sync_request(register_name_answer1, register_name_answer2);
+	c.request(register_name_answer1, register_name_answer2);
 	are_equal(register_name_answer1, register_name_answer2);
 
 	/* It is an echo server, so expecting a struct in output different than the
 	 * one in input must lead to an exception boost::system::system_error
 	 */
-	BOOST_CHECK_THROW(c.sync_request(register_name1, rn2), boost::system::system_error);
+	BOOST_CHECK_THROW(c.request(register_name1, rn2), boost::system::system_error);
+
+	c.close();
+	/* Exception launched if the socket has been closed */
+	BOOST_CHECK_THROW(c.request(rn1, rn2), boost::system::system_error);
 
 	test_async_client<output_msg> test(io_s, "localhost", "4242");
 	io_s.run();
