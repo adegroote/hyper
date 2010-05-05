@@ -39,8 +39,9 @@ namespace hyper {
 
 					/* Construct a connection with the given io_service. */
 					explicit connection(boost::asio::io_service& io_service,
-							connection_manager<InputM, OutputM, Answer> & manager) :
-						socket_(io_service), connection_manager_(manager) 
+							connection_manager<InputM, OutputM, Answer> & manager,
+							const Answer& answer) :
+						socket_(io_service), connection_manager_(manager), answer_(answer)
 					{}
 
 					/* Get the socket associated with the connection. */
@@ -94,7 +95,7 @@ namespace hyper {
 					void handle_read(const boost::system::error_code& e)
 					{
 						if (!e) {
-							outbound_msg_ = boost::apply_visitor(Answer(), inbound_msg_);
+							outbound_msg_ = boost::apply_visitor(answer_, inbound_msg_);
 							dispatch_outbound_message<InputM, OutputM, Answer> dis(*this);
 							boost::apply_visitor(dis, outbound_msg_);
 						} else {
@@ -113,6 +114,9 @@ namespace hyper {
 
 					/* Outgoint data are stored in a msg variant output */
 					msg_variant_output outbound_msg_;
+
+					/* Answer visitor */
+					Answer answer_;
 			};
 
 			template <typename InputM, typename OutputM, typename Answer>
@@ -183,14 +187,17 @@ namespace hyper {
 			{
 				public:
 				  /* Construct the server to listen on specific tcp address and port */
-					explicit server(const std::string& address, const std::string& port) :
+					explicit server(const std::string& address, const std::string& port, 
+						const Answer& ans) :
 						io_service_(),
 						acceptor_(io_service_),
 						connection_manager_(),
 						new_connection_(
-							new connection<InputM, OutputM, Answer>(
+							new connection<InputM, OutputM, Answer> (
 									io_service_, 
-									connection_manager_))
+									connection_manager_,
+									ans)),
+						answer_(ans)
 					{
 						/* Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR). */
 						boost::asio::ip::tcp::resolver resolver(io_service_);
@@ -229,7 +236,8 @@ namespace hyper {
 						  connection_manager_.start(new_connection_);
 						  new_connection_.reset(
 								  new connection<InputM, OutputM, Answer> (
-									  io_service_, connection_manager_));
+									  io_service_, connection_manager_,
+									  answer_));
 						  acceptor_.async_accept(new_connection_->socket(),
 								  boost::bind(&server::handle_accept, this, 
 																	 boost::asio::placeholders::error));
@@ -259,6 +267,9 @@ namespace hyper {
 				  
 				  /* The next connection to be accepted. */
 				  boost::shared_ptr< connection<InputM, OutputM, Answer> > new_connection_;
+
+				  /* The answer visitor */
+				  Answer answer_;
 			};
 		};
 	};

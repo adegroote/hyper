@@ -128,7 +128,7 @@ struct test_async_client
 
 BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 {
-	echo_server s("127.0.0.1", "4242");
+	echo_server s("127.0.0.1", "4242", echo_visitor());
 	boost::thread thr( boost::bind(& echo_server::run, &s));
 
 	boost::asio::io_service io_s;
