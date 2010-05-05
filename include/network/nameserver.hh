@@ -7,6 +7,7 @@
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/thread/shared_mutex.hpp>
+#include <boost/variant/variant.hpp>
 
 #include <network/msg.hh>
 #include <network/server_tcp_impl.hh>
@@ -25,8 +26,8 @@ namespace hyper {
 									  register_name_answer
 									 > output_msg;
 
-			typedef boost::make_variant_over<input_msg> input_variant;
-			typedef boost::make_variant_over<output_msg> output_variant;
+			typedef boost::make_variant_over<input_msg>::type input_variant;
+			typedef boost::make_variant_over<output_msg>::type output_variant;
 
 			// for moment, only deal with tcp
 			struct addr_storage {
@@ -38,7 +39,7 @@ namespace hyper {
 				typedef std::map<std::string, addr_storage> addrs;
 				addrs map_;
 				// Locking doesn't change the semantic of map_addr
-				mutable boost::shared_mutex m;
+				mutable boost::shared_mutex m_;
 
 				public:
 					map_addr();
@@ -51,11 +52,11 @@ namespace hyper {
 		};
 
 		namespace tcp {
-			struct ns_visitor : public boost::static_visitor<ns::input_variant>
+			struct ns_visitor : public boost::static_visitor<ns::output_variant>
 			{
 				ns_visitor(ns::map_addr&);
-				ns::input_variant operator() (const request_name& r) const;
-				ns::input_variant operator() (const register_name& r) const;
+				ns::output_variant operator() (const request_name& r) const;
+				ns::output_variant operator() (const register_name& r) const;
 
 				ns::map_addr& map_;
 			};
