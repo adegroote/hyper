@@ -69,7 +69,7 @@ namespace hyper {
 								const boost::system::error_code& e,
 								boost::asio::ip::tcp::resolver::iterator,
 								boost::tuple<Handler>)
-							= &client::handle_resolve<Handler>;
+							= &client::template handle_resolve<Handler>;
 
 						resolver_.async_resolve(query,
 								boost::bind(f, this,
@@ -111,7 +111,7 @@ namespace hyper {
 								unsigned long int,
 								Output&,
 								boost::tuple<Handler>)
-							= &client::handle_write<Output, Handler>;
+							= &client::template handle_write<Output, Handler>;
 
 						socket_.async_write(in, 
 								boost::bind(f, this,
@@ -137,7 +137,7 @@ namespace hyper {
 									const boost::system::error_code& e,
 									boost::asio::ip::tcp::resolver::iterator,
 									boost::tuple<Handler>)
-								= &client::handle_connect<Handler>;
+								= &client::template handle_connect<Handler>;
 
 							socket_.socket().async_connect(endpoint,
 									boost::bind(f, this,
@@ -170,7 +170,7 @@ namespace hyper {
 									const boost::system::error_code& e,
 									boost::asio::ip::tcp::resolver::iterator,
 									boost::tuple<Handler>)
-								= &client::handle_connect<Handler>;
+								= &client::template handle_connect<Handler>;
 
 							socket_.socket().async_connect(endpoint,
 									boost::bind(f, this,

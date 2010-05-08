@@ -175,7 +175,7 @@ namespace hyper {
 						void (serialized_socket::*f)(
 								const boost::system::error_code&,
 								T&, boost::tuple<Handler>)
-							= &serialized_socket::handle_read_header<T, Handler>;
+							= &serialized_socket::template handle_read_header<T, Handler>;
 
 						boost::asio::async_read(socket_, boost::asio::buffer(inbound_header_),
 								boost::bind(f,
@@ -190,7 +190,7 @@ namespace hyper {
 						void (serialized_socket::*f)(
 								const boost::system::error_code&,
 								msg_variant&, boost::tuple<Handler>)
-							= &serialized_socket::handle_read_header<Handler>;
+							= &serialized_socket::template handle_read_header<Handler>;
 
 						boost::asio::async_read(socket_, boost::asio::buffer(inbound_header_),
 								boost::bind(f,
@@ -318,7 +318,7 @@ namespace hyper {
 							void (serialized_socket::*f)(
 									const boost::system::error_code&,
 									T&, boost::tuple<Handler>)
-								= &serialized_socket::handle_read_data<T, Handler>;
+								= &serialized_socket::template handle_read_data<T, Handler>;
 
 							boost::asio::async_read(socket_, boost::asio::buffer(inbound_data_),
 									boost::bind(f,
