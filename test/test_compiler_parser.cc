@@ -37,4 +37,6 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	r = P.parse_expression("(pos::computeDistance(Dtm::lastMerged, Pos::currentPosition) < threshold) &&"
 						   "(Path3D::goal == currentGoal)");
 
+	r = P.parse_task("toto = task { pre = {}; post = {}; };");
+	r = P.parse_task("titi = task { pre = { {init != false} {size < 42} }; post = {{a && b || c}}; };");
 }
