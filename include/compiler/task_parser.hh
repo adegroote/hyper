@@ -24,6 +24,12 @@ namespace hyper {
 		};
 
 		std::ostream& operator << (std::ostream&, const task_decl& t);
+
+		struct task_decl_list {
+			std::vector<task_decl> list;
+		};
+
+		std::ostream& operator << (std::ostream&, const task_decl_list& l);
 	};
 };
 

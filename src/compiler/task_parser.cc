@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -33,9 +34,7 @@ namespace phoenix = boost::phoenix;
 
 std::ostream& hyper::compiler::operator << (std::ostream& os, const cond_list_decl& l)
 {
-	std::vector<expression_ast>::const_iterator it;	
-	for (it = l.list.begin(); it != l.list.end(); ++it)
-		os << "{" << *it << "}";
+	std::copy(l.list.begin(), l.list.end(), std::ostream_iterator<expression_ast>( os ));
 	return os;
 }
 
@@ -44,6 +43,12 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl& t
 	os << t.name;
 	os << "{" << t.pre << "}";
 	os << "{" << t.post << "}";;
+	return os;
+}
+
+std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl_list& l)
+{
+	std::copy(l.list.begin(), l.list.end(), std::ostream_iterator<task_decl>( os ));
 	return os;
 }
 
@@ -306,14 +311,19 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(cond_list_decl, post)
 );
 
+BOOST_FUSION_ADAPT_STRUCT(
+	task_decl_list,
+	(std::vector<task_decl>, list)
+);
+
 template <typename Iterator, typename Lexer>
-struct  grammar_task : qi::grammar<Iterator, task_decl(), qi::in_state_skipper<Lexer> >
+struct  grammar_task : qi::grammar<Iterator, task_decl_list(), qi::in_state_skipper<Lexer> >
 {
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
     grammar_task(const TokenDef& tok) : 
-		grammar_task::base_type(task, "task"),
+		grammar_task::base_type(task_list, "task_list"),
 		expression_(tok)
 	{
 	    using qi::lit;
@@ -324,6 +334,10 @@ struct  grammar_task : qi::grammar<Iterator, task_decl(), qi::in_state_skipper<L
 		using phoenix::at_c;
         using phoenix::push_back;
 		using phoenix::swap;
+
+		task_list = 
+				(*task					[push_back(at_c<0>(_val), _1)])
+				;
 
 		task = tok.scoped_identifier	[swap(at_c<0>(_val), _1)]
 			 >> lit('=')
@@ -354,6 +368,7 @@ struct  grammar_task : qi::grammar<Iterator, task_decl(), qi::in_state_skipper<L
 			 ;
 
 
+		task_list.name("task_list");
 		task.name("task");
 		pre_cond.name("pre_cond");
 		post_cond.name("post_cond");
@@ -362,6 +377,7 @@ struct  grammar_task : qi::grammar<Iterator, task_decl(), qi::in_state_skipper<L
 		qi::on_error<qi::fail> (task, error_handler(_4, _3, _2));
 	};
 
+	qi::rule<Iterator, task_decl_list(), white_space_> task_list;
 	qi::rule<Iterator, task_decl(), white_space_> task;
 	qi::rule<Iterator, cond_list_decl(), white_space_> pre_cond, post_cond, cond;
 
@@ -472,7 +488,7 @@ bool parser::parse_task(const std::string& expr)
 	base_iterator_type it = expr.begin();
 	iterator_type iter = our_lexer.begin(it, expr.end());
 	iterator_type end = our_lexer.end();
-	task_decl result;
+	task_decl_list result;
     bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
 
 	if (r && iter == end)
