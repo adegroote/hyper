@@ -35,7 +35,7 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const cond_list_de
 {
 	std::vector<expression_ast>::const_iterator it;	
 	for (it = l.list.begin(); it != l.list.end(); ++it)
-		os << "{" << it << "}";
+		os << "{" << *it << "}";
 	return os;
 }
 
@@ -306,33 +306,6 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(cond_list_decl, post)
 );
 
-struct print_cond_list
-{
-	template <typename>
-    struct result { typedef void type; };
-
-	void operator()(const cond_list_decl& expr) const
-	{
-		std::cout << "print_expression " << std::endl;
-		std::cout << "size of expr" << expr.list.size();
-		std::cout << expr << std::endl;
-	}
-};
-
-#if 0
-struct add_cond
-{
-	template <typename, typename>
-    struct result { typedef void type; };
-
-	void operator()(const cond_list_decl& l, const expression_ast& expr) const
-	{
-	//	l.list.push_back(expr);
-	}
-};
-#endif
-
-
 template <typename Iterator, typename Lexer>
 struct  grammar_task : qi::grammar<Iterator, task_decl(), qi::in_state_skipper<Lexer> >
 {
@@ -372,12 +345,12 @@ struct  grammar_task : qi::grammar<Iterator, task_decl(), qi::in_state_skipper<L
 
 		cond = lit('=')
 			 >> lit('{')
-			 >> *( lit('{')				[decl_printer(_val)]
+			 >> *( lit('{')
 				   >> expression_		[push_back(at_c<0>(_val), _1)]
-				   >> lit('}')			[decl_printer(_val)]
+				   >> lit('}')
 				 )
 			 >> lit('}')
-			 >> -lit(';')				[decl_printer(_val)]
+			 >> -lit(';')
 			 ;
 
 
@@ -394,8 +367,6 @@ struct  grammar_task : qi::grammar<Iterator, task_decl(), qi::in_state_skipper<L
 
     typedef grammar_expression<Iterator, Lexer> hyper_expression;
 	hyper_expression expression_;
-
-	function<print_cond_list> decl_printer;
 };
 
 bool parser::parse_expression(const std::string& expr)
@@ -520,7 +491,4 @@ bool parser::parse_task(const std::string& expr)
         std::cout << "-------------------------\n";
         return false;
     }
-
-}	
-
-
+}
