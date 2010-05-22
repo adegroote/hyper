@@ -1,9 +1,8 @@
-#include <fstream>
 #include <iostream>
-#include <sstream>
 
-#include <compiler/parser.hh>
 #include <compiler/ability_parser.hh>
+#include <compiler/parser.hh>
+#include <compiler/utils.hh>
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/lex_lexertl.hpp>
@@ -400,19 +399,6 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 	function<ability_add_adaptator> ability_adder;
 	function<parse_import> import_adder;
 };
-
-std::string 
-read_from_file(const std::string& filename)
-{
-    std::ifstream instream(filename.c_str());
-    if (!instream.is_open()) {
-        std::cerr << "Couldn't open file: " << filename << std::endl;
-        exit(-1);
-    }
-    instream.unsetf(std::ios::skipws);      // No white space skipping!
-    return std::string(std::istreambuf_iterator<char>(instream.rdbuf()),
-                       std::istreambuf_iterator<char>());
-}
 
 
 bool parser::parse_ability_file(const std::string & filename) 
