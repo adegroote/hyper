@@ -52,6 +52,13 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl_li
 	return os;
 }
 
+std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl_list_context& l)
+{
+	os << l.ability_name;
+	os << "{" << l.list << "}";
+	return os;
+}
+
 struct error_handler_
 {
     template <typename, typename, typename>
@@ -85,6 +92,8 @@ struct hyper_lexer : lex::lexer<Lexer>
 		constant_int = "[0-9]+";
 		// XXX We don't support local, nor scientific notation atm
 		constant_double = "[0-9]*\\.[0-9]*";
+		in_ = "in";
+		context_ = "context";
 		task_ = "task";
 		pre_ = "pre";
 		post_ = "post";
@@ -107,7 +116,7 @@ struct hyper_lexer : lex::lexer<Lexer>
 		this->self += constant_double;
 		this->self += true_ | false_;
 		this->self += or_ | and_ | eq_ | neq_ | lt_ | gt_ | lte_ | gte_;
-		this->self += task_ | pre_ | post_;
+		this->self += task_ | pre_ | post_ | in_ | context_;
 		this->self += scoped_identifier;
 
         // define the whitespace to ignore (spaces, tabs, newlines and C-style 
@@ -119,7 +128,7 @@ struct hyper_lexer : lex::lexer<Lexer>
 	};
 
 	lex::token_def<> true_, false_, or_, and_, eq_, neq_, lt_, gt_, lte_, gte_;
-	lex::token_def<> task_, pre_, post_;
+	lex::token_def<> task_, pre_, post_, in_, context_;
     lex::token_def<std::string> scoped_identifier;
 	lex::token_def<std::string> constant_string;
 	lex::token_def<int> constant_int;
@@ -316,14 +325,20 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::vector<task_decl>, list)
 );
 
+BOOST_FUSION_ADAPT_STRUCT(
+	task_decl_list_context,
+	(std::string, ability_name)
+	(task_decl_list, list)
+);
+
 template <typename Iterator, typename Lexer>
-struct  grammar_task : qi::grammar<Iterator, task_decl_list(), qi::in_state_skipper<Lexer> >
+struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_state_skipper<Lexer> >
 {
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
     grammar_task(const TokenDef& tok) : 
-		grammar_task::base_type(task_list, "task_list"),
+		grammar_task::base_type(task_decl_, "task_decl"),
 		expression_(tok)
 	{
 	    using qi::lit;
@@ -334,6 +349,14 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list(), qi::in_state_skip
 		using phoenix::at_c;
         using phoenix::push_back;
 		using phoenix::swap;
+
+		task_decl_ = 
+				   tok.in_ 
+				>> tok.context_
+				>> tok.scoped_identifier [swap(at_c<0>(_val), _1)]
+				>> -lit(';')
+				>> task_list			 [swap(at_c<1>(_val), _1)]
+				;
 
 		task_list = 
 				(*task					[push_back(at_c<0>(_val), _1)])
@@ -368,15 +391,17 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list(), qi::in_state_skip
 			 ;
 
 
+		task_decl_.name("task_decl");
 		task_list.name("task_list");
 		task.name("task");
 		pre_cond.name("pre_cond");
 		post_cond.name("post_cond");
 		cond.name("cond");
 
-		qi::on_error<qi::fail> (task, error_handler(_4, _3, _2));
+		qi::on_error<qi::fail> (task_decl_, error_handler(_4, _3, _2));
 	};
 
+	qi::rule<Iterator, task_decl_list_context(), white_space_> task_decl_;
 	qi::rule<Iterator, task_decl_list(), white_space_> task_list;
 	qi::rule<Iterator, task_decl(), white_space_> task;
 	qi::rule<Iterator, cond_list_decl(), white_space_> pre_cond, post_cond, cond;
@@ -472,7 +497,7 @@ bool parser::parse_task(const std::string& expr)
 	base_iterator_type it = expr.begin();
 	iterator_type iter = our_lexer.begin(it, expr.end());
 	iterator_type end = our_lexer.end();
-	task_decl_list result;
+	task_decl_list_context result;
     bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
 
 	return (r && iter == end);

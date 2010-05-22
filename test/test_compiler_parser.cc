@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	BOOST_CHECK( P.parse_expression("toto::titi") == true );
 	BOOST_CHECK( P.parse_expression("(pos::computeDistance(Dtm::lastMerged, Pos::currentPosition)"
 									"< threshold) && (Path3D::goal == currentGoal)") == true );
-	BOOST_CHECK( P.parse_task("toto = task { pre = {}; post = {}; };") == true );
-	BOOST_CHECK( P.parse_task("titi = task { pre = { {init != false} {size < 42} };"
+	BOOST_CHECK( P.parse_task("in context titi; toto = task { pre = {}; post = {}; };") == true );
+	BOOST_CHECK( P.parse_task("in context example; titi = task { pre = { {init != false} {size < 42} };"
 							                 "post = {{a && b || c}}; };") == true );
 }
