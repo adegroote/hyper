@@ -460,18 +460,5 @@ bool parser::parse_ability_file(const std::string & filename)
 
 	parsed_files.push_back(full);
 
-	if (r && iter == end)
-    {
-        std::cout << "-------------------------\n";
-        std::cout << "Parsing succeeded\n";
-        std::cout << "-------------------------\n";
-        return true;
-    }
-    else
-    {
-        std::cout << "-------------------------\n";
-        std::cout << "Parsing failed\n";
-        std::cout << "-------------------------\n";
-        return false;
-    }
+	return (r && iter == end);
 }

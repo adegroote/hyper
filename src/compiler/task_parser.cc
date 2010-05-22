@@ -429,23 +429,7 @@ bool parser::parse_expression(const std::string& expr)
     bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
 	result.reduce();
 
-	if (r && iter == end)
-    {
-        std::cout << "-------------------------\n";
-        std::cout << "Parsing succeeded\n";
-        std::cout << "-------------------------\n";
-
-		std::cout << "Expr : " << std::endl << result << std::endl;
-        return true;
-    }
-    else
-    {
-        std::cout << "-------------------------\n";
-        std::cout << "Parsing failed\n";
-        std::cout << "-------------------------\n";
-        return false;
-    }
-
+	return (r && iter == end);
 }	
 
 bool parser::parse_task(const std::string& expr)
@@ -491,20 +475,5 @@ bool parser::parse_task(const std::string& expr)
 	task_decl_list result;
     bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
 
-	if (r && iter == end)
-    {
-        std::cout << "-------------------------\n";
-        std::cout << "Parsing succeeded\n";
-        std::cout << "-------------------------\n";
-
-		std::cout << "Expr : " << std::endl << result << std::endl;
-        return true;
-    }
-    else
-    {
-        std::cout << "-------------------------\n";
-        std::cout << "Parsing failed\n";
-        std::cout << "-------------------------\n";
-        return false;
-    }
+	return (r && iter == end);
 }
