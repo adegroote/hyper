@@ -49,6 +49,16 @@ universe::add_scope(const std::string& abilityName, const std::string& id) const
 	return abilityName + "::" + id;
 }
 
+std::pair<std::string, std::string>
+universe::decompose(const std::string& name)
+{
+	std::string::size_type res = name.find("::");
+	assert (res != std::string::npos);
+	return std::make_pair(
+			name.substr(0, res),
+			name.substr(res+2, name.size() - (res+2)));
+}
+
 struct sym_add_scope 
 {
 	std::string scope;

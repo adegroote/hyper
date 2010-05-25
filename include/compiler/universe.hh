@@ -36,6 +36,12 @@ namespace hyper {
 				bool is_scoped_identifier( const std::string &) const;
 
 				/*
+				 * Return a pair of abilityName and variableName
+				 * assume it is a scoped identifier
+				 */
+				std::pair<std::string, std::string> decompose(const std::string& name);
+
+				/*
 				 * Check if is part of native identifier
 				 */
 				bool is_basic_identifier (const std::string &) const ;
