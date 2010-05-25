@@ -110,8 +110,8 @@ namespace hyper {
 								const boost::system::error_code& e,
 								unsigned long int,
 								Output&,
-								boost::tuple<Handler>)
-							= &client::template handle_write<Output, Handler>;
+								boost::tuple<Handler>);
+						f = &client::template handle_write<Output, Handler>;
 
 						socket_.async_write(in, 
 								boost::bind(f, this,

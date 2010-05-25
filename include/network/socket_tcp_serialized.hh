@@ -174,8 +174,8 @@ namespace hyper {
 						// Issue a read operation to read exactly the number of bytes in a header.
 						void (serialized_socket::*f)(
 								const boost::system::error_code&,
-								T&, boost::tuple<Handler>)
-							= &serialized_socket::template handle_read_header<T, Handler>;
+								T&, boost::tuple<Handler>);
+						 f	= &serialized_socket::template handle_read_header<T, Handler>;
 
 						boost::asio::async_read(socket_, boost::asio::buffer(inbound_header_),
 								boost::bind(f,
@@ -315,10 +315,11 @@ namespace hyper {
 
 							// Issue a read operation to read exactly the number of bytes of the struct
 							inbound_data_.resize(head.size);
+
 							void (serialized_socket::*f)(
 									const boost::system::error_code&,
-									T&, boost::tuple<Handler>)
-								= &serialized_socket::template handle_read_data<T, Handler>;
+									T&, boost::tuple<Handler>);
+							f = &serialized_socket::template handle_read_data<T, Handler>;
 
 							boost::asio::async_read(socket_, boost::asio::buffer(inbound_data_),
 									boost::bind(f,
@@ -444,7 +445,7 @@ namespace hyper {
 							T&,
 							msg_variant&,
 							boost::tuple<Handler>);
-					f = & (socket_type::template handle_read_data<T, Handler>);
+					f = & socket_type::template handle_read_data<T, Handler>;
 					boost::asio::async_read(socket_->socket_, 
 							boost::asio::buffer(socket_->inbound_data_),
 							boost::bind(f,
