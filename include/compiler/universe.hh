@@ -2,6 +2,8 @@
 #ifndef _COMPILER_UNIVERSE_HH_
 #define _COMPILER_UNIVERSE_HH_
 
+#include <hyperConfig.hh>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -12,6 +14,7 @@
 #include <compiler/types.hh>
 #include <compiler/functions_def.hh>
 #include <compiler/ability_parser.hh>
+#include <compiler/task_parser.hh>
 
 namespace hyper {
 	namespace compiler {
@@ -48,6 +51,8 @@ namespace hyper {
 				universe();
 
 				bool add(const ability_decl& decl);
+
+				bool add_task(const task_decl_list_context& decl);
 
 				/* 
 				 * Automaticly add the scope to the identifier

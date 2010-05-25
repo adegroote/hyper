@@ -298,3 +298,10 @@ universe::add(const ability_decl& decl)
 
 	return res;
 }
+
+bool
+universe::add_task(const task_decl_list_context& l)
+{
+	bool res = false;
+	return res;
+}

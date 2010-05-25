@@ -2,15 +2,10 @@
 #ifndef _HYPER_EXPRESSION_HH_
 #define _HYPER_EXPRESSION_HH_
 
+#include <hyperConfig.hh>
+
 #include <vector>
 
-/*
- * XXX Whoot crazy not so well documented stuff
- * Increase the max size of possible variant
- * Don't use preprocessed header as they are compiled with default BOOST_MPL_LIMIT_LIST_SIZE
- */
-#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
-#define BOOST_MPL_LIMIT_LIST_SIZE 30
 #include <boost/variant.hpp>
 
 namespace hyper {

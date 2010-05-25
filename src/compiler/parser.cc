@@ -1,3 +1,5 @@
+#include <hyperConfig.hh>
+
 #include <iostream>
 
 #include <compiler/ability_parser.hh>

@@ -337,7 +337,7 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_st
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
-    grammar_task(const TokenDef& tok) : 
+    grammar_task(const TokenDef& tok, universe& u_) : 
 		grammar_task::base_type(task_decl_, "task_decl"),
 		expression_(tok)
 	{
@@ -492,7 +492,7 @@ bool parser::parse_task(const std::string& expr)
     typedef grammar_task<iterator_type, hyper_lexer::lexer_def> hyper_expression;
 
 	hyper_lexer our_lexer;
-	hyper_expression g(our_lexer);
+	hyper_expression g(our_lexer, u);
 
 	base_iterator_type it = expr.begin();
 	iterator_type iter = our_lexer.begin(it, expr.end());
@@ -500,5 +500,8 @@ bool parser::parse_task(const std::string& expr)
 	task_decl_list_context result;
     bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
 
-	return (r && iter == end);
+	if (r && iter == end)
+		return u.add_task(result);
+	else
+		return false;
 }
