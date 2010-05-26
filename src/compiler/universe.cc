@@ -50,7 +50,7 @@ universe::add_scope(const std::string& abilityName, const std::string& id) const
 }
 
 std::pair<std::string, std::string>
-universe::decompose(const std::string& name)
+universe::decompose(const std::string& name) const
 {
 	std::string::size_type res = name.find("::");
 	assert (res != std::string::npos);
@@ -309,9 +309,335 @@ universe::add(const ability_decl& decl)
 	return res;
 }
 
+std::pair<bool, symbolACL>
+universe::get_symbol(const std::string& name, const boost::shared_ptr<ability>& pAbility) const
+{
+	if (!is_scoped_identifier(name)) {
+		std::pair<bool, symbolACL> res = pAbility->get_symbol(name);
+		if (res.first == false)
+			std::cerr << "Unknow symbol " << name << " in ability " << pAbility->name() << std::endl;
+		return res;
+	} else {
+		std::pair<std::string, std::string> p;
+		p = decompose(name);
+		abilityMap::const_iterator it = abilities.find(p.first);
+		if (it == abilities.end()) {
+			std::cerr << "Ability " << p.first  << " does not exist in expression ";
+			std::cerr << name << std::endl;
+			return std::make_pair(false, symbolACL());
+		}
+
+		std::pair<bool, symbolACL> res;
+		res = it->second->get_symbol(p.second);
+		if (res.first == false) {
+			std::cerr << "Unknow symbol " << name << std::endl;
+			return res;
+		}
+
+		/*
+		 * If we are searching in the current ability (but with a scoped name),
+		 * or if it is a remote ability, but a controlable or readable variable
+		 * just return the computed symbolACL
+		 *
+		 * In other case, (remote ability, private variable), return false
+		 */
+		if (res.first == true && 
+				(p.first == pAbility->name() || res.second.acl != PRIVATE))
+			return res;
+
+		std::cerr << "Accessing remote private variable " << name;
+		std::cerr << " is forbidden !! " << std::endl;
+		return std::make_pair(false, symbolACL());
+	}
+}
+
+std::pair<bool, functionDef>
+universe::get_functionDef(const std::string& name) const
+{
+	return fList.get(name);
+}
+
+/*
+ * Classify the binary_op into two kind
+ *   - logical, returns a bool
+ *   - numerical, the return type depends on the left operand (left and right
+ *   operand must be the same)
+ *   XXX : use "typeclass" to check that the operation has "sense"
+ */
+
+enum kind_of_op { NONE, NUMERICAL, LOGICAL};
+template <binary_op_kind T> struct TypeOp { enum { value = NONE }; };
+template <> struct TypeOp<ADD> { enum { value = NUMERICAL }; };
+template <> struct TypeOp<SUB> { enum { value = NUMERICAL }; };
+template <> struct TypeOp<MUL> { enum { value = NUMERICAL }; };
+template <> struct TypeOp<DIV> { enum { value = NUMERICAL }; };
+template <> struct TypeOp<AND> { enum { value = LOGICAL }; };
+template <> struct TypeOp<OR> { enum { value = LOGICAL }; };
+template <> struct TypeOp<GT> { enum { value = LOGICAL }; };
+template <> struct TypeOp<GTE> { enum { value = LOGICAL }; };
+template <> struct TypeOp<LT> { enum { value = LOGICAL }; };
+template <> struct TypeOp<LTE> { enum { value = LOGICAL }; };
+template <> struct TypeOp<EQ> { enum { value = LOGICAL }; };
+template <> struct TypeOp<NEQ> { enum { value = LOGICAL }; };
+
+template <binary_op_kind T, int k>
+struct binary_type {
+	const universe& u;
+	typeId id;	
+	
+	binary_type(const universe& u_, typeId id_) : u(u_), id(id_) {};
+
+	typeId operator() () const { return -1; };
+};
+
+template <binary_op_kind T>
+struct binary_type<T, NUMERICAL> {
+	const universe& u;
+	typeId id;	
+	
+	binary_type(const universe& u_, typeId id_) : u(u_), id(id_) {};
+
+	typeId operator() () const { return id; };
+};
+
+template <binary_op_kind T>
+struct binary_type<T, LOGICAL> {
+	const universe& u;
+	typeId id;	
+	
+	binary_type(const universe& u_, typeId id_) : u(u_), id(id_) {};
+
+	typeId operator() () const { return u.types().getId("bool").second; };
+};
+
+/*
+ * Compute the type of an expression
+ * We assume that the expression is valid
+ */
+struct ast_type : public boost::static_visitor<typeId> {
+	boost::shared_ptr<ability> pAbility;
+	const universe& u;
+
+	ast_type(boost::shared_ptr<ability> pAbility_, const universe& u_):
+		pAbility(pAbility_), u(u_) 
+	{}
+
+	typeId operator() (const empty& e) const
+	{
+		return -1;
+	}
+
+	typeId operator() (const Constant<int>& c) const
+	{
+		return u.types().getId("int").second;
+	}
+
+	typeId operator() (const Constant<double>& c) const
+	{
+		return u.types().getId("double").second;
+	}
+
+	typeId operator() (const Constant<std::string>& c) const
+	{
+		return u.types().getId("string").second;
+	}
+
+	typeId operator() (const Constant<bool>& c) const
+	{
+		return u.types().getId("bool").second;
+	}
+
+	typeId operator() (const std::string& s) const
+	{
+		std::pair<bool, symbolACL> p;
+		p = u.get_symbol(s, pAbility);
+		if (p.first == false)
+			return -1;
+		return p.second.s.t; 
+	}
+
+	typeId operator() (const function_call& f) const
+	{
+		// add scope to do the search
+		std::string name = u.add_scope(pAbility->name(), f.fName);
+		std::pair<bool, functionDef> p = u.get_functionDef(name);
+		if (p.first == false) 
+			return -1;
+
+		return p.second.returnType();
+	}
+
+	bool operator() (const expression_ast& e) const
+	{
+		return boost::apply_visitor(ast_type(pAbility, u), e.expr);
+	}
+
+	template<binary_op_kind T>
+	bool operator() (const binary_op<T>& b) const
+	{
+		typeId leftId = boost::apply_visitor(ast_type(pAbility, u), b.left.expr);
+		return binary_type<T, TypeOp<T>::value> (u, leftId) ();
+	}
+
+	bool operator() (const unary_op<NEG>& op) const
+	{
+		return u.types().getId("bool").second;
+	}
+};
+	
+
+typeId
+universe::typeOf(const boost::shared_ptr<ability>& pAbility, const expression_ast& expr) const
+{
+	return boost::apply_visitor(ast_type(pAbility, *this), expr.expr);
+}
+
+template <unary_op_kind T>
+struct ast_unary_valid : public boost::static_visitor<bool>
+{
+	template <typename U>
+	bool operator() (const U& u) const
+	{
+		return true;
+	}
+};
+
+template <binary_op_kind T>
+struct ast_binary_valid : public boost::static_visitor<bool>
+{
+	template <typename U, typename V>
+	bool operator() ( const U& u, const V& v) const
+	{
+		return true;
+	}
+};
+
+struct ast_valid : public boost::static_visitor<bool>
+{
+	boost::shared_ptr<ability> pAbility;
+	universe& u;
+
+	ast_valid(boost::shared_ptr<ability> pAbility_, universe& u_):
+		pAbility(pAbility_), u(u_) 
+	{}
+
+	bool operator() (const empty& e) const
+	{
+		return false;
+	}
+
+	template <typename T>
+	bool operator() (const Constant<T>& c) const
+	{
+		return true;
+	}
+
+	bool operator() (const std::string& s) const
+	{
+		std::pair<bool, symbolACL> p;
+		p = u.get_symbol(s, pAbility);
+		return p.first;
+	}
+
+	bool operator() (const function_call& f) const
+	{
+		// add scope to do the search
+		std::string name = u.add_scope(pAbility->name(), f.fName);
+		std::pair<bool, functionDef> p = u.get_functionDef(name);
+		if (p.first == false) {
+			std::cerr << "Unknow function " << f.fName << std::endl;
+			return false;
+		}
+
+		bool res = true;
+		if (f.args.size() != p.second.arity()) {
+			std::cerr << "Expected " << p.second.arity() << " arguments";
+			std::cerr << " got " << f.args.size() << " for function ";
+			std::cerr << f.fName << "!";
+			res = false;
+		}
+
+		for (size_t i = 0; i < f.args.size(); ++i)
+			res = boost::apply_visitor(ast_valid(pAbility, u), f.args[i].expr) && res;
+
+		// check type
+		for (size_t i = 0; i < f.args.size(); ++i)
+			res = (u.typeOf(pAbility, f.args[i]) == p.second.argsType(i)) && res;
+
+		return res;
+	}
+
+	bool operator() (const expression_ast& e) const
+	{
+		return boost::apply_visitor(ast_valid(pAbility, u), e.expr);
+	}
+
+	template<binary_op_kind T>
+	bool operator() (const binary_op<T>& b) const
+	{
+		bool left_valid, right_valid;
+		left_valid = boost::apply_visitor(ast_valid(pAbility, u), b.left.expr);
+		right_valid = boost::apply_visitor(ast_valid(pAbility, u), b.right.expr);
+		return left_valid && right_valid && 
+			boost::apply_visitor(ast_binary_valid<T>(), b.left.expr, b.right.expr);
+	}
+
+	template<unary_op_kind T>
+	bool operator() (const unary_op<T>& op) const
+	{
+		bool is_valid = boost::apply_visitor(ast_valid(pAbility, u), op.subject.expr);
+		return is_valid && boost::apply_visitor(ast_unary_valid<T>(), op.subject.expr);
+	}
+};
+
+struct cond_adder
+{
+	bool& res;
+	boost::shared_ptr<ability> pAbility;
+	universe& u;
+
+	cond_adder(bool &res_, boost::shared_ptr<ability> pAbility_, universe& u_):
+		res(res_), pAbility(pAbility_), u(u_)
+	{};
+
+	void operator() (const expression_ast& cond) 
+	{
+		ast_valid is_valid(pAbility, u);
+		res = boost::apply_visitor(is_valid, cond.expr) && res;
+	}
+};
+
+struct task_adder
+{
+	bool& res;
+	boost::shared_ptr<ability> pAbility;
+	universe &u;
+
+	task_adder(bool &res_, boost::shared_ptr<ability> pAbility_, universe& u_):
+		res(res_), pAbility(pAbility_), u(u_)
+	{};
+
+	void operator() (const task_decl& t) 
+	{
+		cond_adder adder(res, pAbility, u);
+		std::for_each(t.pre.list.begin(), t.pre.list.end(), adder); 
+		std::for_each(t.post.list.begin(), t.post.list.end(), adder); 
+		res = adder.res && res;
+	};
+};
+
 bool
 universe::add_task(const task_decl_list_context& l)
 {
-	bool res = false;
+	abilityMap::iterator it = abilities.find(l.ability_name);
+	if (it == abilities.end()) {
+		std::cerr << "ability " << l.ability_name << " is not declared " << std::endl;
+		return false;
+	}
+
+	bool res = true;
+	task_adder adder(res, it->second, *this);
+	std::for_each(l.list.list.begin(), l.list.list.end(), adder);
+
 	return res;
 }

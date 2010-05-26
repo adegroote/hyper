@@ -36,7 +36,21 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	BOOST_CHECK( P.parse_expression("toto::titi") == true );
 	BOOST_CHECK( P.parse_expression("(pos::computeDistance(Dtm::lastMerged, Pos::currentPosition)"
 									"< threshold) && (Path3D::goal == currentGoal)") == true );
-	BOOST_CHECK( P.parse_task("in context titi; toto = task { pre = {}; post = {}; };") == true );
-	BOOST_CHECK( P.parse_task("in context example; titi = task { pre = { {init != false} {size < 42} };"
-							                 "post = {{a && b || c}}; };") == true );
+	BOOST_CHECK( P.parse_task("in context first; toto = task { pre = {}; post = {}; };") == true );
+	// accessing non-existing symbol must fail
+	BOOST_CHECK( P.parse_task("in context first; titi = task { pre = { {init} }; post = {}; };")
+							  == false);
+	// accessing local symbol, without scope is ok
+	BOOST_CHECK( P.parse_task("in context first; titi = task { pre = {{ isOk }}; post = {}; };")
+							  == true);
+	// accessing remote symbol, if readable or controlable is ok
+	BOOST_CHECK( P.parse_task("in context first; titi = task { pre = {{ other::isEmpty }}; "
+															  "post = {}; };")
+							  == true);
+	// accessing private variable from other context is bad :)
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ other::myPrivatevariable }};"
+													      " post = {}; };") == false);
+	// in our local context, it is ok
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ first::myPrivatevariable }};"
+													      " post = {}; };") == true);
 }

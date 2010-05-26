@@ -39,7 +39,7 @@ namespace hyper {
 				 * Return a pair of abilityName and variableName
 				 * assume it is a scoped identifier
 				 */
-				std::pair<std::string, std::string> decompose(const std::string& name);
+				std::pair<std::string, std::string> decompose(const std::string& name) const;
 
 				/*
 				 * Check if is part of native identifier
@@ -52,6 +52,9 @@ namespace hyper {
 
 				bool add_symbols(const std::string&, const symbol_decl_list& decl, 
 						symbolList& s);
+
+
+
 
 			public:
 				universe();
@@ -68,6 +71,15 @@ namespace hyper {
 				std::string add_scope(const std::string& abilityName,
 								      const std::string& identifier) const;
 
+				std::pair<bool, symbolACL> 
+				get_symbol(const std::string& name, const boost::shared_ptr<ability>& pAbility) const;
+
+				std::pair<bool, functionDef>
+				get_functionDef(const std::string& name) const;
+
+				typeId typeOf(const boost::shared_ptr<ability>&, const expression_ast& expr) const;
+
+				const typeList& types() const { return tList; };
 		};
 	};
 };
