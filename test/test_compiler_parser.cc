@@ -53,4 +53,28 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	// in our local context, it is ok
 	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ first::myPrivatevariable }};"
 													      " post = {}; };") == true);
+
+	// calling unknow function is bad
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ toto() }};"
+													      " post = {}; };") == false);
+
+	// calling valid function with bad argument number is not really better
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square() }};"
+													      " post = {}; };") == false);
+
+	// calling valid function with constant
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(42.0) }};"
+													      " post = {}; };") == true);
+
+	// calling valid function with variable of good type is ok
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(thresold) }};"
+													      " post = {}; };") == true);
+
+	// calling valid function with variable of bad type is bad
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(j) }};"
+													      " post = {}; };") == false);
+
+	// calling valid function with non-accessible variable is not really good
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(other::myPrivatevariable) }};"
+													      " post = {}; };") == false);
 }

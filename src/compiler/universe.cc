@@ -553,7 +553,7 @@ struct ast_valid : public boost::static_visitor<bool>
 		if (f.args.size() != p.second.arity()) {
 			std::cerr << "Expected " << p.second.arity() << " arguments";
 			std::cerr << " got " << f.args.size() << " for function ";
-			std::cerr << f.fName << "!";
+			std::cerr << f.fName << "!" << std::endl;
 			res = false;
 		}
 
@@ -561,8 +561,23 @@ struct ast_valid : public boost::static_visitor<bool>
 			res = boost::apply_visitor(ast_valid(pAbility, u), f.args[i].expr) && res;
 
 		// check type
-		for (size_t i = 0; i < f.args.size(); ++i)
-			res = (u.typeOf(pAbility, f.args[i]) == p.second.argsType(i)) && res;
+		for (size_t i = 0; i < f.args.size(); ++i) {
+			typeId id = u.typeOf(pAbility, f.args[i]);
+			bool local_res = (id == p.second.argsType(i));
+			res = local_res && res;
+			if (local_res == false) {
+				type expected = u.types().get(p.second.argsType(i));
+				std::cerr << "Expected expression of type " << expected.name;
+				if (id == -1) {
+					std::cerr << " but can't compute type of " << f.args[i].expr;
+				} else {
+					type local = u.types().get(id);
+					std::cerr << " but get " << f.args[i].expr << " of type " << local.name;
+				}
+				std::cerr << " as argument " << i << " in the call of " << f.fName;
+				std::cerr << std::endl;
+			}
+		}
 
 		return res;
 	}
