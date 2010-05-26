@@ -77,4 +77,33 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	// calling valid function with non-accessible variable is not really good
 	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(other::myPrivatevariable) }};"
 													      " post = {}; };") == false);
+
+	// calling operator < with two variables on same kind is ok
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ i < j }};"
+													      " post = {}; };") == true);
+	
+	// calling operator < with variables of different kind is definitivly forbidden
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ i < 42.0 }};"
+													      " post = {}; };") == false);
+
+	// calling operator < with result of a function is ok as long as the two types match
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(thresold)  < 42.0 }};"
+													      " post = {}; };") == true);
+
+	// same kind of rules for == and !=
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ i == j }};"
+													      " post = {}; };") == true);
+	
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ i == 42.0 }};"
+													      " post = {}; };") == false);
+
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(thresold) == 42.0 }};"
+													      " post = {}; };") == true);
+
+	// for operator && and ||, we only accept boolean expression
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(thresold)  &&  42.0 }};"
+													      " post = {}; };") == false);
+
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ (i > j)  &&  (j > k) }};"
+													      " post = {}; };") == true);
 }

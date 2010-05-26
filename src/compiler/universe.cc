@@ -493,22 +493,118 @@ universe::typeOf(const boost::shared_ptr<ability>& pAbility, const expression_as
 }
 
 template <unary_op_kind T>
-struct ast_unary_valid : public boost::static_visitor<bool>
+struct ast_unary_valid 
 {
-	template <typename U>
-	bool operator() (const U& u) const
+	const universe& u;
+
+	ast_unary_valid(const universe& u_) : u(u_) {};
+
+	bool operator() (typeId id) const
 	{
 		return true;
 	}
 };
 
-template <binary_op_kind T>
-struct ast_binary_valid : public boost::static_visitor<bool>
+template <>
+struct ast_unary_valid<NEG>
 {
-	template <typename U, typename V>
-	bool operator() ( const U& u, const V& v) const
+	const universe& u;
+
+	ast_unary_valid(const universe& u_) : u(u_) {};
+
+	bool operator() (typeId id) const
 	{
+		std::cout << "id " << id << std::endl;
+		return (id == u.types().getId("bool").second);
+	}
+};
+
+enum valid_kind_of { VALID_NONE, VALID_NUMERICAL, VALID_COMPARABLE, VALID_LOGICAL };
+template <binary_op_kind T> struct ValidTypeOp { enum { value = VALID_NONE }; };
+template <> struct ValidTypeOp<ADD> { enum { value = VALID_NUMERICAL }; };
+template <> struct ValidTypeOp<SUB> { enum { value = VALID_NUMERICAL }; };
+template <> struct ValidTypeOp<MUL> { enum { value = VALID_NUMERICAL }; };
+template <> struct ValidTypeOp<DIV> { enum { value = VALID_NUMERICAL }; };
+template <> struct ValidTypeOp<AND> { enum { value = VALID_LOGICAL }; };
+template <> struct ValidTypeOp<OR> { enum { value = VALID_LOGICAL }; };
+template <> struct ValidTypeOp<GT> { enum { value = VALID_COMPARABLE }; };
+template <> struct ValidTypeOp<GTE> { enum { value = VALID_COMPARABLE}; };
+template <> struct ValidTypeOp<LT> { enum { value = VALID_COMPARABLE}; };
+template <> struct ValidTypeOp<LTE> { enum { value = VALID_COMPARABLE}; };
+template <> struct ValidTypeOp<EQ> { enum { value = VALID_COMPARABLE}; };
+template <> struct ValidTypeOp<NEQ> { enum { value = VALID_COMPARABLE}; };
+
+template <binary_op_kind T, int k>
+struct ast_binary_valid_dispatch
+{
+	const universe& u;
+
+	ast_binary_valid_dispatch(const universe& u_) : u(u_) {};
+
+	bool operator() (typeId leftType, typeId rightType)
+	{
+		return false;
+	}
+};
+
+template <binary_op_kind T>
+struct ast_binary_valid_dispatch<T, VALID_NUMERICAL>
+{
+	const universe& u;
+
+	ast_binary_valid_dispatch(const universe& u_) : u(u_) {};
+
+	bool operator() (typeId leftType, typeId rightType)
+	{
+		// XXX Check that they are of "typeclass" numerical
 		return true;
+	}
+};
+
+template <binary_op_kind T>
+struct ast_binary_valid_dispatch<T, VALID_COMPARABLE>
+{
+	const universe& u;
+
+	ast_binary_valid_dispatch(const universe& u_) : u(u_) {};
+
+	bool operator() (typeId leftType, typeId rightType)
+	{
+		// XXX check that they are of "typeclass" comparable
+		return true;
+	}
+};
+
+template <binary_op_kind T>
+struct ast_binary_valid_dispatch<T, VALID_LOGICAL>
+{
+	const universe& u;
+
+	ast_binary_valid_dispatch(const universe& u_) : u(u_) {};
+
+	bool operator() (typeId leftType, typeId rightType)
+	{
+		return (leftType == u.types().getId("bool").second);
+	}
+};
+
+template <binary_op_kind T>
+struct ast_binary_valid 
+{
+	const universe& u;
+	
+	ast_binary_valid(const universe& u_) : u(u_) {};
+
+	bool operator() ( typeId leftType, typeId rightType )
+	{
+		// only accept operation on same type
+		if (leftType == -1 || rightType == -1 ||
+			leftType != rightType) 
+		{
+			return false;
+		}
+
+		return ast_binary_valid_dispatch<T, ValidTypeOp<T>::value> (u) ( leftType, rightType );
 	}
 };
 
@@ -593,15 +689,16 @@ struct ast_valid : public boost::static_visitor<bool>
 		bool left_valid, right_valid;
 		left_valid = boost::apply_visitor(ast_valid(pAbility, u), b.left.expr);
 		right_valid = boost::apply_visitor(ast_valid(pAbility, u), b.right.expr);
-		return left_valid && right_valid && 
-			boost::apply_visitor(ast_binary_valid<T>(), b.left.expr, b.right.expr);
+		return left_valid && right_valid && ast_binary_valid<T>(u) ( 
+													u.typeOf(pAbility, b.left.expr),
+													u.typeOf(pAbility, b.right.expr));
 	}
 
 	template<unary_op_kind T>
 	bool operator() (const unary_op<T>& op) const
 	{
 		bool is_valid = boost::apply_visitor(ast_valid(pAbility, u), op.subject.expr);
-		return is_valid && boost::apply_visitor(ast_unary_valid<T>(), op.subject.expr);
+		return is_valid && ast_unary_valid<T>(u) (u.typeOf(pAbility, op.subject.expr)) ;
 	}
 };
 
