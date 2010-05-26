@@ -501,7 +501,7 @@ struct ast_unary_valid
 
 	bool operator() (typeId id) const
 	{
-		return true;
+		return false;
 	}
 };
 
@@ -514,8 +514,8 @@ struct ast_unary_valid<NEG>
 
 	bool operator() (typeId id) const
 	{
-		std::cout << "id " << id << std::endl;
-		return (id == u.types().getId("bool").second);
+		return (id == u.types().getId("int").second || 
+				id == u.types().getId("double").second);
 	}
 };
 

@@ -106,4 +106,12 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 
 	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ (i > j)  &&  (j > k) }};"
 													      " post = {}; };") == true);
+
+	// for operator -, only accept int and double in entry (probably not correct)
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ - (i < j) }};"
+													      " post = {}; };") == false);
+
+	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ - square(42.0) }};"
+													      " post = {}; };") == true);
+	
 }
