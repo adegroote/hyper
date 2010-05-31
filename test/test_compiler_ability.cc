@@ -42,4 +42,14 @@ BOOST_AUTO_TEST_CASE ( compiler_ability_test )
 	BOOST_CHECK(p.second.acl == READABLE);
 	BOOST_CHECK(p.second.s.name == "r1");
 
+	task a, b, c;
+	a.name = "a";
+	b.name = "b";
+	c.name = "a";
+
+	BOOST_CHECK(test.add_task(a) == true);
+	BOOST_CHECK(test.add_task(b) == true);
+	// same name than task a
+	BOOST_CHECK(test.add_task(c) == false);
+
 }
