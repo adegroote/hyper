@@ -46,8 +46,11 @@ ability::add_task(const task& t)
 	std::vector<task>::const_iterator it;
 	it = std::find_if(tasks.begin(), tasks.end(), same_name(t.name));
 
-	if (it != tasks.end())
+	if (it != tasks.end()) {
+		std::cerr << "Can't add the task named " << t.name;
+		std::cerr << " because a task with the same already exists" << std::endl;
 		return false;
+	}
 
 	tasks.push_back(t);
 	return true;

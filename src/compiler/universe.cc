@@ -707,15 +707,18 @@ struct cond_adder
 	bool& res;
 	boost::shared_ptr<ability> pAbility;
 	universe& u;
+	std::vector<expression_ast>& conds;
 
-	cond_adder(bool &res_, boost::shared_ptr<ability> pAbility_, universe& u_):
-		res(res_), pAbility(pAbility_), u(u_)
+	cond_adder(bool &res_, boost::shared_ptr<ability> pAbility_, universe& u_,
+			std::vector<expression_ast>& conds_):
+		res(res_), pAbility(pAbility_), u(u_), conds(conds_)
 	{};
 
 	void operator() (const expression_ast& cond) 
 	{
 		ast_valid is_valid(pAbility, u);
 		res = boost::apply_visitor(is_valid, cond.expr) && res;
+		conds.push_back(cond);
 	}
 };
 
@@ -724,6 +727,7 @@ struct task_adder
 	bool& res;
 	boost::shared_ptr<ability> pAbility;
 	universe &u;
+	task currentTask;
 
 	task_adder(bool &res_, boost::shared_ptr<ability> pAbility_, universe& u_):
 		res(res_), pAbility(pAbility_), u(u_)
@@ -731,10 +735,19 @@ struct task_adder
 
 	void operator() (const task_decl& t) 
 	{
-		cond_adder adder(res, pAbility, u);
-		std::for_each(t.pre.list.begin(), t.pre.list.end(), adder); 
-		std::for_each(t.post.list.begin(), t.post.list.end(), adder); 
-		res = adder.res && res;
+		currentTask.name = t.name;
+		{
+			cond_adder adder(res, pAbility, u, currentTask.pre);
+			std::for_each(t.pre.list.begin(), t.pre.list.end(), adder); 
+			res = adder.res && res;
+		}
+		{
+			cond_adder adder(res, pAbility, u, currentTask.post);
+			std::for_each(t.post.list.begin(), t.post.list.end(), adder); 
+			res = adder.res && res;
+		}
+		if (res) 
+			res = pAbility->add_task(currentTask);
 	};
 };
 

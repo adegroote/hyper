@@ -44,74 +44,79 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	BOOST_CHECK( P.parse_task("in context first; titi = task { pre = {{ isOk }}; post = {}; };")
 							  == true);
 	// accessing remote symbol, if readable or controlable is ok
-	BOOST_CHECK( P.parse_task("in context first; titi = task { pre = {{ other::isEmpty }}; "
+	BOOST_CHECK( P.parse_task("in context first; tutu = task { pre = {{ other::isEmpty }}; "
 															  "post = {}; };")
 							  == true);
 	// accessing private variable from other context is bad :)
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ other::myPrivatevariable }};"
+	BOOST_CHECK( P.parse_task("in context first; x0 = task { pre = {{ other::myPrivatevariable }};"
 													      " post = {}; };") == false);
 	// in our local context, it is ok
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ first::myPrivatevariable }};"
+	BOOST_CHECK( P.parse_task("in context first; x1 = task { pre = {{ first::myPrivatevariable }};"
 													      " post = {}; };") == true);
 
 	// calling unknow function is bad
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ toto() }};"
+	BOOST_CHECK( P.parse_task("in context first; x2 = task { pre = {{ toto() }};"
 													      " post = {}; };") == false);
 
 	// calling valid function with bad argument number is not really better
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square() }};"
+	BOOST_CHECK( P.parse_task("in context first; x3 = task { pre = {{ square() }};"
 													      " post = {}; };") == false);
 
 	// calling valid function with constant
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(42.0) }};"
+	BOOST_CHECK( P.parse_task("in context first; x4 = task { pre = {{ square(42.0) }};"
 													      " post = {}; };") == true);
 
 	// calling valid function with variable of good type is ok
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(thresold) }};"
+	BOOST_CHECK( P.parse_task("in context first; x5 = task { pre = {{ square(thresold) }};"
 													      " post = {}; };") == true);
 
 	// calling valid function with variable of bad type is bad
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(j) }};"
+	BOOST_CHECK( P.parse_task("in context first; x6 = task { pre = {{ square(j) }};"
 													      " post = {}; };") == false);
 
 	// calling valid function with non-accessible variable is not really good
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(other::myPrivatevariable) }};"
+	BOOST_CHECK( P.parse_task("in context first; x7 = task { pre = {{ square(other::myPrivatevariable) }};"
 													      " post = {}; };") == false);
 
 	// calling operator < with two variables on same kind is ok
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ i < j }};"
+	BOOST_CHECK( P.parse_task("in context first; x8 = task { pre = {{ i < j }};"
 													      " post = {}; };") == true);
 	
 	// calling operator < with variables of different kind is definitivly forbidden
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ i < 42.0 }};"
+	BOOST_CHECK( P.parse_task("in context first; x9 = task { pre = {{ i < 42.0 }};"
 													      " post = {}; };") == false);
 
 	// calling operator < with result of a function is ok as long as the two types match
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(thresold)  < 42.0 }};"
+	BOOST_CHECK( P.parse_task("in context first; x10 = task { pre = {{ square(thresold)  < 42.0 }};"
 													      " post = {}; };") == true);
 
 	// same kind of rules for == and !=
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ i == j }};"
+	BOOST_CHECK( P.parse_task("in context first; x11 = task { pre = {{ i == j }};"
 													      " post = {}; };") == true);
 	
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ i == 42.0 }};"
+	BOOST_CHECK( P.parse_task("in context first; x12 = task { pre = {{ i == 42.0 }};"
 													      " post = {}; };") == false);
 
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(thresold) == 42.0 }};"
+	BOOST_CHECK( P.parse_task("in context first; x13 = task { pre = {{ square(thresold) == 42.0 }};"
 													      " post = {}; };") == true);
 
 	// for operator && and ||, we only accept boolean expression
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ square(thresold)  &&  42.0 }};"
+	BOOST_CHECK( P.parse_task("in context first; x14 = task { pre = {{ square(thresold)  &&  42.0 }};"
 													      " post = {}; };") == false);
 
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ (i > j)  &&  (j > k) }};"
+	BOOST_CHECK( P.parse_task("in context first; x15 = task { pre = {{ (i > j)  &&  (j > k) }};"
 													      " post = {}; };") == true);
 
 	// for operator -, only accept int and double in entry (probably not correct)
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ - (i < j) }};"
+	BOOST_CHECK( P.parse_task("in context first; x16 = task { pre = {{ - (i < j) }};"
 													      " post = {}; };") == false);
 
-	BOOST_CHECK( P.parse_task("in context first; x = task { pre = {{ - square(42.0) }};"
+	BOOST_CHECK( P.parse_task("in context first; x17 = task { pre = {{ - square(42.0) }};"
 													      " post = {}; };") == true);
+
+
+	// you can't add two task with the same name
+	BOOST_CHECK( P.parse_task("in context first; x17 = task { pre = {};"
+													      " post = {}; };") == false);
 	
 }
