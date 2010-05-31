@@ -48,10 +48,6 @@ namespace hyper {
 			type(const std::string& name_, typeOfType t_): name(name_), t(t_), internal(Nothing()) {};
 		};
 
-		struct struct_type : public type {
-			symbolList* s;
-		};
-
 		class typeList : public boost::noncopyable {
 			public:
 				typedef detail::typeId typeId;
