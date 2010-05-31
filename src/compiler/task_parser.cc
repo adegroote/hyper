@@ -6,6 +6,7 @@
 #include <compiler/expression_ast.hh>
 #include <compiler/parser.hh>
 #include <compiler/task_parser.hh>
+#include <compiler/utils.hh>
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/lex_lexertl.hpp>
@@ -504,4 +505,10 @@ bool parser::parse_task(const std::string& expr)
 		return u.add_task(result);
 	else
 		return false;
+}
+
+bool parser::parse_task_file(const std::string& fileName)
+{
+	std::string content = read_from_file(fileName);
+	return parse_task(content);
 }

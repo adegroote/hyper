@@ -21,6 +21,7 @@ namespace hyper {
 				bool parse_ability_file(const std::string&);
 				bool parse_expression(const std::string&);
 				bool parse_task(const std::string&);
+				bool parse_task_file(const std::string&);
 		};
 	};
 };
