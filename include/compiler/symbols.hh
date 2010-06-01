@@ -69,6 +69,14 @@ namespace hyper {
 				 * Returns a list of commun symbol into the two symbolList (this and s)
 				 */
 				std::vector<std::string> intersection(const symbolList& s) const;
+
+				/* 
+				 * Provide a const_iterator on symbol list
+				 * it is a const iterator on std::pair<std::string, symbol>
+				 */
+				typedef std::map<std::string, symbol>::const_iterator const_iterator;
+				const_iterator begin() const { return symbols.begin(); };
+				const_iterator end() const { return symbols.end(); };
 		};
 	};
 };
