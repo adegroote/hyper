@@ -11,6 +11,7 @@
 #include <boost/variant.hpp>
 #include <boost/tuple/tuple.hpp>
 
+#include <compiler/utils.hh>
 #include <compiler/types_parser.hh>
 
 namespace hyper {
@@ -116,6 +117,14 @@ namespace hyper {
 				type get(typeList::typeId id) const;
 
 				type& get(typeList::typeId);
+				
+				template <typename Pred>
+				std::vector<type> select(Pred pred) const
+				{
+					std::vector<type> res;
+					copy_if(types.begin(), types.end(), std::back_inserter(res), pred);
+					return res;
+				}
 		};
 	};
 };
