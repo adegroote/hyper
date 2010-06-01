@@ -1,3 +1,5 @@
+#include <set>
+
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 
@@ -57,6 +59,23 @@ universe::decompose(const std::string& name) const
 	return std::make_pair(
 			name.substr(0, res),
 			name.substr(res+2, name.size() - (res+2)));
+}
+
+std::string
+universe::get_scope(const std::string& name) const
+{
+	if (!is_scoped_identifier(name)) return "";
+	std::pair<std::string, std::string> p = decompose(name);
+	return p.first;
+}
+
+std::string 
+universe::get_identifier(const std::string& identifier) const
+{
+	if (!is_scoped_identifier(identifier))
+		return identifier;
+	std::pair<std::string, std::string> p = decompose(identifier);
+	return p.second;
 }
 
 struct sym_add_scope 
@@ -765,4 +784,166 @@ universe::add_task(const task_decl_list_context& l)
 	std::for_each(l.list.list.begin(), l.list.list.end(), adder);
 
 	return res;
+}
+
+struct select_ability_type : public std::unary_function<type, bool>
+{
+	std::string search_string;
+
+	select_ability_type(const std::string & name) : search_string(name + "::") {};
+
+	bool operator () (const type& t) const
+	{
+		return (t.name.find(search_string, 0) == 0);
+	}
+};
+
+struct compute_deps 
+{
+	std::set<std::string> &s;
+	const typeList& tList;
+	const universe& u;
+
+	compute_deps(std::set<std::string>& s_, const typeList& tlist_, const universe& u_) :
+		s(s_), tList(tlist_), u(u_) {};
+
+	void operator() (const std::pair<std::string, symbol> & p) const
+	{
+		type t = tList.get(p.second.t);
+		s.insert(u.get_scope(t.name));
+	}
+};
+
+
+struct compute_depends_vis : public boost::static_visitor<void>
+{
+	std::set<std::string> &s;
+	const typeList& tList;
+	const universe &u;
+
+	compute_depends_vis(std::set<std::string> &s_, const typeList& tlist_, const universe& u_) : 
+		s(s_), tList(tlist_), u(u_) {};
+
+	void operator() (const Nothing& n) const {};
+
+	void operator() (const typeId& t) const
+	{
+		s.insert(u.get_scope(tList.get(t).name));
+	}
+
+	void operator() (const boost::shared_ptr<symbolList> & l) const
+	{
+		std::for_each(l->begin(), l->end(), compute_deps(s, tList, u));
+	}
+};
+
+struct compute_depends 
+{
+	std::set<std::string> &s;
+	const typeList& tList;
+	const universe& u;
+
+	compute_depends(std::set<std::string>& s_, const typeList& tlist_, const universe& u_) :
+		s(s_), tList(tlist_), u(u_) {};
+
+	void operator() (const type& t) const
+	{
+		boost::apply_visitor(compute_depends_vis(s, tList, u), t.internal);
+	}
+};
+
+struct dump_depends
+{
+	std::ostream & oss;
+	
+	dump_depends(std::ostream& oss_) : oss(oss_) {};
+
+	void operator() (const std::string& s) const
+	{
+		if (s == "")
+			return;
+
+		oss << "#include <hyper/" << s << "/types.hh";
+	}
+};
+
+struct dump_struct
+{
+	std::ostream & oss;
+	const typeList& tList;
+
+	dump_struct(std::ostream& oss_, const typeList& tList_) : 
+		oss(oss_), tList(tList_) {};
+
+	void operator() (const std::pair<std::string, symbol>& p)
+	{
+		type t = tList.get(p.second.t);
+		oss << "\t\t" << t.name << " " << p.first << ";" << std::endl;
+	}
+};
+
+struct dump_types_vis : public boost::static_visitor<void>
+{
+	std::ostream & oss;
+	const typeList& tList;
+	const universe& u;
+	std::string name;
+
+	dump_types_vis(std::ostream& oss_, const typeList& tList_, 
+				   const universe& u_, const std::string& name_):
+		oss(oss_), tList(tList_),u(u_), name(name_) {};
+
+	void operator() (const Nothing& n) const {};
+
+	void operator() (const typeId& tId) const
+	{
+		type t = tList.get(tId);
+		oss << "\ttypedef " << t.name << " " << u.get_identifier(name) << ";";
+		oss << "\n" << std::endl;
+	}
+
+	void operator() (const boost::shared_ptr<symbolList>& l) const
+	{
+		oss << "\tstruct " << u.get_identifier(name) << " {" << std::endl;
+		std::for_each(l->begin(), l->end(), dump_struct(oss, tList));
+		oss << "\t};\n" << std::endl;
+	}
+};
+
+
+struct dump_types
+{
+	std::ostream & oss;
+	const typeList& tList;
+	const universe& u;
+
+	dump_types(std::ostream& oss_, const typeList& tList_, const universe& u_) :
+		oss(oss_), tList(tList_), u(u_) {};
+
+	void operator() (const type& t) const
+	{
+		boost::apply_visitor(dump_types_vis(oss, tList, u, t.name), t.internal);
+	}
+};
+
+void
+universe::dump_ability_types(std::ostream& oss, const std::string& name) const
+{
+	// find types prefixed by name::
+	std::vector<type> types = tList.select(select_ability_type(name));
+
+	// compute dependances
+	std::set<std::string> depends;
+	compute_depends deps(depends, tList, *this);
+	std::for_each(types.begin(), types.end(), deps);
+
+	oss << "#ifndef _" << name << "_ABILITY_HH_" << std::endl;
+	oss << "#define _" << name << "_ABILITY_HH_" << std::endl;
+
+	std::for_each(depends.begin(), depends.end(), dump_depends(oss));
+
+	oss << "namespace hyper { namespace " << name << " {" << std::endl;
+	std::for_each(types.begin(), types.end(), dump_types(oss, tList, *this));
+	oss << "}; };" << std::endl;
+	oss << "#endif /* _" << name << "_ABILITY_HH_ */" << std::endl;
 }

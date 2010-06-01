@@ -71,6 +71,16 @@ namespace hyper {
 				std::string add_scope(const std::string& abilityName,
 								      const std::string& identifier) const;
 
+				/*
+				 * Return "" if there is no scope
+				 */
+				std::string get_scope(const std::string& identifier) const;
+
+				/*
+				 * Get basic identifier (without scope)
+				 */
+				std::string get_identifier(const std::string& identifier) const;
+
 				std::pair<bool, symbolACL> 
 				get_symbol(const std::string& name, const boost::shared_ptr<ability>& pAbility) const;
 
@@ -80,6 +90,8 @@ namespace hyper {
 				typeId typeOf(const boost::shared_ptr<ability>&, const expression_ast& expr) const;
 
 				const typeList& types() const { return tList; };
+
+				void dump_ability_types(std::ostream& os, const std::string& abilityName) const;
 		};
 	};
 };
