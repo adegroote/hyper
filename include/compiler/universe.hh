@@ -28,19 +28,6 @@ namespace hyper {
 				typeList tList;
 				functionDefList fList;
 
-				std::vector<std::string> basicIdentifier;
-
-				/*
-				 * Check if it is a scoped identifier
-				 */
-				bool is_scoped_identifier( const std::string &) const;
-
-				/*
-				 * Return a pair of abilityName and variableName
-				 * assume it is a scoped identifier
-				 */
-				std::pair<std::string, std::string> decompose(const std::string& name) const;
-
 				/*
 				 * Check if is part of native identifier
 				 */
@@ -54,32 +41,12 @@ namespace hyper {
 						symbolList& s);
 
 
-
-
 			public:
 				universe();
 
 				bool add(const ability_decl& decl);
 
 				bool add_task(const task_decl_list_context& decl);
-
-				/* 
-				 * Automaticly add the scope to the identifier
-				 * Don't do the promotion if the identifier is already scoped
-				 * or is a basic identifier
-				 */
-				std::string add_scope(const std::string& abilityName,
-								      const std::string& identifier) const;
-
-				/*
-				 * Return "" if there is no scope
-				 */
-				std::string get_scope(const std::string& identifier) const;
-
-				/*
-				 * Get basic identifier (without scope)
-				 */
-				std::string get_identifier(const std::string& identifier) const;
 
 				std::pair<bool, symbolACL> 
 				get_symbol(const std::string& name, const boost::shared_ptr<ability>& pAbility) const;

@@ -4,6 +4,7 @@
 #include <boost/make_shared.hpp>
 
 #include <compiler/universe.hh>
+#include <compiler/scope.hh>
 
 using namespace hyper::compiler;
 
@@ -16,102 +17,40 @@ universe::universe() : tList(), fList(tList)
 	tList.add("int", intType);
 	tList.add("string", stringType);
 	tList.add("void", noType);
-
-	basicIdentifier.push_back("bool");
-	basicIdentifier.push_back("double");
-	basicIdentifier.push_back("int");
-	basicIdentifier.push_back("string");
-	basicIdentifier.push_back("void");
-}
-
-bool
-universe::is_scoped_identifier(const std::string& s) const
-{
-	std::string::size_type res = s.find("::");
-	return (res != std::string::npos);
-}
-
-bool
-universe::is_basic_identifier(const std::string& s) const
-{
-	// XXX basicIdentifier is not sorted ?
-	std::vector<std::string>::const_iterator begin, end;
-	begin = basicIdentifier.begin();
-	end = basicIdentifier.end();
-
-	return (std::find(begin, end, s) != end);
-}
-
-std::string
-universe::add_scope(const std::string& abilityName, const std::string& id) const
-{
-	if (is_scoped_identifier(id) || is_basic_identifier(id))
-		return id;
-	
-	return abilityName + "::" + id;
-}
-
-std::pair<std::string, std::string>
-universe::decompose(const std::string& name) const
-{
-	std::string::size_type res = name.find("::");
-	assert (res != std::string::npos);
-	return std::make_pair(
-			name.substr(0, res),
-			name.substr(res+2, name.size() - (res+2)));
-}
-
-std::string
-universe::get_scope(const std::string& name) const
-{
-	if (!is_scoped_identifier(name)) return "";
-	std::pair<std::string, std::string> p = decompose(name);
-	return p.first;
-}
-
-std::string 
-universe::get_identifier(const std::string& identifier) const
-{
-	if (!is_scoped_identifier(identifier))
-		return identifier;
-	std::pair<std::string, std::string> p = decompose(identifier);
-	return p.second;
 }
 
 struct sym_add_scope 
 {
-	std::string scope;
-	const universe& u;
+	std::string scope_;
 
-	sym_add_scope(const std::string& s, const universe& u_) : scope(s), u(u_) {};
+	sym_add_scope(const std::string& s) : scope_(s) {};
 	symbol_decl operator() (const symbol_decl &s)
 	{
 		symbol_decl res = s;
-		res.typeName = u.add_scope(scope, res.typeName);
+		res.typeName = scope::add_scope(scope_, res.typeName);
 		return res;
 	}
 };
 
 struct type_add_scope_visitor : public boost::static_visitor<type_decl>
 {
-	std::string scope;
-	const universe& u;
-	type_add_scope_visitor(const std::string& s, const universe& u_) : 
-		scope(s), u(u_) {};
+	std::string scope_;
+	type_add_scope_visitor(const std::string& s)  : 
+		scope_(s) {};
 
 	type_decl operator()(const newtype_decl& decl)
 	{
 		newtype_decl res = decl;
-		res.oldname = u.add_scope(scope, res.oldname);
-		res.newname = u.add_scope(scope, res.newname);
+		res.oldname = scope::add_scope(scope_, res.oldname);
+		res.newname = scope::add_scope(scope_, res.newname);
 		return res;
 	}
 
 	type_decl operator()(const struct_decl& decl)
 	{
 		struct_decl res;
-		sym_add_scope sym_scope(scope, u);
-		res.name = u.add_scope(scope, decl.name);
+		sym_add_scope sym_scope(scope_);
+		res.name = scope::add_scope(scope_, decl.name);
 		res.vars.l.resize(decl.vars.l.size());
 		std::transform(decl.vars.l.begin(), decl.vars.l.end(),
 						res.vars.l.begin(), sym_scope);
@@ -121,32 +60,30 @@ struct type_add_scope_visitor : public boost::static_visitor<type_decl>
 
 struct type_add_scope
 {
-	std::string scope;
-	const universe& u;
+	std::string scope_;
 
-	type_add_scope(const std::string& s, const universe& u_) : scope(s), u(u_) {};
+	type_add_scope(const std::string& s) : scope_(s) {};
 
 	type_decl operator()(const type_decl& decl)
 	{
-		type_add_scope_visitor v(scope, u);
+		type_add_scope_visitor v(scope_);
 		return boost::apply_visitor(v, decl);
 	}
 };
 
 struct functions_def_add_scope {
-	std::string scope;
-	const universe& u;
+	std::string scope_;
 
-	functions_def_add_scope(const std::string& s, const universe& u_) : scope(s), u(u_) {};
+	functions_def_add_scope(const std::string& s) : scope_(s) {};
 
 	function_decl operator()(const function_decl& decl)
 	{
 		function_decl res = decl;
-		res.fName = u.add_scope(scope, res.fName);
-		res.returnName = u.add_scope(scope, res.returnName);
+		res.fName = scope::add_scope(scope_, res.fName);
+		res.returnName = scope::add_scope(scope_, res.returnName);
 		
 		std::transform(res.argsName.begin(), res.argsName.end(),
-					   res.argsName.begin(), boost::bind(&universe::add_scope, &u, scope, _1));
+					   res.argsName.begin(), boost::bind(&scope::add_scope, scope_, _1));
 		return res;
 	}
 };
@@ -172,11 +109,11 @@ struct type_diagnostic_visitor : public boost::static_visitor<void>
 };
 
 bool
-universe::add_types(const std::string& scope, const type_decl_list& t)
+universe::add_types(const std::string& scope_, const type_decl_list& t)
 {
 	type_decl_list t_scoped;
 	t_scoped.l.resize(t.l.size());
-	type_add_scope type_scope(scope, *this);
+	type_add_scope type_scope(scope_);
 
 	std::transform(t.l.begin(), t.l.end(), 
 				   t_scoped.l.begin(), type_scope);
@@ -206,11 +143,11 @@ universe::add_types(const std::string& scope, const type_decl_list& t)
 }
 
 bool
-universe::add_functions(const std::string& scope, const function_decl_list& f)
+universe::add_functions(const std::string& scope_, const function_decl_list& f)
 {
 	function_decl_list f_scoped;
 	f_scoped.l.resize(f.l.size());
-	functions_def_add_scope add_scope(scope, *this);
+	functions_def_add_scope add_scope(scope_);
 
 	std::transform(f.l.begin(), f.l.end(),
 				   f_scoped.l.begin(), add_scope);
@@ -236,12 +173,12 @@ universe::add_functions(const std::string& scope, const function_decl_list& f)
 }
 
 bool
-universe::add_symbols(const std::string& scope, const symbol_decl_list& d,
+universe::add_symbols(const std::string& scope_, const symbol_decl_list& d,
 					  symbolList& s)
 {
 	symbol_decl_list d_scoped;
 	d_scoped.l.resize(d.l.size());
-	sym_add_scope add_scope(scope, *this);
+	sym_add_scope add_scope(scope_);
 
 	std::transform(d.l.begin(), d.l.end(),
 				   d_scoped.l.begin(), add_scope);
@@ -331,14 +268,14 @@ universe::add(const ability_decl& decl)
 std::pair<bool, symbolACL>
 universe::get_symbol(const std::string& name, const boost::shared_ptr<ability>& pAbility) const
 {
-	if (!is_scoped_identifier(name)) {
+	if (!scope::is_scoped_identifier(name)) {
 		std::pair<bool, symbolACL> res = pAbility->get_symbol(name);
 		if (res.first == false)
 			std::cerr << "Unknow symbol " << name << " in ability " << pAbility->name() << std::endl;
 		return res;
 	} else {
 		std::pair<std::string, std::string> p;
-		p = decompose(name);
+		p = scope::decompose(name);
 		abilityMap::const_iterator it = abilities.find(p.first);
 		if (it == abilities.end()) {
 			std::cerr << "Ability " << p.first  << " does not exist in expression ";
@@ -478,7 +415,7 @@ struct ast_type : public boost::static_visitor<typeId> {
 	typeId operator() (const function_call& f) const
 	{
 		// add scope to do the search
-		std::string name = u.add_scope(pAbility->name(), f.fName);
+		std::string name = scope::add_scope(pAbility->name(), f.fName);
 		std::pair<bool, functionDef> p = u.get_functionDef(name);
 		if (p.first == false) 
 			return -1;
@@ -657,7 +594,7 @@ struct ast_valid : public boost::static_visitor<bool>
 	bool operator() (const function_call& f) const
 	{
 		// add scope to do the search
-		std::string name = u.add_scope(pAbility->name(), f.fName);
+		std::string name = scope::add_scope(pAbility->name(), f.fName);
 		std::pair<bool, functionDef> p = u.get_functionDef(name);
 		if (p.first == false) {
 			std::cerr << "Unknow function " << f.fName << std::endl;
@@ -802,15 +739,14 @@ struct compute_deps
 {
 	std::set<std::string> &s;
 	const typeList& tList;
-	const universe& u;
 
-	compute_deps(std::set<std::string>& s_, const typeList& tlist_, const universe& u_) :
-		s(s_), tList(tlist_), u(u_) {};
+	compute_deps(std::set<std::string>& s_, const typeList& tlist_) :
+		s(s_), tList(tlist_) {};
 
 	void operator() (const std::pair<std::string, symbol> & p) const
 	{
 		type t = tList.get(p.second.t);
-		s.insert(u.get_scope(t.name));
+		s.insert(scope::get_scope(t.name));
 	}
 };
 
@@ -819,21 +755,20 @@ struct compute_depends_vis : public boost::static_visitor<void>
 {
 	std::set<std::string> &s;
 	const typeList& tList;
-	const universe &u;
 
-	compute_depends_vis(std::set<std::string> &s_, const typeList& tlist_, const universe& u_) : 
-		s(s_), tList(tlist_), u(u_) {};
+	compute_depends_vis(std::set<std::string> &s_, const typeList& tlist_) : 
+		s(s_), tList(tlist_) {};
 
 	void operator() (const Nothing& n) const {};
 
 	void operator() (const typeId& t) const
 	{
-		s.insert(u.get_scope(tList.get(t).name));
+		s.insert(scope::get_scope(tList.get(t).name));
 	}
 
 	void operator() (const boost::shared_ptr<symbolList> & l) const
 	{
-		std::for_each(l->begin(), l->end(), compute_deps(s, tList, u));
+		std::for_each(l->begin(), l->end(), compute_deps(s, tList));
 	}
 };
 
@@ -841,14 +776,13 @@ struct compute_depends
 {
 	std::set<std::string> &s;
 	const typeList& tList;
-	const universe& u;
 
-	compute_depends(std::set<std::string>& s_, const typeList& tlist_, const universe& u_) :
-		s(s_), tList(tlist_), u(u_) {};
+	compute_depends(std::set<std::string>& s_, const typeList& tlist_) :
+		s(s_), tList(tlist_) {};
 
 	void operator() (const type& t) const
 	{
-		boost::apply_visitor(compute_depends_vis(s, tList, u), t.internal);
+		boost::apply_visitor(compute_depends_vis(s, tList), t.internal);
 	}
 };
 
@@ -886,25 +820,23 @@ struct dump_types_vis : public boost::static_visitor<void>
 {
 	std::ostream & oss;
 	const typeList& tList;
-	const universe& u;
 	std::string name;
 
-	dump_types_vis(std::ostream& oss_, const typeList& tList_, 
-				   const universe& u_, const std::string& name_):
-		oss(oss_), tList(tList_),u(u_), name(name_) {};
+	dump_types_vis(std::ostream& oss_, const typeList& tList_, const std::string& name_):
+		oss(oss_), tList(tList_), name(name_) {};
 
 	void operator() (const Nothing& n) const {};
 
 	void operator() (const typeId& tId) const
 	{
 		type t = tList.get(tId);
-		oss << "\ttypedef " << t.name << " " << u.get_identifier(name) << ";";
+		oss << "\ttypedef " << t.name << " " << scope::get_identifier(name) << ";";
 		oss << "\n" << std::endl;
 	}
 
 	void operator() (const boost::shared_ptr<symbolList>& l) const
 	{
-		oss << "\tstruct " << u.get_identifier(name) << " {" << std::endl;
+		oss << "\tstruct " << scope::get_identifier(name) << " {" << std::endl;
 		std::for_each(l->begin(), l->end(), dump_struct(oss, tList));
 		oss << "\t};\n" << std::endl;
 	}
@@ -915,14 +847,13 @@ struct dump_types
 {
 	std::ostream & oss;
 	const typeList& tList;
-	const universe& u;
 
-	dump_types(std::ostream& oss_, const typeList& tList_, const universe& u_) :
-		oss(oss_), tList(tList_), u(u_) {};
+	dump_types(std::ostream& oss_, const typeList& tList_ ) :
+		oss(oss_), tList(tList_){};
 
 	void operator() (const type& t) const
 	{
-		boost::apply_visitor(dump_types_vis(oss, tList, u, t.name), t.internal);
+		boost::apply_visitor(dump_types_vis(oss, tList, t.name), t.internal);
 	}
 };
 
@@ -974,7 +905,7 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 
 	// compute dependances
 	std::set<std::string> depends;
-	compute_depends deps(depends, tList, *this);
+	compute_depends deps(depends, tList);
 	std::for_each(types.begin(), types.end(), deps);
 
 	{
@@ -983,7 +914,7 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss));
 
 		namespaces n(oss, name);
-		std::for_each(types.begin(), types.end(), dump_types(oss, tList, *this));
+		std::for_each(types.begin(), types.end(), dump_types(oss, tList));
 	}
 
 	return types.size();
@@ -1017,12 +948,12 @@ struct compute_fun_depends
 	void operator() (const functionDef& f) 
 	{
 		type t = tList.get(f.returnType());
-		depends.insert(u.get_scope(t.name));
+		depends.insert(scope::get_scope(t.name));
 
 		for (size_t i = 0; i < f.arity(); ++i) 
 		{
 			type t1 = tList.get(f.argsType(i));
-			depends.insert(u.get_scope(t1.name));
+			depends.insert(scope::get_scope(t1.name));
 		}
 	}
 };
@@ -1032,18 +963,16 @@ struct dump_funcs_proto
 	std::ostream & oss;
 	const typeList& tList;
 	const functionDefList& fList;
-	const universe& u;
 
 	dump_funcs_proto(std::ostream& oss_,
-						const typeList& tList_, const functionDefList& fList_,
-						const universe& u_):
-		oss(oss_), tList(tList_), fList(fList_), u(u_) {};
+						const typeList& tList_, const functionDefList& fList_):
+		oss(oss_), tList(tList_), fList(fList_) {};
 
 
 	void operator() (const functionDef& f) 
 	{
 		type ret = tList.get(f.returnType());
-		oss << "\t\t" << ret.name << " " << u.get_identifier(f.name()) << "(";
+		oss << "\t\t" << ret.name << " " << scope::get_identifier(f.name()) << "(";
 		for (size_t i = 0; i < f.arity(); ++i) 
 		{
 			type arg = tList.get(f.argsType(i));
@@ -1076,7 +1005,7 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss));
 
 		namespaces n(oss, name);
-		std::for_each(funcs.begin(), funcs.end(), dump_funcs_proto(oss, tList, fList, *this));
+		std::for_each(funcs.begin(), funcs.end(), dump_funcs_proto(oss, tList, fList));
 	}
 
 	return funcs.size();
@@ -1087,18 +1016,15 @@ struct dump_funcs_impl
 	std::ostream & oss;
 	const typeList& tList;
 	const functionDefList& fList;
-	const universe& u;
 
 	dump_funcs_impl(std::ostream& oss_,
-						const typeList& tList_, const functionDefList& fList_,
-						const universe& u_):
-		oss(oss_), tList(tList_), fList(fList_), u(u_) {};
-
+						const typeList& tList_, const functionDefList& fList_):
+		oss(oss_), tList(tList_), fList(fList_){};
 
 	void operator() (const functionDef& f) 
 	{
 		type ret = tList.get(f.returnType());
-		oss << "\t\t" << ret.name << " " << u.get_identifier(f.name()) << "(";
+		oss << "\t\t" << ret.name << " " << scope::get_identifier(f.name()) << "(";
 		for (size_t i = 0; i < f.arity(); ++i) 
 		{
 			type arg = tList.get(f.argsType(i));
@@ -1124,7 +1050,7 @@ universe::dump_ability_functions_impl(std::ostream& oss, const std::string& name
 	oss << "#include <" << name << "/funcs.hh>" << std::endl << std::endl;
 
 	namespaces n(oss, name);
-	std::for_each(funcs.begin(), funcs.end(), dump_funcs_impl(oss, tList, fList, *this));
+	std::for_each(funcs.begin(), funcs.end(), dump_funcs_impl(oss, tList, fList));
 
 	return funcs.size();
 }
