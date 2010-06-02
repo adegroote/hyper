@@ -926,6 +926,45 @@ struct dump_types
 	}
 };
 
+struct guards
+{
+	std::ostream &oss;
+	std::string guard;
+
+	guards(std::ostream& oss_, const std::string& abilityName, const std::string& end):
+		oss(oss_), guard(abilityName)
+	{
+		std::transform(guard.begin(), guard.end(), guard.begin(), toupper);
+		guard = "_" + guard + end;
+
+		oss << "#ifndef " << guard << std::endl;
+		oss << "#define " << guard << std::endl;
+		oss << std::endl;
+	}
+
+	~guards()
+	{
+		oss << std::endl;
+		oss << "#endif /* " << guard << " */" << std::endl;
+	}
+};
+
+struct namespaces
+{
+	std::ostream& oss;
+	std::string name;
+
+	namespaces(std::ostream& oss_, const std::string& name_) : oss(oss_), name(name_)
+	{
+		oss << "namespace hyper { namespace " << name << " {" << std::endl << std::endl;
+	}
+
+	~namespaces()
+	{
+		oss << std::endl << "}; };" << std::endl;
+	}
+};
+
 void
 universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 {
@@ -937,15 +976,14 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 	compute_depends deps(depends, tList, *this);
 	std::for_each(types.begin(), types.end(), deps);
 
-	oss << "#ifndef _" << name << "_ABILITY_HH_" << std::endl;
-	oss << "#define _" << name << "_ABILITY_HH_" << std::endl;
+	{
+		guards g(oss, name, "_TYPE_ABILITY_HH_");
 
-	std::for_each(depends.begin(), depends.end(), dump_depends(oss));
+		std::for_each(depends.begin(), depends.end(), dump_depends(oss));
 
-	oss << "\nnamespace hyper { namespace " << name << " {" << std::endl;
-	std::for_each(types.begin(), types.end(), dump_types(oss, tList, *this));
-	oss << "}; };" << std::endl;
-	oss << "#endif /* _" << name << "_ABILITY_HH_ */" << std::endl;
+		namespaces n(oss, name);
+		std::for_each(types.begin(), types.end(), dump_types(oss, tList, *this));
+	}
 }
 
 struct select_ability_funs
@@ -1029,14 +1067,12 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 	compute_fun_depends deps(depends, tList, fList, *this);
 	std::for_each(funcs.begin(), funcs.end(), deps);
 
-	oss << "#ifndef _" << name << "_FUNC_ABILITY_HH_" << std::endl;
-	oss << "#define _" << name << "_FUNC_ABILITY_HH_" << std::endl;
+	{
+		guards g(oss, name, "_FUNC_ABILITY_HH_");
 
-	std::for_each(depends.begin(), depends.end(), dump_depends(oss));
+		std::for_each(depends.begin(), depends.end(), dump_depends(oss));
 
-	oss << "\nnamespace hyper { namespace " << name << " {" << std::endl;
-	std::for_each(funcs.begin(), funcs.end(), dump_funcs_proto(oss, tList, fList, *this));
-	oss << "}; };" << std::endl;
-
-	oss << "#endif _" << name << "_FUNC_ABILITY_HH_" << std::endl;
+		namespaces n(oss, name);
+		std::for_each(funcs.begin(), funcs.end(), dump_funcs_proto(oss, tList, fList, *this));
+	}
 }
