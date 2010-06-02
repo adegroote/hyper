@@ -863,7 +863,7 @@ struct dump_depends
 		if (s == "")
 			return;
 
-		oss << "#include <hyper/" << s << "/types.hh";
+		oss << "#include <" << s << "/types.hh>" << std::endl;
 	}
 };
 
@@ -942,8 +942,101 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 
 	std::for_each(depends.begin(), depends.end(), dump_depends(oss));
 
-	oss << "namespace hyper { namespace " << name << " {" << std::endl;
+	oss << "\nnamespace hyper { namespace " << name << " {" << std::endl;
 	std::for_each(types.begin(), types.end(), dump_types(oss, tList, *this));
 	oss << "}; };" << std::endl;
 	oss << "#endif /* _" << name << "_ABILITY_HH_ */" << std::endl;
+}
+
+struct select_ability_funs
+{
+	std::string search_string;
+
+	select_ability_funs(const std::string & name) : search_string(name + "::") {};
+
+	bool operator () (const functionDef& f) const
+	{
+		return (f.name().find(search_string, 0) == 0);
+	}
+};
+
+struct compute_fun_depends
+{
+	std::set<std::string> &depends;
+	const typeList& tList;
+	const functionDefList& fList;
+	const universe& u;
+
+	compute_fun_depends(std::set<std::string>& depends_,
+						const typeList& tList_, const functionDefList& fList_,
+						const universe& u_):
+		depends(depends_), tList(tList_), fList(fList_), u(u_) {};
+
+
+	void operator() (const functionDef& f) 
+	{
+		type t = tList.get(f.returnType());
+		depends.insert(u.get_scope(t.name));
+
+		for (size_t i = 0; i < f.arity(); ++i) 
+		{
+			type t1 = tList.get(f.argsType(i));
+			depends.insert(u.get_scope(t1.name));
+		}
+	}
+};
+
+struct dump_funcs_proto 
+{
+	std::ostream & oss;
+	const typeList& tList;
+	const functionDefList& fList;
+	const universe& u;
+
+	dump_funcs_proto(std::ostream& oss_,
+						const typeList& tList_, const functionDefList& fList_,
+						const universe& u_):
+		oss(oss_), tList(tList_), fList(fList_), u(u_) {};
+
+
+	void operator() (const functionDef& f) 
+	{
+		type ret = tList.get(f.returnType());
+		oss << "\t" << ret.name << " " << u.get_identifier(f.name()) << "(";
+		for (size_t i = 0; i < f.arity(); ++i) 
+		{
+			type arg = tList.get(f.argsType(i));
+			oss << arg.name;
+			if (arg.t == stringType || arg.t == structType)
+				oss << " const & ";
+			if (i != f.arity() - 1) 
+				oss << ", ";
+		}
+
+		oss << " );" << std::endl;
+	}
+};
+
+
+void 
+universe::dump_ability_functions_proto(std::ostream& oss, const std::string& name) const
+{
+	//find functions prefixed by name::
+	std::vector<functionDef>  funcs = fList.select(select_ability_funs(name));
+
+	// compute dependances
+	std::set<std::string> depends;
+	compute_fun_depends deps(depends, tList, fList, *this);
+	std::for_each(funcs.begin(), funcs.end(), deps);
+
+	oss << "#ifndef _" << name << "_FUNC_ABILITY_HH_" << std::endl;
+	oss << "#define _" << name << "_FUNC_ABILITY_HH_" << std::endl;
+
+	std::for_each(depends.begin(), depends.end(), dump_depends(oss));
+
+	oss << "\nnamespace hyper { namespace " << name << " {" << std::endl;
+	std::for_each(funcs.begin(), funcs.end(), dump_funcs_proto(oss, tList, fList, *this));
+	oss << "}; };" << std::endl;
+
+	oss << "#endif _" << name << "_FUNC_ABILITY_HH_" << std::endl;
 }

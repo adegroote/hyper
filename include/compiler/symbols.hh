@@ -25,7 +25,6 @@ namespace hyper {
 		};
 
 
-
 		struct symbolList {
 			public:
 				enum symbolAddError {

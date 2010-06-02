@@ -92,6 +92,17 @@ namespace hyper {
 				 * return < false, _ > otherwise
 				 */
 				std::pair < bool, functionDef > get(const std::string&) const;
+
+				template <typename Pred>
+				std::vector<functionDef> select(Pred pred) const
+				{
+					std::vector<functionDef> res;
+					fmap::const_iterator it;
+					for (it = functionDefs.begin(); it != functionDefs.end(); ++it)
+						if (pred(it->second))
+							res.push_back(it->second);
+					return res;
+				}
 		};
 	};
 };

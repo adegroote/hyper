@@ -38,9 +38,17 @@ int main(int argc, char** argv)
 		return -1;
 
 	create_directory(abilityName);	
-	std::string fileName = abilityName + "/types.hh";
-	std::ofstream oss(fileName.c_str());
-	u.dump_ability_types(oss, abilityName);
+	{
+		std::string fileName = abilityName + "/types.hh";
+		std::ofstream oss(fileName.c_str());
+		u.dump_ability_types(oss, abilityName);
+	}
+
+	{
+		std::string fileName = abilityName + "/funcs.hh";
+		std::ofstream oss(fileName.c_str());
+		u.dump_ability_functions_proto(oss, abilityName);
+	}
 
 	return 0;
 }
