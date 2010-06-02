@@ -965,7 +965,7 @@ struct namespaces
 	}
 };
 
-void
+size_t
 universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 {
 	// find types prefixed by name::
@@ -984,6 +984,8 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 		namespaces n(oss, name);
 		std::for_each(types.begin(), types.end(), dump_types(oss, tList, *this));
 	}
+
+	return types.size();
 }
 
 struct select_ability_funs
@@ -1056,7 +1058,7 @@ struct dump_funcs_proto
 };
 
 
-void 
+size_t
 universe::dump_ability_functions_proto(std::ostream& oss, const std::string& name) const
 {
 	//find functions prefixed by name::
@@ -1075,4 +1077,7 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 		namespaces n(oss, name);
 		std::for_each(funcs.begin(), funcs.end(), dump_funcs_proto(oss, tList, fList, *this));
 	}
+
+	return funcs.size();
 }
+

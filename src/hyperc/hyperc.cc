@@ -41,13 +41,15 @@ int main(int argc, char** argv)
 	{
 		std::string fileName = abilityName + "/types.hh";
 		std::ofstream oss(fileName.c_str());
-		u.dump_ability_types(oss, abilityName);
+		if (u.dump_ability_types(oss, abilityName) == 0)
+			remove(fileName);;
 	}
 
 	{
 		std::string fileName = abilityName + "/funcs.hh";
 		std::ofstream oss(fileName.c_str());
-		u.dump_ability_functions_proto(oss, abilityName);
+		if ( u.dump_ability_functions_proto(oss, abilityName) == 0)
+			remove(fileName);
 	}
 
 	return 0;

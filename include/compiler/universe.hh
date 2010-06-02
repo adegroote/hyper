@@ -91,9 +91,9 @@ namespace hyper {
 
 				const typeList& types() const { return tList; };
 
-				void dump_ability_types(std::ostream& os, const std::string& abilityName) const;
-				void dump_ability_functions_proto(std::ostream& oss, const std::string& name) const;
-				void dump_ability_functions_impl(std::ostream& oss, const std::string& name) const;
+				size_t dump_ability_types(std::ostream& os, const std::string& abilityName) const;
+				size_t dump_ability_functions_proto(std::ostream& oss, const std::string& name) const;
+				size_t dump_ability_functions_impl(std::ostream& oss, const std::string& name) const;
 				void dump_ability(std::ostream& oss, const std::string& name) const;
 		};
 	};
