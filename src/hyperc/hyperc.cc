@@ -50,6 +50,15 @@ int main(int argc, char** argv)
 		std::ofstream oss(fileName.c_str());
 		if ( u.dump_ability_functions_proto(oss, abilityName) == 0)
 			remove(fileName);
+		else {
+			std::string fileNameImpl = abilityName + "/funcs.cc";
+			if (exists(fileNameImpl)) {
+				// don't touch to the current funcs.cc, write a template one
+				fileNameImpl = abilityName + "/funcs.template.cc";
+			}
+			std::ofstream oss_impl(fileNameImpl.c_str());
+			u.dump_ability_functions_impl(oss_impl, abilityName);
+		}
 	}
 
 	return 0;

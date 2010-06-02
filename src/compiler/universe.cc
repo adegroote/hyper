@@ -956,12 +956,13 @@ struct namespaces
 
 	namespaces(std::ostream& oss_, const std::string& name_) : oss(oss_), name(name_)
 	{
-		oss << "namespace hyper { namespace " << name << " {" << std::endl << std::endl;
+		oss << "namespace hyper {" << std::endl;
+		oss << "\tnamespace " << name << " {" << std::endl << std::endl;
 	}
 
 	~namespaces()
 	{
-		oss << std::endl << "}; };" << std::endl;
+		oss << std::endl << "\t};\n};" << std::endl;
 	}
 };
 
@@ -1042,7 +1043,7 @@ struct dump_funcs_proto
 	void operator() (const functionDef& f) 
 	{
 		type ret = tList.get(f.returnType());
-		oss << "\t" << ret.name << " " << u.get_identifier(f.name()) << "(";
+		oss << "\t\t" << ret.name << " " << u.get_identifier(f.name()) << "(";
 		for (size_t i = 0; i < f.arity(); ++i) 
 		{
 			type arg = tList.get(f.argsType(i));
@@ -1081,3 +1082,49 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 	return funcs.size();
 }
 
+struct dump_funcs_impl
+{
+	std::ostream & oss;
+	const typeList& tList;
+	const functionDefList& fList;
+	const universe& u;
+
+	dump_funcs_impl(std::ostream& oss_,
+						const typeList& tList_, const functionDefList& fList_,
+						const universe& u_):
+		oss(oss_), tList(tList_), fList(fList_), u(u_) {};
+
+
+	void operator() (const functionDef& f) 
+	{
+		type ret = tList.get(f.returnType());
+		oss << "\t\t" << ret.name << " " << u.get_identifier(f.name()) << "(";
+		for (size_t i = 0; i < f.arity(); ++i) 
+		{
+			type arg = tList.get(f.argsType(i));
+			oss << arg.name;
+			if (arg.t == stringType || arg.t == structType)
+				oss << " const & ";
+			oss << "v" << i;
+			if (i != f.arity() - 1) 
+				oss << ", ";
+		}
+
+		oss << " )" << std::endl;
+		oss << "\t\t{\n\t\t}" << std::endl;
+	}
+};
+
+size_t
+universe::dump_ability_functions_impl(std::ostream& oss, const std::string& name) const
+{
+	//find functions prefixed by name::
+	std::vector<functionDef>  funcs = fList.select(select_ability_funs(name));
+
+	oss << "#include <" << name << "/funcs.hh>" << std::endl << std::endl;
+
+	namespaces n(oss, name);
+	std::for_each(funcs.begin(), funcs.end(), dump_funcs_impl(oss, tList, fList, *this));
+
+	return funcs.size();
+}
