@@ -35,6 +35,7 @@ namespace hyper {
 		struct Nothing {};
 
 		struct symbolList;
+		struct typeList;
 
 		typedef boost::variant< Nothing, 
 								detail::typeId,
@@ -47,6 +48,8 @@ namespace hyper {
 			typeInternal internal;
 
 			type(const std::string& name_, typeOfType t_): name(name_), t(t_), internal(Nothing()) {};
+
+			void output(std::ostream& oss, const typeList& tList) const;
 		};
 
 		class typeList : public boost::noncopyable {

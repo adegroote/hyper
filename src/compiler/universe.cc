@@ -5,6 +5,7 @@
 
 #include <compiler/universe.hh>
 #include <compiler/scope.hh>
+#include <compiler/output.hh>
 
 using namespace hyper::compiler;
 
@@ -786,116 +787,6 @@ struct compute_depends
 	}
 };
 
-struct dump_depends
-{
-	std::ostream & oss;
-	
-	dump_depends(std::ostream& oss_) : oss(oss_) {};
-
-	void operator() (const std::string& s) const
-	{
-		if (s == "")
-			return;
-
-		oss << "#include <" << s << "/types.hh>" << std::endl;
-	}
-};
-
-struct dump_struct
-{
-	std::ostream & oss;
-	const typeList& tList;
-
-	dump_struct(std::ostream& oss_, const typeList& tList_) : 
-		oss(oss_), tList(tList_) {};
-
-	void operator() (const std::pair<std::string, symbol>& p)
-	{
-		type t = tList.get(p.second.t);
-		oss << "\t\t" << t.name << " " << p.first << ";" << std::endl;
-	}
-};
-
-struct dump_types_vis : public boost::static_visitor<void>
-{
-	std::ostream & oss;
-	const typeList& tList;
-	std::string name;
-
-	dump_types_vis(std::ostream& oss_, const typeList& tList_, const std::string& name_):
-		oss(oss_), tList(tList_), name(name_) {};
-
-	void operator() (const Nothing& n) const {};
-
-	void operator() (const typeId& tId) const
-	{
-		type t = tList.get(tId);
-		oss << "\ttypedef " << t.name << " " << scope::get_identifier(name) << ";";
-		oss << "\n" << std::endl;
-	}
-
-	void operator() (const boost::shared_ptr<symbolList>& l) const
-	{
-		oss << "\tstruct " << scope::get_identifier(name) << " {" << std::endl;
-		std::for_each(l->begin(), l->end(), dump_struct(oss, tList));
-		oss << "\t};\n" << std::endl;
-	}
-};
-
-
-struct dump_types
-{
-	std::ostream & oss;
-	const typeList& tList;
-
-	dump_types(std::ostream& oss_, const typeList& tList_ ) :
-		oss(oss_), tList(tList_){};
-
-	void operator() (const type& t) const
-	{
-		boost::apply_visitor(dump_types_vis(oss, tList, t.name), t.internal);
-	}
-};
-
-struct guards
-{
-	std::ostream &oss;
-	std::string guard;
-
-	guards(std::ostream& oss_, const std::string& abilityName, const std::string& end):
-		oss(oss_), guard(abilityName)
-	{
-		std::transform(guard.begin(), guard.end(), guard.begin(), toupper);
-		guard = "_" + guard + end;
-
-		oss << "#ifndef " << guard << std::endl;
-		oss << "#define " << guard << std::endl;
-		oss << std::endl;
-	}
-
-	~guards()
-	{
-		oss << std::endl;
-		oss << "#endif /* " << guard << " */" << std::endl;
-	}
-};
-
-struct namespaces
-{
-	std::ostream& oss;
-	std::string name;
-
-	namespaces(std::ostream& oss_, const std::string& name_) : oss(oss_), name(name_)
-	{
-		oss << "namespace hyper {" << std::endl;
-		oss << "\tnamespace " << name << " {" << std::endl << std::endl;
-	}
-
-	~namespaces()
-	{
-		oss << std::endl << "\t};\n};" << std::endl;
-	}
-};
 
 size_t
 universe::dump_ability_types(std::ostream& oss, const std::string& name) const
@@ -911,10 +802,11 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 	{
 		guards g(oss, name, "_TYPE_ABILITY_HH_");
 
-		std::for_each(depends.begin(), depends.end(), dump_depends(oss));
+		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
 
 		namespaces n(oss, name);
-		std::for_each(types.begin(), types.end(), dump_types(oss, tList));
+		std::for_each(types.begin(), types.end(), 
+				boost::bind(&type::output, _1, boost::ref(oss), boost::ref(tList)));
 	}
 
 	return types.size();
@@ -936,14 +828,9 @@ struct compute_fun_depends
 {
 	std::set<std::string> &depends;
 	const typeList& tList;
-	const functionDefList& fList;
-	const universe& u;
 
-	compute_fun_depends(std::set<std::string>& depends_,
-						const typeList& tList_, const functionDefList& fList_,
-						const universe& u_):
-		depends(depends_), tList(tList_), fList(fList_), u(u_) {};
-
+	compute_fun_depends(std::set<std::string>& depends_, const typeList& tList_) :
+		depends(depends_), tList(tList_) {};
 
 	void operator() (const functionDef& f) 
 	{
@@ -958,36 +845,6 @@ struct compute_fun_depends
 	}
 };
 
-struct dump_funcs_proto 
-{
-	std::ostream & oss;
-	const typeList& tList;
-	const functionDefList& fList;
-
-	dump_funcs_proto(std::ostream& oss_,
-						const typeList& tList_, const functionDefList& fList_):
-		oss(oss_), tList(tList_), fList(fList_) {};
-
-
-	void operator() (const functionDef& f) 
-	{
-		type ret = tList.get(f.returnType());
-		oss << "\t\t" << ret.name << " " << scope::get_identifier(f.name()) << "(";
-		for (size_t i = 0; i < f.arity(); ++i) 
-		{
-			type arg = tList.get(f.argsType(i));
-			oss << arg.name;
-			if (arg.t == stringType || arg.t == structType)
-				oss << " const & ";
-			if (i != f.arity() - 1) 
-				oss << ", ";
-		}
-
-		oss << " );" << std::endl;
-	}
-};
-
-
 size_t
 universe::dump_ability_functions_proto(std::ostream& oss, const std::string& name) const
 {
@@ -996,50 +853,21 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 
 	// compute dependances
 	std::set<std::string> depends;
-	compute_fun_depends deps(depends, tList, fList, *this);
+	compute_fun_depends deps(depends, tList);
 	std::for_each(funcs.begin(), funcs.end(), deps);
 
 	{
 		guards g(oss, name, "_FUNC_ABILITY_HH_");
 
-		std::for_each(depends.begin(), depends.end(), dump_depends(oss));
+		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
 
 		namespaces n(oss, name);
-		std::for_each(funcs.begin(), funcs.end(), dump_funcs_proto(oss, tList, fList));
+		std::for_each(funcs.begin(), funcs.end(), 
+				boost::bind(&functionDef::output_proto, _1, boost::ref(oss), boost::ref(tList)));
 	}
 
 	return funcs.size();
 }
-
-struct dump_funcs_impl
-{
-	std::ostream & oss;
-	const typeList& tList;
-	const functionDefList& fList;
-
-	dump_funcs_impl(std::ostream& oss_,
-						const typeList& tList_, const functionDefList& fList_):
-		oss(oss_), tList(tList_), fList(fList_){};
-
-	void operator() (const functionDef& f) 
-	{
-		type ret = tList.get(f.returnType());
-		oss << "\t\t" << ret.name << " " << scope::get_identifier(f.name()) << "(";
-		for (size_t i = 0; i < f.arity(); ++i) 
-		{
-			type arg = tList.get(f.argsType(i));
-			oss << arg.name;
-			if (arg.t == stringType || arg.t == structType)
-				oss << " const & ";
-			oss << "v" << i;
-			if (i != f.arity() - 1) 
-				oss << ", ";
-		}
-
-		oss << " )" << std::endl;
-		oss << "\t\t{\n\t\t}" << std::endl;
-	}
-};
 
 size_t
 universe::dump_ability_functions_impl(std::ostream& oss, const std::string& name) const
@@ -1050,7 +878,8 @@ universe::dump_ability_functions_impl(std::ostream& oss, const std::string& name
 	oss << "#include <" << name << "/funcs.hh>" << std::endl << std::endl;
 
 	namespaces n(oss, name);
-	std::for_each(funcs.begin(), funcs.end(), dump_funcs_impl(oss, tList, fList));
+	std::for_each(funcs.begin(), funcs.end(), 
+			boost::bind(&functionDef::output_impl, _1, boost::ref(oss), boost::ref(tList)));
 
 	return funcs.size();
 }

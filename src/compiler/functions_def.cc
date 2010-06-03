@@ -3,10 +3,49 @@
 #include <boost/bind.hpp>
 
 #include <compiler/functions_def.hh>
+#include <compiler/scope.hh>
 
 using namespace hyper::compiler;
 using std::make_pair;
 using boost::make_tuple;
+
+void 
+functionDef::output_proto(std::ostream& oss, const typeList& tList) const
+{
+	type ret = tList.get(returnType());
+	oss << "\t\t" << ret.name << " " << scope::get_identifier(name()) << "(";
+	for (size_t i = 0; i < arity(); ++i) 
+	{
+		type arg = tList.get(argsType(i));
+		oss << arg.name;
+		if (arg.t == stringType || arg.t == structType)
+			oss << " const & ";
+		if (i != arity() - 1) 
+			oss << ", ";
+	}
+
+	oss << " );" << std::endl;
+}
+
+void 
+functionDef::output_impl(std::ostream& oss, const typeList& tList) const
+{
+	type ret = tList.get(returnType());
+	oss << "\t\t" << ret.name << " " << scope::get_identifier(name()) << "(";
+	for (size_t i = 0; i < arity(); ++i) 
+	{
+		type arg = tList.get(argsType(i));
+		oss << arg.name;
+		if (arg.t == stringType || arg.t == structType)
+			oss << " const & ";
+		oss << "v" << i;
+		if (i != arity() - 1) 
+			oss << ", ";
+	}
+
+	oss << " )" << std::endl;
+	oss << "\t\t{\n\t\t}" << std::endl;
+}
 
 functionDefList::add_result
 functionDefList::add(const std::string &name, 

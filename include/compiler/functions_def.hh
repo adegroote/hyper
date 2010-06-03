@@ -44,6 +44,9 @@ namespace hyper {
 					assert(i < arity());
 					return argsType_[i];
 				};
+
+				void output_proto(std::ostream& os, const typeList& tList) const;
+				void output_impl(std::ostream& os, const typeList& tList) const;
 		};
 
 		class functionDefList : public boost::noncopyable

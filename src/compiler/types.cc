@@ -5,8 +5,56 @@
 
 #include <compiler/symbols.hh>
 #include <compiler/types.hh>
+#include <compiler/scope.hh>
 
 using namespace hyper::compiler;
+
+struct dump_struct
+{
+	std::ostream & oss;
+	const typeList& tList;
+
+	dump_struct(std::ostream& oss_, const typeList& tList_) : 
+		oss(oss_), tList(tList_) {};
+
+	void operator() (const std::pair<std::string, symbol>& p)
+	{
+		type t = tList.get(p.second.t);
+		oss << "\t\t" << t.name << " " << p.first << ";" << std::endl;
+	}
+};
+
+struct dump_types_vis : public boost::static_visitor<void>
+{
+	std::ostream & oss;
+	const typeList& tList;
+	std::string name;
+
+	dump_types_vis(std::ostream& oss_, const typeList& tList_, const std::string& name_):
+		oss(oss_), tList(tList_), name(name_) {};
+
+	void operator() (const Nothing& n) const {};
+
+	void operator() (const typeId& tId) const
+	{
+		type t = tList.get(tId);
+		oss << "\ttypedef " << t.name << " " << scope::get_identifier(name) << ";";
+		oss << "\n" << std::endl;
+	}
+
+	void operator() (const boost::shared_ptr<symbolList>& l) const
+	{
+		oss << "\tstruct " << scope::get_identifier(name) << " {" << std::endl;
+		std::for_each(l->begin(), l->end(), dump_struct(oss, tList));
+		oss << "\t};\n" << std::endl;
+	}
+};
+
+void
+type::output(std::ostream& oss, const typeList& tList) const
+{
+	boost::apply_visitor(dump_types_vis(oss, tList, name), internal);
+}
 
 typeList::add_result
 typeList::add(const std::string& name, typeOfType t)
