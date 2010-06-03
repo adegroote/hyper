@@ -1,5 +1,8 @@
+#include <set>
 
 #include <compiler/ability.hh>
+#include <compiler/output.hh>
+#include <compiler/scope.hh>
 
 using namespace hyper::compiler;
 
@@ -54,4 +57,141 @@ ability::add_task(const task& t)
 
 	tasks.push_back(t);
 	return true;
+}
+
+struct compute_type_depends 
+{
+	std::set<std::string> &s;
+	const typeList& tList;
+
+	compute_type_depends(std::set<std::string>& s_, const typeList& tlist_) :
+		s(s_), tList(tlist_) {};
+
+	void operator() (const std::pair<std::string, symbol>& p) const
+	{
+		type t = tList.get(p.second.t);
+		s.insert(scope::get_scope(t.name));
+	}
+};
+
+struct compute_expression_deps : public boost::static_visitor<void>
+{
+	std::set<std::string>& s;
+	const typeList& tList;
+	const std::string& name;
+
+	compute_expression_deps(std::set<std::string>& s_, const typeList& tlist_, 
+			const std::string& name_) :
+		s(s_), tList(tlist_), name(name_) {};
+
+	template <typename T>
+	void operator() (const T& e) const {};
+
+	void operator() (const expression_ast& e) const
+	{
+		boost::apply_visitor(compute_expression_deps(s, tList, name), e.expr);
+	}
+
+	void operator() (const function_call& f) const
+	{
+		std::string scope = scope::get_scope(f.fName);
+		if (scope == "") // a function without scope means that the function is part of the local scope
+			scope = name;
+		s.insert(scope);
+		for (size_t i = 0; i < f.args.size(); ++i) 
+			boost::apply_visitor(compute_expression_deps(s, tList, name), f.args[i].expr);
+	}
+
+	template <binary_op_kind T>
+	void  operator() (const binary_op<T> & op) const
+	{
+		boost::apply_visitor(compute_expression_deps(s, tList, name), op.left.expr);
+		boost::apply_visitor(compute_expression_deps(s, tList, name), op.right.expr); 
+	}
+
+	template <unary_op_kind T>
+	void operator() (const unary_op<T>& op) const
+	{
+		boost::apply_visitor(compute_expression_deps(s, tList, name), op.subject.expr);
+	}
+};
+
+struct compute_fun_expression_depends
+{
+	std::set<std::string>& s;
+	const typeList& tList;
+	const std::string& name;
+
+	compute_fun_expression_depends(std::set<std::string>& s_, const typeList& tlist_,
+			const std::string &name_) :
+		s(s_), tList(tlist_), name(name_) {};
+
+	void operator() (const expression_ast& e) const
+	{
+		boost::apply_visitor(compute_expression_deps(s, tList, name), e.expr);
+	}
+};
+
+
+struct compute_fun_depends
+{
+	std::set<std::string>& s;
+	const typeList& tList;
+	const std::string& name;
+
+	compute_fun_depends(std::set<std::string>& s_, const typeList& tlist_, const std::string& n) :
+		s(s_), tList(tlist_), name(n) {};
+
+	void operator() (const task& t) const
+	{
+		compute_fun_expression_depends c(s, tList, name);
+		std::for_each(t.pre.begin(), t.pre.end(), c);
+		std::for_each(t.post.begin(), t.post.end(), c);
+	}
+};
+
+struct print_symbol
+{
+	std::ostream& oss;
+	const typeList& tList;
+	const std::string& name;
+	
+	print_symbol(std::ostream& oss_, const typeList& tList_, const std::string& name_) :
+		oss(oss_), tList(tList_), name(name_) {};
+
+	void operator () (const std::pair<std::string, symbol>& p) const
+	{
+		type t = tList.get(p.second.t);
+		oss << "\t\t\t\t" << scope::get_context_identifier(t.name, name);
+		oss << " " << p.second.name << ";" << std::endl;
+	}
+};
+
+void
+ability::dump(std::ostream& oss, const typeList& tList) const
+{
+	std::set<std::string> type_depends;
+	compute_type_depends type_deps(type_depends, tList);
+	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
+	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
+	std::for_each(private_list.begin(), private_list.end(), type_deps);
+
+	std::set<std::string> fun_depends;
+	compute_fun_depends fun_deps(fun_depends, tList, name_);
+	std::for_each(tasks.begin(), tasks.end(), fun_deps);
+
+	guards g(oss, name_, "_ABILITY_HH_");
+
+	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
+	oss << std::endl;
+	std::for_each(fun_depends.begin(), fun_depends.end(), dump_depends(oss, "funcs.hh"));
+
+	namespaces n(oss, name_);
+
+	print_symbol print(oss, tList, name_);
+	oss << "\t\t\tstruct ability {" << std::endl;
+	std::for_each(controlable_list.begin(), controlable_list.end(), print);
+	std::for_each(readable_list.begin(), readable_list.end(), print);
+	std::for_each(private_list.begin(), private_list.end(), print);
+	oss << "\t\t\t};" << std::endl;
 }

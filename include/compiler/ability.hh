@@ -71,6 +71,8 @@ namespace hyper {
 				{
 					return name_;
 				}
+
+				void dump(std::ostream& oss, const typeList& tList) const;
 		};
 	};
 };

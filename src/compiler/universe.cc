@@ -883,3 +883,15 @@ universe::dump_ability_functions_impl(std::ostream& oss, const std::string& name
 
 	return funcs.size();
 }
+
+void
+universe::dump_ability(std::ostream& oss, const std::string& name) const
+{
+	abilityMap::const_iterator it = abilities.find(name);
+	if (it == abilities.end()) {
+		std::cerr << "ability " << name << " seems to not be defined ! " << std::endl;
+		return;
+	}
+
+	it->second->dump(oss, tList);
+}

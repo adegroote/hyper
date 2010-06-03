@@ -59,5 +59,16 @@ namespace hyper {
 			std::pair<std::string, std::string> p = decompose(identifier);
 			return p.second;
 		}
+
+		std::string 
+		scope::get_context_identifier(const std::string& identifier, const std::string& context) 
+		{
+			if (!is_scoped_identifier(identifier))
+				return identifier;
+			std::pair<std::string, std::string> p = decompose(identifier);
+			if (p.first == context)
+				return p.second;
+			return identifier;
+		}
 	};
 };

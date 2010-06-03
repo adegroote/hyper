@@ -61,5 +61,11 @@ int main(int argc, char** argv)
 		}
 	}
 
+	{
+		std::string fileName = abilityName + "/ability.hh";
+		std::ofstream oss(fileName.c_str());
+		u.dump_ability(oss, abilityName);
+	}
+
 	return 0;
 }

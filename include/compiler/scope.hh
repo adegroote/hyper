@@ -43,6 +43,13 @@ namespace hyper {
 				 * Get basic identifier (without scope)
 				 */
 				static std::string get_identifier(const std::string&);
+
+				/*
+				 * Return an identifier with or without the scope, depending the context
+				 * If we are in the right context, return the identifier without scope, otherwise
+				 * return the full identifier
+				 */
+				static std::string get_context_identifier(const std::string&, const std::string&);
 		};
 	};
 };
