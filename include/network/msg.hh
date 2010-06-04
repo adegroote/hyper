@@ -86,41 +86,14 @@ namespace hyper {
 			private:
 				friend class boost::serialization::access;
 				template<class Archive>
-				void save(Archive & ar, const unsigned int version) const
-				{
-					(void) version;
-					std::string addr;
-					unsigned short port;
-					ar & name;
-
-					addr = endpoint.address().to_string();
-					port = endpoint.port();
-
-					ar & addr;
-					ar & port;
-				}
-
-				template<class Archive>
-				void load(Archive & ar, const unsigned int version)
+				void serialize(Archive & ar, const unsigned int version)
 				{
 					(void) version;
 					ar & name;
-
-					std::string addr;
-					boost::asio::ip::address address;
-					unsigned short port;
-
-					ar & addr;
-					ar & port;
-
-					address = boost::asio::ip::address::from_string(addr);
-					endpoint = boost::asio::ip::tcp::endpoint(address, port);
 				}
 
-				BOOST_SERIALIZATION_SPLIT_MEMBER()
 			public:
 				std::string name;
-				boost::asio::ip::tcp::endpoint endpoint;
 		};
 
 		struct register_name_answer
@@ -128,22 +101,85 @@ namespace hyper {
 			private:
 				friend class boost::serialization::access;
 				template<class Archive>
-				void serialize(Archive & ar, const unsigned int version)
+				void save(Archive & ar, const unsigned int version) const
+				{
+					(void) version;
+					std::string addr;
+					unsigned short port;
+					ar & name;
+					ar & success;
+
+					if (success) {
+						addr = endpoint.address().to_string();
+						port = endpoint.port();
+
+						ar & addr;
+						ar & port;
+					}
+				}
+
+				template<class Archive>
+				void load(Archive & ar, const unsigned int version)
 				{
 					(void) version;
 					ar & name;
 					ar & success;
+
+					if (success) {
+						std::string addr;
+						boost::asio::ip::address address;
+						unsigned short port;
+
+						ar & addr;
+						ar & port;
+
+						address = boost::asio::ip::address::from_string(addr);
+						endpoint = boost::asio::ip::tcp::endpoint(address, port);
+					}
 				}
+
+				BOOST_SERIALIZATION_SPLIT_MEMBER()
 			public:
 				std::string name;
 				bool success;
+				boost::asio::ip::tcp::endpoint endpoint;
+		};
+
+		struct ping
+		{
+			private:
+				friend class boost::serialization::access;
+				template<class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & value;
+				}
+			public:
+				uint64_t value;
+		};
+
+		struct pong
+		{
+			private:
+				friend class boost::serialization::access;
+				template<class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & value;
+				}
+			public:
+				uint64_t value;
 		};
 
 		typedef boost::mpl::vector<
 			request_name,
 			request_name_answer,
 			register_name,
-			register_name_answer
+			register_name_answer,
+			ping,
+			pong
 		> message_types;
 
 #define MESSAGE_TYPE_MAX	20

@@ -51,7 +51,6 @@ void are_equal<register_name> (const register_name& a,
 							   const register_name& b)
 {
 	BOOST_CHECK(a.name == b.name);
-	BOOST_CHECK(a.endpoint == b.endpoint);
 }
 
 template <>
@@ -60,6 +59,9 @@ void are_equal<register_name_answer> (const register_name_answer&a,
 {
 	BOOST_CHECK(a.name == b.name);
 	BOOST_CHECK(a.success == b.success);
+	if (a.success) {
+		BOOST_CHECK(a.endpoint == b.endpoint);
+	}
 }
 
 template <typename OutputM>
@@ -77,8 +79,6 @@ struct test_async_client
 							boost::asio::placeholders::error));
 		r1.name = "my ability";
 		rn1.name = "myAbility";
-		rn1.endpoint = boost::asio::ip::tcp::endpoint(
-							  boost::asio::ip::address::from_string("227.0.52.1"), 4242);
 	}
 
 	void handle_connect(const boost::system::error_code& e)
@@ -157,8 +157,6 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 
 	struct register_name register_name1, register_name2;
 	register_name1.name = "myAbility";
-	register_name1.endpoint = boost::asio::ip::tcp::endpoint(
-							  boost::asio::ip::address::from_string("227.0.52.1"), 4242);
 
 	c.request(register_name1, register_name2);
 	are_equal(register_name1, register_name2);
@@ -167,6 +165,13 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 	struct register_name_answer register_name_answer1, register_name_answer2;
 	register_name_answer1.name = "otherAbility";
 	register_name_answer1.success = false;
+
+	c.request(register_name_answer1, register_name_answer2);
+	are_equal(register_name_answer1, register_name_answer2);
+
+	register_name_answer1.success = true;
+	register_name_answer1.endpoint = boost::asio::ip::tcp::endpoint(
+							  boost::asio::ip::address::from_string("227.0.52.1"), 4242);
 
 	c.request(register_name_answer1, register_name_answer2);
 	are_equal(register_name_answer1, register_name_answer2);

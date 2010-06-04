@@ -1,4 +1,5 @@
 #include <boost/thread/locks.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <network/nameserver.hh>
 
@@ -49,7 +50,27 @@ namespace hyper {
 		};
 
 		namespace tcp {
-			ns_visitor::ns_visitor(ns::map_addr& map) : map_(map) {};
+
+			ns_port_generator::ns_port_generator(const std::string& port) 
+			{
+			    using boost::lexical_cast;
+				base_port = lexical_cast<unsigned short> (port);
+				// increment base_port as it will be used by nameserver
+				base_port++;
+			}
+
+			unsigned short ns_port_generator::get()
+			{
+				unsigned short res = base_port;
+				if (res == 0) // too bad, we has overflow port max number
+					exit(-1); // whoot craps, but nobody cares atm
+
+				base_port++;
+				return res;
+			}
+
+			ns_visitor::ns_visitor(ns::map_addr& map, ns_port_generator& gen) : 
+				map_(map), gen_(gen) {};
 
 			ns::output_variant ns_visitor::operator() (const request_name& r) const
 			{
@@ -66,12 +87,15 @@ namespace hyper {
 
 			ns::output_variant ns_visitor::operator() (const register_name& r) const
 			{
+				using namespace boost::asio;
+
 				ns::addr_storage addr;
-				addr.tcp_endpoint = r.endpoint;
+				addr.tcp_endpoint = ip::tcp::endpoint(ip::address_v4::any(), gen_.get());
 				bool res = map_.add(r.name, addr);
 
 				register_name_answer res_msg;
 				res_msg.name = r.name;
+				res_msg.endpoint = addr.tcp_endpoint;
 				res_msg.success = res;
 
 				return res_msg;
@@ -79,7 +103,7 @@ namespace hyper {
 		};
 
 		name_server::name_server(const std::string& addr, const std::string& port):
-			map_(), tcp_ns_(addr, port, tcp::ns_visitor(map_)) {};
+			map_(), gen_(port), tcp_ns_(addr, port, tcp::ns_visitor(map_, gen_)) {};
 
 		void name_server::run()
 		{

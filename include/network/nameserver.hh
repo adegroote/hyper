@@ -52,14 +52,24 @@ namespace hyper {
 		};
 
 		namespace tcp {
+			struct ns_port_generator
+			{
+				unsigned short base_port;
+
+				ns_port_generator(const std::string& base_port);
+				unsigned short get();
+			};
+
 			struct ns_visitor : public boost::static_visitor<ns::output_variant>
 			{
-				ns_visitor(ns::map_addr&);
+				ns_visitor(ns::map_addr&, ns_port_generator&);
 				ns::output_variant operator() (const request_name& r) const;
 				ns::output_variant operator() (const register_name& r) const;
 
 				ns::map_addr& map_;
+				ns_port_generator& gen_;
 			};
+
 		};
 
 		class name_server {
@@ -67,6 +77,7 @@ namespace hyper {
 				tcp_ns_impl;
 
 			ns::map_addr map_;
+			tcp::ns_port_generator gen_;
 			tcp_ns_impl tcp_ns_;
 
 			public:

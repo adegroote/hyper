@@ -53,6 +53,9 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	boost::thread thr( boost::bind(& name_server::run, &s));
 	typedef tcp::client<ns::output_msg> ns_client;
 
+	boost::asio::ip::tcp::endpoint endpoint =  boost::asio::ip::tcp::endpoint(
+			boost::asio::ip::address_v4::any(), 4243);
+
 	boost::asio::io_service io_s;
 	ns_client c(io_s);
 
@@ -70,17 +73,31 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	register_name_answer rea;
 
 	re.name = "pipo";
-	re.endpoint = endpoint1;
 
 	c.request(re, rea);
 
 	BOOST_CHECK(rea.name == re.name);
 	BOOST_CHECK(rea.success == true);
+	BOOST_CHECK(rea.endpoint == endpoint);
 
 	c.request(rn, rna);
 	BOOST_CHECK(rna.name == rn.name);
 	BOOST_CHECK(rna.success == true);
-	BOOST_CHECK(rna.endpoint == endpoint1);
+	BOOST_CHECK(rna.endpoint == endpoint);
+
+	// trying to register again the same name fails
+	re.name = "pipo";
+
+	c.request(re, rea);
+
+	BOOST_CHECK(rea.name == re.name);
+	BOOST_CHECK(rea.success == false);
+
+	// but we keep the previous addr
+	c.request(rn, rna);
+	BOOST_CHECK(rna.name == rn.name);
+	BOOST_CHECK(rna.success == true);
+	BOOST_CHECK(rna.endpoint == endpoint);
 
 	s.stop();
 	thr.join();
