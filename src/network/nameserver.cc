@@ -114,5 +114,10 @@ namespace hyper {
 		{
 			tcp_ns_.stop();
 		}
+
+		void name_server::remove_entry(const std::string & ability)
+		{
+			map_.remove(ability);
+		}
 	};
 };

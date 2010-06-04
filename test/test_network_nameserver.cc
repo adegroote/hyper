@@ -55,6 +55,8 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 
 	boost::asio::ip::tcp::endpoint endpoint =  boost::asio::ip::tcp::endpoint(
 			boost::asio::ip::address_v4::any(), 4243);
+	boost::asio::ip::tcp::endpoint endpoint_ =  boost::asio::ip::tcp::endpoint(
+			boost::asio::ip::address_v4::any(), 4245);
 
 	boost::asio::io_service io_s;
 	ns_client c(io_s);
@@ -98,6 +100,29 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	BOOST_CHECK(rna.name == rn.name);
 	BOOST_CHECK(rna.success == true);
 	BOOST_CHECK(rna.endpoint == endpoint);
+
+	// remove an entry
+	s.remove_entry(re.name);
+
+	// entry is not more here
+	c.request(rn, rna);
+
+	BOOST_CHECK(rna.name == rn.name);
+	BOOST_CHECK(rna.success == false);
+
+	// adding it again
+	c.request(re, rea);
+	BOOST_CHECK(rea.name == re.name);
+	BOOST_CHECK(rea.success == true);
+	BOOST_CHECK(rea.endpoint == endpoint_);
+
+	c.request(rn, rna);
+	BOOST_CHECK(rna.name == rn.name);
+	BOOST_CHECK(rna.success == true);
+	BOOST_CHECK(rna.endpoint == endpoint_);
+
+
+	
 
 	s.stop();
 	thr.join();

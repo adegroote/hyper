@@ -84,6 +84,7 @@ namespace hyper {
 				name_server(const std::string&, const std::string&);
 				void run();
 				void stop();
+				void remove_entry(const std::string&);
 		}; 
 
 	};
