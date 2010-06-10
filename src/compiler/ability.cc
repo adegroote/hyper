@@ -185,11 +185,14 @@ ability::dump(std::ostream& oss, const typeList& tList) const
 	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
 	oss << std::endl;
 	std::for_each(fun_depends.begin(), fun_depends.end(), dump_depends(oss, "funcs.hh"));
+	oss << std::endl;
+	oss << "#include <model/ability.hh>" << std::endl << std::endl;
 
 	namespaces n(oss, name_);
 
 	print_symbol print(oss, tList, name_);
-	oss << "\t\t\tstruct ability {" << std::endl;
+	oss << "\t\t\tstruct ability : public model::ability {" << std::endl;
+	oss << "\t\t\t\tability() : model::ability(\"" << name_ << "\") {};" << std::endl;
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
 	std::for_each(private_list.begin(), private_list.end(), print);
