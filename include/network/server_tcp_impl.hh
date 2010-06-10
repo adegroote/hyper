@@ -188,8 +188,8 @@ namespace hyper {
 				public:
 				  /* Construct the server to listen on specific tcp address and port */
 					explicit server(const std::string& address, const std::string& port, 
-						const Answer& ans) :
-						io_service_(),
+						const Answer& ans, boost::asio::io_service& io_s) :
+						io_service_(io_s),
 						acceptor_(io_service_),
 						connection_manager_(),
 						new_connection_(
@@ -210,12 +210,6 @@ namespace hyper {
 						acceptor_.async_accept(new_connection_->socket(),
 						boost::bind(&server::handle_accept, this, boost::asio::placeholders::error));
 					}
-
-				  /* start the io_service loop */
-				  void run() 
-				  {
-					  io_service_.run();
-				  }
 
 				  /* stop the server */
 				  void stop()
@@ -257,7 +251,7 @@ namespace hyper {
 				  }
 
 				  /* The io_service used to perform asynchronous operations. */
-				  boost::asio::io_service io_service_;
+				  boost::asio::io_service& io_service_;
 
 				  /* Acceptor used to listen for incoming connections. */
 				  boost::asio::ip::tcp::acceptor acceptor_;

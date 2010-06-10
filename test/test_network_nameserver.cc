@@ -49,8 +49,9 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	BOOST_CHECK (p.first == false);
 
 	// testing nameserver
-	name_server s("127.0.0.1", "4242");
-	boost::thread thr( boost::bind(& name_server::run, &s));
+	boost::asio::io_service io_s;
+	name_server s("127.0.0.1", "4242", io_s);
+	boost::thread thr( boost::bind(& boost::asio::io_service::run, &io_s));
 	typedef tcp::client<ns::output_msg> ns_client;
 
 	boost::asio::ip::tcp::endpoint endpoint =  boost::asio::ip::tcp::endpoint(
@@ -58,7 +59,6 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	boost::asio::ip::tcp::endpoint endpoint_ =  boost::asio::ip::tcp::endpoint(
 			boost::asio::ip::address_v4::any(), 4245);
 
-	boost::asio::io_service io_s;
 	ns_client c(io_s);
 
 	c.connect("127.0.0.1", "4242");
@@ -120,9 +120,6 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	BOOST_CHECK(rna.name == rn.name);
 	BOOST_CHECK(rna.success == true);
 	BOOST_CHECK(rna.endpoint == endpoint_);
-
-
-	
 
 	s.stop();
 	thr.join();

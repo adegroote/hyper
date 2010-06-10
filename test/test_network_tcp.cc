@@ -128,13 +128,11 @@ struct test_async_client
 
 BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 {
-	echo_server s("127.0.0.1", "4242", echo_visitor());
-	boost::thread thr( boost::bind(& echo_server::run, &s));
-
 	boost::asio::io_service io_s;
+	echo_server s("127.0.0.1", "4242", echo_visitor(), io_s);
+	boost::thread thr( boost::bind(& boost::asio::io_service::run, &io_s));
+
 	echo_client c(io_s);
-
-
 
 	request_name rn1, rn2;
 	rn1.name = "one ability";
@@ -186,7 +184,6 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 	BOOST_CHECK_THROW(c.request(rn1, rn2), boost::system::system_error);
 
 	test_async_client<output_msg> test(io_s, "localhost", "4242");
-	io_s.run();
 
 	s.stop();
 	c.close();

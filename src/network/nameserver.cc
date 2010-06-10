@@ -102,13 +102,10 @@ namespace hyper {
 			}
 		};
 
-		name_server::name_server(const std::string& addr, const std::string& port):
-			map_(), gen_(port), tcp_ns_(addr, port, tcp::ns_visitor(map_, gen_)) {};
-
-		void name_server::run()
-		{
-			tcp_ns_.run();
-		}
+		name_server::name_server(const std::string& addr, const std::string& port, 
+								 boost::asio::io_service& io_service):
+			map_(), gen_(port), 
+			tcp_ns_(addr, port, tcp::ns_visitor(map_, gen_), io_service) {};
 
 		void name_server::stop()
 		{

@@ -81,8 +81,7 @@ namespace hyper {
 			tcp_ns_impl tcp_ns_;
 
 			public:
-				name_server(const std::string&, const std::string&);
-				void run();
+				name_server(const std::string&, const std::string&, boost::asio::io_service&);
 				void stop();
 				void remove_entry(const std::string&);
 		}; 
