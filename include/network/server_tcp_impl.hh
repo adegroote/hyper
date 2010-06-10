@@ -185,6 +185,16 @@ namespace hyper {
 			template<typename InputM, typename OutputM, typename Answer>
 			class server : private boost::noncopyable
 			{
+				private:
+					void init(const boost::asio::ip::tcp::endpoint& endpoint) 
+					{
+						acceptor_.open(endpoint.protocol());
+						acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+						acceptor_.bind(endpoint);
+						acceptor_.listen();
+						acceptor_.async_accept(new_connection_->socket(),
+						boost::bind(&server::handle_accept, this, boost::asio::placeholders::error));
+					}
 				public:
 				  /* Construct the server to listen on specific tcp address and port */
 					explicit server(const std::string& address, const std::string& port, 
@@ -203,14 +213,24 @@ namespace hyper {
 						boost::asio::ip::tcp::resolver resolver(io_service_);
 						boost::asio::ip::tcp::resolver::query query(address, port);
 						boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
-						acceptor_.open(endpoint.protocol());
-						acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-						acceptor_.bind(endpoint);
-						acceptor_.listen();
-						acceptor_.async_accept(new_connection_->socket(),
-						boost::bind(&server::handle_accept, this, boost::asio::placeholders::error));
+						init(endpoint);
 					}
 
+					explicit server(const boost::asio::ip::tcp::endpoint &endpoint,
+						const Answer& ans, boost::asio::io_service& io_s) :
+						io_service_(io_s),
+						acceptor_(io_service_),
+						connection_manager_(),
+						new_connection_(
+							new connection<InputM, OutputM, Answer> (
+									io_service_, 
+									connection_manager_,
+									ans)),
+						answer_(ans)
+					{
+						init(endpoint);
+					}
+									
 				  /* stop the server */
 				  void stop()
 				  {
