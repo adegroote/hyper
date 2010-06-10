@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 
 	// testing nameserver
 	boost::asio::io_service io_s;
-	name_server s("127.0.0.1", "4242", io_s);
+	name_server s("127.0.0.1", "4242", io_s, false);
 	boost::thread thr( boost::bind(& boost::asio::io_service::run, &io_s));
 	typedef tcp::client<ns::output_msg> ns_client;
 

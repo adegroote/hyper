@@ -69,19 +69,22 @@ namespace hyper {
 				return res;
 			}
 
-			ns_visitor::ns_visitor(ns::map_addr& map, ns_port_generator& gen) : 
-				map_(map), gen_(gen) {};
+			ns_visitor::ns_visitor(ns::map_addr& map, ns_port_generator& gen,
+								  std::ostream & output) : 
+				map_(map), gen_(gen), output_(output) {};
 
 			ns::output_variant ns_visitor::operator() (const request_name& r) const
 			{
 				std::pair<bool, ns::addr_storage> res;
 				res = map_.get(r.name);
+				output_ << "receiving name request : " << r << std::endl;
 
 				request_name_answer res_msg;
 				res_msg.name = r.name;
 				res_msg.success = res.first;
 				res_msg.endpoint = res.second.tcp_endpoint;
 
+				output_ << "answering to name request : " << res_msg << std::endl;
 				return res_msg;
 			}
 
@@ -89,6 +92,7 @@ namespace hyper {
 			{
 				using namespace boost::asio;
 
+				output_ << "receiving name register request : " << r << std::endl;
 				ns::addr_storage addr;
 				addr.tcp_endpoint = ip::tcp::endpoint(ip::address_v4::any(), gen_.get());
 				bool res = map_.add(r.name, addr);
@@ -98,14 +102,17 @@ namespace hyper {
 				res_msg.endpoint = addr.tcp_endpoint;
 				res_msg.success = res;
 
+				output_ << "answering to name register request : " << res_msg << std::endl;
 				return res_msg;
 			}
 		};
 
 		name_server::name_server(const std::string& addr, const std::string& port, 
-								 boost::asio::io_service& io_service):
-			map_(), gen_(port), 
-			tcp_ns_(addr, port, tcp::ns_visitor(map_, gen_), io_service) {};
+								 boost::asio::io_service& io_service, bool verbose):
+			oss(0), map_(), gen_(port), 
+			tcp_ns_(addr, port, 
+					tcp::ns_visitor(map_, gen_, 
+						verbose ? std::cout : oss), io_service) {};
 
 		void name_server::stop()
 		{

@@ -62,12 +62,13 @@ namespace hyper {
 
 			struct ns_visitor : public boost::static_visitor<ns::output_variant>
 			{
-				ns_visitor(ns::map_addr&, ns_port_generator&);
+				ns_visitor(ns::map_addr&, ns_port_generator&, std::ostream& );
 				ns::output_variant operator() (const request_name& r) const;
 				ns::output_variant operator() (const register_name& r) const;
 
 				ns::map_addr& map_;
 				ns_port_generator& gen_;
+				std::ostream& output_;
 			};
 
 		};
@@ -76,12 +77,15 @@ namespace hyper {
 			typedef tcp::server<ns::input_msg, ns::output_msg, tcp::ns_visitor>
 				tcp_ns_impl;
 
+			std::iostream oss;
 			ns::map_addr map_;
 			tcp::ns_port_generator gen_;
 			tcp_ns_impl tcp_ns_;
 
 			public:
-				name_server(const std::string&, const std::string&, boost::asio::io_service&);
+				name_server(const std::string&, const std::string&, 
+							boost::asio::io_service&,
+							bool verbose= false);
 				void stop();
 				void remove_entry(const std::string&);
 		}; 
