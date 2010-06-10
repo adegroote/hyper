@@ -11,6 +11,7 @@
 
 #include <network/msg.hh>
 #include <network/server_tcp_impl.hh>
+#include <network/client_tcp_impl.hh>
 
 namespace hyper {
 	namespace network {
@@ -90,6 +91,20 @@ namespace hyper {
 				void remove_entry(const std::string&);
 		}; 
 
+		class name_client_sync {
+			typedef tcp::client<ns::output_msg> ns_client;
+			ns_client client;
+			public:
+
+			/*
+			 * Can throw a boost::system::error_code if we can connect
+			 */
+			name_client_sync(boost::asio::io_service&, 
+							 const std::string&, const std::string&);
+
+			std::pair<bool, boost::asio::ip::tcp::endpoint> register_name(const std::string&);
+			std::pair<bool, boost::asio::ip::tcp::endpoint> request_name(const std::string&);
+		};
 	};
 };
 

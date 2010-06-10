@@ -11,6 +11,7 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 
 	// testing map_addr (however, not the locking)
 	
+	{
 	ns::map_addr map;
 
 	std::pair<bool, ns::addr_storage> p;
@@ -47,6 +48,7 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	BOOST_CHECK (map.isIn("toto") == false);
 	p = map.get("toto");
 	BOOST_CHECK (p.first == false);
+	}
 
 	// testing nameserver
 	boost::asio::io_service io_s;
@@ -58,6 +60,8 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 			boost::asio::ip::address_v4::any(), 4243);
 	boost::asio::ip::tcp::endpoint endpoint_ =  boost::asio::ip::tcp::endpoint(
 			boost::asio::ip::address_v4::any(), 4245);
+	boost::asio::ip::tcp::endpoint endpoint__ =  boost::asio::ip::tcp::endpoint(
+			boost::asio::ip::address_v4::any(), 4247);
 
 	ns_client c(io_s);
 
@@ -120,6 +124,34 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	BOOST_CHECK(rna.name == rn.name);
 	BOOST_CHECK(rna.success == true);
 	BOOST_CHECK(rna.endpoint == endpoint_);
+
+	// test for name_client_sync
+	BOOST_CHECK_THROW(name_client_sync(io_s, "localhost", "5000"), boost::system::system_error);
+
+	name_client_sync name_client(io_s, "localhost", "4242");
+	std::pair<bool, boost::asio::ip::tcp::endpoint> p;
+
+	p = name_client.request_name("tata");
+
+	BOOST_CHECK(p.first == false);
+
+	p = name_client.request_name("pipo");
+
+	BOOST_CHECK(p.first == true);
+	BOOST_CHECK(p.second == endpoint_);
+
+	p = name_client.register_name("pipo");
+
+	BOOST_CHECK(p.first == false);
+
+	p = name_client.register_name("tata");
+
+	BOOST_CHECK(p.first == true);
+	BOOST_CHECK(p.second == endpoint__);
+
+	p = name_client.request_name("tata");
+	BOOST_CHECK(p.first == true);
+	BOOST_CHECK(p.second == endpoint__);
 
 	s.stop();
 	thr.join();

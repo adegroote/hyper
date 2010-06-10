@@ -123,5 +123,41 @@ namespace hyper {
 		{
 			map_.remove(ability);
 		}
+
+		name_client_sync::name_client_sync(boost::asio::io_service& io_s,
+						const std::string& addr, const std::string& port) :
+			client(io_s)
+		{
+			client.connect(addr, port);
+		}
+
+		std::pair<bool, boost::asio::ip::tcp::endpoint>
+		name_client_sync::register_name(const std::string& ability)
+		{
+			network::register_name re;
+			register_name_answer rea;
+
+			re.name = ability;
+
+			client.request(re, rea);
+
+			if (rea.success) 
+				return std::make_pair(true, rea.endpoint);
+			return std::make_pair(false, boost::asio::ip::tcp::endpoint());
+		}
+
+		std::pair<bool, boost::asio::ip::tcp::endpoint>
+		name_client_sync::request_name(const std::string& ability)
+		{
+			network::request_name rn;
+			request_name_answer rna;
+
+			rn.name = ability;
+			client.request(rn, rna);
+
+			if (rna.success) 
+				return std::make_pair(true, rna.endpoint);
+			return std::make_pair(false, boost::asio::ip::tcp::endpoint());
+		}
 	};
 };
