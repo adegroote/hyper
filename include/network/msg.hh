@@ -3,11 +3,13 @@
 
 #include <stdint.h>
 
+#include <iostream>
 #include <string>
 
 #include <boost/asio.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/serialization/serialization.hpp>
+#include <boost/variant.hpp>
 
 namespace hyper {
 	namespace network {
@@ -184,6 +186,9 @@ namespace hyper {
 
 #define MESSAGE_TYPE_MAX	20
 
+		typedef boost::make_variant_over<message_types>::type message_variant;
+
+		std::ostream& operator << (std::ostream&, const message_variant&);
 	};
 };
 

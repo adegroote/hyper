@@ -20,6 +20,9 @@ void try_archive_interface(const T& src, T& dest)
 		boost::archive::text_iarchive archive(archive_stream);
 		archive >> dest;
 	}
+
+	std::cout << "src : " << src << std::endl;
+	std::cout << "dest : " << dest << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE ( network_msg_test )
