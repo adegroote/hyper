@@ -24,6 +24,12 @@ namespace hyper {
 		{
 			return std::remove_copy_if(begin, last, res, std::not1(p));
 		}
+
+		/*
+		 * Replace all occurrence of @pattern by @replace in @str
+		 */
+		std::string replace_by(const std::string& , const std::string& pattern,	
+													const std::string& replace);
 	}
 };
 
