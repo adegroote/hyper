@@ -20,7 +20,19 @@ struct dump_struct
 	void operator() (const std::pair<std::string, symbol>& p)
 	{
 		type t = tList.get(p.second.t);
-		oss << "\t\t" << t.name << " " << p.first << ";" << std::endl;
+		oss << "\t\t\t" << t.name << " " << p.first << ";" << std::endl;
+	}
+};
+
+struct dump_serialize_struct
+{
+	std::ostream & oss;
+
+	dump_serialize_struct(std::ostream& oss_) : oss(oss_) {};
+
+	void operator() (const std::pair<std::string, symbol>& p)
+	{
+		oss << " & " << p.first;
 	}
 };
 
@@ -45,6 +57,17 @@ struct dump_types_vis : public boost::static_visitor<void>
 	void operator() (const boost::shared_ptr<symbolList>& l) const
 	{
 		oss << "\tstruct " << scope::get_identifier(name) << " {" << std::endl;
+		oss << "\t\tprivate:" << std::endl;
+		oss << "\t\t\tfriend class boost::serialization::access;" << std::endl;
+		oss << "\t\t\ttemplate<class Archive>" << std::endl;
+		oss << "\t\t\tvoid serialize(Archive & ar, const unsigned int version)" << std::endl;
+		oss << "\t\t\t{" << std::endl;
+		oss << "\t\t\t\t(void) version;" << std::endl;
+		oss << "\t\t\t\tar";
+		std::for_each(l->begin(), l->end(), dump_serialize_struct(oss));
+		oss << ";" << std::endl;
+		oss << "\t\t\t}"  << std::endl;
+		oss << "\t\tpublic:" << std::endl;
 		std::for_each(l->begin(), l->end(), dump_struct(oss, tList));
 		oss << "\t};\n" << std::endl;
 	}

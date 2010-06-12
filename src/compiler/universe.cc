@@ -802,6 +802,11 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 	{
 		guards g(oss, name, "_TYPE_ABILITY_HH_");
 
+		// include standard needed headers and serialisation header
+
+		oss << "#include <string>\n#include<vector>\n" << std::endl;
+		oss << "#include <boost/serialization/serialization.hpp>\n" << std::endl;
+
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
 
 		namespaces n(oss, name);
@@ -858,6 +863,7 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 
 	{
 		guards g(oss, name, "_FUNC_ABILITY_HH_");
+
 
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
 
