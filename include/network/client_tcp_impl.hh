@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 #include <network/socket_tcp_serialized.hh>
 
@@ -19,7 +20,8 @@ namespace hyper {
 				public:
 					explicit client(boost::asio::io_service& io_service):
 						resolver_(io_service),
-						socket_(io_service)
+						socket_(io_service),
+						timer_(io_service)
 					{
 					}
 
@@ -121,6 +123,42 @@ namespace hyper {
 									boost::make_tuple(handler)));
 					}
 
+					/*
+					 * Send a request asynchronously @in within a timeout @duration. 
+					 * On completion, @handler_read is called. 
+					 * If the call is a success, @out is set with a correct
+					 * value. 
+					 * On timeout, @handler_timeout is called, and @out is in
+					 * an unknow state
+					 *
+					 * ATM we assume there is only one async_request at the
+					 * same time, so only one timer. If we want to deal with
+					 * more requests with timeout in the same time, we need to
+					 * delegate to upper layer
+					 *
+					 * Handler_{read,timeout} must implement
+					 *		void (*)(const boost::system::error_code&)
+					 */
+					template <typename Input, typename Output, typename HandlerRead, 
+							  typename HandlerTimeout>
+					void async_request_timeout(const Input& in, 
+											   Output& out, 
+											   HandlerRead handler_read,
+											   const boost::posix_time::time_duration& duration,
+											   HandlerTimeout handler_timeout)
+					{
+						void (client::*f)(
+								const boost::system::error_code& e,
+								boost::tuple<HandlerTimeout>);
+						f = &client::template handle_timeout<HandlerTimeout>;
+
+						async_request<Input, Output, HandlerRead>(in, out, handler_read);
+						timer_.expires_from_now(duration);
+						timer_.async_wait(boost::bind(f, this, 
+													  boost::asio::placeholders::error,
+													  boost::make_tuple(handler_timeout)));
+					}
+
 				private:
 					template <typename Handler>
 					void handle_resolve(const boost::system::error_code& err,
@@ -194,14 +232,45 @@ namespace hyper {
 						(void) written;
 						if (e)
 						{
+							timer_.cancel();
 							boost::get<0>(handler) (e);
 						} else {
-							socket_.async_read(out, boost::get<0>(handler));
+							void (client::*f)(
+									const boost::system::error_code& e,
+									boost::tuple<Handler>)
+								= &client::template handle_read <Handler>;
+							socket_.async_read(out, 
+									boost::bind(f, this,
+										 boost::asio::placeholders::error,
+										 handler));
 						}
+					}
+
+					/* Cancel the timer if the read finished 
+					 * Only call the user handler if the call has not been
+					 * cancelled by a timeout*/
+					template <typename Handler>
+					void handle_read(const boost::system::error_code& e,
+									 boost::tuple<Handler> handler)
+					{
+						timer_.cancel();
+						if (e != boost::asio::error::operation_aborted)
+							boost::get<0>(handler) (e);
+					}
+
+					/* Only call the user timeout handler if the timer has not
+					 * been cancelled */
+					template <typename Handler>
+					void handle_timeout(const boost::system::error_code& e,
+											  boost::tuple<Handler> handler)
+					{
+						if (e !=  boost::asio::error::operation_aborted)
+							boost::get<0>(handler)(e);
 					}
 
 					boost::asio::ip::tcp::resolver resolver_;
 					serialized_socket<OutputM> socket_;
+					boost::asio::deadline_timer timer_;
 			};
 		};
 	};

@@ -20,6 +20,7 @@ struct echo_visitor : public boost::static_visitor<output_variant>
 	template <typename T>
 	output_variant operator() (const T& t) const
 	{
+		sleep(2);
 		return t;
 	}
 };
@@ -85,7 +86,8 @@ struct test_async_client
 	{
 		if (e)
 		{
-			std::cerr << "Can't connect : " << std::endl;
+			BOOST_CHECK(false);
+			std::cerr << "Can't connect : " << e.message() << std::endl;
 		} else {
 
 			c.async_request(r1, r2,
@@ -99,6 +101,7 @@ struct test_async_client
 	{
 		if (e)
 		{
+			BOOST_CHECK(false);
 			std::cerr << "Error processing msg" << std::endl;
 		} else {
 			are_equal(r1, r2);
@@ -113,16 +116,58 @@ struct test_async_client
 	{
 		if (e)
 		{
+			BOOST_CHECK(false);
 			std::cerr << "Error processing msg" << std::endl;
 		}
 		else 
 		{
 			are_equal(rn1, rn2);
+			expect_timeout = false;
+			c.async_request_timeout(rn1, rn2,
+					boost::bind(&test_async_client::handle_timeout_register_name,
+								this,
+								boost::asio::placeholders::error),
+					boost::posix_time::seconds(5),
+					boost::bind(&test_async_client::handle_timeout,
+								this,
+								boost::asio::placeholders::error)
+					);
 		}
+	}
+
+	void handle_timeout_register_name(const boost::system::error_code& e)
+	{
+		if (e)
+		{
+			BOOST_CHECK(false);
+			std::cerr << "Error processing msg : "  << e.message()  << std::endl;
+		}
+		else
+		{
+			BOOST_CHECK(expect_timeout == false);
+			are_equal(rn1, rn2);
+			expect_timeout = true;
+			c.async_request_timeout(rn1, rn2,
+					boost::bind(&test_async_client::handle_timeout_register_name,
+								this,
+								boost::asio::placeholders::error),
+					boost::posix_time::seconds(1),
+					boost::bind(&test_async_client::handle_timeout,
+								this,
+								boost::asio::placeholders::error)
+					);
+		}
+	}
+
+	void handle_timeout(const boost::system::error_code& e)
+	{
+		BOOST_CHECK(expect_timeout == true);
+		c.close();
 	}
 
 	request_name r1, r2;
 	register_name rn1, rn2;
+	bool expect_timeout;
 
 };
 
