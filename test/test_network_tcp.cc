@@ -183,7 +183,9 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 	/* Exception launched if the socket has been closed */
 	BOOST_CHECK_THROW(c.request(rn1, rn2), boost::system::system_error);
 
-	test_async_client<output_msg> test(io_s, "localhost", "4242");
+	boost::asio::io_service io_s2;
+	test_async_client<output_msg> test(io_s2, "127.0.0.1", "4242");
+	io_s2.run();
 
 	s.stop();
 	c.close();
