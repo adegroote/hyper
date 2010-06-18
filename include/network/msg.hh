@@ -175,13 +175,45 @@ namespace hyper {
 				uint64_t value;
 		};
 
+		struct request_variable_value
+		{
+			private:
+				friend class boost::serialization::access;
+				template<class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & var_name;
+				}
+			public:
+				std::string var_name;
+		};
+
+		struct variable_value
+		{
+			private:
+				friend class boost::serialization::access;
+				template<class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & var_name & success & value ;
+				}
+			public:
+				std::string var_name;
+				bool success;
+				std::string value;
+		};
+
 		typedef boost::mpl::vector<
 			request_name,
 			request_name_answer,
 			register_name,
 			register_name_answer,
 			ping,
-			pong
+			pong,
+			request_variable_value,
+			variable_value
 		> message_types;
 
 #define MESSAGE_TYPE_MAX	20
