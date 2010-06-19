@@ -35,7 +35,7 @@ namespace hyper {
 		};
 
 		std::ostream& operator << (std::ostream&, const ability_decl& a);
-	};
-};
+	}
+}
 
 #endif /* _ABILITY_PARSER_HH_ */

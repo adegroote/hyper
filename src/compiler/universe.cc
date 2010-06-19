@@ -97,15 +97,18 @@ struct type_diagnostic_visitor : public boost::static_visitor<void>
 
 	void operator() (const typeList::native_decl_error& error) const
 	{
+		(void) error;
 		assert(false);
 	}
 
 	void operator() (const typeList::struct_decl_error& error) const
 	{
+		(void) error;
 	}
 
 	void operator() (const typeList::new_decl_error& error) const
 	{
+		(void) error;
 	}
 };
 
@@ -381,26 +384,31 @@ struct ast_type : public boost::static_visitor<typeId> {
 
 	typeId operator() (const empty& e) const
 	{
+		(void) e;
 		return -1;
 	}
 
 	typeId operator() (const Constant<int>& c) const
 	{
+		(void) c;
 		return u.types().getId("int").second;
 	}
 
 	typeId operator() (const Constant<double>& c) const
 	{
+		(void) c;
 		return u.types().getId("double").second;
 	}
 
 	typeId operator() (const Constant<std::string>& c) const
 	{
+		(void) c;
 		return u.types().getId("string").second;
 	}
 
 	typeId operator() (const Constant<bool>& c) const
 	{
+		(void) c;
 		return u.types().getId("bool").second;
 	}
 
@@ -438,6 +446,7 @@ struct ast_type : public boost::static_visitor<typeId> {
 
 	bool operator() (const unary_op<NEG>& op) const
 	{
+		(void) op;
 		return u.types().getId("bool").second;
 	}
 };
@@ -514,6 +523,8 @@ struct ast_binary_valid_dispatch<T, VALID_NUMERICAL>
 	bool operator() (typeId leftType, typeId rightType)
 	{
 		// XXX Check that they are of "typeclass" numerical
+		(void) leftType;
+		(void) rightType;
 		return true;
 	}
 };
@@ -528,6 +539,8 @@ struct ast_binary_valid_dispatch<T, VALID_COMPARABLE>
 	bool operator() (typeId leftType, typeId rightType)
 	{
 		// XXX check that they are of "typeclass" comparable
+		(void) leftType;
+		(void) rightType;
 		return true;
 	}
 };
@@ -541,6 +554,7 @@ struct ast_binary_valid_dispatch<T, VALID_LOGICAL>
 
 	bool operator() (typeId leftType, typeId rightType)
 	{
+		(void) rightType;
 		return (leftType == u.types().getId("bool").second);
 	}
 };
@@ -576,6 +590,7 @@ struct ast_valid : public boost::static_visitor<bool>
 
 	bool operator() (const empty& e) const
 	{
+		(void) e;
 		return false;
 	}
 
@@ -760,7 +775,7 @@ struct compute_depends_vis : public boost::static_visitor<void>
 	compute_depends_vis(std::set<std::string> &s_, const typeList& tlist_) : 
 		s(s_), tList(tlist_) {};
 
-	void operator() (const Nothing& n) const {};
+	void operator() (const Nothing& n) const { (void) n;};
 
 	void operator() (const typeId& t) const
 	{

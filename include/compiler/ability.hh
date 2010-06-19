@@ -74,8 +74,8 @@ namespace hyper {
 
 				void dump(std::ostream& oss, const typeList& tList) const;
 		};
-	};
-};
+	}
+}
 
 
 #endif /* _COMPILER_ABILITY_HH */

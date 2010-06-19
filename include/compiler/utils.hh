@@ -31,6 +31,6 @@ namespace hyper {
 		std::string replace_by(const std::string& , const std::string& pattern,	
 													const std::string& replace);
 	}
-};
+}
 
 #endif /* _COMPILER_UTIL_HH_ */

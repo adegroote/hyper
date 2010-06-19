@@ -18,7 +18,7 @@ namespace hyper {
 			struct ability_visitor : public boost::static_visitor<output_variant>
 			{
 			};
-		};
+		}
 
 		struct ability {
 			typedef network::tcp::server<details::input_msg, 
@@ -49,7 +49,7 @@ namespace hyper {
 			{
 			}
 		};
-	};
-};
+	}
+}
 
 #endif /* _MODEL_ABILITY_HH_ */

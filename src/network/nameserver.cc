@@ -6,7 +6,7 @@
 namespace hyper {
 	namespace network {
 		namespace ns {
-			map_addr::map_addr() : map_(), m_()  {};
+			map_addr::map_addr() : map_(), m_()  {}
 
 			bool map_addr::add(const std::string& key, const addr_storage& s)
 			{
@@ -47,7 +47,7 @@ namespace hyper {
 
 				return std::make_pair(true, it->second);
 			}
-		};
+		}
 
 		namespace tcp {
 
@@ -71,7 +71,7 @@ namespace hyper {
 
 			ns_visitor::ns_visitor(ns::map_addr& map, ns_port_generator& gen,
 								  std::ostream & output) : 
-				map_(map), gen_(gen), output_(output) {};
+				map_(map), gen_(gen), output_(output) {}
 
 			ns::output_variant ns_visitor::operator() (const request_name& r) const
 			{
@@ -105,14 +105,14 @@ namespace hyper {
 				output_ << "answering to name register request : " << res_msg << std::endl;
 				return res_msg;
 			}
-		};
+		}
 
 		name_server::name_server(const std::string& addr, const std::string& port, 
 								 boost::asio::io_service& io_service, bool verbose):
 			oss(0), map_(), gen_(port), 
 			tcp_ns_(addr, port, 
 					tcp::ns_visitor(map_, gen_, 
-						verbose ? std::cout : oss), io_service) {};
+						verbose ? std::cout : oss), io_service) {}
 
 		void name_server::stop()
 		{
@@ -159,5 +159,5 @@ namespace hyper {
 				return std::make_pair(true, rna.endpoint);
 			return std::make_pair(false, boost::asio::ip::tcp::endpoint());
 		}
-	};
-};
+	}
+}

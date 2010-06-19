@@ -457,8 +457,8 @@ namespace hyper {
 
 				socket_type* socket_;
 			};
-		};
-	};
-};
+		}
+	}
+}
 
 #endif /* _NETWORK_SOCKET_TCP_ASYNC_SERIALIZERD_HH_ */

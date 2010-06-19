@@ -139,28 +139,28 @@ struct hyper_lexer : lex::lexer<Lexer>
 BOOST_FUSION_ADAPT_STRUCT(
 		Constant<int>,
 		(int, value)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 		Constant<double>,
 		(double, value)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 		Constant<std::string>,
 		(std::string, value)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 		Constant<bool>,
 		(bool, value)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 		function_call,
 		(std::string, fName)
 		(std::vector<expression_ast>, args)
-);
+)
 
 template <typename Iterator, typename Lexer>
 struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_state_skipper<Lexer> >
@@ -294,7 +294,7 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 		func_call.name("function declaration instance");
 
 		qi::on_error<qi::fail> (expression, error_handler(_4, _3, _2));
-	};
+	}
 
 	qi::rule<Iterator, expression_ast(), white_space_> expression, primary_expr, unary_expr;
 	qi::rule<Iterator, expression_ast(), white_space_> multiplicative_expr, additive_expr;
@@ -312,25 +312,25 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 BOOST_FUSION_ADAPT_STRUCT(
 	cond_list_decl,
 	(std::vector<expression_ast>, list)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	task_decl,
 	(std::string, name)
 	(cond_list_decl, pre)
 	(cond_list_decl, post)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	task_decl_list,
 	(std::vector<task_decl>, list)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	task_decl_list_context,
 	(std::string, ability_name)
 	(task_decl_list, list)
-);
+)
 
 template <typename Iterator, typename Lexer>
 struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_state_skipper<Lexer> >
@@ -338,7 +338,7 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_st
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
-    grammar_task(const TokenDef& tok, universe& u_) : 
+    grammar_task(const TokenDef& tok) : 
 		grammar_task::base_type(task_decl_, "task_decl"),
 		expression_(tok)
 	{
@@ -400,7 +400,7 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_st
 		cond.name("cond");
 
 		qi::on_error<qi::fail> (task_decl_, error_handler(_4, _3, _2));
-	};
+	}
 
 	qi::rule<Iterator, task_decl_list_context(), white_space_> task_decl_;
 	qi::rule<Iterator, task_decl_list(), white_space_> task_list;
@@ -493,7 +493,7 @@ bool parser::parse_task(const std::string& expr)
     typedef grammar_task<iterator_type, hyper_lexer::lexer_def> hyper_expression;
 
 	hyper_lexer our_lexer;
-	hyper_expression g(our_lexer, u);
+	hyper_expression g(our_lexer);
 
 	base_iterator_type it = expr.begin();
 	iterator_type iter = our_lexer.begin(it, expr.end());

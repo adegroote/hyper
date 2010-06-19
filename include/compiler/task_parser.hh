@@ -38,7 +38,7 @@ namespace hyper {
 
 		std::ostream& operator << (std::ostream&, const task_decl_list_context & l);
 
-	};
-};
+	}
+}
 
 #endif /* _COMPILER_TASK_PARSER_HH_ */

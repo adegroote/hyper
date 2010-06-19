@@ -272,9 +272,9 @@ namespace hyper {
 					serialized_socket<OutputM> socket_;
 					boost::asio::deadline_timer timer_;
 			};
-		};
-	};
-};
+		}
+	}
+}
 
 
 

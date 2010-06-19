@@ -70,5 +70,5 @@ namespace hyper {
 				return p.second;
 			return identifier;
 		}
-	};
-};
+	}
+}

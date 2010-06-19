@@ -51,7 +51,7 @@ namespace hyper {
 				 */
 				static std::string get_context_identifier(const std::string&, const std::string&);
 		};
-	};
-};
+	}
+}
 
 #endif /* _COMPILER_SCOPE_HH_ */

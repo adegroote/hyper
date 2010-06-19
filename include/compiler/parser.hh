@@ -23,7 +23,7 @@ namespace hyper {
 				bool parse_task(const std::string&);
 				bool parse_task_file(const std::string&);
 		};
-	};
-};
+	}
+}
 
 #endif /* _PARSER_HH_ */

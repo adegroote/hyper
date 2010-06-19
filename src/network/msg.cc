@@ -14,7 +14,7 @@ namespace {
 			return archive_stream.str();
 		}
 	};
-};
+}
 
 namespace hyper {
 	namespace network {
@@ -23,5 +23,5 @@ namespace hyper {
 			oss << boost::apply_visitor(message_print(), m);
 			return oss;
 		}
-	};
-};
+	}
+}

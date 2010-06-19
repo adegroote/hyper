@@ -30,7 +30,7 @@ namespace hyper {
 
 		namespace detail {
 			typedef std::size_t typeId;
-		};
+		}
 
 		struct Nothing {};
 
@@ -129,7 +129,7 @@ namespace hyper {
 					return res;
 				}
 		};
-	};
-};
+	}
+}
 
 #endif /* _TYPES_HH_ */

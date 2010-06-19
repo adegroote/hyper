@@ -64,7 +64,7 @@ namespace hyper {
 				oss << "#include <" << s << "/" << depend_kind << ">" << std::endl;
 			}
 		};
-	};
-};
+	}
+}
 
 #endif

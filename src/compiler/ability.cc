@@ -85,7 +85,7 @@ struct compute_expression_deps : public boost::static_visitor<void>
 		s(s_), tList(tlist_), name(name_) {};
 
 	template <typename T>
-	void operator() (const T& e) const {};
+	void operator() (const T& e) const { (void)e; }
 
 	void operator() (const expression_ast& e) const
 	{

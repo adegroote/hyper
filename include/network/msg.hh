@@ -221,7 +221,7 @@ namespace hyper {
 		typedef boost::make_variant_over<message_types>::type message_variant;
 
 		std::ostream& operator << (std::ostream&, const message_variant&);
-	};
-};
+	}
+}
 
 #endif /* _NETWORK_MSG_HH_ */

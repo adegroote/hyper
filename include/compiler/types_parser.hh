@@ -48,7 +48,7 @@ namespace hyper {
 		};
 
 		std::ostream& operator <<(std::ostream&, const type_decl_list&);
-	};
-};
+	}
+}
 
 #endif /* _TYPES_PARSER_HH_ */

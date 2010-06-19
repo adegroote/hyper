@@ -93,47 +93,47 @@ BOOST_FUSION_ADAPT_STRUCT(
     symbol_decl,
     (std::string, typeName)
 	(std::string, name)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	symbol_decl_list,
 	(std::vector<symbol_decl>, l)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
     function_decl,
     (std::string, fName)
 	(std::string, returnName)
 	(std::vector < std::string>, argsName)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	function_decl_list,
 	(std::vector<function_decl> , l)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	struct_decl,
 	(std::string, name)
 	(symbol_decl_list, vars)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	newtype_decl,
 	(std::string, newname)
 	(std::string, oldname)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	type_decl_list,
 	(std::vector < type_decl >, l)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	programming_decl,
 	(type_decl_list, types)
 	(function_decl_list, funcs)
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	ability_blocks_decl,
@@ -141,13 +141,13 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(symbol_decl_list, readables)       // 1
 	(symbol_decl_list, privates)        // 2
 	(programming_decl, env)				// 3
-);
+)
 
 BOOST_FUSION_ADAPT_STRUCT(
 	ability_decl,
 	(std::string, name)				    // 0
 	(ability_blocks_decl, blocks)		// 1
-);	
+)	
 
 struct ability_add_adaptator {
 	universe &u;
@@ -380,7 +380,7 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		debug(structure_decl);
 		debug(new_type_decl);
 #endif
-	};
+	}
 
 	qi::rule<Iterator, white_space_> statement;
 	qi::rule<Iterator, white_space_> block_tasks;

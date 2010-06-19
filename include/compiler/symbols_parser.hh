@@ -22,7 +22,7 @@ namespace hyper {
 		};
 
 		std::ostream& operator << (std::ostream& os, const symbol_decl_list&);
-	};
-};
+	}
+}
 
 #endif /* _SYMBOLS_PARSER_HH_ */

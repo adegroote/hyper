@@ -50,7 +50,7 @@ namespace hyper {
 					std::pair<bool, addr_storage> get(const std::string& key) const;
 			};
 
-		};
+		}
 
 		namespace tcp {
 			struct ns_port_generator
@@ -72,7 +72,7 @@ namespace hyper {
 				std::ostream& output_;
 			};
 
-		};
+		}
 
 		class name_server {
 			typedef tcp::server<ns::input_msg, ns::output_msg, tcp::ns_visitor>
@@ -105,7 +105,7 @@ namespace hyper {
 			std::pair<bool, boost::asio::ip::tcp::endpoint> register_name(const std::string&);
 			std::pair<bool, boost::asio::ip::tcp::endpoint> request_name(const std::string&);
 		};
-	};
-};
+	}
+}
 
 #endif /* _NETWORK_NAMESERVER_HH_ */

@@ -30,7 +30,7 @@ typedef server<input_msg, output_msg, echo_visitor>  echo_server;
 typedef client<output_msg> echo_client;
 
 template <typename T>
-void are_equal(const T& a, const T&b) {};
+void are_equal(const T& a, const T&b) {}
 
 template <>
 void are_equal<request_name> (const request_name& a, const request_name& b)
@@ -161,6 +161,7 @@ struct test_async_client
 
 	void handle_timeout(const boost::system::error_code& e)
 	{
+		(void) e;
 		BOOST_CHECK(expect_timeout == true);
 		c.close();
 	}

@@ -63,7 +63,7 @@ namespace hyper {
 				size_t dump_ability_functions_impl(std::ostream& oss, const std::string& name) const;
 				void dump_ability(std::ostream& oss, const std::string& name) const;
 		};
-	};
-};
+	}
+}
 
 #endif

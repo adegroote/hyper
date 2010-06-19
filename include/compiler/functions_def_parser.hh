@@ -20,7 +20,7 @@ namespace hyper {
 		};
 
 		std::ostream& operator << (std::ostream& os, const function_decl_list& l);
-	};
-};
+	}
+}
 
 #endif /* _FUNCTIONS_DEF_PARSER_HH_ */

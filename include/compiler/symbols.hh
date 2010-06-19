@@ -77,7 +77,7 @@ namespace hyper {
 				const_iterator begin() const { return symbols.begin(); };
 				const_iterator end() const { return symbols.end(); };
 		};
-	};
-};
+	}
+}
 
 #endif /* _SYMBOLS_HH_ */

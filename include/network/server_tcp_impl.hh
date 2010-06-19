@@ -285,8 +285,8 @@ namespace hyper {
 				  /* The answer visitor */
 				  Answer answer_;
 			};
-		};
-	};
-};
+		}
+	}
+}
 
 #endif /* _NETWORK_SERVER_TCP_IMPL_HH_ */

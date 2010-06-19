@@ -121,8 +121,8 @@ namespace hyper {
 			std::string fName;
 			std::vector< expression_ast > args;
 		};
-	};
-};
+	}
+}
 
 
 

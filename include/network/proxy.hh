@@ -122,7 +122,7 @@ namespace hyper {
 		};
 
 
-	};
-};
+	}
+}
 
 #endif /* _HYPER_NETWORK_PROXY_HH_ */

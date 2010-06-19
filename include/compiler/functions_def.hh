@@ -107,7 +107,7 @@ namespace hyper {
 					return res;
 				}
 		};
-	};
-};
+	}
+}
 
 #endif /* _FUNCTIONS_DEF_HH_ */
