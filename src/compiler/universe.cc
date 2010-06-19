@@ -343,38 +343,38 @@ template <> struct TypeOp<NEQ> { enum { value = LOGICAL }; };
 template <binary_op_kind T, int k>
 struct binary_type {
 	const universe& u;
-	typeId id;	
+	boost::optional<typeId> id;	
 	
-	binary_type(const universe& u_, typeId id_) : u(u_), id(id_) {};
+	binary_type(const universe& u_, boost::optional<typeId> id_) : u(u_), id(id_) {};
 
-	typeId operator() () const { return -1; };
+	boost::optional<typeId> operator() () const { return boost::none; };
 };
 
 template <binary_op_kind T>
 struct binary_type<T, NUMERICAL> {
 	const universe& u;
-	typeId id;	
+	boost::optional<typeId> id;	
 	
-	binary_type(const universe& u_, typeId id_) : u(u_), id(id_) {};
+	binary_type(const universe& u_, boost::optional<typeId> id_) : u(u_), id(id_) {};
 
-	typeId operator() () const { return id; };
+	boost::optional<typeId> operator() () const { return id; };
 };
 
 template <binary_op_kind T>
 struct binary_type<T, LOGICAL> {
 	const universe& u;
-	typeId id;	
+	boost::optional<typeId> id;	
 	
-	binary_type(const universe& u_, typeId id_) : u(u_), id(id_) {};
+	binary_type(const universe& u_, boost::optional<typeId> id_) : u(u_), id(id_) {};
 
-	typeId operator() () const { return u.types().getId("bool").second; };
+	boost::optional<typeId> operator() () const { return u.types().getId("bool").second; };
 };
 
 /*
  * Compute the type of an expression
  * We assume that the expression is valid
  */
-struct ast_type : public boost::static_visitor<typeId> {
+struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 	boost::shared_ptr<ability> pAbility;
 	const universe& u;
 
@@ -382,69 +382,69 @@ struct ast_type : public boost::static_visitor<typeId> {
 		pAbility(pAbility_), u(u_) 
 	{}
 
-	typeId operator() (const empty& e) const
+	boost::optional<typeId> operator() (const empty& e) const
 	{
 		(void) e;
-		return -1;
+		return boost::none;
 	}
 
-	typeId operator() (const Constant<int>& c) const
+	boost::optional<typeId> operator() (const Constant<int>& c) const
 	{
 		(void) c;
 		return u.types().getId("int").second;
 	}
 
-	typeId operator() (const Constant<double>& c) const
+	boost::optional<typeId> operator() (const Constant<double>& c) const
 	{
 		(void) c;
 		return u.types().getId("double").second;
 	}
 
-	typeId operator() (const Constant<std::string>& c) const
+	boost::optional<typeId> operator() (const Constant<std::string>& c) const
 	{
 		(void) c;
 		return u.types().getId("string").second;
 	}
 
-	typeId operator() (const Constant<bool>& c) const
+	boost::optional<typeId> operator() (const Constant<bool>& c) const
 	{
 		(void) c;
 		return u.types().getId("bool").second;
 	}
 
-	typeId operator() (const std::string& s) const
+	boost::optional<typeId> operator() (const std::string& s) const
 	{
 		std::pair<bool, symbolACL> p;
 		p = u.get_symbol(s, pAbility);
 		if (p.first == false)
-			return -1;
+			return boost::none;
 		return p.second.s.t; 
 	}
 
-	typeId operator() (const function_call& f) const
+	boost::optional<typeId> operator() (const function_call& f) const
 	{
 		// add scope to do the search
 		std::string name = scope::add_scope(pAbility->name(), f.fName);
 		std::pair<bool, functionDef> p = u.get_functionDef(name);
 		if (p.first == false) 
-			return -1;
+			return boost::none;
 
 		return p.second.returnType();
 	}
 
-	bool operator() (const expression_ast& e) const
+	boost::optional<typeId> operator() (const expression_ast& e) const
 	{
 		return boost::apply_visitor(ast_type(pAbility, u), e.expr);
 	}
 
 	template<binary_op_kind T>
-	bool operator() (const binary_op<T>& b) const
+	boost::optional<typeId> operator() (const binary_op<T>& b) const
 	{
-		typeId leftId = boost::apply_visitor(ast_type(pAbility, u), b.left.expr);
+		boost::optional<typeId> leftId = boost::apply_visitor(ast_type(pAbility, u), b.left.expr);
 		return binary_type<T, TypeOp<T>::value> (u, leftId) ();
 	}
 
-	bool operator() (const unary_op<NEG>& op) const
+	boost::optional<typeId> operator() (const unary_op<NEG>& op) const
 	{
 		(void) op;
 		return u.types().getId("bool").second;
@@ -452,7 +452,7 @@ struct ast_type : public boost::static_visitor<typeId> {
 };
 	
 
-typeId
+boost::optional<typeId>
 universe::typeOf(const boost::shared_ptr<ability>& pAbility, const expression_ast& expr) const
 {
 	return boost::apply_visitor(ast_type(pAbility, *this), expr.expr);
@@ -465,7 +465,7 @@ struct ast_unary_valid
 
 	ast_unary_valid(const universe& u_) : u(u_) {};
 
-	bool operator() (typeId id) const
+	bool operator() (boost::optional<typeId> id) const
 	{
 		return false;
 	}
@@ -478,10 +478,12 @@ struct ast_unary_valid<NEG>
 
 	ast_unary_valid(const universe& u_) : u(u_) {};
 
-	bool operator() (typeId id) const
+	bool operator() (boost::optional<typeId> id) const
 	{
-		return (id == u.types().getId("int").second || 
-				id == u.types().getId("double").second);
+		if (!id)
+			return false;
+		return (*id == u.types().getId("int").second || 
+				*id == u.types().getId("double").second);
 	}
 };
 
@@ -507,7 +509,7 @@ struct ast_binary_valid_dispatch
 
 	ast_binary_valid_dispatch(const universe& u_) : u(u_) {};
 
-	bool operator() (typeId leftType, typeId rightType)
+	bool operator() (boost::optional<typeId> leftType, boost::optional<typeId> rightType)
 	{
 		return false;
 	}
@@ -566,16 +568,15 @@ struct ast_binary_valid
 	
 	ast_binary_valid(const universe& u_) : u(u_) {};
 
-	bool operator() ( typeId leftType, typeId rightType )
+	bool operator() (boost::optional<typeId> leftType, boost::optional<typeId> rightType)
 	{
 		// only accept operation on same type
-		if (leftType == -1 || rightType == -1 ||
-			leftType != rightType) 
+		if (!leftType || !rightType  || *leftType != *rightType) 
 		{
 			return false;
 		}
 
-		return ast_binary_valid_dispatch<T, ValidTypeOp<T>::value> (u) ( leftType, rightType );
+		return ast_binary_valid_dispatch<T, ValidTypeOp<T>::value> (u) ( *leftType, *rightType );
 	}
 };
 
@@ -630,16 +631,16 @@ struct ast_valid : public boost::static_visitor<bool>
 
 		// check type
 		for (size_t i = 0; i < f.args.size(); ++i) {
-			typeId id = u.typeOf(pAbility, f.args[i]);
+			boost::optional<typeId> id = u.typeOf(pAbility, f.args[i]);
 			bool local_res = (id == p.second.argsType(i));
 			res = local_res && res;
 			if (local_res == false) {
 				type expected = u.types().get(p.second.argsType(i));
 				std::cerr << "Expected expression of type " << expected.name;
-				if (id == -1) {
+				if (!id) {
 					std::cerr << " but can't compute type of " << f.args[i].expr;
 				} else {
-					type local = u.types().get(id);
+					type local = u.types().get(*id);
 					std::cerr << " but get " << f.args[i].expr << " of type " << local.name;
 				}
 				std::cerr << " as argument " << i << " in the call of " << f.fName;

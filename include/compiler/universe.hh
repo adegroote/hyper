@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/optional/optional.hpp>
 
 #include <compiler/ability.hh>
 #include <compiler/types.hh>
@@ -54,7 +55,8 @@ namespace hyper {
 				std::pair<bool, functionDef>
 				get_functionDef(const std::string& name) const;
 
-				typeId typeOf(const boost::shared_ptr<ability>&, const expression_ast& expr) const;
+				boost::optional<typeId>
+				typeOf(const boost::shared_ptr<ability>&, const expression_ast& expr) const;
 
 				const typeList& types() const { return tList; };
 
