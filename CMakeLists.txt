@@ -1,15 +1,5 @@
-# $Id: $ #
-# ----------------------------------------------------------------------------
-#  Root CMake file for Jafar
-#
-#    From the off-tree build directory, invoke:
-#      $ cmake <JAFAR_DIR>
-#
-# ----------------------------------------------------------------------------
-
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
-# it MUST go before PROJECT(Jafar) in order to work
 if (NOT CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR} CACHE INTERNAL "" FORCE)
 endif()
@@ -40,28 +30,59 @@ endif()
 
 include(CheckIncludeFile)
 
-find_package(Boost 1.34 REQUIRED COMPONENTS unit_test_framework filesystem system thread serialization)
-set(BOOST_FOUND ${Boost_FOUND})
+find_package(Boost 1.42 REQUIRED COMPONENTS unit_test_framework filesystem system thread serialization)
 include_directories(${Boost_INCLUDE_DIRS})
 message(STATUS "boost libraries "${Boost_LIBRARIES})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
-set(HAVE_BOOST Boost_FOUND)
-set(LIBS_MAP_BOOST "Boost")
 
-#-------------------------------------------------------------------------------
-# Build executable and libraries
-#-------------------------------------------------------------------------------
 
-add_subdirectory(src)
 
-#-------------------------------------------------------------------------------
-# Tests
-#-------------------------------------------------------------------------------
+# add_subdirectory(include)
+include_directories(${HYPER_SOURCE_DIR}/include)
 
-add_subdirectory(test)
+set(model_test_ADDITIONAL_LIBS "hyper_network")
 
-#------------------------------------------------------------------------------
-# Install needed include
-#------------------------------------------------------------------------------
+foreach(lib compiler network model)
+  string(TOUPPER "${lib}_sources" THIS_LIB_SOURCES)
+  string(TOLOWER "hyper_${lib}" HyperLibrary)
+  if(EXISTS ${HYPER_SOURCE_DIR}/src/${lib})
+    file(GLOB ${THIS_LIB_SOURCES} ${HYPER_SOURCE_DIR}/src/${lib}/*.cc)
+    add_library (${HyperLibrary} SHARED ${${THIS_LIB_SOURCES}}) 
+    install(TARGETS ${HyperLibrary}
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+      )
+  endif(EXISTS ${HYPER_SOURCE_DIR}/src/${lib})
+  string(TOUPPER "test_${lib}_sources" THIS_LIB_TEST_SOURCES)
+  file(GLOB  ${THIS_LIB_TEST_SOURCES} ${HYPER_SOURCE_DIR}/test/test_${lib}_*.cc ${HYPER_SOURCE_DIR}/test/test_superviseur.cc)
+  string(TOLOWER "test_hyper_${lib}" THIS_LIB_TEST_EXECUTABLE)
+  add_executable(${THIS_LIB_TEST_EXECUTABLE} ${${THIS_LIB_TEST_SOURCES}})
+  target_link_libraries(${THIS_LIB_TEST_EXECUTABLE} ${Boost_LIBRARIES} ${${lib}_test_ADDITIONAL_LIBS})
+  if(EXISTS ${HYPER_SOURCE_DIR}/src/${lib})
+	target_link_libraries(${THIS_LIB_TEST_EXECUTABLE} ${HyperLibrary})
+  endif(EXISTS ${HYPER_SOURCE_DIR}/src/${lib})
+  message(STATUS "add_test(${HyperLibrary} ${THIS_LIB_TEST_EXECUTABLE})")
+  add_test(${HyperLibrary} ${THIS_LIB_TEST_EXECUTABLE})
+  if(EXISTS ${HYPER_SOURCE_DIR}/src/${lib})
+	add_custom_target(${lib} ALL DEPENDS ${HyperLibrary} ${THIS_LIB_TEST_EXECUTABLE})
+  else()
+	add_custom_target(${lib} ALL DEPENDS ${THIS_LIB_TEST_EXECUTABLE})
+  endif()
 
-add_subdirectory(include)
+endforeach(lib)
+
+# install rules for include
+install(DIRECTORY include/network include/model
+		DESTINATION ${CMAKE_INSTALL_PREFIX}/include/hyper
+		)
+
+# hypercc rules
+file(GLOB hyperc_sources ${HYPER_SOURCE_DIR}/src/hyperc/*.cc)
+add_executable(hyperc ${hyperc_sources})
+target_link_libraries(hyperc hyper_compiler ${Boost_FILESYSTEM_LIBRARY})
+install(TARGETS hyperc DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+# hyperruntime rules
+file(GLOB hyperruntime_sources ${HYPER_SOURCE_DIR}/src/hyperruntime/*.cc)
+add_executable(hyperruntime ${hyperruntime_sources})
+target_link_libraries(hyperruntime hyper_network ${Boost_LIBRARIES})
+install(TARGETS hyperruntime DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
