@@ -598,6 +598,7 @@ struct ast_valid : public boost::static_visitor<bool>
 	template <typename T>
 	bool operator() (const Constant<T>& c) const
 	{
+		(void) c;
 		return true;
 	}
 

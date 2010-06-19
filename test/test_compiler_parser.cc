@@ -7,7 +7,6 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 {
 	using namespace hyper::compiler;
 
-	bool r;
 	universe u;
 	parser P(u);
 	BOOST_CHECK( P.parse_ability_file("./example.ability") == true );

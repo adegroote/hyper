@@ -45,7 +45,7 @@ struct dump_types_vis : public boost::static_visitor<void>
 	dump_types_vis(std::ostream& oss_, const typeList& tList_, const std::string& name_):
 		oss(oss_), tList(tList_), name(name_) {};
 
-	void operator() (const Nothing& n) const {};
+	void operator() (const Nothing& n) const { (void)n; }
 
 	void operator() (const typeId& tId) const
 	{
@@ -103,6 +103,7 @@ struct add_type : public boost::static_visitor < typeList::add_result >
 
 	typeList::add_result operator() (const Nothing & decl)
 	{
+		(void) decl;
 		assert(false);
 	}
 
