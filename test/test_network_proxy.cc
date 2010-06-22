@@ -26,6 +26,87 @@ namespace {
 
 		proxy_serializer& serializer() { return s; };
 	};
+
+	struct false_resolv
+	{
+		false_resolv() {};
+
+		template <typename Handler>
+		void async_resolve(const std::string& ability_name, 
+						  boost::asio::ip::tcp::endpoint& endpoint,
+						  Handler handler)
+		{
+			(void) ability_name;
+			(void) handler;
+			endpoint = boost::asio::ip::tcp::endpoint(
+					  boost::asio::ip::address::from_string("127.0.0.1"), 5000);
+			handler(boost::system::error_code());
+		}
+	};
+
+	struct test_proxy {
+		false_resolv resolver;
+		remote_proxy<int, false_resolv> r_proxy;
+		test & t;
+		
+
+		test_proxy(boost::asio::io_service& io_s, test& t_) :
+			r_proxy(io_s, "test", "x" , resolver), t(t_) {}
+
+		void handle_second_test(const boost::system::error_code& e)
+		{
+			BOOST_CHECK(!e);
+			const boost::optional<int>& value = r_proxy();
+			BOOST_CHECK(value);
+			BOOST_CHECK(*value == 14);
+		}
+
+		void handle_first_test(const boost::system::error_code& e)
+		{
+			BOOST_CHECK(!e);
+			const boost::optional<int>& value = r_proxy();
+			BOOST_CHECK(value);
+			BOOST_CHECK(*value == 12);
+
+			t.x = 14;
+			r_proxy.async_get(
+					boost::bind(&test_proxy::handle_second_test, 
+								this, boost::asio::placeholders::error));
+		}
+
+		void test_async()
+		{
+			t.x = 12;
+			r_proxy.async_get(
+					boost::bind(&test_proxy::handle_first_test, 
+								this, boost::asio::placeholders::error));
+		}
+	};
+
+	struct test_proxy_error {
+		false_resolv resolver;
+		remote_proxy<int, false_resolv> r_proxy;
+		test & t;
+		
+
+		test_proxy_error(boost::asio::io_service& io_s, test& t_) :
+			r_proxy(io_s, "test", "pipo" , resolver), t(t_) {}
+
+		void handle_first_test(const boost::system::error_code& e)
+		{
+			BOOST_CHECK(!e); // no system error
+			// XXX must be improved to return a useful error code
+			const boost::optional<int>& value = r_proxy();
+			BOOST_CHECK(!value); // but value is "undefined" 
+		}
+
+		void test_async()
+		{
+			r_proxy.async_get(
+					boost::bind(&test_proxy_error::handle_first_test, 
+								this, boost::asio::placeholders::error));
+		}
+	};
 }
 
 BOOST_AUTO_TEST_CASE ( network_proxy_test )
@@ -122,8 +203,17 @@ BOOST_AUTO_TEST_CASE ( network_proxy_test )
 		boost::optional<ping> s_bug_value = deserialize_value<ping> (value.value);
 		BOOST_CHECK(!s_bug_value);
 
+		boost::asio::io_service io2_s;
+		test_proxy_error test_p_error(io2_s, t);
+		test_p_error.test_async();
+		io2_s.run();
+
+		boost::asio::io_service io3_s;
+		test_proxy test_p(io3_s, t);
+		test_p.test_async();
+		io3_s.run();
+
 		s.stop();
 		thr.join();
 	}
-	
 }

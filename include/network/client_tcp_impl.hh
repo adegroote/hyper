@@ -80,6 +80,13 @@ namespace hyper {
 									boost::make_tuple(handler)));
 					}
 
+					template <typename Handler>
+					void async_connect(const boost::asio::ip::tcp::endpoint& endpoint, 
+									   Handler handler)
+					{
+						socket_.socket().async_connect(endpoint, handler);
+					}
+							
 					void close()
 					{
 						socket_.close();

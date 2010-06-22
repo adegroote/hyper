@@ -16,10 +16,8 @@
 namespace hyper {
 	namespace network {
 
-		template <typename T, bool is_local = true> struct proxy {};
-
 		template <typename T>
-		struct proxy<T, true> 
+		struct proxy
 		{
 			T& value_;
 
@@ -106,19 +104,141 @@ namespace hyper {
 			}
 		};
 
+
+		template <typename T>
+		class proxy_async_client {
+			private:
+				typedef tcp::client<proxy_output_msg> proxy_client;
+
+				proxy_client c_;
+				variable_value value_msg;
+
+				template <typename Handler>
+				void handle_value_request(const boost::system::error_code &e,
+										  boost::optional<T>& value,
+										  boost::tuple<Handler> handler)
+				{
+					if (e || value_msg.success == false ) 
+						value = boost::none;
+					else
+						value = deserialize_value<T>(value_msg.value);
+
+					boost::get<0>(handler)(e);
+				}
+
+			public:
+				proxy_async_client(boost::asio::io_service& io_s) : c_(io_s) {}
+
+				template <typename Handler>
+				void async_connect(const boost::asio::ip::tcp::endpoint& endpoint,
+										Handler handler)
+				{
+					return c_.async_connect(endpoint, handler);
+				}
+
+				void close() { c_.close(); }
+
+				template <typename Handler>
+				void async_request(const std::string& name, boost::optional<T>& value,
+								  Handler handler) 
+				{
+					request_variable_value m;
+					m.var_name = name;
+					void (proxy_async_client::*f)(const boost::system::error_code &,
+											      boost::optional<T>&,
+												  boost::tuple<Handler>)
+						= &proxy_async_client::template handle_value_request<Handler>;
+
+					c_.async_request(m, value_msg, 
+							boost::bind(f, this, 
+											  _1, 
+											 boost::ref(value), 
+											 boost::make_tuple(handler)));
+				}
+		};
+
 		/*
 		 * In the remote case, @T must be serializable. In the remote case
 		 * proxy, the proxy object is a consummer of a remote publised
 		 * information. 
 		 */
-		template <typename T>
-		struct proxy<T, false>
+		template <typename T, typename Resolver>
+		class remote_proxy
 		{
-			boost::optional<T> value_;
+			private:
+				boost::optional<T> value_;
+				std::string ability_name_;
+				std::string var_name_, var_value_;
 
-			proxy(boost::asio::io_service & io_s) { assert(false); };
+				proxy_async_client<T> c;
+				Resolver& r_;
+				boost::asio::ip::tcp::endpoint endpoint_;
 
-			const boost::optional<T>& operator() () const { return value_; };
+			private:
+				template <typename Handler>
+				void handle_request(const boost::system::error_code &e,
+									boost::tuple<Handler> handler)
+				{
+					boost::get<0>(handler)(e);
+				}
+
+				template <typename Handler>
+				void handle_connect(const boost::system::error_code& e,
+									boost::tuple<Handler> handler)
+				{
+					if (e) 
+						boost::get<0>(handler)(e);
+					else {
+						void (remote_proxy::*f) (const boost::system::error_code&,
+								boost::tuple<Handler>) =
+							&remote_proxy::template handle_request<Handler>;
+
+						c.async_request(var_name_, value_,
+							boost::bind(f, this, boost::asio::placeholders::error, handler));
+					}
+				}
+
+				template <typename Handler>
+				void handle_resolve(const boost::system::error_code& e,
+									boost::tuple<Handler> handler)
+				{
+					if (e) 
+						boost::get<0>(handler)(e);
+					else {
+						void (remote_proxy::*f) (const boost::system::error_code&,
+								boost::tuple<Handler>) =
+							&remote_proxy::template handle_connect<Handler>;
+
+						c.async_connect(endpoint_, 
+							boost::bind(f, this, boost::asio::placeholders::error, handler));
+					}
+				}
+
+			public:
+				remote_proxy(boost::asio::io_service & io_s,
+							 const std::string& ability_name,
+							 const std::string& var_name,
+							 Resolver& r) :
+					ability_name_(ability_name), var_name_(var_name), c(io_s), r_(r) {}
+
+				/* Asynchronously make an request to remote ability
+				 * On completion (in the @Handler call), it is safe to call
+				 * operator() to get the value of the remote  variable.
+				 */
+				template <typename Handler>
+				void async_get(Handler handler) 
+				{ 
+					void (remote_proxy::*f) (const boost::system::error_code&,
+							boost::tuple<Handler>) =
+						&remote_proxy::template handle_resolve<Handler>;
+
+					r_.async_resolve(ability_name_, endpoint_,
+							boost::bind(f, this,
+										 boost::asio::placeholders::error,
+										 boost::make_tuple(handler)));
+				}
+
+				const boost::optional<T>& operator() () const { return value_; };
 		};
 
 
