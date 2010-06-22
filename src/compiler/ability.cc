@@ -167,6 +167,19 @@ struct print_symbol
 	}
 };
 
+struct add_proxy_symbol
+{
+	std::ostream& oss;
+
+	add_proxy_symbol(std::ostream& oss_) : oss(oss_) {};
+
+	void operator () (const std::pair<std::string, symbol>& p) const
+	{
+		oss << "\t\t\t\t\tserializer.register_variable(\"" << p.second.name << "\",";
+		oss << p.second.name << ");" << std::endl;
+	}
+};
+
 void
 ability::dump(std::ostream& oss, const typeList& tList) const
 {
@@ -192,9 +205,14 @@ ability::dump(std::ostream& oss, const typeList& tList) const
 
 	print_symbol print(oss, tList, name_);
 	oss << "\t\t\tstruct ability : public model::ability {" << std::endl;
-	oss << "\t\t\t\tability() : model::ability(\"" << name_ << "\") {};" << std::endl;
+
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
 	std::for_each(private_list.begin(), private_list.end(), print);
+
+	oss << "\t\t\t\tability() : model::ability(\"" << name_ << "\") {\n" ;
+	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy_symbol(oss));
+	std::for_each(readable_list.begin(), readable_list.end(), add_proxy_symbol(oss));
+	oss << "\t\t\t\t}\n;" << std::endl;
 	oss << "\t\t\t};" << std::endl;
 }
