@@ -48,22 +48,17 @@ void build_base_cmake(std::ostream& oss, const std::string& name)
 		"enable_language(C)\n"
 		"include(CheckIncludeFile)\n"
 		"\n"
-		"find_package(Boost 1.40 REQUIRED COMPONENTS system thread serialization)\n"
+		"find_package(Boost 1.42 REQUIRED COMPONENTS system thread serialization)\n"
 		"set(BOOST_FOUND ${Boost_FOUND})\n"
 		"include_directories(${Boost_INCLUDE_DIRS})\n"
 		"message(STATUS \"boost libraries \"${Boost_LIBRARIES})\n"
-		"set(LIBS ${LIBS} ${Boost_LIBRARIES})\n"
-		"set(HAVE_BOOST Boost_FOUND)\n"
-		"set(LIBS_MAP_BOOST \"Boost\")\n"
 		"\n"
 		"include_directories(${CMAKE_SOURCE_DIR})\n"
 		"add_executable(@NAME@ main.cc)\n"
-		"target_link_libraries(@NAME@ ${Boost_SYSTEM_LIBRARY})\n"
-		"target_link_libraries(@NAME@ ${Boost_THREAD_LIBRARY})\n"
-		"target_link_libraries(@NAME@ ${Boost_SERIALIZATION_LIBRARY})\n"
+		"target_link_libraries(@NAME@ ${Boost_LIBRARIES})\n"
 
 		"include_directories(${HYPER_ROOT}/include/hyper)\n"
-		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libHyperNetwork.so)\n"
+		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_network.so)\n"
 		;
 
 	oss << hyper::compiler::replace_by(cmake, "@NAME@", name);
