@@ -278,16 +278,14 @@ namespace hyper {
 				tupleT & t;
 				boost::asio::io_service& io_s;
 				enum { size = boost::mpl::size<vectorT>::type::value };
-				const boost::array<std::string, size>& abilities;
-				const boost::array<std::string, size>& vars;
+				const boost::array<std::pair<std::string, std::string>, size>& vars;
 				Resolver& r;
 
 				init_proxys(tupleT& t_, 
 							boost::asio::io_service& io_s_,
-							const boost::array<std::string, size>& abilities_,
-							const boost::array<std::string, size>& vars_,
+							const boost::array<std::pair<std::string, std::string>, size>& vars_,
 							Resolver& r_):
-					t(t_), io_s(io_s_), abilities(abilities_), vars(vars_), r(r_) {}
+					t(t_), io_s(io_s_), vars(vars_), r(r_) {}
 
 				template <typename U>
 				void operator() (U unused)
@@ -296,7 +294,8 @@ namespace hyper {
 					typedef remote_proxy<typename boost::mpl::at<vectorT, U>::type, Resolver> proxy_;
 
 					boost::get<U::value>(t) = boost::shared_ptr<proxy_>(
-						new proxy_ (io_s, abilities[U::value], vars[U::value], r)
+						new proxy_ (io_s, vars[U::value].first, 
+										  vars[U::value].second, r)
 					);
 				}
 			};
@@ -365,12 +364,11 @@ namespace hyper {
 			tuple_proxy proxys;
 
 			remote_proxy_n(boost::asio::io_service& io_s,
-						   const boost::array<std::string, size>& abilities,
-						   const boost::array<std::string, size>& vars,
+						   const boost::array<std::pair<std::string, std::string>, size>&  vars,
 						   Resolver& r) 
 			{
 				details::init_proxys<tuple_proxy, vectorT, Resolver> 
-					init_(proxys, io_s, abilities, vars, r);
+					init_(proxys, io_s, vars, r);
 				boost::mpl::for_each<range> (init_);
 			};
 

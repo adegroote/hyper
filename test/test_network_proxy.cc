@@ -115,23 +115,21 @@ namespace {
 		typedef boost::mpl::vector<int, int, std::string> local_types;
 		typedef remote_proxy_n<local_types, false_resolv> r_proxy_n;
 
-		boost::shared_ptr<r_proxy_n> r_proxy;
 		false_resolv resolv_;
+		r_proxy_n r_proxy;
 
-		test_remote_proxy_n(boost::asio::io_service& io_s) {
-			boost::array<std::string, r_proxy_n::size> abilities = 
-				boost::assign::list_of("test")("test")("test");
-			boost::array<std::string, r_proxy_n::size> vars = 
-				boost::assign::list_of("x")("y")("mystring");
-			r_proxy = 
-				boost::shared_ptr<r_proxy_n> (new r_proxy_n(io_s, abilities, vars, resolv_));
-		}
+		test_remote_proxy_n(boost::asio::io_service& io_s) :
+			r_proxy(io_s,
+					boost::assign::list_of<std::pair<std::string, std::string> >
+						("test", "x")("test","y")("test", "mystring"),
+					resolv_)
+			{}
 
 		void handle_test(const boost::system::error_code& e)
 		{
-			const boost::optional<int> &x = r_proxy->at_c<0>();
-			const boost::optional<int> &y = r_proxy->at_c<1>();
-			const boost::optional<std::string> &s = r_proxy->at_c<2>();
+			const boost::optional<int> &x = r_proxy.at_c<0>();
+			const boost::optional<int> &y = r_proxy.at_c<1>();
+			const boost::optional<std::string> &s = r_proxy.at_c<2>();
 
 			std::cout << "we really enter here" << std::endl;
 
@@ -147,7 +145,7 @@ namespace {
 
 		void test_async()
 		{
-			r_proxy->async_get(
+			r_proxy.async_get(
 					boost::bind(
 						&test_remote_proxy_n::handle_test,
 						this, boost::asio::placeholders::error));
