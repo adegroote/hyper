@@ -1,7 +1,10 @@
 #include <network/proxy.hh>
 #include <boost/test/unit_test.hpp>
 
+#include <boost/assign/list_of.hpp>
 #include <boost/thread.hpp>
+#include <boost/mpl/assert.hpp>
+#include <boost/mpl/equal.hpp>
 
 namespace {
 	using namespace hyper::network;
@@ -64,7 +67,7 @@ namespace {
 		void handle_first_test(const boost::system::error_code& e)
 		{
 			BOOST_CHECK(!e);
-			const boost::optional<int>& value = r_proxy();
+			const typename remote_proxy<int,false_resolv>::type & value = r_proxy();
 			BOOST_CHECK(value);
 			BOOST_CHECK(*value == 12);
 
@@ -105,6 +108,49 @@ namespace {
 			r_proxy.async_get(
 					boost::bind(&test_proxy_error::handle_first_test, 
 								this, boost::asio::placeholders::error));
+		}
+	};
+
+	struct test_remote_proxy_n {
+		typedef boost::mpl::vector<int, int, std::string> local_types;
+		typedef remote_proxy_n<local_types, false_resolv> r_proxy_n;
+
+		boost::shared_ptr<r_proxy_n> r_proxy;
+		false_resolv resolv_;
+
+		test_remote_proxy_n(boost::asio::io_service& io_s) {
+			boost::array<std::string, r_proxy_n::size> abilities = 
+				boost::assign::list_of("test")("test")("test");
+			boost::array<std::string, r_proxy_n::size> vars = 
+				boost::assign::list_of("x")("y")("mystring");
+			r_proxy = 
+				boost::shared_ptr<r_proxy_n> (new r_proxy_n(io_s, abilities, vars, resolv_));
+		}
+
+		void handle_test(const boost::system::error_code& e)
+		{
+			const boost::optional<int> &x = r_proxy->at_c<0>();
+			const boost::optional<int> &y = r_proxy->at_c<1>();
+			const boost::optional<std::string> &s = r_proxy->at_c<2>();
+
+			std::cout << "we really enter here" << std::endl;
+
+			BOOST_CHECK(!e);
+			BOOST_CHECK(x);
+			BOOST_CHECK(y);
+			BOOST_CHECK(s);
+
+			BOOST_CHECK(*x == 42);
+			BOOST_CHECK(*y == 43);
+			BOOST_CHECK(*s == "wonderland");
+		}
+
+		void test_async()
+		{
+			r_proxy->async_get(
+					boost::bind(
+						&test_remote_proxy_n::handle_test,
+						this, boost::asio::placeholders::error));
 		}
 	};
 }
@@ -212,6 +258,17 @@ BOOST_AUTO_TEST_CASE ( network_proxy_test )
 		test_proxy test_p(io3_s, t);
 		test_p.test_async();
 		io3_s.run();
+
+
+
+		boost::asio::io_service io4_s;
+		false_resolv resolv_;
+		t.x = 42;
+		t.y = 43;
+		t.s = "wonderland";
+		test_remote_proxy_n r_proxy_n(io4_s);
+		r_proxy_n.test_async();
+		io4_s.run();
 
 		s.stop();
 		thr.join();
