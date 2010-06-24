@@ -4,14 +4,20 @@
 
 #include <network/client_tcp_impl.hh>
 #include <network/nameserver.hh>
+#include <network/utils.hh>
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#include <boost/array.hpp>
 #include <boost/function.hpp>
-#include <boost/optional/optional.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/mpl/at.hpp>
+#include <boost/mpl/for_each.hpp>
+#include <boost/mpl/range_c.hpp>
+#include <boost/mpl/size.hpp>
+#include <boost/mpl/transform.hpp>
 #include <boost/none.hpp>
-
-#include <cassert>
+#include <boost/optional/optional.hpp>
 
 namespace hyper {
 	namespace network {
@@ -106,7 +112,8 @@ namespace hyper {
 
 
 		template <typename T>
-		class proxy_async_client {
+		class proxy_async_client 
+		{
 			private:
 				typedef tcp::client<proxy_output_msg> proxy_client;
 
@@ -165,10 +172,14 @@ namespace hyper {
 		template <typename T, typename Resolver>
 		class remote_proxy
 		{
+			public:
+				typedef boost::optional<T> type;
+
 			private:
-				boost::optional<T> value_;
+				type value_;
 				std::string ability_name_;
 				std::string var_name_, var_value_;
+				bool finished;
 
 				proxy_async_client<T> c;
 				Resolver& r_;
@@ -179,6 +190,7 @@ namespace hyper {
 				void handle_request(const boost::system::error_code &e,
 									boost::tuple<Handler> handler)
 				{
+					finished = true;
 					boost::get<0>(handler)(e);
 				}
 
@@ -228,6 +240,8 @@ namespace hyper {
 				template <typename Handler>
 				void async_get(Handler handler) 
 				{ 
+					finished = false;
+					value_ = boost::none;
 					void (remote_proxy::*f) (const boost::system::error_code&,
 							boost::tuple<Handler>) =
 						&remote_proxy::template handle_resolve<Handler>;
@@ -238,10 +252,224 @@ namespace hyper {
 										 boost::make_tuple(handler)));
 				}
 
-				const boost::optional<T>& operator() () const { return value_; };
+				void abort() { c.close(); };
+
+				const type& operator() () const { return value_; };
+
+				bool is_finished() const { return finished; };
 		};
 
+		namespace details {
+			template <typename T, typename Resolver>
+			struct to_proxy 
+			{
+				typedef boost::shared_ptr<remote_proxy<T, Resolver> > type;
+			};
 
+			template <typename T>
+			struct to_internal_type
+			{
+				typedef const typename boost::optional<T>& type;
+			};
+
+			template <typename tupleT, typename vectorT, typename Resolver>
+			struct init_proxys
+			{
+				tupleT & t;
+				boost::asio::io_service& io_s;
+				enum { size = boost::mpl::size<vectorT>::type::value };
+				const boost::array<std::string, size>& abilities;
+				const boost::array<std::string, size>& vars;
+				Resolver& r;
+
+				init_proxys(tupleT& t_, 
+							boost::asio::io_service& io_s_,
+							const boost::array<std::string, size>& abilities_,
+							const boost::array<std::string, size>& vars_,
+							Resolver& r_):
+					t(t_), io_s(io_s_), abilities(abilities_), vars(vars_), r(r_) {}
+
+				template <typename U>
+				void operator() (U unused)
+				{
+					(void) unused;
+					typedef remote_proxy<typename boost::mpl::at<vectorT, U>::type, Resolver> proxy_;
+
+					boost::get<U::value>(t) = boost::shared_ptr<proxy_>(
+						new proxy_ (io_s, abilities[U::value], vars[U::value], r)
+					);
+				}
+			};
+
+			template <typename tupleT>
+			struct abort_proxys 
+			{
+				tupleT & t;
+
+				abort_proxys(tupleT& t_): t(t_) {};
+
+				template <typename U> // U models mpl::int_
+				void operator() (U unused)
+				{
+					(void) unused;
+					if (!boost::get<U::value>(t)->is_finished())
+						boost::get<U::value>(t)->abort();
+				}
+			};
+
+			template <typename tupleT>
+			struct proxy_finished
+			{
+				tupleT & t;
+				bool & res;
+
+				proxy_finished(tupleT& t_, bool& b): t(t_), res(b) {};
+
+				template <typename U> // U models mpl::int_
+				void operator() (U unused)
+				{
+					(void) unused;
+					res = res &&  (boost::get<U::value>(t)->is_finished());
+				}
+			};
+
+			template <typename tupleT, typename Handler, typename vectorT, typename Resolver>
+			struct call_proxy;
+		}
+
+
+
+		template <typename vectorT, typename Resolver>
+		struct remote_proxy_n 
+		{
+			typedef typename boost::mpl::transform<
+				vectorT, 
+				details::to_proxy<boost::mpl::_1, Resolver> 
+			>::type seq;
+
+			typedef typename boost::mpl::transform<
+				vectorT,
+				details::to_internal_type<boost::mpl::_1>
+			>::type seqReturn;
+
+			typedef typename to_tuple<seq>::type tuple_proxy;
+			enum { size = boost::mpl::size<vectorT>::type::value };
+			typedef boost::mpl::range_c<size_t, 0, size> range;
+
+
+			/*
+			 * proxy is a tuple of boost::shared_ptr< remote_proxy <> > We need
+			 * to use some ptr because we can't initialize it in the
+			 * initialisation list of remote_proxy_n.
+			 */
+			tuple_proxy proxys;
+
+			remote_proxy_n(boost::asio::io_service& io_s,
+						   const boost::array<std::string, size>& abilities,
+						   const boost::array<std::string, size>& vars,
+						   Resolver& r) 
+			{
+				details::init_proxys<tuple_proxy, vectorT, Resolver> 
+					init_(proxys, io_s, abilities, vars, r);
+				boost::mpl::for_each<range> (init_);
+			};
+
+			~remote_proxy_n() 
+			{
+				abort();
+			}
+
+			template <typename Handler>
+			void handle_request(const boost::system::error_code& e,
+								boost::tuple<Handler> handler) 
+			{
+				if (e) {
+					/* Discard cancelled error */
+					if (e == boost::asio::error::operation_aborted)
+						return;
+
+					abort();
+
+					boost::get<0>(handler)(e);
+				} else {
+					/* check if everything has terminated. If it is ok, call
+					 * handler(e). Otherwise, do nothing 
+					 */
+					bool is_finished = true;
+					details::proxy_finished<tuple_proxy> finish_(proxys, is_finished);
+					boost::mpl::for_each<range> (finish_);
+
+					if (is_finished) 
+						boost::get<0>(handler)(e);
+				}
+			}
+			/*
+			 * async_get will ask all the remote ability to get the value of
+			 * their respective variable, under a certain timeout.
+			 *
+			 * When an ability answers :
+			 *		- if it is a failure ( operator() return a boost::none ),
+			 *		we abort other requests, as we can't compute the whole
+			 *		expression
+			 *		- if it is a success, but we are still waiting some other
+			 *		answer, don't do anything
+			 *		- if all abilities have answered, handler is called and you
+			 *		can call at_c<i> on each element of the tuple
+			 */
+			template <typename Handler>
+			void async_get(Handler handler)
+			{
+				void (remote_proxy_n::*f)(const boost::system::error_code&,
+										  boost::tuple<Handler> handler) =
+					&remote_proxy_n::template handle_request<Handler>;
+
+				details::call_proxy<
+					tuple_proxy, 
+					boost::function<void (const boost::system::error_code&)>,
+					vectorT, 
+					Resolver
+				> call_(proxys, boost::bind(f, this, 
+							boost::asio::placeholders::error,
+							boost::make_tuple(handler)),
+						*this);;
+				boost::mpl::for_each<range> (call_); 
+			}
+
+			void abort()
+			{
+				/* abort other request */
+				details::abort_proxys<tuple_proxy> abort_(proxys);
+				boost::mpl::for_each<range> (abort_);
+			}
+
+			template <size_t i>
+			typename boost::mpl::at<seqReturn, boost::mpl::int_<i> >::type at_c() const
+			{
+				return (*(boost::get<i>(proxys)))();
+			}
+
+		};
+
+		namespace details {
+			template <typename tupleT, typename Handler, typename vectorT, typename Resolver>
+			struct call_proxy
+			{
+				tupleT& t;
+				Handler handler;
+				remote_proxy_n<vectorT, Resolver>& r_proxy;
+
+				call_proxy(tupleT& t_, Handler handler_, 
+						   remote_proxy_n<vectorT, Resolver>& r_proxy_): 
+					t(t_), handler(handler_), r_proxy(r_proxy_) {};
+
+				template <typename U>
+				void operator()(U unused)
+				{
+					(void) unused;
+					boost::get<U::value>(t)->async_get(handler);
+				}
+			};
+		}
 	}
 }
 
