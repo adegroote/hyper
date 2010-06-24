@@ -138,6 +138,8 @@ namespace {
 			BOOST_CHECK(y);
 			BOOST_CHECK(s);
 
+			BOOST_CHECK(r_proxy.is_successful());
+
 			BOOST_CHECK(*x == 42);
 			BOOST_CHECK(*y == 43);
 			BOOST_CHECK(*s == "wonderland");

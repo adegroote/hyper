@@ -319,16 +319,32 @@ namespace hyper {
 			template <typename tupleT>
 			struct proxy_finished
 			{
-				tupleT & t;
+				const tupleT & t;
 				bool & res;
 
-				proxy_finished(tupleT& t_, bool& b): t(t_), res(b) {};
+				proxy_finished(const tupleT& t_, bool& b): t(t_), res(b) {};
 
 				template <typename U> // U models mpl::int_
 				void operator() (U unused)
 				{
 					(void) unused;
 					res = res &&  (boost::get<U::value>(t)->is_finished());
+				}
+			};
+
+			template <typename tupleT>
+			struct proxy_successed
+			{
+				const tupleT & t;
+				bool & res;
+
+				proxy_successed(const tupleT& t_, bool& b): t(t_), res(b) {};
+
+				template <typename U> // U models mpl::int_
+				void operator() (U unused)
+				{
+					(void) unused;
+					res = res && (*(boost::get<U::value>(t)))();
 				}
 			};
 
@@ -438,6 +454,14 @@ namespace hyper {
 				/* abort other request */
 				details::abort_proxys<tuple_proxy> abort_(proxys);
 				boost::mpl::for_each<range> (abort_);
+			}
+
+			bool is_successful() const
+			{
+				bool is_success = true;
+				details::proxy_successed<tuple_proxy> success_(proxys, is_success);
+				boost::mpl::for_each<range> (success_);
+				return is_success;
 			}
 
 			template <size_t i>
