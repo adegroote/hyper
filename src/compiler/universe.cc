@@ -701,7 +701,6 @@ struct task_adder
 	bool& res;
 	ability& ab;
 	universe &u;
-	task currentTask;
 
 	task_adder(bool &res_, ability& ab_, universe& u_):
 		res(res_), ab(ab_), u(u_)
@@ -709,6 +708,7 @@ struct task_adder
 
 	void operator() (const task_decl& t) 
 	{
+		task currentTask;
 		currentTask.name = t.name;
 		{
 			cond_adder adder(res, ab, u, currentTask.pre);
