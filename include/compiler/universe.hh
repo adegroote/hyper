@@ -50,13 +50,13 @@ namespace hyper {
 				bool add_task(const task_decl_list_context& decl);
 
 				std::pair<bool, symbolACL> 
-				get_symbol(const std::string& name, const boost::shared_ptr<ability>& pAbility) const;
+				get_symbol(const std::string& name, const ability&) const;
 
 				std::pair<bool, functionDef>
 				get_functionDef(const std::string& name) const;
 
 				boost::optional<typeId>
-				typeOf(const boost::shared_ptr<ability>&, const expression_ast& expr) const;
+				typeOf(const ability&, const expression_ast& expr) const;
 
 				const typeList& types() const { return tList; };
 

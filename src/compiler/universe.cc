@@ -270,12 +270,12 @@ universe::add(const ability_decl& decl)
 }
 
 std::pair<bool, symbolACL>
-universe::get_symbol(const std::string& name, const boost::shared_ptr<ability>& pAbility) const
+universe::get_symbol(const std::string& name, const ability& ab) const
 {
 	if (!scope::is_scoped_identifier(name)) {
-		std::pair<bool, symbolACL> res = pAbility->get_symbol(name);
+		std::pair<bool, symbolACL> res = ab.get_symbol(name);
 		if (res.first == false)
-			std::cerr << "Unknow symbol " << name << " in ability " << pAbility->name() << std::endl;
+			std::cerr << "Unknow symbol " << name << " in ability " << ab.name() << std::endl;
 		return res;
 	} else {
 		std::pair<std::string, std::string> p;
@@ -302,7 +302,7 @@ universe::get_symbol(const std::string& name, const boost::shared_ptr<ability>& 
 		 * In other case, (remote ability, private variable), return false
 		 */
 		if (res.first == true && 
-				(p.first == pAbility->name() || res.second.acl != PRIVATE))
+				(p.first == ab.name() || res.second.acl != PRIVATE))
 			return res;
 
 		std::cerr << "Accessing remote private variable " << name;
@@ -375,11 +375,11 @@ struct binary_type<T, LOGICAL> {
  * We assume that the expression is valid
  */
 struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
-	boost::shared_ptr<ability> pAbility;
+	const ability& ab;
 	const universe& u;
 
-	ast_type(boost::shared_ptr<ability> pAbility_, const universe& u_):
-		pAbility(pAbility_), u(u_) 
+	ast_type(const ability& ab_, const universe& u_):
+		ab(ab_), u(u_) 
 	{}
 
 	boost::optional<typeId> operator() (const empty& e) const
@@ -415,7 +415,7 @@ struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 	boost::optional<typeId> operator() (const std::string& s) const
 	{
 		std::pair<bool, symbolACL> p;
-		p = u.get_symbol(s, pAbility);
+		p = u.get_symbol(s, ab);
 		if (p.first == false)
 			return boost::none;
 		return p.second.s.t; 
@@ -424,7 +424,7 @@ struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 	boost::optional<typeId> operator() (const function_call& f) const
 	{
 		// add scope to do the search
-		std::string name = scope::add_scope(pAbility->name(), f.fName);
+		std::string name = scope::add_scope(ab.name(), f.fName);
 		std::pair<bool, functionDef> p = u.get_functionDef(name);
 		if (p.first == false) 
 			return boost::none;
@@ -434,13 +434,13 @@ struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 
 	boost::optional<typeId> operator() (const expression_ast& e) const
 	{
-		return boost::apply_visitor(ast_type(pAbility, u), e.expr);
+		return boost::apply_visitor(ast_type(ab, u), e.expr);
 	}
 
 	template<binary_op_kind T>
 	boost::optional<typeId> operator() (const binary_op<T>& b) const
 	{
-		boost::optional<typeId> leftId = boost::apply_visitor(ast_type(pAbility, u), b.left.expr);
+		boost::optional<typeId> leftId = boost::apply_visitor(ast_type(ab, u), b.left.expr);
 		return binary_type<T, TypeOp<T>::value> (u, leftId) ();
 	}
 
@@ -453,9 +453,9 @@ struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 	
 
 boost::optional<typeId>
-universe::typeOf(const boost::shared_ptr<ability>& pAbility, const expression_ast& expr) const
+universe::typeOf(const ability& ab, const expression_ast& expr) const
 {
-	return boost::apply_visitor(ast_type(pAbility, *this), expr.expr);
+	return boost::apply_visitor(ast_type(ab, *this), expr.expr);
 }
 
 template <unary_op_kind T>
@@ -582,11 +582,11 @@ struct ast_binary_valid
 
 struct ast_valid : public boost::static_visitor<bool>
 {
-	boost::shared_ptr<ability> pAbility;
+	const ability& ab;
 	universe& u;
 
-	ast_valid(boost::shared_ptr<ability> pAbility_, universe& u_):
-		pAbility(pAbility_), u(u_) 
+	ast_valid(const ability& ab_, universe& u_):
+		ab(ab_), u(u_) 
 	{}
 
 	bool operator() (const empty& e) const
@@ -605,14 +605,14 @@ struct ast_valid : public boost::static_visitor<bool>
 	bool operator() (const std::string& s) const
 	{
 		std::pair<bool, symbolACL> p;
-		p = u.get_symbol(s, pAbility);
+		p = u.get_symbol(s, ab);
 		return p.first;
 	}
 
 	bool operator() (const function_call& f) const
 	{
 		// add scope to do the search
-		std::string name = scope::add_scope(pAbility->name(), f.fName);
+		std::string name = scope::add_scope(ab.name(), f.fName);
 		std::pair<bool, functionDef> p = u.get_functionDef(name);
 		if (p.first == false) {
 			std::cerr << "Unknow function " << f.fName << std::endl;
@@ -628,11 +628,11 @@ struct ast_valid : public boost::static_visitor<bool>
 		}
 
 		for (size_t i = 0; i < f.args.size(); ++i)
-			res = boost::apply_visitor(ast_valid(pAbility, u), f.args[i].expr) && res;
+			res = boost::apply_visitor(ast_valid(ab, u), f.args[i].expr) && res;
 
 		// check type
 		for (size_t i = 0; i < f.args.size(); ++i) {
-			boost::optional<typeId> id = u.typeOf(pAbility, f.args[i]);
+			boost::optional<typeId> id = u.typeOf(ab, f.args[i]);
 			bool local_res = (id == p.second.argsType(i));
 			res = local_res && res;
 			if (local_res == false) {
@@ -654,43 +654,43 @@ struct ast_valid : public boost::static_visitor<bool>
 
 	bool operator() (const expression_ast& e) const
 	{
-		return boost::apply_visitor(ast_valid(pAbility, u), e.expr);
+		return boost::apply_visitor(ast_valid(ab, u), e.expr);
 	}
 
 	template<binary_op_kind T>
 	bool operator() (const binary_op<T>& b) const
 	{
 		bool left_valid, right_valid;
-		left_valid = boost::apply_visitor(ast_valid(pAbility, u), b.left.expr);
-		right_valid = boost::apply_visitor(ast_valid(pAbility, u), b.right.expr);
+		left_valid = boost::apply_visitor(ast_valid(ab, u), b.left.expr);
+		right_valid = boost::apply_visitor(ast_valid(ab, u), b.right.expr);
 		return left_valid && right_valid && ast_binary_valid<T>(u) ( 
-													u.typeOf(pAbility, b.left.expr),
-													u.typeOf(pAbility, b.right.expr));
+													u.typeOf(ab, b.left.expr),
+													u.typeOf(ab, b.right.expr));
 	}
 
 	template<unary_op_kind T>
 	bool operator() (const unary_op<T>& op) const
 	{
-		bool is_valid = boost::apply_visitor(ast_valid(pAbility, u), op.subject.expr);
-		return is_valid && ast_unary_valid<T>(u) (u.typeOf(pAbility, op.subject.expr)) ;
+		bool is_valid = boost::apply_visitor(ast_valid(ab, u), op.subject.expr);
+		return is_valid && ast_unary_valid<T>(u) (u.typeOf(ab, op.subject.expr)) ;
 	}
 };
 
 struct cond_adder
 {
 	bool& res;
-	boost::shared_ptr<ability> pAbility;
+	const ability& ab;
 	universe& u;
 	std::vector<expression_ast>& conds;
 
-	cond_adder(bool &res_, boost::shared_ptr<ability> pAbility_, universe& u_,
+	cond_adder(bool &res_, const ability& ab_, universe& u_,
 			std::vector<expression_ast>& conds_):
-		res(res_), pAbility(pAbility_), u(u_), conds(conds_)
+		res(res_), ab(ab_), u(u_), conds(conds_)
 	{};
 
 	void operator() (const expression_ast& cond) 
 	{
-		ast_valid is_valid(pAbility, u);
+		ast_valid is_valid(ab, u);
 		res = boost::apply_visitor(is_valid, cond.expr) && res;
 		conds.push_back(cond);
 	}
@@ -699,29 +699,29 @@ struct cond_adder
 struct task_adder
 {
 	bool& res;
-	boost::shared_ptr<ability> pAbility;
+	ability& ab;
 	universe &u;
 	task currentTask;
 
-	task_adder(bool &res_, boost::shared_ptr<ability> pAbility_, universe& u_):
-		res(res_), pAbility(pAbility_), u(u_)
+	task_adder(bool &res_, ability& ab_, universe& u_):
+		res(res_), ab(ab_), u(u_)
 	{};
 
 	void operator() (const task_decl& t) 
 	{
 		currentTask.name = t.name;
 		{
-			cond_adder adder(res, pAbility, u, currentTask.pre);
+			cond_adder adder(res, ab, u, currentTask.pre);
 			std::for_each(t.pre.list.begin(), t.pre.list.end(), adder); 
 			res = adder.res && res;
 		}
 		{
-			cond_adder adder(res, pAbility, u, currentTask.post);
+			cond_adder adder(res, ab, u, currentTask.post);
 			std::for_each(t.post.list.begin(), t.post.list.end(), adder); 
 			res = adder.res && res;
 		}
 		if (res) 
-			res = pAbility->add_task(currentTask);
+			res = ab.add_task(currentTask);
 	};
 };
 
@@ -735,7 +735,7 @@ universe::add_task(const task_decl_list_context& l)
 	}
 
 	bool res = true;
-	task_adder adder(res, it->second, *this);
+	task_adder adder(res, *(it->second), *this);
 	std::for_each(l.list.list.begin(), l.list.list.end(), adder);
 
 	return res;
@@ -916,5 +916,5 @@ universe::dump_ability(std::ostream& oss, const std::string& name) const
 		return;
 	}
 
-	it->second->dump(oss, tList);
+	it->second->dump(oss, tList, *this);
 }
