@@ -202,6 +202,7 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	std::for_each(fun_depends.begin(), fun_depends.end(), dump_depends(oss, "funcs.hh"));
 	oss << std::endl;
 	oss << "#include <model/ability.hh>" << std::endl << std::endl;
+	oss << "#include <model/task.hh>" << std::endl << std::endl;
 
 	namespaces n(oss, name_);
 

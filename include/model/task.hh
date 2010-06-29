@@ -50,7 +50,7 @@ namespace hyper {
 			}
 
 			protected:
-			virtual bool real_compute() { return false; }
+			virtual bool real_compute() const { return false; }
 		};
 
 		template <>
@@ -67,7 +67,7 @@ namespace hyper {
 			}
 
 			protected:
-			virtual bool real_compute() { return false; };
+			virtual bool real_compute() const { return false; };
 		};
 	}
 }

@@ -180,6 +180,22 @@ namespace {
 		}
 	};
 
+	struct build_mpl_vector
+	{
+		std::string& mpl_vector;
+		const typeList& tList;
+		
+		build_mpl_vector(std::string &mpl_vector_, const typeList& tList_) :
+			mpl_vector(mpl_vector_), tList(tList_) {}
+
+		void operator() (typeId t) 
+		{
+			if (mpl_vector != "") 
+				mpl_vector+= ",";
+			mpl_vector+= tList.get(t).name;
+		}
+	};
+
 	struct expression_dump
 	{
 		const universe& u;
@@ -188,18 +204,21 @@ namespace {
 		std::ostream& oss;
 		const typeList& tList;
 		size_t counter;
+		const std::string base_expr;
 
 		expression_dump(const universe& u_,
 						const ability& ability_context_, 
 						const task& task_context_,
 						std::ostream& oss_,
-						const typeList& tList_):
+						const typeList& tList_,
+						const std::string& base_expr_):
 			u(u_),
 			ability_context(ability_context_),
 			task_context(task_context_),
 			oss(oss_), 
 			tList(tList_),
-			counter(0)
+			counter(0),
+			base_expr(base_expr_)
 		{}
 
 		void operator() (const expression_ast& e) 
@@ -242,13 +261,26 @@ namespace {
 							   get_type());
 			}
 
+			std::string mpl_vector;
+			std::for_each(remote_sym_type.begin(), remote_sym_type.end(),
+						  build_mpl_vector(mpl_vector, tList));
+			mpl_vector = "boost::mpl::vector<" + mpl_vector + ">";
+
 			std::ostringstream expression_oss;
-			expression_oss << "expression_" << counter++;
+			expression_oss << base_expr << "expression_" << counter++;
 			std::string expression_name = expression_oss.str();
-			oss << indent << "struct " << expression_name <<  " {" << std::endl;
+			oss << indent << "struct " << expression_name;
+			oss << " : public model::expression<" << mpl_vector << " > {" << std::endl;
 			oss << indent_next << "const ability &a;" << std::endl;
 			if (has_remote_symbols)
 			{
+				oss << indent_next << expression_name;
+				oss << "(const ability& a_, boost::asio::io_service &io_s,";
+				oss << "const model::expression< " << mpl_vector << " >::arg_list& l,";
+				oss << "network::name_client& r) : " << std::endl;
+
+				oss << indent_next << "a(a_), model::expression< " << mpl_vector << " >(";
+				oss << "io_s, l, r) {}" << std::endl;
 			}
 
 			if (!has_remote_symbols) {
@@ -257,7 +289,7 @@ namespace {
 			}
 
 			dump_expression_ast dump(remote_syms);
-			oss << indent_next << "bool operator() () const {" << std::endl;
+			oss << indent_next << "bool real_compute() const {" << std::endl;
 			std::string compute_expr = boost::apply_visitor(dump, e.expr);
 			oss << indent_next_next << "return (" << compute_expr << ");" << std::endl;
 			oss << indent_next << "}" << std::endl;
@@ -278,9 +310,14 @@ namespace hyper {
 				oss << indent << "struct " << name << " {" << std::endl;
 				oss << next_indent << "const ability& a;" << std::endl;
 				oss << next_indent << name << "(const ability& a_) : a(a_) {}" << std::endl;
-				expression_dump e_dump(u, context, *this, oss, tList);
+				{
+				expression_dump e_dump(u, context, *this, oss, tList, "pre_");
 				std::for_each(pre.begin(), pre.end(), e_dump);
+				}
+				{
+				expression_dump e_dump(u, context, *this, oss, tList, "post_");
 				std::for_each(post.begin(), post.end(), e_dump);
+				}
 				oss << indent << "};" << std::endl;
 			}
 
@@ -289,10 +326,10 @@ namespace hyper {
 				oss << "Task " << t.name << std::endl;
 				oss << "Pre : " << std::endl;
 				std::copy(t.pre.begin(), t.pre.end(), 
-						std::ostream_iterator<expression_ast>( oss ));
+						std::ostream_iterator<expression_ast>( oss, "\n" ));
 				oss << std::endl << "Post : " << std::endl;
 				std::copy(t.post.begin(), t.post.end(),
-						std::ostream_iterator<expression_ast>( oss ));
+						std::ostream_iterator<expression_ast>( oss, "\n" ));
 				return oss;
 			}
 	}
