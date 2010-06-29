@@ -125,17 +125,17 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	BOOST_CHECK(rna.success == true);
 	BOOST_CHECK(rna.endpoint == endpoint_);
 
-	// test for name_client_sync
-	BOOST_CHECK_THROW(name_client_sync(io_s, "localhost", "5000"), boost::system::system_error);
+	// test for name_client
+	BOOST_CHECK_THROW(name_client(io_s, "localhost", "5000"), boost::system::system_error);
 
-	name_client_sync name_client(io_s, "localhost", "4242");
+	name_client name_client(io_s, "localhost", "4242");
 	std::pair<bool, boost::asio::ip::tcp::endpoint> p;
 
-	p = name_client.request_name("tata");
+	p = name_client.sync_resolve("tata");
 
 	BOOST_CHECK(p.first == false);
 
-	p = name_client.request_name("pipo");
+	p = name_client.sync_resolve("pipo");
 
 	BOOST_CHECK(p.first == true);
 	BOOST_CHECK(p.second == endpoint_);
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	BOOST_CHECK(p.first == true);
 	BOOST_CHECK(p.second == endpoint__);
 
-	p = name_client.request_name("tata");
+	p = name_client.sync_resolve("tata");
 	BOOST_CHECK(p.first == true);
 	BOOST_CHECK(p.second == endpoint__);
 

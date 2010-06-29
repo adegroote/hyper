@@ -38,7 +38,7 @@ namespace hyper {
 			tcp_ability_impl;
 
 			boost::asio::io_service io_s;
-			network::name_client_sync name_client;
+			network::name_client name_client;
 			network::proxy_serializer serializer;
 			network::proxy_visitor proxy_vis;
 			details::ability_visitor vis;

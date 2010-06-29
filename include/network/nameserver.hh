@@ -91,7 +91,7 @@ namespace hyper {
 				void remove_entry(const std::string&);
 		}; 
 
-		class name_client_sync {
+		class name_client {
 			typedef tcp::client<ns::output_msg> ns_client;
 			ns_client client;
 			public:
@@ -99,11 +99,11 @@ namespace hyper {
 			/*
 			 * Can throw a boost::system::error_code if we can connect
 			 */
-			name_client_sync(boost::asio::io_service&, 
+			name_client(boost::asio::io_service&, 
 							 const std::string&, const std::string&);
 
 			std::pair<bool, boost::asio::ip::tcp::endpoint> register_name(const std::string&);
-			std::pair<bool, boost::asio::ip::tcp::endpoint> request_name(const std::string&);
+			std::pair<bool, boost::asio::ip::tcp::endpoint> sync_resolve(const std::string&);
 		};
 	}
 }

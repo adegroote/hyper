@@ -124,7 +124,7 @@ namespace hyper {
 			map_.remove(ability);
 		}
 
-		name_client_sync::name_client_sync(boost::asio::io_service& io_s,
+		name_client::name_client(boost::asio::io_service& io_s,
 						const std::string& addr, const std::string& port) :
 			client(io_s)
 		{
@@ -132,7 +132,7 @@ namespace hyper {
 		}
 
 		std::pair<bool, boost::asio::ip::tcp::endpoint>
-		name_client_sync::register_name(const std::string& ability)
+		name_client::register_name(const std::string& ability)
 		{
 			network::register_name re;
 			register_name_answer rea;
@@ -147,7 +147,7 @@ namespace hyper {
 		}
 
 		std::pair<bool, boost::asio::ip::tcp::endpoint>
-		name_client_sync::request_name(const std::string& ability)
+		name_client::sync_resolve(const std::string& ability)
 		{
 			network::request_name rn;
 			request_name_answer rna;
