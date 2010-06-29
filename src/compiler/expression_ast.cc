@@ -100,6 +100,7 @@ struct expression_ast_print : public boost::static_visitor<std::string>
 std::ostream& hyper::compiler::operator << (std::ostream& os, const expression_ast& e)
 {
 	os << boost::apply_visitor(expression_ast_print(0), e.expr);
+	os << std::endl;
 	return os;
 }
 

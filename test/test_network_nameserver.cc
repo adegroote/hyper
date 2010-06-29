@@ -5,6 +5,32 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
 
+struct test_async_name
+{
+	hyper::network::name_client & client_;
+	hyper::network::name_resolve r;
+
+
+	test_async_name(hyper::network::name_client& client) : client_(client) {}
+
+	void handle_first_test(const boost::system::error_code &e)
+	{
+		std::cout << "handling test_async_name::first_test_async" << std::endl;
+		BOOST_CHECK(!e);
+		BOOST_CHECK(r.endpoint() ==  boost::asio::ip::tcp::endpoint(
+			boost::asio::ip::address_v4::any(), 4247));
+	}
+
+	void async_test() 
+	{
+		r.name("tata");
+		client_.async_resolve(r,
+				boost::bind(&test_async_name::handle_first_test, 
+							this, 
+							boost::asio::placeholders::error));
+	}
+};
+
 BOOST_AUTO_TEST_CASE ( namesever_test )
 {
 	using namespace hyper::network;
@@ -152,6 +178,12 @@ BOOST_AUTO_TEST_CASE ( namesever_test )
 	p = name_client.sync_resolve("tata");
 	BOOST_CHECK(p.first == true);
 	BOOST_CHECK(p.second == endpoint__);
+
+	boost::asio::io_service ios2;
+	hyper::network::name_client nc2(ios2, "localhost", "4242");
+	test_async_name test_async(nc2);
+	test_async.async_test();
+	ios2.run();
 
 	s.stop();
 	thr.join();

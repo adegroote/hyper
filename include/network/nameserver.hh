@@ -91,9 +91,37 @@ namespace hyper {
 				void remove_entry(const std::string&);
 		}; 
 
+		struct name_resolve {
+			request_name_answer rna;
+
+			name_resolve() {};
+			const std::string& name() { return rna.name; };
+			void name(const std::string& name) { rna.name = name; } // a bit hackish
+			const boost::asio::ip::tcp::endpoint& endpoint() { return rna.endpoint; }
+			bool success() { return rna.success; };
+		};
+
 		class name_client {
 			typedef tcp::client<ns::output_msg> ns_client;
 			ns_client client;
+
+			template <typename Handler>
+			void handle_resolve(const boost::system::error_code &e,
+								name_resolve& solv,
+								boost::tuple<Handler> handler)
+			{
+				if (e) {
+					boost::get<0>(handler)(e);
+				} else {
+					if (solv.success()) {
+						boost::get<0>(handler)(e);
+					} else {
+						// XXX wrong, return a real error from hyper::network::
+						boost::get<0>(handler)(boost::system::error_code());
+					}
+				}
+			}
+
 			public:
 
 			/*
@@ -104,6 +132,24 @@ namespace hyper {
 
 			std::pair<bool, boost::asio::ip::tcp::endpoint> register_name(const std::string&);
 			std::pair<bool, boost::asio::ip::tcp::endpoint> sync_resolve(const std::string&);
+
+			template <typename Handler>
+			void async_resolve(name_resolve & solv,
+							   Handler handler)
+			{
+				network::request_name rn;
+				rn.name = solv.name();
+
+				void (name_client::*f)(const boost::system::error_code& e,
+									   name_resolve& solv,
+									   boost::tuple<Handler>) =
+					&name_client::template handle_resolve<Handler>;
+
+				client.async_request(rn, solv.rna, 
+						boost::bind(f, this, boost::asio::placeholders::error,
+											 boost::ref(solv),
+											 boost::make_tuple(handler)));
+			}
 		};
 	}
 }

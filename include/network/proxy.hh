@@ -183,7 +183,7 @@ namespace hyper {
 
 				proxy_async_client<T> c;
 				Resolver& r_;
-				boost::asio::ip::tcp::endpoint endpoint_;
+				name_resolve solver;
 
 			private:
 				template <typename Handler>
@@ -221,7 +221,7 @@ namespace hyper {
 								boost::tuple<Handler>) =
 							&remote_proxy::template handle_connect<Handler>;
 
-						c.async_connect(endpoint_, 
+						c.async_connect(solver.endpoint(), 
 							boost::bind(f, this, boost::asio::placeholders::error, handler));
 					}
 				}
@@ -246,7 +246,8 @@ namespace hyper {
 							boost::tuple<Handler>) =
 						&remote_proxy::template handle_resolve<Handler>;
 
-					r_.async_resolve(ability_name_, endpoint_,
+					solver.name(ability_name_);
+					r_.async_resolve(solver,
 							boost::bind(f, this,
 										 boost::asio::placeholders::error,
 										 boost::make_tuple(handler)));
