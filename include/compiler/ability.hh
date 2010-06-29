@@ -4,8 +4,8 @@
 
 #include <hyperConfig.hh>
 
-#include <compiler/expression_ast.hh>
 #include <compiler/symbols.hh>
+#include <compiler/task.hh>
 #include <compiler/types.hh>
 
 namespace hyper {
@@ -25,11 +25,7 @@ namespace hyper {
 			symbolACL(const symbol& s_, abilityACL acl_) : s(s_), acl(acl_) {};
 		};
 
-		struct task {
-			std::string name;
-			std::vector<expression_ast> pre;
-			std::vector<expression_ast> post;
-		};
+		class universe;
 
 		class ability : public boost::noncopyable {
 			private:
@@ -72,7 +68,7 @@ namespace hyper {
 					return name_;
 				}
 
-				void dump(std::ostream& oss, const typeList& tList) const;
+				void dump(std::ostream& oss, const typeList& tList, const universe& u) const;
 		};
 	}
 }

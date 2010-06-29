@@ -4,6 +4,8 @@
 #include <compiler/output.hh>
 #include <compiler/scope.hh>
 
+#include <boost/bind.hpp>
+
 using namespace hyper::compiler;
 
 std::pair<bool, symbolACL>
@@ -181,7 +183,7 @@ struct add_proxy_symbol
 };
 
 void
-ability::dump(std::ostream& oss, const typeList& tList) const
+ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 {
 	std::set<std::string> type_depends;
 	compute_type_depends type_deps(type_depends, tList);
@@ -205,6 +207,12 @@ ability::dump(std::ostream& oss, const typeList& tList) const
 
 	print_symbol print(oss, tList, name_);
 	oss << "\t\t\tstruct ability : public model::ability {" << std::endl;
+
+	std::for_each(tasks.begin(), tasks.end(),
+				  boost::bind(&task::dump, _1, boost::ref(oss), 
+											   boost::cref(tList), 
+											   boost::cref(u),
+											   boost::cref(*this)));
 
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
