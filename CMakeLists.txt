@@ -38,7 +38,7 @@ include_directories(${HYPER_SOURCE_DIR}/include)
 
 set(model_test_ADDITIONAL_LIBS "hyper_network")
 
-foreach(lib compiler network model)
+foreach(lib compiler network logic model)
   string(TOUPPER "${lib}_sources" THIS_LIB_SOURCES)
   string(TOLOWER "hyper_${lib}" HyperLibrary)
   if(EXISTS ${HYPER_SOURCE_DIR}/src/${lib})
