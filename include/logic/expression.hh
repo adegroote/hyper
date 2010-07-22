@@ -63,6 +63,12 @@ namespace hyper {
 
 		generate_return generate(const std::string&, const funcDefList&);
 
+		bool operator == (const expression& e1, const expression& e2);
+
+		bool operator != (const expression& e1, const expression& e2)
+		{
+			return ! (e1 == e2);
+		}
 
 		struct function_call {
 			std::string name; // only for parsing stuff

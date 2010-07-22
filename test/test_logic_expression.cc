@@ -8,6 +8,7 @@ BOOST_AUTO_TEST_CASE ( logic_expression_test)
 	funcDefList list;
 	list.add("equal", 2);
 	list.add("less", 2);
+	list.add("plus", 2);
 	list.add("void", 0);
 	list.add("not", 1);
 
@@ -29,4 +30,22 @@ BOOST_AUTO_TEST_CASE ( logic_expression_test)
 
 	r = generate("equal(x, y, z)", list);
 	BOOST_CHECK(r.res == false);
+
+	generate_return r1, r2, r3, r4, r5;
+	r1 = generate("equal(x, y)", list);
+	BOOST_CHECK(r1.res);
+	r2 = generate("equal(x, plus(7, 3))", list);
+	BOOST_CHECK(r2.res);
+	r3 = generate("less(x, \"toto\")", list);
+	BOOST_CHECK(r3.res);
+	r4 = generate("equal(x, y)", list);
+	BOOST_CHECK(r4.res);
+	r5 = generate("equal(x, plus(7, 3))", list);
+	BOOST_CHECK(r5.res);
+
+	BOOST_CHECK(r1.e != r2.e);
+	BOOST_CHECK(r1.e != r3.e);
+	BOOST_CHECK(r1.e == r4.e);
+	BOOST_CHECK(r2.e == r5.e);
+	BOOST_CHECK(r3.e != r4.e);
 }

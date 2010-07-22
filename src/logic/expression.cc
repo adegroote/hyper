@@ -253,6 +253,41 @@ struct  grammar_expression : qi::grammar<Iterator, expression(), qi::in_state_sk
 	function<validate_func_adaptor> validate_func;
 };
 
+struct are_expression_equal : public boost::static_visitor<bool>
+{
+	template <typename U, typename V>
+	bool operator() ( const U& u, const V& v) const
+	{
+		return false;
+	}
+
+	template <typename U>
+	bool operator() (const Constant<U>& u, const Constant<U>& v) const
+	{
+		return (u.value == v.value);
+	}
+
+	bool operator() (const std::string& u, const std::string& v) const
+	{
+		return (u == v);
+	}
+
+	bool operator() (const function_call& f1, const function_call& f2) const
+	{
+		if (f1.id != f2.id)
+			return false;
+		bool same_args = true;
+		size_t i = 0;
+		while (same_args && i < f1.args.size())
+		{
+			same_args = same_args && 
+				boost::apply_visitor(are_expression_equal(), f1.args[i].expr, f2.args[i].expr);
+			++i;
+		}
+		return same_args;
+	}
+};
+
 namespace hyper {
 	namespace logic {
 		generate_return generate(const std::string& expr, const funcDefList& funcs)
@@ -331,12 +366,16 @@ namespace hyper {
 			oss << f.name << "(";
 			for (size_t i = 0; i < f.args.size(); ++i) {
 				oss << f.args[i];
-				if (i != (f.args.size() - 1)) {
-					oss << "," << std::endl;
-				}
+				if (i != (f.args.size() - 1)) 
+					oss << ","; 
 			}
 			oss << ")";
 			return oss;
+		}
+
+		bool operator == (const expression& e1, const expression& e2)
+		{
+			return boost::apply_visitor(are_expression_equal(), e1.expr, e2.expr);
 		}
 	}
 }
