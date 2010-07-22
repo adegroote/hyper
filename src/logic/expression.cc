@@ -154,13 +154,13 @@ struct validate_func_adaptor {
 };
 
 template <typename Iterator, typename Lexer>
-struct  grammar_expression : qi::grammar<Iterator, expression(), qi::in_state_skipper<Lexer> >
+struct  grammar_expression : qi::grammar<Iterator, function_call(), qi::in_state_skipper<Lexer> >
 {
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
     grammar_expression(const TokenDef& tok, const funcDefList& funcs) : 
-		grammar_expression::base_type(expression_, "expression"),
+		grammar_expression::base_type(func_call, "expression"),
 		validate_func(funcs)
 	{
 	    using qi::lit;
@@ -238,7 +238,7 @@ struct  grammar_expression : qi::grammar<Iterator, expression(), qi::in_state_sk
 		debug(func_call);
 #endif
 
-		qi::on_error<qi::fail> (expression_, error_handler(_4, _3, _2));
+		qi::on_error<qi::fail> (func_call, error_handler(_4, _3, _2));
 	}
 
 	qi::rule<Iterator, expression(), white_space_> expression_;

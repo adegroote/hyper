@@ -11,7 +11,7 @@ namespace hyper {
 
 			private:
 				const funcDefList& funcs;
-				typedef std::vector<expression> expressionV;
+				typedef std::vector<function_call> expressionV;
 
 				expressionV list;
 
@@ -25,7 +25,7 @@ namespace hyper {
 					list.push_back(r.e);
 				}
 
-				bool matches(const expression& e) const;
+				bool matches(const function_call & e) const;
 		};
 	}
 }

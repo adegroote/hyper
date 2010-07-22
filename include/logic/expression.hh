@@ -55,14 +55,6 @@ namespace hyper {
 
 		std::ostream& operator << (std::ostream& oss, const expression& e);
 
-			/* Will extend it with error case if needed */
-		struct generate_return {
-			bool res;
-			expression e;
-		};
-
-		generate_return generate(const std::string&, const funcDefList&);
-
 		bool operator == (const expression& e1, const expression& e2);
 
 		inline bool operator != (const expression& e1, const expression& e2)
@@ -75,6 +67,14 @@ namespace hyper {
 			functionId id;
 			std::vector< expression > args;
 		};
+
+		/* Will extend it with error case if needed */
+		struct generate_return {
+			bool res;
+			function_call e;
+		};
+
+		generate_return generate(const std::string&, const funcDefList&);
 
 		std::ostream& operator << (std::ostream& oss, const function_call& f);
 
