@@ -32,5 +32,16 @@ namespace hyper {
 
 			return boost::none;
 		}
+
+		boost::optional<functionId> funcDefList::getId(const std::string& name) const
+		{
+			funcM::const_iterator it = m.find(name);
+			if (it == m.end())
+				return boost::none;
+			else
+				return it->second;
+
+			return boost::none;
+		}
 	}
 }

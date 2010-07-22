@@ -33,4 +33,12 @@ BOOST_AUTO_TEST_CASE ( logic_function_def_test)
 
 	f_opt = list.get("toto");
 	BOOST_CHECK(! f_opt );
+
+	boost::optional<functionId> f_id;
+	f_id = list.getId("less");
+	BOOST_CHECK(f_id);
+	BOOST_CHECK(*f_id == 1);
+
+	f_id = list.getId("toto");
+	BOOST_CHECK(! f_opt);
 }

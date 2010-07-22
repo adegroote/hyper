@@ -48,6 +48,7 @@ namespace hyper {
 				functionId add(const std::string& name, size_t arity);
 				function_def get(functionId id) const;
 				boost::optional<function_def> get(const std::string& name) const;
+				boost::optional<functionId> getId(const std::string& name) const;
 		};
 	}
 }
