@@ -65,7 +65,7 @@ namespace hyper {
 
 		bool operator == (const expression& e1, const expression& e2);
 
-		bool operator != (const expression& e1, const expression& e2)
+		inline bool operator != (const expression& e1, const expression& e2)
 		{
 			return ! (e1 == e2);
 		}

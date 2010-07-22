@@ -258,6 +258,7 @@ struct are_expression_equal : public boost::static_visitor<bool>
 	template <typename U, typename V>
 	bool operator() ( const U& u, const V& v) const
 	{
+		(void) u; (void) v;
 		return false;
 	}
 
