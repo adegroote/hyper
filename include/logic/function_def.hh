@@ -12,18 +12,23 @@ namespace hyper {
 	namespace logic {
 		typedef std::size_t functionId ;
 
+		struct eval_predicate;
+
 		/*
 		 * In the logic world, everything is untyped
 		 * (type validation has been done in a previous step, so we don't care)
+		 * eval is not owned by function_def, but by the funcDefList associated
 		 */
 		struct function_def 
 		{
 			std::string name;
 			size_t arity;
+			eval_predicate* eval_pred;
 
 			function_def() {};
-			function_def(const std::string& name_, const size_t arity_):
-				name(name_), arity(arity_) {}
+			function_def(const std::string& name_, const size_t arity_, 
+						 eval_predicate* eval_ = 0):
+				name(name_), arity(arity_), eval_pred(eval_) {}
 		};
 
 		/*
@@ -37,16 +42,25 @@ namespace hyper {
 		{
 			private:
 				typedef std::vector<function_def> funcV;
+				typedef std::vector<eval_predicate*> funcE;
 				typedef std::map<std::string, functionId> funcM;
 
 				funcV list;
+				funcE list_eval;
 				funcM m;
 
 			public:
-				funcDefList() {};
+				funcDefList();
+				~funcDefList();
 
-				functionId add(const std::string& name, size_t arity);
-				function_def get(functionId id) const;
+				functionId add(const std::string& name, size_t arity, eval_predicate* eval = 0);
+
+				const function_def& get(functionId id) const
+				{
+					assert (id < list.size());
+					return list[id];
+				}
+
 				boost::optional<function_def> get(const std::string& name) const;
 				boost::optional<functionId> getId(const std::string& name) const;
 		};
