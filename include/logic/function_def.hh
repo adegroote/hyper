@@ -37,6 +37,9 @@ namespace hyper {
 		 * This id won't be unique between the different abilities, so won't be
 		 * used to encode the msg exchanged, but will be used to compute logic
 		 * search.
+		 *
+		 * funcDefList is also responsible of the lifetime of the
+		 * eval_predicate*, stored in list_eval
 		 */
 		class funcDefList : public boost::noncopyable
 		{

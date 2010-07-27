@@ -6,6 +6,7 @@
 using namespace boost::logic;
 using namespace hyper::logic;
 
+namespace {
 struct are_equal : public boost::static_visitor<tribool>
 {
 	template <typename T, typename U>
@@ -36,6 +37,7 @@ struct not_equal
 		return ! (equal()(e1, e2));
 	}
 };
+}
 
 BOOST_AUTO_TEST_CASE ( logic_eval_test )
 {
