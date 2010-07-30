@@ -66,6 +66,8 @@ namespace hyper {
 
 				boost::optional<function_def> get(const std::string& name) const;
 				boost::optional<functionId> getId(const std::string& name) const;
+
+				size_t size() const { return list.size(); }
 		};
 	}
 }
