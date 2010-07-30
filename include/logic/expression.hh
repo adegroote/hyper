@@ -19,6 +19,12 @@ namespace hyper {
 		};
 
 		template <typename T>
+		bool operator < (const Constant<T>& t1, const Constant<T>& t2)
+		{
+			return t1.value < t2.value;
+		}
+
+		template <typename T>
 		std::ostream& operator << (std::ostream& oss, const Constant<T>& c)
 		{
 			oss << c.value;
@@ -62,11 +68,15 @@ namespace hyper {
 			return ! (e1 == e2);
 		}
 
+		bool operator < (const expression& e1, const expression& e2);
+
 		struct function_call {
 			std::string name; // only for parsing stuff
 			functionId id;
 			std::vector< expression > args;
 		};
+
+		bool operator < (const function_call& f1, const function_call& f2);
 
 		/* Will extend it with error case if needed */
 		struct generate_return {

@@ -378,5 +378,34 @@ namespace hyper {
 		{
 			return boost::apply_visitor(are_expression_equal(), e1.expr, e2.expr);
 		}
+
+		bool operator < (const expression& e1, const expression& e2)
+		{
+			return e1.expr < e2.expr;
+		}
+
+		bool operator < (const function_call& f1, const function_call & f2)
+		{
+			if (f1.id < f2.id)
+				return true;
+			if (f1.id > f2.id)
+				return false;
+			std::vector<expression>::const_iterator it1, it2;
+			it1 = f1.args.begin();
+			it2 = f2.args.begin();
+			while (it1 != f1.args.end())
+			{
+				if (*it1 < *it2)
+					return true;
+				if (*it1 == *it2) {
+					++it1;
+					++it2;
+				} else
+					return false;
+			}
+
+			return false;
+		}
+			
 	}
 }
