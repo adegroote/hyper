@@ -9,26 +9,17 @@ namespace hyper {
 	namespace logic {
 		class facts {
 			public:
-				typedef std::vector<function_call> expressionV;
-				typedef expressionV::const_iterator const_iterator;
+				typedef std::vector<expression> expressionV;
+				typedef std::vector<expressionV> factsV;
 
 			private:
 				const funcDefList& funcs;
-				expressionV list;
+				factsV list;
 
 			public:	
 				facts(const funcDefList& funcs_): funcs(funcs_) {}
 
-				const_iterator add(const std::string& s)
-				{
-					generate_return r = generate(s, funcs);
-					assert(r.res);
-					list.push_back(r.e);
-					return --list.end();
-				}
-
-				const_iterator begin() const { return list.begin(); }
-				const_iterator end() const { return list.end(); }
+				bool add(const std::string& s);
 
 				bool matches(const function_call & e) const;
 		};

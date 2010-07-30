@@ -91,6 +91,9 @@ BOOST_AUTO_TEST_CASE ( logic_facts_test )
 	BOOST_CHECK(r.res);
 	BOOST_CHECK(our_facts.matches(r.e) == false);
 
+	r = generate("less(z, 7)", funcs);
+	BOOST_CHECK(r.res);
+	BOOST_CHECK(our_facts.matches(r.e) == true);
 	/* More difficult, equal is symetric */
 	//BOOST_CHECK(our_facts.matches(r.e));
 }
