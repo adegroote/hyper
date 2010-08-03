@@ -7,9 +7,8 @@
 
 namespace hyper {
 	namespace logic {
-		typedef std::pair<expression, expression> unify_p;
-		typedef std::vector<unify_p> unifyV;
-		typedef std::pair<bool, unifyV > unify_res;
+		typedef std::map<std::string, expression> unifyM;
+		typedef std::pair<bool, unifyM> unify_res;
 
 		/*
 		 * It is not a real unification in the logical sense, as it is not a
@@ -24,7 +23,7 @@ namespace hyper {
 		 * will return <false, ...> because 7 can't take the value of b. A real
 		 * unify here will say that b == 7 and a == x with no contrainst
 		 */
-		unify_res unify(const function_call& f1, const function_call& f2);
+		unify_res unify(const function_call& f1, const function_call& f2, const unifyM& ctx);
 	}
 }
 
