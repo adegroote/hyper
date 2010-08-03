@@ -12,6 +12,7 @@ namespace hyper {
 			if (r.e.id >= list.size())
 				list.resize(funcs.size());
 			list[r.e.id].push_back(r.e);
+			size__++;
 			return true;
 		}
 

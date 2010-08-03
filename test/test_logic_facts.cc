@@ -65,9 +65,13 @@ BOOST_AUTO_TEST_CASE ( logic_facts_test )
 	funcs.add("equal", 2, new eval<equal, 2>());
 	funcs.add("less", 2, new eval<less, 2>());
 
+	BOOST_CHECK(our_facts.size() == 0);
 	our_facts.add("equal(x, 7)");
+	BOOST_CHECK(our_facts.size() == 1);
 	our_facts.add("equal(x, y)");
+	BOOST_CHECK(our_facts.size() == 2);
 	our_facts.add("less(z, 7)");
+	BOOST_CHECK(our_facts.size() == 3);
 
 	generate_return r = generate("equal(x, 7)", funcs);
 	BOOST_CHECK(r.res);
