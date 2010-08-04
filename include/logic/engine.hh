@@ -16,6 +16,8 @@ namespace hyper {
 				facts facts_;
 				rules rules_;
 
+				void apply_rules();
+
 			public:
 				engine();
 				bool add_func(const std::string&, size_t, eval_predicate* = 0);
