@@ -3,17 +3,24 @@
 
 namespace hyper {
 	namespace logic {
+		bool facts::add(const function_call& f)
+		{
+			if (f.id >= list.size())
+				list.resize(funcs.size());
+			std::pair< expressionS::iterator, bool> p;
+			p = list[f.id].insert(f);
+			if (p.second)
+				size__++;
+			return p.second;
+		}
+
 		bool facts::add(const std::string& s)
 		{
 			generate_return r = generate(s, funcs);
 			assert(r.res);
 			if (!r.res) return false;
 
-			if (r.e.id >= list.size())
-				list.resize(funcs.size());
-			list[r.e.id].push_back(r.e);
-			size__++;
-			return true;
+			return add(r.e);
 		}
 
 		bool facts::matches(const function_call& f) const
@@ -31,7 +38,7 @@ namespace hyper {
 			if (f.id >= list.size())
 				return false;
 
-			expressionV::const_iterator it = list[f.id].begin();
+			expressionS::const_iterator it = list[f.id].begin();
 			bool has_matched = false;
 			while (!has_matched && it != list[f.id].end())
 			{

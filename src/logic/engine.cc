@@ -21,8 +21,10 @@ namespace hyper {
 
 		bool engine::add_fact(const std::vector<std::string>& exprs)
 		{
+			// help the compiler to choose right overload
+			bool (facts::*f) (const std::string& s) = &facts::add;
 			std::for_each(exprs.begin(), exprs.end(), 
-						  boost::bind(&facts::add, boost::ref(facts_), _1));
+						  boost::bind(f, boost::ref(facts_), _1));
 			return true;
 		}
 

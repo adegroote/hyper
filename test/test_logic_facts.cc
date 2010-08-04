@@ -72,6 +72,10 @@ BOOST_AUTO_TEST_CASE ( logic_facts_test )
 	BOOST_CHECK(our_facts.size() == 2);
 	our_facts.add("less(z, 7)");
 	BOOST_CHECK(our_facts.size() == 3);
+	our_facts.add("equal(x, y)");
+	// inserting a fact already present doesn't give you a lot more information
+	BOOST_CHECK(our_facts.size() == 3);
+
 
 	generate_return r = generate("equal(x, 7)", funcs);
 	BOOST_CHECK(r.res);

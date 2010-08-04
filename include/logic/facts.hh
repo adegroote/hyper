@@ -3,15 +3,16 @@
 
 #include <logic/expression.hh>
 
+#include <set>
 #include <vector>
 
 namespace hyper {
 	namespace logic {
 		class facts {
 			public:
-				typedef std::vector<function_call> expressionV;
-				typedef std::vector<expressionV> factsV;
-				typedef expressionV::const_iterator const_iterator;
+				typedef std::set<function_call> expressionS;
+				typedef std::vector<expressionS> factsV;
+				typedef expressionS::const_iterator const_iterator;
 
 			private:
 				const funcDefList& funcs;
@@ -22,6 +23,7 @@ namespace hyper {
 				facts(const funcDefList& funcs_): funcs(funcs_), size__(0) {}
 
 				bool add(const std::string& s);
+				bool add(const function_call& f);
 
 				bool matches(const function_call & e) const;
 
