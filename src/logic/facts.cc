@@ -23,7 +23,7 @@ namespace hyper {
 			return add(r.e);
 		}
 
-		bool facts::matches(const function_call& f) const
+		boost::logic::tribool facts::matches(const function_call& f) const
 		{
 			// try to check if the function_call is evaluable
 			boost::logic::tribool res;
@@ -36,7 +36,7 @@ namespace hyper {
 			// we don't have conclusion from evaluation, check in the know fact
 			
 			if (f.id >= list.size())
-				return false;
+				return boost::logic::indeterminate;
 
 			expressionS::const_iterator it = list[f.id].begin();
 			bool has_matched = false;
@@ -46,7 +46,9 @@ namespace hyper {
 				++it;
 			}
 			
-			return has_matched;
+			if (has_matched) 
+				return has_matched;
+			return boost::logic::indeterminate;
 		}
 
 		struct dump_facts

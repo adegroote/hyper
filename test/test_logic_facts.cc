@@ -104,4 +104,8 @@ BOOST_AUTO_TEST_CASE ( logic_facts_test )
 	BOOST_CHECK(our_facts.matches(r.e) == true);
 	/* More difficult, equal is symetric */
 	//BOOST_CHECK(our_facts.matches(r.e));
+
+	r = generate("equal(v, w)", funcs);
+	BOOST_CHECK(r.res);
+	BOOST_CHECK(boost::logic::indeterminate( our_facts.matches(r.e)));
 }

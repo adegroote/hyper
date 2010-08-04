@@ -228,11 +228,7 @@ namespace hyper {
 			assert(r.res);
 			const function_call& f = r.e;
 
-			bool match = facts_.matches(f);
-			if (match)
-				return match;
-
-			return boost::logic::indeterminate;
+			return facts_.matches(f);
 		}
 
 		std::ostream& operator << (std::ostream& os, const engine& e)

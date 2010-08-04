@@ -3,6 +3,8 @@
 
 #include <logic/expression.hh>
 
+#include <boost/logic/tribool.hpp>
+
 #include <iostream>
 #include <set>
 #include <vector>
@@ -26,7 +28,7 @@ namespace hyper {
 				bool add(const std::string& s);
 				bool add(const function_call& f);
 
-				bool matches(const function_call & e) const;
+				boost::logic::tribool matches(const function_call & e) const;
 
 				const_iterator begin(functionId id) const { 
 					if (id >= list.size())
