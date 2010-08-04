@@ -8,24 +8,11 @@
 namespace {
 	using namespace hyper::logic;
 
-#if 0
-	struct is_bad_unification {
-		bool operator() (const unify_res& uni) const
-		{
-			return !uni.first;
-		}
-	};
-
-	struct reduce
-	{
-		void operator() (std::vector<unify_res>& unify_)
-		{
-			unify_.erase(std::remove_if(unify_.begin(), unify_.end(), is_bad_unification()), 
-						 unify_.end());
-		}
-	};
-#endif
-
+	/*
+	 * Try to find unification between one condition of a rule and one fact
+	 * If the unification is succesful, it is addede to unify_vect
+	 * Otherwise, there is no effect
+	 */
 	struct apply_unification_ 
 	{
 		facts& facts_;
@@ -49,6 +36,9 @@ namespace {
 		}
 	};
 
+	/*
+	 * Try to find unification between one condition of a rule and the facts
+	 */
 	struct apply_unification 
 	{
 		facts& facts_;
@@ -68,6 +58,9 @@ namespace {
 		}
 	};
 
+	/*
+	 * Really generate a fact from an expression and a unification map
+	 */
 	struct do_unification : public boost::static_visitor<expression>
 	{
 		const unifyM& m;
@@ -98,6 +91,9 @@ namespace {
 		}
 	};
 
+	/*
+	 * Generate a fact from a rule and a unification map
+	 */
 	struct generate_fact
 	{
 		const function_call& f;
@@ -114,6 +110,9 @@ namespace {
 		}
 	};
 
+	/*
+	 * Add a fact from a rule and each unification we can find
+	 */
 	struct add_facts
 	{
 		facts& facts_;
@@ -137,6 +136,15 @@ namespace {
 		}
 	};
 
+	/*
+	 * Try to apply a rule to a set of facts
+	 *
+	 * For that, we try to compute unification between the rules condition and
+	 * the facts, and if we can find such unification, we generate new facts on
+	 * the base of the action part of the rule
+	 *
+	 * It returns true if we compute new facts
+	 */
 	struct apply_rule 
 	{
 		facts& facts_;
