@@ -1,6 +1,7 @@
 #ifndef _LOGIC_UNIFY_HH_
 #define _LOGIC_UNIFY_HH_
 
+#include <iostream>
 #include <vector>
 
 #include <logic/expression.hh>
@@ -24,6 +25,8 @@ namespace hyper {
 		 * unify here will say that b == 7 and a == x with no contrainst
 		 */
 		unify_res unify(const function_call& f1, const function_call& f2, const unifyM& ctx);
+
+		std::ostream& operator << (std::ostream& os, const unifyM& m);
 	}
 }
 

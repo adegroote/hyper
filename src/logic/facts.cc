@@ -48,5 +48,23 @@ namespace hyper {
 			
 			return has_matched;
 		}
+
+		struct dump_facts
+		{
+			std::ostream& os;
+
+			dump_facts(std::ostream& os_) : os(os_) {}
+
+			void operator() (const facts::expressionS& s) const
+			{
+				std::copy(s.begin(), s.end(), std::ostream_iterator<expression> ( os, "\n"));
+			}
+		};
+
+		std::ostream& operator << (std::ostream& os, const facts& f)
+		{
+			std::for_each(f.list.begin(), f.list.end(), dump_facts(os));
+			return os;
+		}
 	}
 }

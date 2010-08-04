@@ -62,5 +62,11 @@ namespace hyper {
 			r_.push_back(r);
 			return true;
 		}
+
+		std::ostream& operator << (std::ostream& os, const rules& r)
+		{
+			std::copy(r.begin(), r.end(), std::ostream_iterator<rule> ( os, "\n"));
+			return os;
+		}
 	}
 }

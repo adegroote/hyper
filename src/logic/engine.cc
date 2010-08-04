@@ -226,5 +226,15 @@ namespace hyper {
 
 			return boost::logic::indeterminate;
 		}
+
+		std::ostream& operator << (std::ostream& os, const engine& e)
+		{
+			os << "FACTS : " << std::endl;
+			os << e.facts_;
+			os << "\n ====================================== \n";
+			os << "RULES : " << std::endl;
+			os << e.rules_;
+			return os;
+		}
 	}
 }

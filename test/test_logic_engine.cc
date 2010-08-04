@@ -76,8 +76,10 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 	BOOST_CHECK(e.add_fact("equal(x, y)"));
 	BOOST_CHECK(e.add_fact("equal(x, 7)"));
-	BOOST_CHECK(e.add_fact("less(z, 9)"));
+	BOOST_CHECK(e.add_fact("less(y, 9)"));
 	BOOST_CHECK(e.add_fact("less(z, y)"));
+
+	std::cout << e << std::endl;
 
 	boost::logic::tribool r;
 	r = e.infer("equal(x, 7)");

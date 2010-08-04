@@ -108,5 +108,12 @@ namespace hyper {
 
 			return res;
 		}
+
+		std::ostream& operator << (std::ostream& os, const unifyM& m)
+		{
+			for (unifyM::const_iterator it = m.begin(); it != m.end(); ++it)
+				os << "\tunifying " << it->first << " with " << it-> second << "\n";
+			return os;
+		}
 	}
 }

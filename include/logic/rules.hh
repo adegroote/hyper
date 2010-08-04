@@ -37,7 +37,10 @@ namespace hyper {
 				const_iterator end() const { return r_.end(); }
 
 				size_t size() { return r_.size(); }
+
+				friend std::ostream& operator << (std::ostream&, const rules&);
 		};
+		std::ostream& operator << (std::ostream&, const rules&);
 	}
 }
 

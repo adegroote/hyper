@@ -28,7 +28,11 @@ namespace hyper {
 							  const std::vector<std::string>& action);
 
 				boost::logic::tribool infer(const std::string& goal);
+
+				friend std::ostream& operator << (std::ostream&, const engine&);
 		};
+
+		std::ostream& operator << (std::ostream&, const engine&);
 	}
 }
 

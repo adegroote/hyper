@@ -3,6 +3,7 @@
 
 #include <logic/expression.hh>
 
+#include <iostream>
 #include <set>
 #include <vector>
 
@@ -47,8 +48,10 @@ namespace hyper {
 
 				size_t size() const { return size__; }
 
-
+				friend std::ostream& operator << (std::ostream& os, const facts&);
 		};
+
+		std::ostream& operator << (std::ostream& os, const facts&);
 	}
 }
 
