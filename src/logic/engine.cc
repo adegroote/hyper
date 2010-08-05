@@ -244,6 +244,7 @@ namespace {
 									  facts_.sub_end(*it_id),
 									  std::inserter(tmp, tmp.begin()));
 				std::swap(res, tmp);
+				++it_id;
 			}
 
 			m[s] = res;
@@ -393,8 +394,6 @@ namespace {
 			 * possible expression (intersection of all possible expression for
 			 * each category
 			 */
-
-
 			vec_expressionM possible_expression(unify_vect.size());
 			for (size_t i = 0; i < unify_vect.size(); ++i)
 				std::for_each(unbounded_symbols[i].begin(),
