@@ -1,9 +1,13 @@
 #include <logic/engine.hh>
 #include <logic/unify.hh>
+#include <logic/eval.hh>
 
+#include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
 
 #include <set>
+#include <sstream>
+
 
 namespace {
 	using namespace hyper::logic;
@@ -381,7 +385,7 @@ namespace {
 			for (size_t i = 0; i < unify_vect.size(); ++i) 
 				std::for_each(unify_vect[i].begin(), unify_vect[i].end(),
 							  list_keys<std::string>(bounded_symbols[i]));
-						  
+
 			/* for each bound map, compute all the unbounded key */
 			vector_set_symbols unbounded_symbols(unify_vect.size());
 			for (size_t i = 0; i < unify_vect.size(); ++i)
@@ -412,16 +416,100 @@ namespace {
 			return false;
 		}
 	};
+
+	struct are_equal : public boost::static_visitor<tribool>
+	{
+		template <typename T, typename U>
+		tribool operator()(const T& t, const U& u) const
+		{
+			(void)t; (void) u; 
+			return boost::logic::indeterminate;
+		}
+	
+		template <typename U>
+		tribool operator () (const Constant<U>& u, const Constant<U>& v) const
+		{
+			return (u.value == v.value);
+		}
+	};
+
+	struct equal
+	{
+		tribool operator() (const expression& e1, const expression& e2) const
+		{
+			return boost::apply_visitor(are_equal(), e1.expr, e2.expr);
+		}
+	};
 }
 
 namespace hyper {
 	namespace logic {
-		engine::engine() : facts_(funcs_), rules_(funcs_) {}
+		engine::engine() : facts_(funcs_), rules_(funcs_) 
+		{
+			funcs_.add("equal", 2, new eval<equal, 2>());
+
+			add_rule("equal_reflexivity", 
+					 boost::assign::list_of<std::string>("equal(X, Y)"),
+					 boost::assign::list_of<std::string>("equal(Y, X)"));
+
+			add_rule("equal_transitiviy", 
+					  boost::assign::list_of<std::string>("equal(X, Y)")("equal(Y,Z)"),
+					  boost::assign::list_of<std::string>("equal(X, Z)"));
+		}
 
 		bool engine::add_func(const std::string& name, size_t arity,
 							  eval_predicate* eval)
 		{
 			funcs_.add(name, arity, eval);
+			/*
+			 * For each function f of arity n, state that 
+			 * if f(X1, X2, ..., XN) and equal(X1, Y1) then f(Y1, X2, ..., XN)
+			 */
+			typedef std::vector<std::string> statement;
+			std::vector<statement> conds;
+			for (size_t i = 0; i < arity; ++i) {
+				statement s;
+				std::ostringstream oss;
+				oss << name << "(";
+				for (size_t j = 0; j < arity; ++j) {
+					oss << "X" << j;
+					if (j != arity - 1)
+						oss << ",";
+				}
+				oss << ")";
+				s.push_back(oss.str());
+
+				oss.str("");
+				oss << "equal(X" << i << ",Y" << i << ")";
+				s.push_back(oss.str());
+				conds.push_back(s);
+			}
+
+			std::vector<statement> action;
+			for (size_t i = 0; i < arity; ++i) {
+				statement s;
+				std::ostringstream oss;
+				oss << name << "(";
+				for (size_t j = 0; j < arity; ++j) {
+					if ( i == j ) 
+						oss << "Y" << j;
+					else 
+						oss << "X" << j;
+					if (j != arity - 1)
+						oss << ",";
+				}
+				oss << ")";
+				s.push_back(oss.str());
+				action.push_back(s);
+			}
+
+			for (size_t i = 0; i < arity; ++i) {
+				std::ostringstream oss;
+				oss << name << "_unify" << i;
+
+				add_rule(oss.str(), conds[i], action[i]);
+			}
+
 			return true; // XXX
 		}
 
