@@ -1,6 +1,33 @@
 #include <logic/facts.hh>
 #include <logic/eval.hh>
 
+namespace {
+	using namespace hyper::logic;
+
+	struct set_inserter : public boost::static_visitor<void>
+	{
+		facts::sub_expressionV& list;
+		facts::sub_expressionS& set;
+
+		set_inserter(facts::sub_expressionV& list_, facts::sub_expressionS& set_) : 
+			list(list_), set(set_) {}
+
+		template <typename T>
+		void operator() (const T& t) const
+		{
+			set.insert(t);
+		}
+
+		void operator() (const function_call& f) const
+		{
+			set.insert(f);
+			set_inserter inserter(list, list[f.id]);
+			std::vector<expression>::const_iterator it;
+			for (it = f.args.begin(); it != f.args.end(); ++it)
+				boost::apply_visitor(inserter, it->expr);
+		}
+	};
+}
 namespace hyper {
 	namespace logic {
 		bool facts::add(const function_call& f)
@@ -9,8 +36,15 @@ namespace hyper {
 				list.resize(funcs.size());
 			std::pair< expressionS::iterator, bool> p;
 			p = list[f.id].insert(f);
-			if (p.second)
+			if (p.second) {
 				size__++;
+				if (f.id >= sub_list.size())
+					sub_list.resize(funcs.size());
+				set_inserter inserter(sub_list, sub_list[f.id]);
+				std::vector<expression>::const_iterator it;
+				for (it = f.args.begin(); it != f.args.end(); ++it)
+					boost::apply_visitor(inserter, it->expr);
+			}
 			return p.second;
 		}
 

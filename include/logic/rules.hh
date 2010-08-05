@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <vector>
+#include <set>
 
 namespace hyper {
 	namespace logic {
@@ -14,6 +15,11 @@ namespace hyper {
 			std::string identifier;
 			std::vector<function_call> condition;
 			std::vector<function_call> action;
+
+			typedef std::map<std::string, std::set<functionId> > map_symbol;
+
+			/* List of symbols involved in the rule */
+			map_symbol symbols;
 		};
 
 		std::ostream& operator << (std::ostream&, const rule&);

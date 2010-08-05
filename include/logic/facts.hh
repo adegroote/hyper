@@ -17,9 +17,15 @@ namespace hyper {
 				typedef std::vector<expressionS> factsV;
 				typedef expressionS::const_iterator const_iterator;
 
+				/* A list of sub-expression which appears for each category */
+				typedef std::set<expression> sub_expressionS;
+				typedef std::vector<sub_expressionS> sub_expressionV;
+				typedef sub_expressionS::const_iterator sub_const_iterator;
+
 			private:
 				const funcDefList& funcs;
 				mutable factsV list;
+				mutable sub_expressionV sub_list;
 				size_t size__;
 
 			public:	
@@ -40,6 +46,18 @@ namespace hyper {
 					if (id >= list.size())
 						list.resize(funcs.size());
 					return list[id].end();
+				}
+
+				sub_const_iterator sub_begin(functionId id) const {
+					if (id >= sub_list.size())
+						sub_list.resize(funcs.size());
+					return sub_list[id].begin();
+				}
+
+				sub_const_iterator sub_end(functionId id) const {
+					if (id >= sub_list.size())
+						sub_list.resize(funcs.size());
+					return sub_list[id].end();
 				}
 
 				size_t size(functionId id) const {

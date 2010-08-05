@@ -95,5 +95,9 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	r = e.infer("equal(7, y)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
+
+	r = e.infer("less(z, 12)");
+	BOOST_CHECK(! boost::logic::indeterminate(r));
+	BOOST_CHECK(r);
 }
 
