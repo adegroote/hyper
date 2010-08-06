@@ -1,6 +1,8 @@
 #include <logic/facts.hh>
 #include <logic/eval.hh>
 
+#include <boost/bind.hpp>
+
 namespace {
 	using namespace hyper::logic;
 
@@ -27,6 +29,21 @@ namespace {
 				boost::apply_visitor(inserter, it->expr);
 		}
 	};
+
+	struct inner_function_call : public boost::static_visitor<void>
+	{
+		std::vector<function_call> & v;
+
+		inner_function_call(std::vector<function_call>& v_) : v(v_) {}
+
+		template <typename T>
+		void operator() (const T& t) const { (void) t; }
+
+		void operator() (const function_call& f) const 
+		{
+			v.push_back(f);
+		}
+	};
 }
 namespace hyper {
 	namespace logic {
@@ -44,6 +61,14 @@ namespace hyper {
 				std::vector<expression>::const_iterator it;
 				for (it = f.args.begin(); it != f.args.end(); ++it)
 					boost::apply_visitor(inserter, it->expr);
+
+				/* Insert sub_fact */
+				std::vector<function_call> s;
+				for (it = f.args.begin(); it != f.args.end(); ++it)
+					boost::apply_visitor(inner_function_call(s), it->expr);
+
+				bool (facts::*f)(const function_call&) = &facts::add;
+				std::for_each(s.begin(), s.end(), boost::bind(f, this, _1));
 			}
 			return p.second;
 		}

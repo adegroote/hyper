@@ -38,15 +38,26 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	engine e;
 
 	BOOST_CHECK(e.add_func("less", 2, new eval<less, 2>()));
+	BOOST_CHECK(e.add_func("distance", 2));
 
 	BOOST_CHECK(e.add_rule("less_transitiviy", 
 						   boost::assign::list_of<std::string>("less(X, Y)")("less(Y,Z)"),
 						   boost::assign::list_of<std::string>("less(X, Z)")));
 
+	BOOST_CHECK(e.add_rule("distance_symmetry",
+						   boost::assign::list_of<std::string>("distance(A,B)"),
+						   boost::assign::list_of<std::string>("equal(distance(A,B), distance(B,A))")));
+
+	BOOST_CHECK(e.add_rule("distance_equal",
+						   boost::assign::list_of<std::string>("distance(A, B)")("equal(B,C)"),
+						   boost::assign::list_of<std::string>("equal(distance(A, B), distance(A, C))")));
+
 	BOOST_CHECK(e.add_fact("equal(x, y)"));
 	BOOST_CHECK(e.add_fact("equal(x, 7)"));
 	BOOST_CHECK(e.add_fact("less(y, 9)"));
 	BOOST_CHECK(e.add_fact("less(z, y)"));
+	BOOST_CHECK(e.add_fact("less(distance(center, object), 0.5)"));
+	BOOST_CHECK(e.add_fact("equal(object, balloon)"));
 
 	std::cout << e << std::endl;
 
@@ -72,6 +83,18 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 	// y < 9 and x = y
 	r = e.infer("less(x, 12)");
+	BOOST_CHECK(! boost::logic::indeterminate(r));
+	BOOST_CHECK(r);
+
+	r = e.infer("less(distance(center, object), 1.0)");
+	BOOST_CHECK(! boost::logic::indeterminate(r));
+	BOOST_CHECK(r);
+
+	r = e.infer("less(distance(center, balloon), 1.0)");
+	BOOST_CHECK(! boost::logic::indeterminate(r));
+	BOOST_CHECK(r);
+
+	r = e.infer("less(distance(object, center), 1.0)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 }
