@@ -93,5 +93,11 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	r = e.infer("less(distance(object, center), 1.0)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
+
+	r = e.infer("less(distance(object, center), 0.1)");
+	BOOST_CHECK(boost::logic::indeterminate(r));
+
+	r = e.infer("less(distance(object, x), 0.7)");
+	BOOST_CHECK(boost::logic::indeterminate(r));
 }
 
