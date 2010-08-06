@@ -128,14 +128,14 @@ namespace {
 
 		void operator() (const function_call& f)
 		{
-			std::vector<function_call> v;
+			std::set<function_call> s;
 
 			std::transform(unify_vect.begin(), unify_vect.end(),
-						   std::back_inserter(v),
+						   std::inserter(s, s.begin()),
 						   generate_fact(f));
 
 			bool (facts::*add_f) (const function_call& f) = & facts::add;
-			std::for_each(v.begin(), v.end(), 
+			std::for_each(s.begin(), s.end(), 
 						  boost::bind(add_f, boost::ref(facts_), _1));
 		}
 	};
