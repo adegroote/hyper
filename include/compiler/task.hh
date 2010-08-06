@@ -7,13 +7,13 @@
 #include <vector>
 
 #include <compiler/expression_ast.hh>
-#include <compiler/types.hh>
 
 namespace hyper {
 	namespace compiler {
 
 		class ability;
 		class universe;
+		class typeList;
 
 		struct task {
 			std::string name;

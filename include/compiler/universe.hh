@@ -14,11 +14,13 @@
 #include <compiler/ability.hh>
 #include <compiler/types.hh>
 #include <compiler/functions_def.hh>
-#include <compiler/ability_parser.hh>
-#include <compiler/task_parser.hh>
 
 namespace hyper {
 	namespace compiler {
+
+		struct task_decl_list_context;
+		struct ability_decl;
+		class ability;
 
 		class universe : public boost::noncopyable
 		{

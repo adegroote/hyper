@@ -9,7 +9,6 @@
 #include <boost/noncopyable.hpp>
 
 #include <compiler/types.hh>
-#include <compiler/symbols_parser.hh>
 
 namespace hyper {
 	namespace compiler {
@@ -24,6 +23,8 @@ namespace hyper {
 			symbol(const std::string name_, typeList::typeId t_) : name(name_), t(t_) {};
 		};
 
+		struct symbol_decl;
+		struct symbol_decl_list;
 
 		struct symbolList {
 			public:

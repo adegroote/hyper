@@ -4,6 +4,7 @@
 #include <boost/bind.hpp>
 
 #include <compiler/symbols.hh>
+#include <compiler/symbols_parser.hh>
 
 using namespace hyper::compiler;
 using std::make_pair;

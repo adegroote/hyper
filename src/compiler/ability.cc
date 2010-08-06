@@ -3,6 +3,7 @@
 #include <compiler/ability.hh>
 #include <compiler/output.hh>
 #include <compiler/scope.hh>
+#include <compiler/types.hh>
 
 #include <boost/bind.hpp>
 

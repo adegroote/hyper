@@ -7,10 +7,11 @@
 
 #include <boost/filesystem.hpp>
 
-#include <compiler/universe.hh>
 
 namespace hyper {
 	namespace compiler {
+		class universe;
+
 		class parser {
 			private:
 				universe &u;

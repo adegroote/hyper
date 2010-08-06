@@ -6,7 +6,6 @@
 
 #include <compiler/symbols.hh>
 #include <compiler/task.hh>
-#include <compiler/types.hh>
 
 namespace hyper {
 	namespace compiler {
@@ -26,6 +25,7 @@ namespace hyper {
 		};
 
 		class universe;
+		class typeList;
 
 		class ability : public boost::noncopyable {
 			private:

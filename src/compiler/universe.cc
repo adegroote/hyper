@@ -1,11 +1,15 @@
+#include <hyperConfig.hh>
+
 #include <set>
 
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 
+#include <compiler/ability_parser.hh>
+#include <compiler/output.hh>
 #include <compiler/universe.hh>
 #include <compiler/scope.hh>
-#include <compiler/output.hh>
+#include <compiler/task_parser.hh>
 
 using namespace hyper::compiler;
 

@@ -4,6 +4,7 @@
 
 #include <compiler/ability_parser.hh>
 #include <compiler/parser.hh>
+#include <compiler/universe.hh>
 #include <compiler/utils.hh>
 
 #include <boost/spirit/include/qi.hpp>

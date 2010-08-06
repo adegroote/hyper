@@ -1,6 +1,7 @@
-#include <compiler/task.hh>
 #include <compiler/ability.hh>
 #include <compiler/scope.hh>
+#include <compiler/task.hh>
+#include <compiler/types.hh>
 #include <compiler/universe.hh>
 #include <compiler/utils.hh>
 
