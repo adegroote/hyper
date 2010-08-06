@@ -457,7 +457,7 @@ namespace hyper {
 					  boost::assign::list_of<std::string>("equal(X, Z)"));
 		}
 
-		bool engine::add_func(const std::string& name, size_t arity,
+		bool engine::add_predicate(const std::string& name, size_t arity,
 							  eval_predicate* eval)
 		{
 			funcs_.add(name, arity, eval);
@@ -506,6 +506,70 @@ namespace hyper {
 			for (size_t i = 0; i < arity; ++i) {
 				std::ostringstream oss;
 				oss << name << "_unify" << i;
+
+				add_rule(oss.str(), conds[i], action[i]);
+			}
+
+			return true; // XXX
+		}
+
+		bool engine::add_func(const std::string& name, size_t arity)
+		{
+			funcs_.add(name, arity, 0);
+			/*
+			 * For each function f of arity n, state that 
+			 * if f(X1, X2, ..., XN) and equal(X1, Y1) then 
+			 *	equal(f(X1, X2, ..., XN), f(Y1, X2, ....));
+			 */
+			typedef std::vector<std::string> statement;
+			std::vector<statement> conds;
+			for (size_t i = 0; i < arity; ++i) {
+				statement s;
+				std::ostringstream oss;
+				oss << name << "(";
+				for (size_t j = 0; j < arity; ++j) {
+					oss << "X" << j;
+					if (j != arity - 1)
+						oss << ",";
+				}
+				oss << ")";
+				s.push_back(oss.str());
+
+				oss.str("");
+				oss << "equal(X" << i << ",Y" << i << ")";
+				s.push_back(oss.str());
+				conds.push_back(s);
+			}
+
+			std::vector<statement> action;
+			for (size_t i = 0; i < arity; ++i) {
+				statement s;
+				std::ostringstream oss;
+				oss << "equal(";
+				oss << name << "(";
+				for (size_t j = 0; j < arity; ++j) {
+						oss << "X" << j;
+					if (j != arity - 1)
+						oss << ",";
+				}
+				oss << "),";
+				oss << name << "(";
+				for (size_t j = 0; j < arity; ++j) {
+					if ( i == j ) 
+						oss << "Y" << j;
+					else 
+						oss << "X" << j;
+					if (j != arity - 1)
+						oss << ",";
+				}
+				oss << "))";
+				s.push_back(oss.str());
+				action.push_back(s);
+			}
+
+			for (size_t i = 0; i < arity; ++i) {
+				std::ostringstream oss;
+				oss << name << "_equal" << i;
 
 				add_rule(oss.str(), conds[i], action[i]);
 			}

@@ -20,7 +20,8 @@ namespace hyper {
 
 			public:
 				engine();
-				bool add_func(const std::string&, size_t, eval_predicate* = 0);
+				bool add_predicate(const std::string&, size_t, eval_predicate* = 0);
+				bool add_func(const std::string&, size_t);
 				bool add_fact(const std::string&);
 				bool add_fact(const std::vector<std::string>&);
 				bool add_rule(const std::string& identifier,

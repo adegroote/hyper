@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 {
 	engine e;
 
-	BOOST_CHECK(e.add_func("less", 2, new eval<less, 2>()));
+	BOOST_CHECK(e.add_predicate("less", 2, new eval<less, 2>()));
 	BOOST_CHECK(e.add_func("distance", 2));
 
 	BOOST_CHECK(e.add_rule("less_transitiviy", 
@@ -47,10 +47,6 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	BOOST_CHECK(e.add_rule("distance_symmetry",
 						   boost::assign::list_of<std::string>("distance(A,B)"),
 						   boost::assign::list_of<std::string>("equal(distance(A,B), distance(B,A))")));
-
-	BOOST_CHECK(e.add_rule("distance_equal",
-						   boost::assign::list_of<std::string>("distance(A, B)")("equal(B,C)"),
-						   boost::assign::list_of<std::string>("equal(distance(A, B), distance(A, C))")));
 
 	BOOST_CHECK(e.add_fact("equal(x, y)"));
 	BOOST_CHECK(e.add_fact("equal(x, 7)"));
