@@ -166,12 +166,12 @@ struct ability_add_adaptator {
 
 struct parse_import {
 
-	parser &p;
+	hyper::compiler::parser &p;
 
 	template <typename>
 	struct result { typedef bool type; };
 
-	parse_import(parser & p_) : p(p_) {};
+	parse_import(hyper::compiler::parser & p_) : p(p_) {};
 
 	bool operator()(const std::string& filename) const
 	{
@@ -187,7 +187,7 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
-    grammar_ability(const TokenDef& tok, universe& u_, parser &p_) : 
+    grammar_ability(const TokenDef& tok, universe& u_, hyper::compiler::parser &p_) : 
 		grammar_ability::base_type(statement, "ability"), 
 		ability_adder(u_), import_adder(p_)
 	{
