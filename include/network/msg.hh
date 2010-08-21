@@ -9,6 +9,7 @@
 #include <boost/asio.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/serialization/serialization.hpp>
+#include <boost/serialization/split_member.hpp>
 #include <boost/variant.hpp>
 
 namespace hyper {
