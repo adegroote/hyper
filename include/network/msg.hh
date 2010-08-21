@@ -217,7 +217,7 @@ namespace hyper {
 			variable_value
 		> message_types;
 
-#define MESSAGE_TYPE_MAX	20
+#define MESSAGE_TYPE_MAX	7
 
 		typedef boost::make_variant_over<message_types>::type message_variant;
 
