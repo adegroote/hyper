@@ -53,7 +53,7 @@ namespace hyper {
 				std::pair<bool, boost::asio::ip::tcp::endpoint> p;
 				p = name_client.register_name(name);
 				if (p.first == true) {
-					std::cout << "Succesfully get an addr" << p.second << std::endl;
+					std::cout << "Succesfully get an addr " << p.second << std::endl;
 					serv = boost::shared_ptr<tcp_ability_impl> 
 						(new tcp_ability_impl(p.second, vis, io_s));
 				}
@@ -68,6 +68,7 @@ namespace hyper {
 
 			void stop()
 			{
+				serv->stop();
 			}
 		};
 	}
