@@ -266,6 +266,14 @@ BOOST_AUTO_TEST_CASE ( network_proxy_test )
 		r_proxy_n.test_async();
 		io4_s.run();
 
+		t.x = 92;
+		remote_proxy_sync<int, false_resolv> sync_proxy("test", "x", resolv_);
+		boost::optional<int> res_sync_proxy = sync_proxy.get(boost::posix_time::seconds(1));
+		BOOST_CHECK(res_sync_proxy);
+		BOOST_CHECK(*res_sync_proxy == 92);
+
+		// XXX Need to test timeout version ...
+
 		s.stop();
 		thr.join();
 	}

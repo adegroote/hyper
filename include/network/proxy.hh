@@ -260,6 +260,66 @@ namespace hyper {
 				bool is_finished() const { return finished; };
 		};
 
+		template <typename T, typename Resolver>
+		class remote_proxy_sync
+		{
+			public:
+			remote_proxy_sync(const std::string& ability_name,
+							 const std::string& var_name,
+							 Resolver& r):
+				deadline_(io_service_),
+				client(io_service_, ability_name, var_name, r) 
+			{
+				deadline_.expires_at(boost::posix_time::pos_infin);
+
+				// Start the persistent actor that checks for deadline expiry.
+				check_deadline();
+			}
+
+			const boost::optional<T>& get(boost::posix_time::time_duration timeout)
+			{
+				deadline_.expires_from_now(timeout);
+				boost::system::error_code ec = boost::asio::error::would_block;
+
+				client.async_get(boost::bind(&remote_proxy_sync::handle_answer, 
+											 this,
+											 boost::asio::placeholders::error,
+											 boost::ref(ec))
+								 );
+
+				// Block until the asynchronous operation has completed.:D
+				do io_service_.run_one(); while (ec == boost::asio::error::would_block);
+
+				return client();
+			}
+
+			private:
+			  void check_deadline()
+			  {
+				  // Check whether the deadline has passed. We compare the deadline against
+				  // the current time since a new asynchronous operation may have moved the
+				  // deadline before this actor had a chance to run.
+				  if (deadline_.expires_at() <= boost::asio::deadline_timer::traits_type::now())
+				  {
+					  client.abort();
+					  deadline_.expires_at(boost::posix_time::pos_infin);
+				  }
+					
+				// Put the actor back to sleep.
+				deadline_.async_wait(boost::bind(&remote_proxy_sync::check_deadline, this));
+			}
+
+			  void handle_answer(const boost::system::error_code& e,
+								 boost::system::error_code& wait_e)
+			  {
+				  wait_e = e;
+			  }
+
+			  boost::asio::io_service io_service_;
+			  boost::asio::deadline_timer deadline_;
+			  remote_proxy<T, Resolver> client;
+		};
+
 		namespace details {
 			template <typename T, typename Resolver>
 			struct to_proxy 
