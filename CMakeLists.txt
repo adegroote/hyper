@@ -36,7 +36,7 @@ set(LIBS ${LIBS} ${Boost_LIBRARIES})
 # add_subdirectory(include)
 include_directories(${HYPER_SOURCE_DIR}/include)
 
-set(model_test_ADDITIONAL_LIBS "hyper_network")
+set(model_test_ADDITIONAL_LIBS "hyper_network;hyper_logic;hyper_compiler")
 
 foreach(lib compiler network logic model)
   string(TOUPPER "${lib}_sources" THIS_LIB_SOURCES)
