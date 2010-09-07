@@ -6,6 +6,7 @@
 #include <network/nameserver.hh>
 #include <network/utils.hh>
 
+#include <boost/any.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/array.hpp>
@@ -16,6 +17,7 @@
 #include <boost/mpl/range_c.hpp>
 #include <boost/mpl/size.hpp>
 #include <boost/mpl/transform.hpp>
+#include <boost/optional/optional.hpp>
 #include <boost/none.hpp>
 #include <boost/optional/optional.hpp>
 
@@ -55,6 +57,12 @@ namespace hyper {
 			}
 		}
 
+		template <typename T>
+		boost::any capture_value(const T& value)
+		{
+			return value;
+		}
+
 		class proxy_serializer
 		{
 			typedef std::map<std::string, boost::function <std::string ()> > serializer;
@@ -83,6 +91,49 @@ namespace hyper {
 					if (it == s.end()) 
 						return std::make_pair(false, "");
 					return std::make_pair(true, it->second());
+				}
+		};
+
+		class local_proxy 
+		{
+			typedef std::map<std::string, boost::function<boost::any ()> > l_proxy;
+			l_proxy l;
+			mutable boost::shared_mutex m_;
+
+			public:
+				local_proxy() {};
+				template <typename T>
+				bool register_variable(const std::string& name, const T& value)
+				{
+					boost::any(*f) (const T& value) = &capture_value<T>;
+					std::pair< l_proxy::iterator, bool > p;
+
+					boost::upgrade_lock<boost::shared_mutex> lock(m_);
+					p = l.insert(std::make_pair(name, 
+								boost::bind(f, boost::cref(value))));
+					return p.second;
+				}
+
+				/* 
+				 * It will be nice to pass a boost::system::error to know the
+				 * failure cause
+				 */
+				template <typename T>
+				boost::optional<T> eval(const std::string& name) const
+				{
+					l_proxy::const_iterator it;
+					boost::shared_lock<boost::shared_mutex> lock(m_);
+					it = l.find(name);
+					if (it == l.end()) 
+						return boost::none;
+					try { 
+						T value = boost::any_cast<T>(it->second());
+						return value;
+					} catch (const boost::bad_any_cast & e) {
+						return boost::none;
+					}
+
+					return boost::none;
 				}
 		};
 

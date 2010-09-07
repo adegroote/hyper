@@ -191,6 +191,36 @@ BOOST_AUTO_TEST_CASE ( network_proxy_test )
 		BOOST_CHECK(p.second != p1.second);
 	}
 
+	// local proxy test
+	{
+		local_proxy l;
+		int i;
+		BOOST_CHECK(l.register_variable("x", t.x) == true);
+		BOOST_CHECK(l.register_variable("y", t.y) == true);
+		BOOST_CHECK(l.register_variable("z", t.z) == true);
+		BOOST_CHECK(l.register_variable("x", i) == false);
+
+		t.x = 99;
+		boost::optional<int> x_value;
+		x_value = l.eval<int>("x");
+		BOOST_CHECK(x_value);
+		BOOST_CHECK(*x_value = 99);
+
+		t.x = 101;
+		x_value = l.eval<int>("x");
+		BOOST_CHECK(x_value);
+		BOOST_CHECK(*x_value = 101);
+
+		x_value = l.eval<int>("i");
+		BOOST_CHECK(! x_value);
+
+		boost::optional<double> y_value;
+		y_value = l.eval<double>("y");
+		BOOST_CHECK(! y_value); // bad type
+	}
+
+
+
 	// Proxy visitor test
 	{
 		boost::asio::io_service io_s;
