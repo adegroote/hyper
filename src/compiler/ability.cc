@@ -178,7 +178,7 @@ struct add_proxy_symbol
 
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
-		oss << "\t\t\t\t\tserializer.register_variable(\"" << p.second.name << "\",";
+		oss << "\t\t\t\t\texport_variable(\"" << p.second.name << "\",";
 		oss << p.second.name << ");" << std::endl;
 	}
 };
