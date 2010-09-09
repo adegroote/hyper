@@ -7,6 +7,8 @@
 #include <compiler/symbols.hh>
 #include <compiler/task.hh>
 
+#include <set>
+
 namespace hyper {
 	namespace compiler {
 
@@ -69,6 +71,8 @@ namespace hyper {
 				}
 
 				void dump(std::ostream& oss, const typeList& tList, const universe& u) const;
+
+				std::set<std::string> get_function_depends(const typeList& tList) const;
 		};
 	}
 }

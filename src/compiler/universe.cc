@@ -924,3 +924,15 @@ universe::dump_ability(std::ostream& oss, const std::string& name) const
 
 	it->second->dump(oss, tList, *this);
 }
+
+std::set<std::string>
+universe::get_function_depends(const std::string& name) const
+{
+	abilityMap::const_iterator it = abilities.find(name);
+	if (it == abilities.end()) {
+		std::cerr << "ability " << name << " seems to not be defined ! " << std::endl;
+		return std::set<std::string>();
+	}
+
+	return it->second->get_function_depends(tList);
+}

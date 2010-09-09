@@ -183,6 +183,16 @@ struct add_proxy_symbol
 	}
 };
 
+
+std::set<std::string> 
+ability::get_function_depends(const typeList& tList) const
+{
+	std::set<std::string> fun_depends;
+	compute_fun_depends fun_deps(fun_depends, tList, name_);
+	std::for_each(tasks.begin(), tasks.end(), fun_deps);
+	return fun_depends;
+}
+
 void
 ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 {
@@ -192,9 +202,7 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
 	std::for_each(private_list.begin(), private_list.end(), type_deps);
 
-	std::set<std::string> fun_depends;
-	compute_fun_depends fun_deps(fun_depends, tList, name_);
-	std::for_each(tasks.begin(), tasks.end(), fun_deps);
+	std::set<std::string> fun_depends = get_function_depends(tList);
 
 	guards g(oss, name_, "_ABILITY_HH_");
 

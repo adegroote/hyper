@@ -5,6 +5,7 @@
 #include <hyperConfig.hh>
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -61,11 +62,13 @@ namespace hyper {
 				typeOf(const ability&, const expression_ast& expr) const;
 
 				const typeList& types() const { return tList; };
+				const functionDefList& funcs() const { return fList; };
 
 				size_t dump_ability_types(std::ostream& os, const std::string& abilityName) const;
 				size_t dump_ability_functions_proto(std::ostream& oss, const std::string& name) const;
 				size_t dump_ability_functions_impl(std::ostream& oss, const std::string& name) const;
 				void dump_ability(std::ostream& oss, const std::string& name) const;
+				std::set<std::string> get_function_depends(const std::string& name) const;
 		};
 	}
 }

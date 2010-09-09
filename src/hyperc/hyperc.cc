@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <set>
 
 #include <boost/filesystem.hpp>
 
@@ -39,29 +40,69 @@ void build_main(std::ostream& oss, const std::string& name)
 	oss << hyper::compiler::replace_by(main, "@NAME@", name);
 }
 
-void build_base_cmake(std::ostream& oss, const std::string& name)
+void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
+					  const std::set<std::string>& depends)
 {
-	std::string cmake = 
+	std::string base_cmake1 = 
 		"cmake_minimum_required(VERSION 2.6.4 FATAL_ERROR)\n"
 		"\n"
 		"project(HYPER_ABILITY_@NAME@ CXX)\n"
 		"enable_language(C)\n"
 		"include(CheckIncludeFile)\n"
 		"\n"
-		"find_package(Boost 1.42 REQUIRED COMPONENTS system thread serialization)\n"
+		"find_package(Boost 1.42 REQUIRED COMPONENTS system thread serialization filesystem)\n"
 		"set(BOOST_FOUND ${Boost_FOUND})\n"
 		"include_directories(${Boost_INCLUDE_DIRS})\n"
 		"message(STATUS \"boost libraries \"${Boost_LIBRARIES})\n"
 		"\n"
 		"include_directories(${CMAKE_SOURCE_DIR})\n"
+		"\n"
+		;
+	std::string build_function = 
+		"add_library(hyper_@NAME@ SHARED @NAME@/funcs.cc)\n"
+		"install(TARGETS hyper_@NAME@\n"
+		"		  DESTINATION ${HYPER_ROOT}/lib/hyper/\n"
+		")\n"
+		"\n"
+		;
+
+	std::string build_ability = 
 		"add_executable(@NAME@ main.cc)\n"
+		;
+	std::string link_function =
+		"target_link_libraries(@NAME@ hyper_@NAME@)\n"
+		;
+
+	std::string link_depends =
+		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/hyper/libhyper_"
+		;
+
+	std::string additionnal_link = 
 		"target_link_libraries(@NAME@ ${Boost_LIBRARIES})\n"
 
 		"include_directories(${HYPER_ROOT}/include/hyper)\n"
 		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_network.so)\n"
+		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_compiler.so)\n"
+		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_logic.so)\n"
 		;
 
-	oss << hyper::compiler::replace_by(cmake, "@NAME@", name);
+	oss << hyper::compiler::replace_by(base_cmake1, "@NAME@", name);
+	if (has_func)
+		oss << hyper::compiler::replace_by(build_function, "@NAME@", name);
+
+	oss << hyper::compiler::replace_by(build_ability, "@NAME@", name);
+	if (has_func)
+		oss << hyper::compiler::replace_by(link_function, "@NAME@", name);
+
+	std::set<std::string>::const_iterator it;
+	for (it = depends.begin(); it != depends.end(); ++it) {
+		if (*it != name) {
+			oss << hyper::compiler::replace_by(link_depends, "@NAME@", name);
+			oss << *it << ".so)\n";
+		}
+	}
+
+	oss << hyper::compiler::replace_by(additionnal_link, "@NAME@", name);
 }
 
 int main(int argc, char** argv)
@@ -95,12 +136,14 @@ int main(int argc, char** argv)
 			remove(fileName);;
 	}
 
+	bool define_func = false;
 	{
 		std::string fileName = directoryName + "/funcs.hh";
 		std::ofstream oss(fileName.c_str());
-		if ( u.dump_ability_functions_proto(oss, abilityName) == 0)
+		if ( u.dump_ability_functions_proto(oss, abilityName) == 0) {
 			remove(fileName);
-		else {
+			define_func = false;
+		} else {
 			std::string fileNameImpl = directoryName + "/funcs.cc";
 			if (exists(fileNameImpl)) {
 				// don't touch to the current funcs.cc, write a template one
@@ -108,6 +151,7 @@ int main(int argc, char** argv)
 			}
 			std::ofstream oss_impl(fileNameImpl.c_str());
 			u.dump_ability_functions_impl(oss_impl, abilityName);
+			define_func = true;
 		}
 	}
 
@@ -124,7 +168,8 @@ int main(int argc, char** argv)
 
 	{
 		std::ofstream oss("src/CMakeLists.txt");
-		build_base_cmake(oss, abilityName);
+		std::set<std::string> depends = u.get_function_depends(abilityName);
+		build_base_cmake(oss, abilityName, define_func, depends);
 	}
 
 
