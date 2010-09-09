@@ -12,26 +12,39 @@ using boost::make_tuple;
 void 
 functionDef::output_proto(std::ostream& oss, const typeList& tList) const
 {
+	oss << "\t\tstruct " << scope::get_identifier(name()) << " {" << std::endl;;
 	type ret = tList.get(returnType());
-	oss << "\t\t" << ret.name << " " << scope::get_identifier(name()) << "(";
+	oss << "\t\t\t" << "typedef " << ret.name << " result_type;" << std::endl;
+	oss << "\t\t\t" << "typedef boost::mpl::vector<";
+	for (size_t i = 0; i < arity(); ++i) 
+	{
+		type arg = tList.get(argsType(i));
+		oss << arg.name;
+		if (i != arity() - 1) 
+			oss << ", ";
+	}
+	oss << "> args_type;" << std::endl;
+
+	oss << "\t\t\tstatic " << ret.name << " apply (";
 	for (size_t i = 0; i < arity(); ++i) 
 	{
 		type arg = tList.get(argsType(i));
 		oss << arg.name;
 		if (arg.t == stringType || arg.t == structType)
-			oss << " const & ";
+			oss << " const &";
 		if (i != arity() - 1) 
 			oss << ", ";
 	}
 
-	oss << " );" << std::endl;
+	oss << ");" << std::endl;
+	oss << "\t\t};";
 }
 
 void 
 functionDef::output_impl(std::ostream& oss, const typeList& tList) const
 {
 	type ret = tList.get(returnType());
-	oss << "\t\t" << ret.name << " " << scope::get_identifier(name()) << "(";
+	oss << "\t\t" << ret.name << " " << scope::get_identifier(name()) << "::apply(";
 	for (size_t i = 0; i < arity(); ++i) 
 	{
 		type arg = tList.get(argsType(i));

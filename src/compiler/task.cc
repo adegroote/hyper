@@ -108,7 +108,7 @@ namespace {
 		std::string operator() (const function_call& f) const
 		{
 			std::ostringstream oss;
-			oss << f.fName << "(";
+			oss << f.fName << "::apply(";
 			for (size_t i = 0; i < f.args.size(); ++i) {
 				oss << boost::apply_visitor(dump_expression_ast(remote_syms), f.args[i].expr);
 				if (i != (f.args.size() - 1)) {

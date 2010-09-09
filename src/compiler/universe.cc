@@ -888,6 +888,8 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
 
+		oss << "#include <boost/mpl/vector.hpp>\n\n"; 
+
 		namespaces n(oss, name);
 		std::for_each(funcs.begin(), funcs.end(), 
 				boost::bind(&functionDef::output_proto, _1, boost::ref(oss), boost::ref(tList)));
