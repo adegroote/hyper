@@ -67,6 +67,13 @@ namespace hyper {
 					std::cout << "failed to get an addr" << std::endl;
 			};
 
+			template <typename T>
+			void export_variable(const std::string& name, const T& value)
+			{
+				serializer.register_variable(name, value);
+				proxy.register_variable(name, value);
+			}
+
 			void run()
 			{
 				io_s.run();

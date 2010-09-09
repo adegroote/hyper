@@ -68,16 +68,12 @@ namespace {
 
 		pos_ability() : hyper::model::ability("pos")
 		{
-			serializer.register_variable("A", A);
-			serializer.register_variable("B", B);
-			serializer.register_variable("x", x);
-			serializer.register_variable("y", y);
-			serializer.register_variable("z", z);
-			proxy.register_variable("A", A);
-			proxy.register_variable("B", B);
-			proxy.register_variable("x", x);
-			proxy.register_variable("y", y);
-			proxy.register_variable("z", z);
+			export_variable("A", A);
+			export_variable("B", B);
+			export_variable("x", x);
+			export_variable("y", y);
+			export_variable("z", z);
+
 			f_map.add("distance", new hyper::model::function_execution<distance>());
 			f_map.add("add_int", new hyper::model::function_execution<add<int> >());
 			f_map.add("square_int", new hyper::model::function_execution<square<int> >());
@@ -90,8 +86,7 @@ namespace {
 
 		goal_ability() : hyper::model::ability("goal")
 		{
-			serializer.register_variable("goal", goal);
-			proxy.register_variable("goal", goal);
+			export_variable("goal", goal);
 		}
 	};
 }
