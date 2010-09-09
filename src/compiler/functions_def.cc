@@ -60,6 +60,14 @@ functionDef::output_impl(std::ostream& oss, const typeList& tList) const
 	oss << "\t\t{\n\t\t}" << std::endl;
 }
 
+void
+functionDef::output_import(std::ostream& oss) const
+{
+	oss << "\t\t\t\ta.f_map.add(\"" << name() << "\",";
+	oss << " new hyper::model::function_execution<" << name() << ">());";
+	oss << std::endl;
+}
+
 functionDefList::add_result
 functionDefList::add(const std::string &name, 
 						  const std::string &return_name,

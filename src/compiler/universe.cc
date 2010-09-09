@@ -914,6 +914,34 @@ universe::dump_ability_functions_impl(std::ostream& oss, const std::string& name
 }
 
 void
+universe::dump_ability_import_module_def(std::ostream& oss, const std::string& name) const
+{
+	oss << "#include <" << name << "/types.hh>" << std::endl;
+	oss << "#include <" << name << "/funcs.hh>" << std::endl << std::endl;
+	oss << "#include <model/ability.hh>" << std::endl << std::endl;
+
+	namespaces n(oss, name);
+	oss << "\t\t\tvoid import_funcs(model::ability &a); " << std::endl;
+};
+
+void
+universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const
+{
+	oss << "#include <" << name << "/import.hh>" << std::endl << std::endl;
+	oss << "#include <model/execute_impl.hh>" << std::endl << std::endl;
+
+	//find functions prefixed by name::
+	std::vector<functionDef>  funcs = fList.select(select_ability_funs(name));
+
+	namespaces n(oss, name);
+	oss << "\t\t\tvoid import_funcs(model::ability &a) {" << std::endl;
+	std::for_each(funcs.begin(), funcs.end(),
+		  boost::bind(&functionDef::output_import, _1, boost::ref(oss)));
+
+	oss << "\t\t\t}" << std::endl;
+}
+
+void
 universe::dump_ability(std::ostream& oss, const std::string& name) const
 {
 	abilityMap::const_iterator it = abilities.find(name);

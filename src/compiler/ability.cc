@@ -183,6 +183,19 @@ struct add_proxy_symbol
 	}
 };
 
+struct add_import_funcs
+{
+	std::ostream& oss;
+
+	add_import_funcs(std::ostream& oss_) : oss(oss_) {};
+
+	void operator () (const std::string& s) const
+	{
+		oss << "\t\t\t\t\t" << s << "::import_funcs(*this);" << std::endl;
+	}
+};
+
+
 
 std::set<std::string> 
 ability::get_function_depends(const typeList& tList) const
@@ -208,10 +221,10 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 
 	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
 	oss << std::endl;
-	std::for_each(fun_depends.begin(), fun_depends.end(), dump_depends(oss, "funcs.hh"));
+	std::for_each(fun_depends.begin(), fun_depends.end(), dump_depends(oss, "import.hh"));
 	oss << std::endl;
-	oss << "#include <model/ability.hh>" << std::endl << std::endl;
-	oss << "#include <model/task.hh>" << std::endl << std::endl;
+	oss << "#include <model/ability.hh>" << std::endl;
+	oss << "#include <model/task.hh>" << std::endl;
 
 	namespaces n(oss, name_);
 
@@ -231,6 +244,7 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	oss << "\t\t\t\tability() : model::ability(\"" << name_ << "\") {\n" ;
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy_symbol(oss));
 	std::for_each(readable_list.begin(), readable_list.end(), add_proxy_symbol(oss));
+	std::for_each(fun_depends.begin(), fun_depends.end(), add_import_funcs(oss));
 	oss << "\t\t\t\t}\n;" << std::endl;
 	oss << "\t\t\t};" << std::endl;
 }

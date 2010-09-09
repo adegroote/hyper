@@ -59,7 +59,7 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 		"\n"
 		;
 	std::string build_function = 
-		"add_library(hyper_@NAME@ SHARED @NAME@/funcs.cc)\n"
+		"add_library(hyper_@NAME@ SHARED @NAME@/funcs.cc @NAME@/import.cc)\n"
 		"install(TARGETS hyper_@NAME@\n"
 		"		  DESTINATION ${HYPER_ROOT}/lib/hyper/\n"
 		")\n"
@@ -152,6 +152,18 @@ int main(int argc, char** argv)
 			std::ofstream oss_impl(fileNameImpl.c_str());
 			u.dump_ability_functions_impl(oss_impl, abilityName);
 			define_func = true;
+
+			{
+				std::string fileName = directoryName + "/import.hh";
+				std::ofstream oss(fileName.c_str());
+				u.dump_ability_import_module_def(oss, abilityName);
+			}
+
+			{ 
+				std::string fileName = directoryName + "/import.cc";
+				std::ofstream oss(fileName.c_str());
+				u.dump_ability_import_module_impl(oss, abilityName);
+			}
 		}
 	}
 
