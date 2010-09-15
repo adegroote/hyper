@@ -8,6 +8,7 @@
 #include <compiler/utils.hh>
 
 #include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/lex.hpp>
 #include <boost/spirit/include/lex_lexertl.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_algorithm.hpp>
@@ -55,6 +56,19 @@ struct error_handler_
 
 function<error_handler_> const error_handler = error_handler_();
 
+struct handle_const_string
+{
+	template <typename, typename>
+	struct result { typedef std::string type; };
+
+	template <typename Iterator>
+	std::string operator() (Iterator begin, Iterator end) const
+	{
+		std::string s(begin, end);
+		return s.substr(1, s.size() - 2);
+	}
+};
+
 template <typename Lexer>
 struct hyper_lexer : lex::lexer<Lexer>
 {
@@ -75,7 +89,7 @@ struct hyper_lexer : lex::lexer<Lexer>
         this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',' ;
 		this->self += struct_ | newtype_ | ability_ | context_ | tasks_ | export_ | import_;
 		this->self += identifier | scoped_identifier;
-		this->self += constant_string;
+		this->self += constant_string [lex::_val = h_const_string(lex::_start, lex::_end)];
 
         // define the whitespace to ignore (spaces, tabs, newlines and C-style 
         // comments)
@@ -88,6 +102,8 @@ struct hyper_lexer : lex::lexer<Lexer>
     lex::token_def<> struct_, newtype_, ability_, context_, tasks_, export_, import_;
     lex::token_def<std::string> identifier, scoped_identifier;
 	lex::token_def<std::string> constant_string;
+
+	phoenix::function<handle_const_string> h_const_string;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -175,9 +191,7 @@ struct parse_import {
 
 	bool operator()(const std::string& filename) const
 	{
-		// remove first and last "
-		std::string f = filename.substr(1, filename.size() - 2);
-		return p.parse_ability_file(f);
+		return p.parse_ability_file(filename);
 	}
 };
 
@@ -441,7 +455,7 @@ bool parser::parse_ability_file(const std::string & filename)
     > token_type;
 
     // Here we use the lexertl based lexer engine.
-    typedef lex::lexertl::lexer<token_type> lexer_type;
+    typedef lex::lexertl::actor_lexer<token_type> lexer_type;
 
     // This is the token definition type (derived from the given lexer type).
     typedef hyper_lexer<lexer_type> hyper_lexer;
