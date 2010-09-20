@@ -231,12 +231,25 @@ namespace hyper {
 				std::string ability_name_;
 				std::string var_name_, var_value_;
 				bool finished;
+				bool connected;
 
 				proxy_async_client<T> c;
 				Resolver& r_;
 				name_resolve solver;
 
 			private:
+
+				template <typename Handler>
+				void send_request(boost::tuple<Handler> handler)
+				{
+					void (remote_proxy::*f) (const boost::system::error_code&,
+							boost::tuple<Handler>) =
+						&remote_proxy::template handle_request<Handler>;
+
+					c.async_request(var_name_, value_,
+							boost::bind(f, this, boost::asio::placeholders::error, handler));
+				}
+
 				template <typename Handler>
 				void handle_request(const boost::system::error_code &e,
 									boost::tuple<Handler> handler)
@@ -252,12 +265,8 @@ namespace hyper {
 					if (e) 
 						boost::get<0>(handler)(e);
 					else {
-						void (remote_proxy::*f) (const boost::system::error_code&,
-								boost::tuple<Handler>) =
-							&remote_proxy::template handle_request<Handler>;
-
-						c.async_request(var_name_, value_,
-							boost::bind(f, this, boost::asio::placeholders::error, handler));
+						connected=true;
+						send_request<Handler> (handler);
 					}
 				}
 
@@ -282,7 +291,9 @@ namespace hyper {
 							 const std::string& ability_name,
 							 const std::string& var_name,
 							 Resolver& r) :
-					ability_name_(ability_name), var_name_(var_name), c(io_s), r_(r) {}
+					ability_name_(ability_name), var_name_(var_name), 
+					finished(false), connected(false),
+					c(io_s), r_(r) {}
 
 				/* Asynchronously make an request to remote ability
 				 * On completion (in the @Handler call), it is safe to call
@@ -293,15 +304,20 @@ namespace hyper {
 				{ 
 					finished = false;
 					value_ = boost::none;
+
+					if (!connected) {
 					void (remote_proxy::*f) (const boost::system::error_code&,
 							boost::tuple<Handler>) =
 						&remote_proxy::template handle_resolve<Handler>;
-
 					solver.name(ability_name_);
+					
 					r_.async_resolve(solver,
 							boost::bind(f, this,
 										 boost::asio::placeholders::error,
 										 boost::make_tuple(handler)));
+					} else {
+						send_request<Handler> (boost::make_tuple(handler));
+					}
 				}
 
 				void abort() { c.close(); };
