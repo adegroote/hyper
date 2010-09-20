@@ -250,14 +250,14 @@ namespace {
 
 	struct is_remote_sym 
 	{
-		typedef const std::string& argument_type;
+		typedef std::string argument_type;
 		typedef bool result_type;
 
 		const ability& ctx;
 
 		is_remote_sym(const ability& ctx_): ctx(ctx_) {}
 
-		bool operator() (const std::string& sym) const
+		bool operator() (std::string sym) const
 		{
 			std::string scope = hyper::compiler::scope::get_scope(sym);
 			return (scope != "" && scope != ctx.name());
