@@ -63,7 +63,7 @@ namespace {
 		void handle_first_test(const boost::system::error_code& e)
 		{
 			BOOST_CHECK(!e);
-			const typename remote_proxy<int,false_resolv>::type & value = r_proxy();
+			const remote_proxy<int,false_resolv>::type & value = r_proxy();
 			BOOST_CHECK(value);
 			BOOST_CHECK(*value == 12);
 
