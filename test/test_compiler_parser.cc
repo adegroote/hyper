@@ -21,6 +21,7 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	BOOST_CHECK( P.parse_expression("g(false)") == true );
 	BOOST_CHECK( P.parse_expression("-42") == true );
 	BOOST_CHECK( P.parse_expression("+42") == true );
+	BOOST_CHECK( P.parse_expression("-42.0") == true );
     BOOST_CHECK( P.parse_expression("42 * 3") == true );
     BOOST_CHECK( P.parse_expression("42 + 14 * 3") == true );
 	BOOST_CHECK( P.parse_expression("var1 + var2") == true );

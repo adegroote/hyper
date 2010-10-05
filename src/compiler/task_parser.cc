@@ -5,6 +5,7 @@
 
 #include <compiler/expression_ast.hh>
 #include <compiler/parser.hh>
+#include <compiler/base_parser.hh>
 #include <compiler/task_parser.hh>
 #include <compiler/universe.hh>
 #include <compiler/utils.hh>
@@ -61,81 +62,7 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl_li
 	return os;
 }
 
-struct error_handler_
-{
-    template <typename, typename, typename>
-    struct result { typedef void type; };
-
-    template <typename Iterator>
-    void operator()(
-        qi::info const& what
-      , Iterator err_pos, Iterator last) const
-    {
-        std::cout
-            << "Error! Expecting "
-            << what                         // what failed?
-            << " here: \""
-            << std::string(err_pos, last)   // iterators to error-pos, end
-            << "\""
-            << std::endl
-        ;
-    }
-};
-
 function<error_handler_> const error_handler = error_handler_();
-
-template <typename Lexer>
-struct hyper_lexer : lex::lexer<Lexer>
-{
-	hyper_lexer() 
-	{
-		scoped_identifier = "[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*";
-		constant_string = "\\\".*\\\"";
-		constant_int = "[0-9]+";
-		// XXX We don't support local, nor scientific notation atm
-		constant_double = "[0-9]*\\.[0-9]*";
-		in_ = "in";
-		context_ = "context";
-		task_ = "task";
-		pre_ = "pre";
-		post_ = "post";
-		true_ = "true";
-		false_ = "false";
-		or_ = "\\|\\|";
-		and_ = "&&";
-		eq_ = "==";
-		neq_ = "!=";
-		lt_ = "<";
-		gt_ = ">";
-		lte_ = "<=";
-		gte_ = ">=";
-
-		/* identifier must be the last if you want to not match keyword */
-        this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',' ;
-		this->self += lex::token_def<>('+') | '-' | '*' | '/' ;
-		this->self += constant_string;
-		this->self += constant_int;
-		this->self += constant_double;
-		this->self += true_ | false_;
-		this->self += or_ | and_ | eq_ | neq_ | lt_ | gt_ | lte_ | gte_;
-		this->self += task_ | pre_ | post_ | in_ | context_;
-		this->self += scoped_identifier;
-
-        // define the whitespace to ignore (spaces, tabs, newlines and C-style 
-        // comments)
-        this->self("WS")
-            =   lex::token_def<>("[ \\t\\n]+") 
-            |   "\\/\\*[^*]*\\*+([^/*][^*]*\\*+)*\\/"
-            ;
-	};
-
-	lex::token_def<> true_, false_, or_, and_, eq_, neq_, lt_, gt_, lte_, gte_;
-	lex::token_def<> task_, pre_, post_, in_, context_;
-    lex::token_def<std::string> scoped_identifier;
-	lex::token_def<std::string> constant_string;
-	lex::token_def<int> constant_int;
-	lex::token_def<double> constant_double;
-};
 
 BOOST_FUSION_ADAPT_STRUCT(
 		Constant<int>,
@@ -163,14 +90,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 		(std::vector<expression_ast>, args)
 )
 
-template <typename Iterator, typename Lexer>
-struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_state_skipper<Lexer> >
+template <typename Iterator>
+struct  grammar_expression : qi::grammar<Iterator, expression_ast(), white_space<Iterator> >
 {
-    typedef qi::in_state_skipper<Lexer> white_space_;
+    typedef white_space<Iterator> white_space_;
 
-	template <typename TokenDef>
-    grammar_expression(const TokenDef& tok) : 
-		grammar_expression::base_type(expression, "expression")
+    grammar_expression() : grammar_expression::base_type(expression, "expression")
 	{
 	    using qi::lit;
         using qi::lexeme;
@@ -181,34 +106,36 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 		using phoenix::val;
 		using phoenix::push_back;
 
+		qi::real_parser<double, qi::strict_ureal_policies<double> > strict_double;
+
 		expression =
 			equality_expr.alias()
 				;
 
 		equality_expr =
 			relational_expr								[_val = _1]
-			>> *(		(tok.eq_ > relational_expr      [bind(&expression_ast::binary<EQ>, _val, _1)])
-					|   (tok.neq_ > relational_expr     [bind(&expression_ast::binary<NEQ>, _val, _1)])
+			>> *(		("==" > relational_expr      [bind(&expression_ast::binary<EQ>, _val, _1)])
+					|   ("!=" > relational_expr     [bind(&expression_ast::binary<NEQ>, _val, _1)])
 				)
 			;
 
 		relational_expr =
 			logical_expr								[_val = _1]
-			>> *(		(tok.lte_ > logical_expr        [bind(&expression_ast::binary<LTE>, _val, _1)])
-					|   (tok.lt_ > logical_expr         [bind(&expression_ast::binary<LT>, _val, _1)])
-					|   (tok.gte_ > logical_expr        [bind(&expression_ast::binary<GTE>, _val, _1)])
-					|   (tok.gt_ > logical_expr         [bind(&expression_ast::binary<GT>, _val, _1)])
+			>> *(		("<=" > logical_expr        [bind(&expression_ast::binary<LTE>, _val, _1)])
+					|   ('<' > logical_expr         [bind(&expression_ast::binary<LT>, _val, _1)])
+					|   (">=" > logical_expr        [bind(&expression_ast::binary<GTE>, _val, _1)])
+					|   ('>' > logical_expr         [bind(&expression_ast::binary<GT>, _val, _1)])
 				)
 			;
 
 		logical_and_expr =
 			additive_expr								[_val = _1]
-			>> *(	   tok.and_ > additive_expr			[bind(&expression_ast::binary<AND>, _val, _1)])
+			>> *(	   "&&" > additive_expr			[bind(&expression_ast::binary<AND>, _val, _1)])
 			;
 
 		logical_or_expr =
 			logical_and_expr							[_val = _1]
-			>> *(	tok.or_ > logical_and_expr			[bind(&expression_ast::binary<OR>, _val, _1)])
+			>> *(	"||" > logical_and_expr			[bind(&expression_ast::binary<OR>, _val, _1)])
 			;
 
 		logical_expr = logical_or_expr.alias()
@@ -245,31 +172,30 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 
 		node_ = 
 				(
-				  cst_int				   
-				| cst_double			   
+				cst_double			   
+				| cst_int				   
 				| cst_string			   
 				| cst_bool
 				| var_inst 			   
 				)			   [_val = _1]
 			 ;
 
-		cst_int = tok.constant_int		[at_c<0>(_val) = _1]
+		cst_int = qi::uint_		[at_c<0>(_val) = _1]
 				;
 
-		cst_double = tok.constant_double [at_c<0>(_val) = _1]
+		cst_double = strict_double [at_c<0>(_val) = _1]
 				;
 
-		cst_string = tok.constant_string [at_c<0>(_val) = _1]
+		cst_string = constant_string [at_c<0>(_val) = _1]
 				;
 
-		cst_bool = tok.true_		    [at_c<0>(_val) = true]
-				 | tok.false_			[at_c<0>(_val) = false]
+		cst_bool = qi::bool_		    [at_c<0>(_val) = _1]
 				 ;
 
-		var_inst = tok.scoped_identifier [_val = _1]
+		var_inst = scoped_identifier [_val = _1]
 			;
 
-		func_call = tok.scoped_identifier [at_c<0>(_val) = _1]
+		func_call = scoped_identifier [at_c<0>(_val) = _1]
 				  >> lit('(')
 				  >> -(
 					   expression		[push_back(at_c<1>(_val), _1)]
@@ -308,6 +234,9 @@ struct  grammar_expression : qi::grammar<Iterator, expression_ast(), qi::in_stat
 	qi::rule<Iterator, Constant<std::string>(), white_space_> cst_string;
 	qi::rule<Iterator, std::string(), white_space_> var_inst;
 	qi::rule<Iterator, function_call(), white_space_> func_call;
+
+	const_string_grammer<Iterator> constant_string;
+	scoped_identifier_grammar<Iterator> scoped_identifier;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -333,15 +262,13 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(task_decl_list, list)
 )
 
-template <typename Iterator, typename Lexer>
-struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_state_skipper<Lexer> >
+template <typename Iterator>
+struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_space<Iterator> >
 {
-    typedef qi::in_state_skipper<Lexer> white_space_;
+    typedef white_space<Iterator> white_space_;
 
-	template <typename TokenDef>
-    grammar_task(const TokenDef& tok) : 
-		grammar_task::base_type(task_decl_, "task_decl"),
-		expression_(tok)
+    grammar_task() : 
+		grammar_task::base_type(task_decl_, "task_decl")
 	{
 	    using qi::lit;
         using qi::lexeme;
@@ -353,9 +280,9 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_st
 		using phoenix::swap;
 
 		task_decl_ = 
-				   tok.in_ 
-				>> tok.context_
-				>> tok.scoped_identifier [swap(at_c<0>(_val), _1)]
+				   lit("in")
+				>> lit("context")
+				>> scoped_identifier	 [swap(at_c<0>(_val), _1)]
 				>> -lit(';')
 				>> task_list			 [swap(at_c<1>(_val), _1)]
 				;
@@ -364,9 +291,9 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_st
 				(*task					[push_back(at_c<0>(_val), _1)])
 				;
 
-		task = tok.scoped_identifier	[swap(at_c<0>(_val), _1)]
+		task = scoped_identifier	[swap(at_c<0>(_val), _1)]
 			 >> lit('=')
-			 >> tok.task_ 
+			 >> lit("task")
 			 >> lit('{')
 			 >> pre_cond				[swap(at_c<1>(_val), _1)]
 			 >> post_cond				[swap(at_c<2>(_val), _1)]
@@ -374,11 +301,11 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_st
 			 >> -lit(';')
 			 ;
 
-		pre_cond = tok.pre_ 
+		pre_cond = lit("pre")
 				 >> cond				[swap(at_c<0>(_val), at_c<0>(_1))]
 				 ;
 
-		post_cond = tok.post_
+		post_cond = lit("post")
 				  >> cond				[swap(at_c<0>(_val), at_c<0>(_1))]
 				  ;
 
@@ -391,7 +318,6 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_st
 			 >> lit('}')
 			 >> -lit(';')
 			 ;
-
 
 		task_decl_.name("task_decl");
 		task_list.name("task_list");
@@ -408,101 +334,25 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), qi::in_st
 	qi::rule<Iterator, task_decl(), white_space_> task;
 	qi::rule<Iterator, cond_list_decl(), white_space_> pre_cond, post_cond, cond;
 
-    typedef grammar_expression<Iterator, Lexer> hyper_expression;
-	hyper_expression expression_;
+	grammar_expression<Iterator> expression_;
+	scoped_identifier_grammar<Iterator> scoped_identifier;
 };
 
 bool parser::parse_expression(const std::string& expr)
 {
-    // This is the lexer token type to use. The second template parameter lists 
-    // all attribute types used for token_def's during token definition (see 
-    // calculator_tokens<> above). Here we use the predefined lexertl token 
-    // type, but any compatible token type may be used instead.
-    //
-    // If you don't list any token attribute types in the following declaration 
-    // (or just use the default token type: lexertl_token<base_iterator_type>)  
-    // it will compile and work just fine, just a bit less efficient. This is  
-    // because the token attribute will be generated from the matched input  
-    // sequence every time it is requested. But as soon as you specify at 
-    // least one token attribute type you'll have to list all attribute types 
-    // used for token_def<> declarations in the token definition class above, 
-    // otherwise compilation errors will occur.
-
-    typedef std::string::const_iterator base_iterator_type;
-
-    typedef lex::lexertl::token<
-        base_iterator_type, boost::mpl::vector<std::string, int , double> 
-    > token_type;
-
-    // Here we use the lexertl based lexer engine.
-    typedef lex::lexertl::lexer<token_type> lexer_type;
-
-    // This is the token definition type (derived from the given lexer type).
-    typedef hyper_lexer<lexer_type> hyper_lexer;
-
-    // this is the iterator type exposed by the lexer 
-    typedef hyper_lexer::iterator_type iterator_type;
-
-    // this is the type of the grammar to parse
-    typedef grammar_expression<iterator_type, hyper_lexer::lexer_def> hyper_expression;
-
-	hyper_lexer our_lexer;
-	hyper_expression g(our_lexer);
-
-	base_iterator_type it = expr.begin();
-	iterator_type iter = our_lexer.begin(it, expr.end());
-	iterator_type end = our_lexer.end();
 	expression_ast result;
-    bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
+    bool r = parse(grammar_expression<std::string::const_iterator>(), expr, result);
 	result.reduce();
 
-	return (r && iter == end);
+	return r;
 }	
 
 bool parser::parse_task(const std::string& expr)
 {
-    // This is the lexer token type to use. The second template parameter lists 
-    // all attribute types used for token_def's during token definition (see 
-    // calculator_tokens<> above). Here we use the predefined lexertl token 
-    // type, but any compatible token type may be used instead.
-    //
-    // If you don't list any token attribute types in the following declaration 
-    // (or just use the default token type: lexertl_token<base_iterator_type>)  
-    // it will compile and work just fine, just a bit less efficient. This is  
-    // because the token attribute will be generated from the matched input  
-    // sequence every time it is requested. But as soon as you specify at 
-    // least one token attribute type you'll have to list all attribute types 
-    // used for token_def<> declarations in the token definition class above, 
-    // otherwise compilation errors will occur.
-
-    typedef std::string::const_iterator base_iterator_type;
-
-    typedef lex::lexertl::token<
-        base_iterator_type, boost::mpl::vector<std::string, int , double> 
-    > token_type;
-
-    // Here we use the lexertl based lexer engine.
-    typedef lex::lexertl::lexer<token_type> lexer_type;
-
-    // This is the token definition type (derived from the given lexer type).
-    typedef hyper_lexer<lexer_type> hyper_lexer;
-
-    // this is the iterator type exposed by the lexer 
-    typedef hyper_lexer::iterator_type iterator_type;
-
-    // this is the type of the grammar to parse
-    typedef grammar_task<iterator_type, hyper_lexer::lexer_def> hyper_expression;
-
-	hyper_lexer our_lexer;
-	hyper_expression g(our_lexer);
-
-	base_iterator_type it = expr.begin();
-	iterator_type iter = our_lexer.begin(it, expr.end());
-	iterator_type end = our_lexer.end();
 	task_decl_list_context result;
-    bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
+    bool r = parse(grammar_task<std::string::const_iterator>(), expr, result);
 
-	if (r && iter == end)
+	if (r)
 		return u.add_task(result);
 	else
 		return false;
