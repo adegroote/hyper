@@ -3,18 +3,51 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
+
+#include <compiler/expression_ast.hh>
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_algorithm.hpp>
+#include <boost/spirit/include/phoenix_bind.hpp> 
 #include <boost/spirit/include/phoenix_container.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
 #include <boost/spirit/include/phoenix_statement.hpp>
+#include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
+#include <boost/fusion/include/adapt_struct.hpp>
+
 
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
+
+BOOST_FUSION_ADAPT_STRUCT(
+		hyper::compiler::Constant<int>,
+		(int, value)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+		hyper::compiler::Constant<double>,
+		(double, value)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+		hyper::compiler::Constant<std::string>,
+		(std::string, value)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+		hyper::compiler::Constant<bool>,
+		(bool, value)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+		hyper::compiler::function_call,
+		(std::string, fName)
+		(std::vector<hyper::compiler::expression_ast>, args)
+)
 
 namespace {
 	struct generate_scoped_identifier {
@@ -120,6 +153,188 @@ namespace hyper {
 			}
 
 			qi::rule<Iterator, std::string()> start;
+		};
+
+		template <typename Iterator>
+		struct constant_grammar :
+			qi::grammar<Iterator, expression_ast(), white_space<Iterator> >
+		{
+			typedef white_space<Iterator> white_space_;
+
+			constant_grammar() : constant_grammar::base_type(start)
+			{
+				qi::real_parser<double, qi::strict_ureal_policies<double> > strict_double;
+				using namespace qi::labels;
+				using phoenix::at_c;
+
+				start = 
+						(
+						cst_double			   
+						| cst_int				   
+						| cst_string			   
+						| cst_bool
+						)			   [_val = _1];
+
+				cst_int = qi::uint_		[at_c<0>(_val) = _1];
+		
+				cst_double = strict_double [at_c<0>(_val) = _1];
+		
+				cst_string = constant_string [at_c<0>(_val) = _1];
+		
+				cst_bool = qi::bool_		    [at_c<0>(_val) = _1];
+
+				start.name("constant");
+				cst_int.name("const int");
+				cst_double.name("const double");
+				cst_string.name("const string");
+				cst_bool.name("const bool");
+			}
+
+			const_string_grammer<Iterator> constant_string;
+			qi::rule<Iterator, expression_ast(), white_space_> start;
+			qi::rule<Iterator, Constant<int>(), white_space_> cst_int;
+			qi::rule<Iterator, Constant<double>(), white_space_> cst_double;
+			qi::rule<Iterator, Constant<bool>(), white_space_> cst_bool;
+			qi::rule<Iterator, Constant<std::string>(), white_space_> cst_string;
+		};
+
+		template <typename Iterator>
+		struct atom_grammar :
+			qi::grammar<Iterator, expression_ast(), white_space<Iterator> >
+		{
+			typedef white_space<Iterator> white_space_;
+
+			atom_grammar() : atom_grammar::base_type(start)
+			{
+				using namespace qi::labels;
+				start =  (
+						  constant
+						| var_inst 			   
+						)			   [_val = _1];
+		
+				var_inst = scoped_identifier;
+
+				start.name("atom");
+				var_inst.name("var instance");
+			}
+
+			qi::rule<Iterator, expression_ast(), white_space_> start;
+			qi::rule<Iterator, std::string(), white_space_> var_inst;
+
+			constant_grammar<Iterator> constant;
+			scoped_identifier_grammar<Iterator> scoped_identifier;
+		};
+
+		template <typename Iterator>
+		struct  grammar_expression : qi::grammar<Iterator, expression_ast(), white_space<Iterator> >
+		{
+		    typedef white_space<Iterator> white_space_;
+		
+		    grammar_expression() : grammar_expression::base_type(expression, "expression")
+			{
+			    using qi::lit;
+		        using qi::lexeme;
+		        using ascii::char_;
+		        using namespace qi::labels;
+		
+				using phoenix::at_c;
+				using phoenix::val;
+				using phoenix::push_back;
+				using phoenix::bind;
+		
+				expression =
+					equality_expr.alias()
+						;
+		
+				equality_expr =
+					relational_expr								[_val = _1]
+					>> *(	("==" > relational_expr      [bind(&expression_ast::binary<EQ>, _val, _1)])
+						|   ("!=" > relational_expr     [bind(&expression_ast::binary<NEQ>, _val, _1)])
+						)
+					;
+		
+				relational_expr =
+					logical_expr								[_val = _1]
+					>> *(	("<=" > logical_expr        [bind(&expression_ast::binary<LTE>, _val, _1)])
+						|   ('<' > logical_expr         [bind(&expression_ast::binary<LT>, _val, _1)])
+						|   (">=" > logical_expr        [bind(&expression_ast::binary<GTE>, _val, _1)])
+						|   ('>' > logical_expr         [bind(&expression_ast::binary<GT>, _val, _1)])
+						)
+					;
+		
+				logical_and_expr =
+					additive_expr								[_val = _1]
+					>> *(  "&&" > additive_expr			[bind(&expression_ast::binary<AND>, _val, _1)])
+					;
+		
+				logical_or_expr =
+					logical_and_expr							[_val = _1]
+					>> *("||" > logical_and_expr			[bind(&expression_ast::binary<OR>, _val, _1)])
+					;
+		
+				logical_expr = logical_or_expr.alias()
+					;
+						
+				additive_expr =
+					multiplicative_expr						[_val = _1]
+					>> *(	('+' > multiplicative_expr	[bind(&expression_ast::binary<ADD>, _val, _1)])
+						|   ('-' > multiplicative_expr  [bind(&expression_ast::binary<SUB>, _val, _1)])
+						)
+					;
+		
+				multiplicative_expr =
+					unary_expr							[_val = _1]
+					>> *(	('*' > unary_expr		[bind(&expression_ast::binary<MUL>, _val, _1)])
+						|   ('/' > unary_expr       [bind(&expression_ast::binary<DIV>, _val, _1)])
+						)
+					;
+		
+		
+				unary_expr =
+					primary_expr						[_val = _1]
+					|   ('-' > primary_expr             [bind(&expression_ast::unary<NEG>, _val, _1)])
+					|   ('+' > primary_expr				[_val = _1])
+					;
+		
+		
+				primary_expr =
+							func_call						[_val = _1]
+					    |	(atom							[_val = _1])
+						|   ('(' > expression				[_val = _1] > ')')
+					;
+		
+		
+		
+				func_call = scoped_identifier [at_c<0>(_val) = _1]
+						  >> lit('(')
+						  >> -(
+							   expression		[push_back(at_c<1>(_val), _1)]
+							   >> *( ',' >
+								     expression	[push_back(at_c<1>(_val), _1)])
+							  )
+						  >> lit(')')
+						  ;
+		
+				expression.name("expression declaration");
+				primary_expr.name("primary expr declaration");
+				unary_expr.name("unary expr declaration");
+				multiplicative_expr.name("multiplicative expr declaration");
+				additive_expr.name("additive expr declaration");
+				relational_expr.name("relational expr declaration");
+				equality_expr.name("equality expr declaration");
+				func_call.name("function declaration instance");
+			}
+		
+			qi::rule<Iterator, expression_ast(), white_space_> expression, primary_expr, unary_expr;
+			qi::rule<Iterator, expression_ast(), white_space_> multiplicative_expr, additive_expr;
+			qi::rule<Iterator, expression_ast(), white_space_> logical_expr;
+			qi::rule<Iterator, expression_ast(), white_space_> logical_and_expr, logical_or_expr;
+		    qi::rule<Iterator, expression_ast(), white_space_> relational_expr, equality_expr;
+			qi::rule<Iterator, function_call(), white_space_> func_call;
+		
+			constant_grammar<Iterator> constant;
+			scoped_identifier_grammar<Iterator> scoped_identifier;
+			atom_grammar<Iterator> atom;
 		};
 
 		template <typename Grammar>
