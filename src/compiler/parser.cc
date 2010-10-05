@@ -122,6 +122,32 @@ struct parse_import {
 };
 
 template <typename Iterator>
+struct initializer_grammar: qi::grammar<Iterator, expression_ast(), white_space<Iterator> >
+{
+	typedef white_space<Iterator> white_space_;
+
+	initializer_grammar() : initializer_grammar::base_type(start)
+	{
+		using namespace qi::labels;
+		using phoenix::at_c;
+
+		start =  task_call						[_val = _1]
+			  |	(atom							[_val = _1])
+			  ;
+
+		task_call = identifier [at_c<0>(_val) = _1]
+					>> qi::lit('(')
+					>> qi::lit(')')
+			;
+	}
+
+	qi::rule<Iterator, expression_ast(), white_space_> start;
+	qi::rule<Iterator, function_call(), white_space_> task_call;
+	identifier_grammar<Iterator> identifier;
+	atom_grammar<Iterator> atom;
+};
+
+template <typename Iterator>
 struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 {
     typedef white_space<Iterator> white_space_;
@@ -223,9 +249,12 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 
 		v_decl   =  scoped_identifier		[at_c<0>(_a) = _1]
 				 >> identifier				[at_c<1>(_a) = _1]
+				 >> -( lit('=') > initializer)
 				 >> 
 					   *(lit(',')			[push_back(at_c<0>(_val), _a)]
-						 >> identifier		[at_c<1>(_a) = _1])
+						 >> identifier		[at_c<1>(_a) = _1]
+						 >> -(lit('=') > initializer)
+						)
 				 >> lit(';')				[push_back(at_c<0>(_val), _a)]
 		;
 
@@ -342,6 +371,7 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 	const_string_grammer<Iterator> constant_string;
 	identifier_grammar<Iterator> identifier;
 	scoped_identifier_grammar<Iterator> scoped_identifier;
+	initializer_grammar<Iterator> initializer;
 };
 
 

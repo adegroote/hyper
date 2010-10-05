@@ -6,8 +6,10 @@ first = ability
 	{
 		{
 			/* Here, the controlable variable */
-			position p;
-			bool isOk;
+			/* p will be updated by a call of GetPos task */
+			position p = GetPos();
+			/* isOk is initialized to false */
+			bool isOk = false;
 			otherability::coolstruct s;
 			
 			/* Ok, defined in other.ability */
@@ -15,7 +17,7 @@ first = ability
 		} 
 		{
 			/* Here, the read-only variable */
-			double thresold;
+			double thresold = 2.0;
 			int i, j, k;
 		} 
 		{
