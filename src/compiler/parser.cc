@@ -8,8 +8,6 @@
 #include <compiler/utils.hh>
 
 #include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/lex.hpp>
-#include <boost/spirit/include/lex_lexertl.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_algorithm.hpp>
 #include <boost/spirit/include/phoenix_container.hpp>
@@ -19,16 +17,14 @@
 #include <boost/fusion/include/adapt_struct.hpp>
 
 //#define HYPER_DEBUG_RULES
-
+//
 using boost::phoenix::function;
 using boost::phoenix::ref;
 using boost::phoenix::size;
 
 using namespace hyper::compiler;
 
-
 namespace qi = boost::spirit::qi;
-namespace lex = boost::spirit::lex;
 namespace ascii = boost::spirit::ascii;
 namespace fusion = boost::fusion;
 namespace phoenix = boost::phoenix;
@@ -56,54 +52,91 @@ struct error_handler_
 
 function<error_handler_> const error_handler = error_handler_();
 
-struct handle_const_string
+template <typename Iterator>
+struct white_space : qi::grammar<Iterator>
 {
+	white_space() : white_space::base_type(start)
+	{
+		using boost::spirit::ascii::char_;
+        using namespace qi::labels;
+
+		start =
+			qi::space                               // tab/space/cr/lf
+			|   "/*" >> *(char_ - "*/") >> "*/"
+			|   "//" >> *(char_)
+			;
+
+		start.name("ws");
+		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
+	}
+
+	qi::rule<Iterator> start;
+};
+
+template<typename Iterator>
+struct identifier_grammar: qi::grammar<Iterator, std::string()>
+{
+	identifier_grammar() : identifier_grammar::base_type(start)
+	{
+		using namespace qi::labels;
+		start = (qi::alpha | '_') >> *(qi::alnum | '_');
+
+		start.name("identifier");
+		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
+	}
+
+	qi::rule<Iterator, std::string()> start;
+};
+
+
+struct generate_scoped_identifier {
 	template <typename, typename>
 	struct result { typedef std::string type; };
 
-	template <typename Iterator>
-	std::string operator() (Iterator begin, Iterator end) const
+	std::string operator()(const std::string& scope, 
+						   const std::string& identifier) const
 	{
-		std::string s(begin, end);
-		return s.substr(1, s.size() - 2);
+		return scope + "::" + identifier;
 	}
 };
 
-template <typename Lexer>
-struct hyper_lexer : lex::lexer<Lexer>
+template <typename Iterator>
+struct scoped_identifier_grammar: 
+	qi::grammar<Iterator, std::string()>
 {
-	hyper_lexer() 
+	scoped_identifier_grammar() : scoped_identifier_grammar::base_type(start)
 	{
-        identifier = "[a-zA-Z_][a-zA-Z0-9_]*";
-		scoped_identifier = "[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*";
-		constant_string = "\\\".*\\\"";
-		struct_ = "struct";
-		newtype_ = "newtype";
-		ability_ = "ability";
-		context_ = "context";
-		tasks_ = "tasks";
-		export_ = "export";
-		import_ = "import";
+		using namespace qi::labels;
+		start = id		[_val = _1]
+			  >> -(*("::"	
+						  >> id		[_val = gen(_val, _1)]
+					 )
+				)
+			  ;
 
-		/* identifier must be the last if you want to not match keyword */
-        this->self = lex::token_def<>('(') | ')' | '{' | '}' | '=' | ';' | ',' ;
-		this->self += struct_ | newtype_ | ability_ | context_ | tasks_ | export_ | import_;
-		this->self += identifier | scoped_identifier;
-		this->self += constant_string [lex::_val = h_const_string(lex::_start, lex::_end)];
+		start.name("scoped_identifier");
+		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
+	}
 
-        // define the whitespace to ignore (spaces, tabs, newlines and C-style 
-        // comments)
-        this->self("WS")
-            =   lex::token_def<>("[ \\t\\n]+") 
-            |   "\\/\\*[^*]*\\*+([^/*][^*]*\\*+)*\\/"
-            ;
-	};
+	qi::rule<Iterator, std::string()> start;
+	phoenix::function<generate_scoped_identifier> gen;
+	identifier_grammar<Iterator> id;
+};
 
-    lex::token_def<> struct_, newtype_, ability_, context_, tasks_, export_, import_;
-    lex::token_def<std::string> identifier, scoped_identifier;
-	lex::token_def<std::string> constant_string;
+template <typename Iterator>
+struct const_string_grammer:
+	qi::grammar<Iterator, std::string()>
+{
+	const_string_grammer() : const_string_grammer::base_type(start)
+	{
+		using namespace qi::labels;
+		start = '"' 
+			    >> *(qi::lexeme[qi::char_ - '"'] [_val+= _1]) 
+				>> '"'
+				;
+	}
 
-	phoenix::function<handle_const_string> h_const_string;
+	qi::rule<Iterator, std::string()> start;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -195,13 +228,12 @@ struct parse_import {
 	}
 };
 
-template <typename Iterator, typename Lexer>
-struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
+template <typename Iterator>
+struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 {
-    typedef qi::in_state_skipper<Lexer> white_space_;
+    typedef white_space<Iterator> white_space_;
 
-	template <typename TokenDef>
-    grammar_ability(const TokenDef& tok, universe& u_, hyper::compiler::parser &p_) : 
+    grammar_ability(universe& u_, hyper::compiler::parser &p_) : 
 		grammar_ability::base_type(statement, "ability"), 
 		ability_adder(u_), import_adder(p_)
 	{
@@ -224,9 +256,9 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 		ability_ = 
 				  import_list
-				  >> tok.identifier			[swap(at_c<0>(_val), _1)] 
+				  >> identifier			[swap(at_c<0>(_val), _1)] 
 				  >> lit('=')
-				  >> tok.ability_ 
+				  >> lit("ability")
 				  >> lit('{')
 				  >> ability_description	[swap(at_c<1>(_val), _1)]
 				  >> lit('}')
@@ -240,7 +272,7 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 					;	
 
 		block_context =
-				  tok.context_
+				  lit("context")
 				  >> lit('=')
 				  >> lit('{')
 				  >> block_variable		[swap(at_c<0>(_val), _1)]
@@ -256,14 +288,14 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 				  ;
 
 		block_tasks = 
-				  tok.tasks_
+				  lit("tasks")
 				  >> lit('=')
 				  >> lit('{')
 				  >> lit('}')
 				  ;
 
 		block_definition =
-				 tok.export_
+				 lit("export")
 				 >> lit('=')
 				 >> lit('{')
 				 >> block_type_decl			[swap(at_c<0>(_val), _1)]
@@ -287,8 +319,8 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 				*(import				[import_adder(_1)])
 				;
 
-		import =	tok.import_ 
-					>> tok.constant_string	[swap(_val, _1)]
+		import =	lit("import")
+					>> constant_string	[swap(_val, _1)]
 					>> -lit(';')
 					;
 
@@ -296,12 +328,11 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 											  begin(at_c<0>(_1)), end(at_c<0>(_1)))])
 				   ;
 
-		v_decl   =  (tok.identifier|tok.scoped_identifier)	
-											[at_c<0>(_a) = _1]
-				 >> tok.identifier			[at_c<1>(_a) = _1]
+		v_decl   =  scoped_identifier		[at_c<0>(_a) = _1]
+				 >> identifier				[at_c<1>(_a) = _1]
 				 >> 
 					   *(lit(',')			[push_back(at_c<0>(_val), _a)]
-						 >> tok.identifier	[at_c<1>(_a) = _1])
+						 >> identifier		[at_c<1>(_a) = _1])
 				 >> lit(';')				[push_back(at_c<0>(_val), _a)]
 		;
 
@@ -309,14 +340,14 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 				(*f_decl							  [push_back(at_c<0>(_val), _1)])
 				;
 
-		f_decl = (tok.identifier|tok.scoped_identifier)								[at_c<1>(_val) = _1]
-			   >> tok.identifier													[at_c<0>(_val) = _1]
+		f_decl = scoped_identifier								[at_c<1>(_val) = _1]
+			   >> identifier									[at_c<0>(_val) = _1]
 			   >> lit('(')
 			   > -(
-					(tok.identifier|tok.scoped_identifier)							[push_back(at_c<2>(_val),_1)]
-					>> -tok.identifier
-					>> *(lit(',') > (tok.identifier|tok.scoped_identifier)			[push_back(at_c<2>(_val),_1)]
-								  > -tok.identifier)
+					scoped_identifier							[push_back(at_c<2>(_val),_1)]
+					>> - identifier
+					>> *(lit(',') > scoped_identifier			[push_back(at_c<2>(_val),_1)]
+								  > - identifier)
 				  )
 			   > lit(')')				
 			   > -lit(';')
@@ -337,19 +368,19 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 		 * structure_decl and v_decl are more or less the same, so maybe there
 		 * is a way to share the code between them. For moment, it works as it
 		 */
-		structure_decl = tok.identifier	    [at_c<0>(_val) = _1]
+		structure_decl = identifier			[at_c<0>(_val) = _1]
 					  >> lit('=')
-					  >> tok.struct_
+					  >> lit("struct")
 					  >> lit('{')
 					  >> v_decl_list		[swap(at_c<1>(_val) , _1)]
 					  >> lit('}')			
 					  >> -lit(';')		  
 					  ;
 
-		new_type_decl = tok.identifier		[at_c<0>(_val) = _1]
+		new_type_decl = identifier			[at_c<0>(_val) = _1]
 					 >> lit('=')
-					 >> tok.newtype_
-					 >> (tok.identifier|tok.scoped_identifier)	[at_c<1>(_val) = _1]
+					 >> lit("newtype")
+					 >> scoped_identifier	[at_c<1>(_val) = _1]
 					 >> lit(';')		
 					 ;
 
@@ -415,8 +446,24 @@ struct  grammar_ability: qi::grammar<Iterator, qi::in_state_skipper<Lexer> >
 
 	function<ability_add_adaptator> ability_adder;
 	function<parse_import> import_adder;
+	const_string_grammer<Iterator> constant_string;
+	identifier_grammar<Iterator> identifier;
+	scoped_identifier_grammar<Iterator> scoped_identifier;
 };
 
+
+template <typename Grammar>
+bool parse(const Grammar& g, const std::string& expr)
+{
+	typedef white_space<std::string::const_iterator> white_space;
+	white_space ws;
+
+	std::string::const_iterator iter = expr.begin();
+	std::string::const_iterator end = expr.end();
+	bool r = phrase_parse(iter, end, g, ws);
+
+	return (r && iter == end);
+}
 
 bool parser::parse_ability_file(const std::string & filename) 
 {
@@ -434,48 +481,14 @@ bool parser::parse_ability_file(const std::string & filename)
 		return true; // already parsed
 	}
 
-    // This is the lexer token type to use. The second template parameter lists 
-    // all attribute types used for token_def's during token definition (see 
-    // calculator_tokens<> above). Here we use the predefined lexertl token 
-    // type, but any compatible token type may be used instead.
-    //
-    // If you don't list any token attribute types in the following declaration 
-    // (or just use the default token type: lexertl_token<base_iterator_type>)  
-    // it will compile and work just fine, just a bit less efficient. This is  
-    // because the token attribute will be generated from the matched input  
-    // sequence every time it is requested. But as soon as you specify at 
-    // least one token attribute type you'll have to list all attribute types 
-    // used for token_def<> declarations in the token definition class above, 
-    // otherwise compilation errors will occur.
-
-    typedef std::string::iterator base_iterator_type;
-
-    typedef lex::lexertl::token<
-        base_iterator_type, boost::mpl::vector<std::string> 
-    > token_type;
-
-    // Here we use the lexertl based lexer engine.
-    typedef lex::lexertl::actor_lexer<token_type> lexer_type;
-
-    // This is the token definition type (derived from the given lexer type).
-    typedef hyper_lexer<lexer_type> hyper_lexer;
-
-    // this is the iterator type exposed by the lexer 
-    typedef hyper_lexer::iterator_type iterator_type;
-
     // this is the type of the grammar to parse
-    typedef grammar_ability<iterator_type, hyper_lexer::lexer_def> hyper_ability;
+    typedef grammar_ability<std::string::const_iterator> hyper_ability;
 
-	hyper_lexer our_lexer;
-	hyper_ability g(our_lexer, u, *this);
+	hyper_ability g(u, *this);
 
 	std::string expr = read_from_file(filename);
-	base_iterator_type it = expr.begin();
-	iterator_type iter = our_lexer.begin(it, expr.end());
-	iterator_type end = our_lexer.end();
-    bool r = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self]);
+	bool r = parse(g, expr);
 
 	parsed_files.push_back(full);
-
-	return (r && iter == end);
+	return r;
 }
