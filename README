@@ -1,0 +1,36 @@
+
+The Hyper project is an implementation of a supervision framework. It is a
+2-clause BSD-licensed project (cf LICENSE).
+
+The current stuff is not a working software, it does not do anything really
+useful nowadays.
+
+Installation
+------------
+
+You need a recent Boost-version to build hyper (boost >= 1.42) and cmake.
+It has been tested on
+	- ubuntu x86-64 (gcc 4.5.1, gcc 4.4.3, clang-current)
+	- NetBSD x86-64 (gcc 4.1.3, you need a special patch for boost, ticket 4662)
+	- Windows 7 x86-64 ( visual studio 2010, boost 1.44)
+
+To build it :
+  cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} .
+  make 
+  make install
+  make test (to play the regression test)
+
+Warning :
+  some files take really long time to compile (in particular
+  src/compiler/parser.cc, src/compiler/task_parser.cc,
+  src/compiler/expression.cc), and take an huge amount of memory. 
+
+Network related test can take long time to execute, due to some code testing
+timeout.
+
+Documentation
+-------------
+
+TODO :D
+The code is not usable in any useful way, the documentation will come with the
+0.1 release
