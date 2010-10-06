@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <compiler/expression_ast.hh>
+
 namespace hyper {
 	namespace compiler {
 		/* Structs used by parser */
@@ -13,6 +15,8 @@ namespace hyper {
 		struct symbol_decl {
 			std::string typeName;
 			std::string name;
+
+			expression_ast initializer;
 		};
 
 		std::ostream& operator << (std::ostream& os, const symbol_decl&);

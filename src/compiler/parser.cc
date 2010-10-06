@@ -36,6 +36,7 @@ BOOST_FUSION_ADAPT_STRUCT(
     symbol_decl,
     (std::string, typeName)
 	(std::string, name)
+	(expression_ast, initializer)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -249,11 +250,11 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 
 		v_decl   =  scoped_identifier		[at_c<0>(_a) = _1]
 				 >> identifier				[at_c<1>(_a) = _1]
-				 >> -( lit('=') > initializer)
+				 >> -( lit('=') > initializer [at_c<2>(_a) = _1])
 				 >> 
 					   *(lit(',')			[push_back(at_c<0>(_val), _a)]
 						 >> identifier		[at_c<1>(_a) = _1]
-						 >> -(lit('=') > initializer)
+						 >> -(lit('=') > initializer [at_c<2>(_a) = _1])
 						)
 				 >> lit(';')				[push_back(at_c<0>(_val), _a)]
 		;

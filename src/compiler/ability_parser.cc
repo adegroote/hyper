@@ -1,3 +1,4 @@
+#include <hyperConfig.hh>
 
 #include <compiler/ability_parser.hh>
 

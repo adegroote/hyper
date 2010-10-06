@@ -1,3 +1,5 @@
+#include <hyperConfig.hh>
+
 #include <compiler/symbols.hh>
 #include <boost/test/unit_test.hpp>
 

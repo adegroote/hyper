@@ -1,3 +1,5 @@
+#include <hyperConfig.hh>
+
 #include <cassert>
 #include <algorithm>
 

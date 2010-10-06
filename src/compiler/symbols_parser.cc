@@ -1,3 +1,4 @@
+#include <hyperConfig.hh>
 #include <compiler/symbols_parser.hh>
 
 using namespace hyper::compiler;
