@@ -9,6 +9,7 @@
 #include <boost/noncopyable.hpp>
 
 #include <compiler/types.hh>
+#include <compiler/expression_ast.hh>
 
 namespace hyper {
 	namespace compiler {
@@ -18,9 +19,12 @@ namespace hyper {
 		struct symbol {
 			std::string name;
 			typeList::typeId t;
+			expression_ast initializer;
 
 			symbol() {};
-			symbol(const std::string name_, typeList::typeId t_) : name(name_), t(t_) {};
+			symbol(const std::string& name_, typeList::typeId t_, 
+				   const expression_ast& initializer_ = empty()) : 
+				name(name_), t(t_), initializer(initializer_) {};
 		};
 
 		struct symbol_decl;
@@ -50,7 +54,8 @@ namespace hyper {
 				 * < false, alreadyExist > means the symbol already exists
 				 * < false, unknowType > means the type used to define the symbol is not know
 				 */
-				add_result add(const std::string& name, const std::string& tname);
+				add_result add(const std::string& name, const std::string& tname, 
+							   const expression_ast& initializer = empty());
 
 				add_result add(const symbol_decl& s);
 

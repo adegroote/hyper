@@ -12,7 +12,8 @@ using namespace hyper::compiler;
 using std::make_pair;
 
 symbolList::add_result
-symbolList::add(const std::string &name, const std::string& tname)
+symbolList::add(const std::string &name, const std::string& tname, 
+				const expression_ast& initializer)
 {
 	sMap::const_iterator it = symbols.find(name);
 	if (it != symbols.end())
@@ -23,14 +24,14 @@ symbolList::add(const std::string &name, const std::string& tname)
 	if (p.first == false)
 		return make_pair(false, unknowType);
 
-	symbols[name] = symbol(name, p.second);
+	symbols[name] = symbol(name, p.second, initializer);
 	return make_pair(true, noError);
 }
 
 symbolList::add_result
 symbolList::add(const symbol_decl &s)
 {
-	return add(s.name, s.typeName);
+	return add(s.name, s.typeName, s.initializer);
 }
 
 std::vector<symbolList::add_result>

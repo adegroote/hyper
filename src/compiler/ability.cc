@@ -1,4 +1,5 @@
 #include <set>
+#include <sstream>
 
 #include <compiler/ability.hh>
 #include <compiler/output.hh>
@@ -153,6 +154,39 @@ struct compute_fun_depends
 	}
 };
 
+struct print_initializer_helpers : boost::static_visitor<std::string>
+{
+	template <typename T>
+	std::string operator () (const T&) const { assert(false); return ""; }
+
+	std::string operator () (const empty &) const { return ""; }
+
+	std::string operator () (const expression_ast& e) const
+	{
+		return boost::apply_visitor(print_initializer_helpers(), e.expr);
+	}
+
+	template <typename T>
+	std::string operator () (const Constant<T>& c) const
+	{
+		std::ostringstream oss;
+		oss << " = " << c.value;
+		return oss.str();
+	}
+
+	std::string operator () (const function_call& f) const
+	{
+		assert(f.args.size() == 0);
+		// XXX TODO, implement 
+		return "";
+	}
+};
+
+std::string print_initializer(const expression_ast& init)
+{
+	return boost::apply_visitor(print_initializer_helpers(), init.expr);
+}
+
 struct print_symbol
 {
 	std::ostream& oss;
@@ -166,7 +200,8 @@ struct print_symbol
 	{
 		type t = tList.get(p.second.t);
 		oss << "\t\t\t\t" << scope::get_context_identifier(t.name, name);
-		oss << " " << p.second.name << ";" << std::endl;
+		oss << " " << p.second.name;
+		oss << print_initializer(p.second.initializer) << ";" << std::endl;
 	}
 };
 
