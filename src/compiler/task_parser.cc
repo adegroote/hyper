@@ -7,19 +7,9 @@
 #include <compiler/parser.hh>
 #include <compiler/base_parser.hh>
 #include <compiler/task_parser.hh>
+#include <compiler/cond_block_parser.hh>
 #include <compiler/universe.hh>
 #include <compiler/utils.hh>
-
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/lex_lexertl.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_algorithm.hpp>
-#include <boost/spirit/include/phoenix_container.hpp>
-#include <boost/spirit/include/phoenix_fusion.hpp>
-#include <boost/spirit/include/phoenix_statement.hpp>
-#include <boost/spirit/include/phoenix_object.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/fusion/include/adapt_struct.hpp>
 
 //#define HYPER_DEBUG_RULES
 
@@ -30,7 +20,6 @@ using boost::phoenix::size;
 using namespace hyper::compiler;
 
 namespace qi = boost::spirit::qi;
-namespace lex = boost::spirit::lex;
 namespace ascii = boost::spirit::ascii;
 namespace fusion = boost::fusion;
 namespace phoenix = boost::phoenix;
@@ -41,11 +30,16 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const cond_list_de
 	return os;
 }
 
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const cond_block_decl& c)
+{
+	os << "{" << c.pre << "}";
+	os << "{" << c.post << "}";;
+}
+
 std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl& t)
 {
 	os << t.name;
-	os << "{" << t.pre << "}";
-	os << "{" << t.post << "}";;
+	os << t.conds;
 	return os;
 }
 
@@ -64,18 +58,10 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl_li
 
 function<error_handler_> const error_handler = error_handler_();
 
-
-
-BOOST_FUSION_ADAPT_STRUCT(
-	cond_list_decl,
-	(std::vector<expression_ast>, list)
-)
-
 BOOST_FUSION_ADAPT_STRUCT(
 	task_decl,
 	(std::string, name)
-	(cond_list_decl, pre)
-	(cond_list_decl, post)
+	(cond_block_decl, conds)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -122,26 +108,7 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_spa
 			 >> lit('=')
 			 >> lit("task")
 			 >> lit('{')
-			 >> pre_cond				[swap(at_c<1>(_val), _1)]
-			 >> post_cond				[swap(at_c<2>(_val), _1)]
-			 >> lit('}')
-			 >> -lit(';')
-			 ;
-
-		pre_cond = lit("pre")
-				 >> cond				[swap(at_c<0>(_val), at_c<0>(_1))]
-				 ;
-
-		post_cond = lit("post")
-				  >> cond				[swap(at_c<0>(_val), at_c<0>(_1))]
-				  ;
-
-		cond = lit('=')
-			 >> lit('{')
-			 >> *( lit('{')
-				   >> expression_		[push_back(at_c<0>(_val), _1)]
-				   >> lit('}')
-				 )
+			 >> cond_block				[swap(at_c<1>(_val), _1)]
 			 >> lit('}')
 			 >> -lit(';')
 			 ;
@@ -149,9 +116,6 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_spa
 		task_decl_.name("task_decl");
 		task_list.name("task_list");
 		task.name("task");
-		pre_cond.name("pre_cond");
-		post_cond.name("post_cond");
-		cond.name("cond");
 
 		qi::on_error<qi::fail> (task_decl_, error_handler(_4, _3, _2));
 	}
@@ -159,10 +123,9 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_spa
 	qi::rule<Iterator, task_decl_list_context(), white_space_> task_decl_;
 	qi::rule<Iterator, task_decl_list(), white_space_> task_list;
 	qi::rule<Iterator, task_decl(), white_space_> task;
-	qi::rule<Iterator, cond_list_decl(), white_space_> pre_cond, post_cond, cond;
 
-	grammar_expression<Iterator> expression_;
 	scoped_identifier_grammar<Iterator> scoped_identifier;
+	cond_block_grammar<Iterator> cond_block;
 };
 
 bool parser::parse_expression(const std::string& expr)

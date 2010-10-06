@@ -716,12 +716,12 @@ struct task_adder
 		currentTask.name = t.name;
 		{
 			cond_adder adder(res, ab, u, currentTask.pre);
-			std::for_each(t.pre.list.begin(), t.pre.list.end(), adder); 
+			std::for_each(t.conds.pre.list.begin(), t.conds.pre.list.end(), adder); 
 			res = adder.res && res;
 		}
 		{
 			cond_adder adder(res, ab, u, currentTask.post);
-			std::for_each(t.post.list.begin(), t.post.list.end(), adder); 
+			std::for_each(t.conds.post.list.begin(), t.conds.post.list.end(), adder); 
 			res = adder.res && res;
 		}
 		if (res) 

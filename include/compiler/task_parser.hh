@@ -17,10 +17,16 @@ namespace hyper {
 
 		std::ostream& operator << (std::ostream&, const cond_list_decl & l);
 
-		struct task_decl {
-			std::string name;
+		struct cond_block_decl {
 			cond_list_decl pre;
 			cond_list_decl post;
+		};
+
+		std::ostream& operator << (std::ostream&, const cond_block_decl& c);
+
+		struct task_decl {
+			std::string name;
+			cond_block_decl conds;
 		};
 
 		std::ostream& operator << (std::ostream&, const task_decl& t);
@@ -37,8 +43,6 @@ namespace hyper {
 		};
 
 		std::ostream& operator << (std::ostream&, const task_decl_list_context & l);
-
 	}
 }
-
 #endif /* _COMPILER_TASK_PARSER_HH_ */
