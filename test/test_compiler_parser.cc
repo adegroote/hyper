@@ -118,5 +118,45 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	// you can't add two task with the same name
 	BOOST_CHECK( P.parse_task("in context first; x17 = task { pre = {};"
 													      " post = {}; };") == false);
+
+
+	/* Testing recipe parsing */
+	BOOST_CHECK( P.parse_recipe("r0 = recipe { pre = {}; post = {}; body = {}; };"));
+
+	BOOST_CHECK( P.parse_recipe("r1 = recipe { pre = {}; post = {}; body = {  make (2 == 1); }; };"));
+
+	BOOST_CHECK( P.parse_recipe("r2 = recipe { pre = {}; \
+											   post = {};  \
+											   body = {  make ((first::X == 1)); }; };"));
+
+	BOOST_CHECK( P.parse_recipe("r3 = recipe { pre = {};	\
+											   post = {};   \
+											   body = {  ensure ((first::X == 1)); }; };"));
+
+
+	BOOST_CHECK( P.parse_recipe("r4 = recipe { pre = {};	\
+											   post = {};   \
+											   body = {  let Z ensure ((first::X == 1)); \
+														 abort Z; \
+													  }; };"));
 	
+	BOOST_CHECK( P.parse_recipe("r5 = recipe { pre = {};	\
+											   post = {};   \
+											   body = {  let s square(2.0);; \
+													  }; };"));
+
+	std::string p3d_recipe = 
+		"r6 = recipe { \
+		pre = {};		\
+		post = {};		\
+		body = {		\
+			ensure(pos::distance(dtm::lastMerge, pos::current) < 0.5 \
+				&& p3d::goal == currentGoal \
+				&& control::tracking == p3dSpeedRef \
+				);									\
+			wait(pos::distance(currentGoal, pos::current) < goalThreshold); \
+			}; \
+		}";
+
+	BOOST_CHECK( P.parse_recipe(p3d_recipe));
 }
