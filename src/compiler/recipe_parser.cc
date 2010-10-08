@@ -220,7 +220,8 @@ struct  grammar_recipe :
 bool parser::parse_recipe(const std::string& expr)
 {
 	recipe_decl_list result;
-    bool r = parse(grammar_recipe<std::string::const_iterator>(), expr, result);
+	grammar_recipe<std::string::const_iterator> g;
+    bool r = parse(g, expr, result);
 	std::cout << result << std::endl;
 	return r;
 }

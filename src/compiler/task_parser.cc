@@ -131,7 +131,8 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_spa
 bool parser::parse_expression(const std::string& expr)
 {
 	expression_ast result;
-    bool r = parse(grammar_expression<std::string::const_iterator>(), expr, result);
+	grammar_expression<std::string::const_iterator> g;
+    bool r = parse(g, expr, result);
 	result.reduce();
 
 	return r;
@@ -140,7 +141,8 @@ bool parser::parse_expression(const std::string& expr)
 bool parser::parse_task(const std::string& expr)
 {
 	task_decl_list_context result;
-    bool r = parse(grammar_task<std::string::const_iterator>(), expr, result);
+	grammar_task<std::string::const_iterator> g;
+    bool r = parse(g, expr, result);
 
 	if (r)
 		return u.add_task(result);
