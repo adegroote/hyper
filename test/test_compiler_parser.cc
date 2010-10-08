@@ -150,9 +150,9 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 		pre = {};		\
 		post = {};		\
 		body = {		\
-			ensure(pos::distance(dtm::lastMerge, pos::current) < 0.5 \
-				&& p3d::goal == currentGoal \
-				&& control::tracking == p3dSpeedRef \
+			ensure((pos::distance(dtm::lastMerge, pos::current) < 0.5) \
+				&& (p3d::goal == currentGoal) \
+				&& (control::tracking == p3dSpeedRef) \
 				);									\
 			wait(pos::distance(currentGoal, pos::current) < goalThreshold); \
 			}; \
