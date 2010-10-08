@@ -78,18 +78,16 @@ struct body_block_grammar :
 
 		using phoenix::at_c;
 		using phoenix::swap;
-		using phoenix::push_back;
-		using phoenix::construct;
 
 		start = lit("body")
 			>> lit("=")
 			>> lit('{')
-			>> body_decl_list	[swap(_val, _1)]
+			>> body_decl_list	[swap(at_c<0>(_val), _1)]
 			>> lit('}')
 			>> -lit(';')
 			;
 
-		body_decl_list = (*body_decl	[push_back(at_c<0>(_val), _1)]		);
+		body_decl_list = (*body_decl	);
 
 		body_decl = (	let_decl_	
 					|	make_decl_
@@ -97,7 +95,7 @@ struct body_block_grammar :
 					|   wait_decl_
 					|	abort_decl_
 					|	expression
-					)				[_val = _1]
+					)
 					>> -lit(';')
 					;
 
@@ -112,13 +110,13 @@ struct body_block_grammar :
 
 		make_decl_ = lit("make")
 				  >> lit("(")
-				  >> expression		[_val = construct< recipe_op<MAKE> > (_1)]
+				  >> expression
 				  >> lit(")")
 				  ;
 
 		ensure_decl_ = lit("ensure")
 				  >> lit("(")
-				  >> expression		[_val = construct< recipe_op<ENSURE> > (_1)]
+				  >> expression
 				  >> lit(")")
 				  ;
 
@@ -129,7 +127,7 @@ struct body_block_grammar :
 
 		wait_decl_ = lit("wait")
 				  >> lit("(")
-				  >> expression		[_val = construct< recipe_op<WAIT> > (_1)]
+				  >> expression
 				  >> lit(")")
 				  ;
 
@@ -155,7 +153,7 @@ struct body_block_grammar :
 	}
 
 	qi::rule<Iterator, body_block_decl(), white_space_> start;
-	qi::rule<Iterator, body_block_decl(), white_space_> body_decl_list;
+	qi::rule<Iterator, std::vector<recipe_expression>(), white_space_> body_decl_list;
 	qi::rule<Iterator, recipe_expression(), white_space_> body_decl;
 	qi::rule<Iterator, let_decl(), white_space_> let_decl_;
 	qi::rule<Iterator, abort_decl(), white_space_> abort_decl_;
@@ -222,7 +220,9 @@ struct  grammar_recipe :
 bool parser::parse_recipe(const std::string& expr)
 {
 	recipe_decl_list result;
-    return parse(grammar_recipe<std::string::const_iterator>(), expr, result);
+    bool r = parse(grammar_recipe<std::string::const_iterator>(), expr, result);
+	std::cout << result << std::endl;
+	return r;
 }
 
 bool parser::parse_recipe_file(const std::string& fileName)
