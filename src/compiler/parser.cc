@@ -132,8 +132,8 @@ struct initializer_grammar: qi::grammar<Iterator, expression_ast(), white_space<
 		using namespace qi::labels;
 		using phoenix::at_c;
 
-		start =  task_call						[_val = _1]
-			  |	(atom							[_val = _1])
+		start =  task_call						
+			  |	atom							
 			  ;
 
 		task_call = identifier [at_c<0>(_val) = _1]
@@ -176,11 +176,11 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 
 		ability_ = 
 				  import_list
-				  >> identifier			[swap(at_c<0>(_val), _1)] 
+				  >> identifier
 				  >> lit('=')
 				  >> lit("ability")
 				  >> lit('{')
-				  >> ability_description	[swap(at_c<1>(_val), _1)]
+				  >> ability_description
 				  >> lit('}')
 				  >> -lit(';')
 				  ;
@@ -195,9 +195,9 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				  lit("context")
 				  >> lit('=')
 				  >> lit('{')
-				  >> block_variable		[swap(at_c<0>(_val), _1)]
-				  >> block_variable		[swap(at_c<1>(_val), _1)]
-				  >> block_variable		[swap(at_c<2>(_val), _1)]
+				  >> block_variable
+				  >> block_variable
+				  >> block_variable
 				  >> lit('}')
 				  ;
 
@@ -218,20 +218,20 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				 lit("export")
 				 >> lit('=')
 				 >> lit('{')
-				 >> block_type_decl			[swap(at_c<0>(_val), _1)]
-				 >> block_function_decl     [swap(at_c<1>(_val), _1)]
+				 >> block_type_decl
+				 >> block_function_decl
 				 >> lit('}')
 				 ;
 
 		block_type_decl =
 				lit('{')
-				>> type_decl_list_		[swap(_val, _1)]
+				>> type_decl_list_
 				>> lit('}')
 				;
 
 		block_function_decl =
 				lit('{')
-				>> f_decl_list		    [swap(_val, _1)]
+				>> f_decl_list
 				>> lit('}')
 				;
 
@@ -240,7 +240,7 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				;
 
 		import =	lit("import")
-					>> constant_string	[swap(_val, _1)]
+					>> constant_string
 					>> -lit(';')
 					;
 
@@ -259,51 +259,45 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				 >> lit(';')				[push_back(at_c<0>(_val), _a)]
 		;
 
-		f_decl_list =
-				(*f_decl							  [push_back(at_c<0>(_val), _1)])
-				;
+		f_decl_list =(*f_decl);
 
 		f_decl = scoped_identifier								[at_c<1>(_val) = _1]
 			   >> identifier									[at_c<0>(_val) = _1]
 			   >> lit('(')
-			   > -(
+			   > -((
 					scoped_identifier							[push_back(at_c<2>(_val),_1)]
 					>> - identifier
-					>> *(lit(',') > scoped_identifier			[push_back(at_c<2>(_val),_1)]
-								  > - identifier)
+				   ) % ','
 				  )
-			   > lit(')')				
+			   > lit(')')
 			   > -lit(';')
 			   
 	    ;
 
-		type_decl_ = 
-					structure_decl						[_val =  _1]
-				   |new_type_decl						[_val =  _1]
+		type_decl_ = structure_decl
+				   |new_type_decl
 				   ;
 
-		type_decl_list_ = 
-					 (*type_decl_					    [push_back(at_c<0>(_val), _1)])
-					;
+		type_decl_list_ = (*type_decl_);
 
 		/* 
 		 * XXX
 		 * structure_decl and v_decl are more or less the same, so maybe there
 		 * is a way to share the code between them. For moment, it works as it
 		 */
-		structure_decl = identifier			[at_c<0>(_val) = _1]
+		structure_decl = identifier
 					  >> lit('=')
 					  >> lit("struct")
 					  >> lit('{')
-					  >> v_decl_list		[swap(at_c<1>(_val) , _1)]
-					  >> lit('}')			
-					  >> -lit(';')		  
+					  >> v_decl_list
+					  >> lit('}')
+					  >> -lit(';')
 					  ;
 
-		new_type_decl = identifier			[at_c<0>(_val) = _1]
+		new_type_decl = identifier			
 					 >> lit('=')
 					 >> lit("newtype")
-					 >> scoped_identifier	[at_c<1>(_val) = _1]
+					 >> scoped_identifier
 					 >> lit(';')		
 					 ;
 
@@ -359,11 +353,13 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 	qi::rule<Iterator, programming_decl(), white_space_> block_definition; 
 	qi::rule<Iterator, ability_blocks_decl(), white_space_> block_context, ability_description;
 	qi::rule<Iterator, type_decl(), white_space_>  type_decl_; 
-	qi::rule<Iterator, type_decl_list(), white_space_> type_decl_list_, block_type_decl;
+	qi::rule<Iterator, type_decl_list(), white_space_> block_type_decl;
+	qi::rule<Iterator, std::vector<type_decl>(), white_space_> type_decl_list_;
 	qi::rule<Iterator, symbol_decl_list(), qi::locals<symbol_decl>, white_space_> v_decl;
 	qi::rule<Iterator, symbol_decl_list(), white_space_> v_decl_list, block_variable;
 	qi::rule<Iterator, function_decl(), white_space_> f_decl;
-	qi::rule<Iterator, function_decl_list(), white_space_> f_decl_list, block_function_decl;
+	qi::rule<Iterator, function_decl_list(), white_space_> block_function_decl;
+	qi::rule<Iterator, std::vector<function_decl>(), white_space_> f_decl_list;
 	qi::rule<Iterator, struct_decl(), qi::locals<symbol_decl>, white_space_> structure_decl;
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
 
