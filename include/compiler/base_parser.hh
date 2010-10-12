@@ -24,26 +24,6 @@ namespace ascii = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
 
 BOOST_FUSION_ADAPT_STRUCT(
-		hyper::compiler::Constant<int>,
-		(int, value)
-)
-
-BOOST_FUSION_ADAPT_STRUCT(
-		hyper::compiler::Constant<double>,
-		(double, value)
-)
-
-BOOST_FUSION_ADAPT_STRUCT(
-		hyper::compiler::Constant<std::string>,
-		(std::string, value)
-)
-
-BOOST_FUSION_ADAPT_STRUCT(
-		hyper::compiler::Constant<bool>,
-		(bool, value)
-)
-
-BOOST_FUSION_ADAPT_STRUCT(
 		hyper::compiler::function_call,
 		(std::string, fName)
 		(std::vector<hyper::compiler::expression_ast>, args)
@@ -173,15 +153,12 @@ namespace hyper {
 						| cst_int				   
 						| cst_string			   
 						| cst_bool
-						)			   [_val = _1];
+						);
 
-				cst_int = qi::uint_		[at_c<0>(_val) = _1];
-		
-				cst_double = strict_double [at_c<0>(_val) = _1];
-		
-				cst_string = constant_string [at_c<0>(_val) = _1];
-		
-				cst_bool = qi::bool_		    [at_c<0>(_val) = _1];
+				cst_int = qi::uint_;
+				cst_double = strict_double;
+				cst_string = constant_string;
+				cst_bool = qi::bool_;
 
 				start.name("constant");
 				cst_int.name("const int");
@@ -210,7 +187,7 @@ namespace hyper {
 				start =  (
 						  constant
 						| var_inst 			   
-						)			   [_val = _1];
+						);
 		
 				var_inst = scoped_identifier;
 
