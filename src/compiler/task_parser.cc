@@ -84,31 +84,23 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_spa
 		grammar_task::base_type(task_decl_, "task_decl")
 	{
 	    using qi::lit;
-        using qi::lexeme;
-        using ascii::char_;
         using namespace qi::labels;
-
-		using phoenix::at_c;
-        using phoenix::push_back;
-		using phoenix::swap;
 
 		task_decl_ = 
 				   lit("in")
 				>> lit("context")
-				>> scoped_identifier	 [swap(at_c<0>(_val), _1)]
+				>> scoped_identifier
 				>> -lit(';')
-				>> task_list			 [swap(at_c<1>(_val), _1)]
+				>> task_list
 				;
 
-		task_list = 
-				(*task					[push_back(at_c<0>(_val), _1)])
-				;
+		task_list = (*task);
 
-		task = scoped_identifier	[swap(at_c<0>(_val), _1)]
+		task = scoped_identifier
 			 >> lit('=')
 			 >> lit("task")
 			 >> lit('{')
-			 >> cond_block				[swap(at_c<1>(_val), _1)]
+			 >> cond_block
 			 >> lit('}')
 			 >> -lit(';')
 			 ;
@@ -121,7 +113,7 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_spa
 	}
 
 	qi::rule<Iterator, task_decl_list_context(), white_space_> task_decl_;
-	qi::rule<Iterator, task_decl_list(), white_space_> task_list;
+	qi::rule<Iterator, std::vector<task_decl>(), white_space_> task_list;
 	qi::rule<Iterator, task_decl(), white_space_> task;
 
 	scoped_identifier_grammar<Iterator> scoped_identifier;
