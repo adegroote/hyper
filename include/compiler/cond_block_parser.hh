@@ -27,29 +27,25 @@ namespace hyper {
 				cond_block_grammar::base_type(start)
 			{
 				using qi::lit;
-		        using namespace qi::labels;
-				using phoenix::push_back;
-				using phoenix::at_c;
-				using phoenix::swap;
 		
-				start = pre_cond			[swap(at_c<0>(_val), _1)]
-						>> post_cond			[swap(at_c<1>(_val), _1)]
+				start = pre_cond
+						>> post_cond
 						;
 		
 				pre_cond = lit("pre")
 						 >> lit("=")
-						 >> cond				[swap(at_c<0>(_val), at_c<0>(_1))]
+						 >> cond
 						 ;
 		
 				post_cond = lit("post")
 						  >> lit("=")
-						  >> cond				[swap(at_c<0>(_val), at_c<0>(_1))]
+						  >> cond
 						  ;
 		
 				cond = 
 					 lit('{')
 					 >> *( lit('{')
-						   >> expression		[push_back(at_c<0>(_val), _1)]
+						   >> expression
 						   >> lit('}')
 						 )
 					 >> lit('}')
@@ -63,7 +59,8 @@ namespace hyper {
 			}
 		
 			qi::rule<Iterator, cond_block_decl(), white_space_> start;
-			qi::rule<Iterator, cond_list_decl(), white_space_> cond, pre_cond, post_cond;
+			qi::rule<Iterator, cond_list_decl(), white_space_> pre_cond, post_cond;
+			qi::rule<Iterator, std::vector<expression_ast>(), white_space_> cond;
 			grammar_expression<Iterator> expression;
 		};
 	}
