@@ -74,15 +74,11 @@ struct body_block_grammar :
 		body_block_grammar::base_type(start)
 	{
 		using qi::lit;
-        using namespace qi::labels;
-
-		using phoenix::at_c;
-		using phoenix::swap;
 
 		start = lit("body")
 			>> lit("=")
 			>> lit('{')
-			>> body_decl_list	[swap(at_c<0>(_val), _1)]
+			>> body_decl_list
 			>> lit('}')
 			>> -lit(';')
 			;
@@ -104,8 +100,8 @@ struct body_block_grammar :
 		 * and expression
 		 */
 		let_decl_ = lit("let")
-				 >> identifier		[at_c<0>(_val) = _1]
-				 >> body_decl		[at_c<1>(_val) = _1]
+				 >> identifier
+				 >> body_decl
 				 ;
 
 		make_decl_ = lit("make")
@@ -121,9 +117,8 @@ struct body_block_grammar :
 				  ;
 
 		abort_decl_ = lit("abort")
-				   >> identifier	[at_c<0>(_val) = _1]
+				   >> identifier
 				   ;
-
 
 		wait_decl_ = lit("wait")
 				  >> lit("(")
@@ -175,40 +170,37 @@ struct  grammar_recipe :
 		grammar_recipe::base_type(start)
 	{
 	    using qi::lit;
-        using qi::lexeme;
-        using ascii::char_;
         using namespace qi::labels;
 
-		using phoenix::at_c;
-        using phoenix::push_back;
-		using phoenix::swap;
+		start = recipe_list;
 
-		start = 
-			 (*recipe			[push_back(at_c<0>(_val), _1)])
-			 ;
+		recipe_list = (*recipe);
 
-		recipe = scoped_identifier  [swap(at_c<0>(_val), _1)]
+		recipe = scoped_identifier
 			 >> lit('=')
 			 >> lit("recipe")
 			 >> lit("{")
-			 >> cond_block			[swap(at_c<1>(_val), _1)]
-			 >> body_block			[swap(at_c<2>(_val), _1)]
+			 >> cond_block
+			 >> body_block
 			 >> lit('}')
 			 >> -lit(';')
 			 ;
 
 		start.name("recipe list");
+		recipe_list.name("recipe list helper");
 		recipe.name("recipe");
 
 #ifdef HYPER_DEBUG_RULES
 		debug(start);
 		debug(recipe);
+		debug(recipe_list);
 #endif
 
 		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 	}
 
 	qi::rule<Iterator, recipe_decl_list(), white_space_> start;
+	qi::rule<Iterator, std::vector<recipe_decl>(), white_space_> recipe_list;
 	qi::rule<Iterator, recipe_decl(), white_space_> recipe;
 
 	scoped_identifier_grammar<Iterator> scoped_identifier;
@@ -229,5 +221,5 @@ bool parser::parse_recipe(const std::string& expr)
 bool parser::parse_recipe_file(const std::string& fileName)
 {
 	std::string content = read_from_file(fileName);
-	return parse_task(content);
+	return parse_recipe(content);
 }
