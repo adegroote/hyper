@@ -10,6 +10,10 @@
 
 namespace hyper {
 	namespace compiler {
+
+		class ability;
+		class universe;
+
 		template <typename T>
 		struct Constant
 		{
@@ -88,6 +92,8 @@ namespace hyper {
 			}
 
 			void reduce();
+
+			bool is_valid(const ability&, const universe&) const;
 		};
 
 		std::ostream& operator << (std::ostream& os, const expression_ast& e);
