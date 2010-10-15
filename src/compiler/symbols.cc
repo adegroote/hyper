@@ -15,16 +15,23 @@ symbolList::add_result
 symbolList::add(const std::string &name, const std::string& tname, 
 				const expression_ast& initializer)
 {
-	sMap::const_iterator it = symbols.find(name);
-	if (it != symbols.end())
-		return make_pair(false, alreadyExist);
-
 	std::pair < bool, typeList::typeId> p;
 	p = tlist.getId(tname);
 	if (p.first == false)
 		return make_pair(false, unknowType);
 
-	symbols[name] = symbol(name, p.second, initializer);
+	return add(name, p.second, initializer);
+}
+
+symbolList::add_result
+symbolList::add(const std::string& name, const typeId& type,
+			    const expression_ast& initializer)
+{
+	sMap::const_iterator it = symbols.find(name);
+	if (it != symbols.end())
+		return make_pair(false, alreadyExist);
+
+	symbols[name] = symbol(name, type, initializer);
 	return make_pair(true, noError);
 }
 

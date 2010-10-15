@@ -57,6 +57,9 @@ namespace hyper {
 				add_result add(const std::string& name, const std::string& tname, 
 							   const expression_ast& initializer = empty());
 
+				add_result add(const std::string& name, const typeId& id,
+							   const expression_ast& initializer = empty());
+
 				add_result add(const symbol_decl& s);
 
 				std::vector<add_result> add(const symbol_decl_list& l);
