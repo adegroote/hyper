@@ -621,3 +621,13 @@ universe::get_function_depends(const std::string& name) const
 
 	return it->second->get_function_depends(tList);
 }
+
+const ability&
+universe::get_ability(const std::string& name) const
+{
+	abilityMap::const_iterator it = abilities.find(name);
+	if (it == abilities.end()) {
+		assert(false);
+	}
+	return *(it->second);
+}
