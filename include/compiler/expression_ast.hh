@@ -7,12 +7,14 @@
 #include <vector>
 
 #include <boost/variant.hpp>
+#include <boost/optional/optional_fwd.hpp>
 
 namespace hyper {
 	namespace compiler {
 
 		class ability;
 		class universe;
+		class symbolList;
 
 		template <typename T>
 		struct Constant
@@ -93,7 +95,8 @@ namespace hyper {
 
 			void reduce();
 
-			bool is_valid(const ability&, const universe&) const;
+			bool is_valid(const ability&, const universe&,
+						 const boost::optional<symbolList>& s) const;
 		};
 
 		std::ostream& operator << (std::ostream& os, const expression_ast& e);
