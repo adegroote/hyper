@@ -48,10 +48,10 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 															  "post = {}; };")
 							  == true);
 	// accessing private variable from other context is bad :)
-	BOOST_CHECK( P.parse_task("in context first; x0 = task { pre = {{ other::myPrivatevariable }};"
+	BOOST_CHECK( P.parse_task("in context first; x0 = task { pre = {{ other::myPrivatevariable == 0.0 }};"
 													      " post = {}; };") == false);
 	// in our local context, it is ok
-	BOOST_CHECK( P.parse_task("in context first; x1 = task { pre = {{ first::myPrivatevariable }};"
+	BOOST_CHECK( P.parse_task("in context first; x1 = task { pre = {{ first::myPrivatevariable == 0.0 }};"
 													      " post = {}; };") == true);
 
 	// calling unknow function is bad
@@ -63,11 +63,11 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 													      " post = {}; };") == false);
 
 	// calling valid function with constant
-	BOOST_CHECK( P.parse_task("in context first; x4 = task { pre = {{ square(42.0) }};"
+	BOOST_CHECK( P.parse_task("in context first; x4 = task { pre = {{ square(42.0) == 0.0}};"
 													      " post = {}; };") == true);
 
 	// calling valid function with variable of good type is ok
-	BOOST_CHECK( P.parse_task("in context first; x5 = task { pre = {{ square(thresold) }};"
+	BOOST_CHECK( P.parse_task("in context first; x5 = task { pre = {{ square(thresold) == 0.0}};"
 													      " post = {}; };") == true);
 
 	// calling valid function with variable of bad type is bad
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 													      " post = {}; };") == false);
 
 	// calling valid function with non-accessible variable is not really good
-	BOOST_CHECK( P.parse_task("in context first; x7 = task { pre = {{ square(other::myPrivatevariable) }};"
+	BOOST_CHECK( P.parse_task("in context first; x7 = task { pre = {{ square(other::myPrivatevariable) == 0.0}};"
 													      " post = {}; };") == false);
 
 	// calling operator < with two variables on same kind is ok
@@ -119,6 +119,12 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	BOOST_CHECK( P.parse_task("in context first; x17 = task { pre = {};"
 													      " post = {}; };") == false);
 
+	// A condition must be a valid expression and returns a bool
+	BOOST_CHECK(! P.parse_task("in context first; x18 = task { pre = {{ square(thresold)}};"
+													      " post = {}; };") == true);
+
+	BOOST_CHECK(! P.parse_task("in context first; x19 = task { pre = {{ first::myPrivatevariable}};"
+													      " post = {}; };") == true);
 
 	/* Testing recipe parsing */
 	BOOST_CHECK( P.parse_recipe("r0 = recipe { pre = {}; post = {}; body = {}; };"));
