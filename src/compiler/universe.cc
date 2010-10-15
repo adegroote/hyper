@@ -22,6 +22,7 @@ universe::universe() : tList(), fList(tList)
 	tList.add("int", intType);
 	tList.add("string", stringType);
 	tList.add("void", noType);
+	tList.add("identifier", intType);
 }
 
 struct sym_add_scope 

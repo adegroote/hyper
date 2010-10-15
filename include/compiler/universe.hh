@@ -22,6 +22,7 @@ namespace hyper {
 		struct task_decl_list_context;
 		struct ability_decl;
 		class ability;
+		struct recipe_expression;
 
 		class universe : public boost::noncopyable
 		{
@@ -60,6 +61,9 @@ namespace hyper {
 
 				boost::optional<typeId>
 				typeOf(const ability&, const expression_ast& expr) const;
+
+				boost::optional<typeId>
+				typeOf(const ability&, const recipe_expression& expr) const;
 
 				const typeList& types() const { return tList; };
 				const functionDefList& funcs() const { return fList; };

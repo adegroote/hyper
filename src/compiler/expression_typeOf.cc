@@ -1,4 +1,5 @@
 #include <compiler/expression_ast.hh>
+#include <compiler/recipe_expression.hh>
 #include <compiler/scope.hh>
 #include <compiler/types.hh>
 #include <compiler/universe.hh>
@@ -143,4 +144,56 @@ boost::optional<typeId>
 universe::typeOf(const ability& ab, const expression_ast& expr) const
 {
 	return boost::apply_visitor(ast_type(ab, *this), expr.expr);
+}
+
+/* 
+ * Compute the type of a recipe_expression
+ * Assume that the recipe_expression is valid
+ */
+struct recipe_ast_type : public boost::static_visitor<boost::optional<typeId> > {
+	const ability& ab;
+	const universe& u;
+
+	recipe_ast_type(const ability& ab_, const universe& u_):
+		ab(ab_), u(u_) 
+	{}
+
+	boost::optional<typeId>
+	operator() (const empty&) const { assert(false); return boost::none; }
+
+	boost::optional<typeId>
+	operator() (const expression_ast& e) const {
+		return u.typeOf(ab, e);
+	}
+
+	boost::optional<typeId> 
+	operator() (const let_decl&) const {
+		return u.types().getId("void").second;
+	}
+
+	boost::optional<typeId>
+	operator() (const abort_decl&) const {
+		return u.types().getId("void").second;
+	}
+
+	boost::optional<typeId>
+	operator() (const recipe_op<MAKE>&) const {
+		return u.types().getId("bool").second;
+	}
+
+	boost::optional<typeId>
+	operator() (const recipe_op<ENSURE>&) const {
+		return u.types().getId("identifier").second;
+	}
+
+	boost::optional<typeId>
+	operator() (const recipe_op<WAIT>&) const {
+		return u.types().getId("void").second;
+	}
+};
+
+boost::optional<typeId>
+universe::typeOf(const ability& ab, const recipe_expression& expr) const
+{
+	return boost::apply_visitor(recipe_ast_type(ab, *this), expr.expr);
 }
