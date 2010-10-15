@@ -343,7 +343,7 @@ namespace {
 			std::transform(remote_syms.begin(), remote_syms.end(), 
 						   std::back_inserter(remote_symbols),
 						   boost::bind(&universe::get_symbol, boost::cref(u),
-									   _1, boost::cref(ability_context)));
+									   _1, boost::cref(ability_context), boost::none));
 
 			bool has_remote_symbols = !remote_symbols.empty();
 			std::vector<typeId> remote_sym_type;

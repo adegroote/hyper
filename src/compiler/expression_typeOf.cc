@@ -66,9 +66,11 @@ struct binary_type<T, LOGICAL> {
 struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 	const ability& ab;
 	const universe& u;
+	const boost::optional<symbolList>& local_context;
 
-	ast_type(const ability& ab_, const universe& u_):
-		ab(ab_), u(u_) 
+	ast_type(const ability& ab_, const universe& u_, 
+			const boost::optional<symbolList>& local_context_):
+		ab(ab_), u(u_), local_context(local_context_)
 	{}
 
 	boost::optional<typeId> operator() (const empty& e) const
@@ -104,7 +106,7 @@ struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 	boost::optional<typeId> operator() (const std::string& s) const
 	{
 		std::pair<bool, symbolACL> p;
-		p = u.get_symbol(s, ab);
+		p = u.get_symbol(s, ab, local_context);
 		if (p.first == false)
 			return boost::none;
 		return p.second.s.t; 
@@ -123,13 +125,13 @@ struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 
 	boost::optional<typeId> operator() (const expression_ast& e) const
 	{
-		return boost::apply_visitor(ast_type(ab, u), e.expr);
+		return boost::apply_visitor(ast_type(ab, u, local_context), e.expr);
 	}
 
 	template<binary_op_kind T>
 	boost::optional<typeId> operator() (const binary_op<T>& b) const
 	{
-		boost::optional<typeId> leftId = boost::apply_visitor(ast_type(ab, u), b.left.expr);
+		boost::optional<typeId> leftId = boost::apply_visitor(ast_type(ab, u, local_context), b.left.expr);
 		return binary_type<T, TypeOp<T>::value> (u, leftId) ();
 	}
 
@@ -141,9 +143,10 @@ struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 };
 
 boost::optional<typeId>
-universe::typeOf(const ability& ab, const expression_ast& expr) const
+universe::typeOf(const ability& ab, const expression_ast& expr,
+				 const boost::optional<symbolList>& local_context) const
 {
-	return boost::apply_visitor(ast_type(ab, *this), expr.expr);
+	return boost::apply_visitor(ast_type(ab, *this, local_context), expr.expr);
 }
 
 /* 
@@ -153,9 +156,11 @@ universe::typeOf(const ability& ab, const expression_ast& expr) const
 struct recipe_ast_type : public boost::static_visitor<boost::optional<typeId> > {
 	const ability& ab;
 	const universe& u;
+	const boost::optional<symbolList>& local_context;
 
-	recipe_ast_type(const ability& ab_, const universe& u_):
-		ab(ab_), u(u_) 
+	recipe_ast_type(const ability& ab_, const universe& u_,
+					const boost::optional<symbolList>& local_context_) :
+		ab(ab_), u(u_), local_context(local_context_)
 	{}
 
 	boost::optional<typeId>
@@ -163,7 +168,7 @@ struct recipe_ast_type : public boost::static_visitor<boost::optional<typeId> > 
 
 	boost::optional<typeId>
 	operator() (const expression_ast& e) const {
-		return u.typeOf(ab, e);
+		return u.typeOf(ab, e, local_context);
 	}
 
 	boost::optional<typeId> 
@@ -193,7 +198,8 @@ struct recipe_ast_type : public boost::static_visitor<boost::optional<typeId> > 
 };
 
 boost::optional<typeId>
-universe::typeOf(const ability& ab, const recipe_expression& expr) const
+universe::typeOf(const ability& ab, const recipe_expression& expr,
+				 const boost::optional<symbolList>& local_context) const
 {
-	return boost::apply_visitor(recipe_ast_type(ab, *this), expr.expr);
+	return boost::apply_visitor(recipe_ast_type(ab, *this, local_context), expr.expr);
 }

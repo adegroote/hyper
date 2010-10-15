@@ -54,16 +54,19 @@ namespace hyper {
 				bool add_task(const task_decl_list_context& decl);
 
 				std::pair<bool, symbolACL> 
-				get_symbol(const std::string& name, const ability&) const;
+				get_symbol(const std::string& name, const ability&, 
+						   const boost::optional<symbolList>& s = boost::none) const;
 
 				std::pair<bool, functionDef>
 				get_functionDef(const std::string& name) const;
 
 				boost::optional<typeId>
-				typeOf(const ability&, const expression_ast& expr) const;
+				typeOf(const ability&, const expression_ast& expr,
+					   const boost::optional<symbolList>&s = boost::none) const;
 
 				boost::optional<typeId>
-				typeOf(const ability&, const recipe_expression& expr) const;
+				typeOf(const ability&, const recipe_expression& expr,
+					  const boost::optional<symbolList>&s = boost::none) const;
 
 				const typeList& types() const { return tList; };
 				const functionDefList& funcs() const { return fList; };

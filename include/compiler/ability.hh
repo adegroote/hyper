@@ -23,6 +23,7 @@ namespace hyper {
 			abilityACL acl;
 
 			symbolACL() {};
+			symbolACL(const symbol& s_) : s(s_), acl(CONTROLABLE) {};
 			symbolACL(const symbol& s_, abilityACL acl_) : s(s_), acl(acl_) {};
 		};
 

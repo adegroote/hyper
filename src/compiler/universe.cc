@@ -275,12 +275,22 @@ universe::add(const ability_decl& decl)
 }
 
 std::pair<bool, symbolACL>
-universe::get_symbol(const std::string& name, const ability& ab) const
+universe::get_symbol(const std::string& name, const ability& ab,
+					 const boost::optional<symbolList>& local_context) const
 {
 	if (!scope::is_scoped_identifier(name)) {
 		std::pair<bool, symbolACL> res = ab.get_symbol(name);
-		if (res.first == false)
-			std::cerr << "Unknow symbol " << name << " in ability " << ab.name() << std::endl;
+		if (res.first == false && local_context) {
+			if (local_context) {
+				res = (*local_context).get(name);
+				if (res.first == false) {
+					std::cerr << "Unknow symbol " << name << " in ability ";
+					std::cerr << ab.name() << " nor in local context ";
+				}
+			} else {
+				std::cerr << "Unknow symbol " << name << " in ability " << ab.name();
+			}
+		}
 		return res;
 	} else {
 		std::pair<std::string, std::string> p;
