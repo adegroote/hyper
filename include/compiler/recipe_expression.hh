@@ -38,6 +38,7 @@ namespace hyper {
 		std::ostream& operator<< (std::ostream& os, const recipe_op<kind>& r)
 		{
 			os << kind << " " << r.content;
+			return os;
 		}
 
 		struct recipe_expression {

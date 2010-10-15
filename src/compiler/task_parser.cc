@@ -34,6 +34,7 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const cond_block_de
 {
 	os << "{" << c.pre << "}";
 	os << "{" << c.post << "}";;
+	return os;
 }
 
 std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl& t)
