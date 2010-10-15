@@ -212,13 +212,23 @@ struct  grammar_recipe :
 bool parser::parse_recipe(const std::string& expr)
 {
 	recipe_decl_list result;
+	return parse_recipe(expr, result);
+}
+
+bool parser::parse_recipe(const std::string& expr, recipe_decl_list& res)
+{
 	grammar_recipe<std::string::const_iterator> g;
-    bool r = parse(g, expr, result);
-	return r;
+    return parse(g, expr, res);
 }
 
 bool parser::parse_recipe_file(const std::string& fileName)
 {
 	std::string content = read_from_file(fileName);
 	return parse_recipe(content);
+}
+
+bool parser::parse_recipe_file(const std::string& fileName, recipe_decl_list& res)
+{
+	std::string content = read_from_file(fileName);
+	return parse_recipe(content, res);
 }
