@@ -579,7 +579,7 @@ universe::dump_ability_import_module_def(std::ostream& oss, const std::string& n
 
 	namespaces n(oss, name);
 	oss << "\t\t\tvoid import_funcs(model::ability &a); " << std::endl;
-};
+}
 
 void
 universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const
