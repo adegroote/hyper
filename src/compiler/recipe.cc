@@ -19,7 +19,7 @@ struct validate_expression
 
 	void operator() (const expression_ast& e) const
 	{
-		b = e.is_valid(a, u, boost::none) && b;
+		b = e.is_valid_predicate(a, u, boost::none) && b;
 	}
 };
 
@@ -37,10 +37,7 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 
 	template <recipe_op_kind kind>
 	bool operator() (const recipe_op<kind>& op) const {
-		bool is_valid = op.content.is_valid(a, u, local);
-		boost::optional<typeId> type = u.typeOf(a, op.content, local);
-		bool valid_type = (type && *type == u.types().getId("bool").second);
-		return is_valid && valid_type;
+		return op.content.is_valid_predicate(a, u, local);
 	}
 
 	bool operator() (const expression_ast& e) const {

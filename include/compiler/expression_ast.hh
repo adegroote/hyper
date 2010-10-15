@@ -97,6 +97,9 @@ namespace hyper {
 
 			bool is_valid(const ability&, const universe&,
 						 const boost::optional<symbolList>& s) const;
+
+			bool is_valid_predicate(const ability&, const universe&,
+									const boost::optional<symbolList>& s) const;
 		};
 
 		std::ostream& operator << (std::ostream& os, const expression_ast& e);

@@ -235,5 +235,17 @@ namespace hyper {
 			ast_valid is_valid(context, u, local_context);
 			return boost::apply_visitor(is_valid, this->expr);
 		}
+
+		bool expression_ast::is_valid_predicate(const ability& context, const universe& u,
+									const boost::optional<symbolList>& local_context) const
+		{
+			bool valid_expression = is_valid(context, u, local_context);
+			std::pair<bool, typeId> expected_type = u.types().getId("bool");
+			assert(expected_type.first);
+			boost::optional<typeId> real_type = u.typeOf(context, *this);
+			bool valid_type = real_type && (*real_type == expected_type.second);
+
+			return valid_expression && valid_type;
+		}
 	}
 }

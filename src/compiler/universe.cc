@@ -346,13 +346,7 @@ struct cond_adder
 
 	void operator() (const expression_ast& cond) 
 	{
-
-		bool valid_expression = cond.is_valid(ab, u, boost::none);
-		std::pair<bool, typeId> expected_type = u.types().getId("bool");
-		assert(expected_type.first);
-		boost::optional<typeId> real_type = u.typeOf(ab, cond);
-		bool valid_type = real_type && (*real_type == expected_type.second);
-		res = res && valid_expression && valid_type;
+		res = cond.is_valid_predicate(ab, u, boost::none) && res;
 		conds.push_back(cond);
 	}
 };
