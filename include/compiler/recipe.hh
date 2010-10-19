@@ -38,6 +38,8 @@ namespace hyper {
 				 */
 				bool validate(const universe&) ;
 				void dump(std::ostream& oss, const universe&) const;
+
+				const std::string& get_name() const { return name; }
 		};
 	}
 }
