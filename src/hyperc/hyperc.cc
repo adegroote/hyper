@@ -9,6 +9,8 @@
 #include <compiler/parser.hh>
 #include <compiler/universe.hh>
 #include <compiler/utils.hh>
+#include <compiler/recipe.hh>
+#include <compiler/recipe_parser.hh>
 
 using namespace hyper::compiler;
 using namespace boost::filesystem;
@@ -105,6 +107,39 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 	oss << hyper::compiler::replace_by(additionnal_link, "@NAME@", name);
 }
 
+struct generate_recipe 
+{
+	const universe& u;
+	const ability& ab;
+	task t;
+	const typeList& tList;
+
+	bool success;
+	std::string directoryName;
+
+	generate_recipe(const universe& u_,
+					const std::string& abilityName, 
+					const std::string& directoryName_) :
+		u(u_), ab(u.get_ability(abilityName)), tList(u.types()), 
+		success(true), directoryName(directoryName_) 
+	{}
+
+	void operator() (const recipe_decl& decl)
+	{
+		recipe r(decl, ab, t, tList);
+		bool valid = r.validate(u);
+		if (!valid) {
+			std::cerr << r.get_name() << " seems not valid " << std::endl;
+		}
+		success = success && valid;
+		if (success) {
+			std::string fileName = directoryName + "/" + r.get_name() + ".cc";
+			std::ofstream oss(fileName.c_str());
+			r.dump(oss, u);
+		}
+	}
+};
+
 int main(int argc, char** argv)
 {
 	if (argc != 2)
@@ -114,20 +149,52 @@ int main(int argc, char** argv)
 	}
 
 	std::string abilityName = argv[1];
-	std::string directoryName = "src/" + abilityName;
+	std::string directoryName = ".hyper/src/" + abilityName;
+	std::string directoryTaskName = directoryName + "/tasks";
+	std::string directoryRecipeName = directoryName + "/recipes";
+	std::string taskDirectory = abilityName;
 	universe u;
 	parser P(u);
 
-	create_directory("src");
+	create_directory(".hyper");
+	create_directory(".hyper/src");
 	create_directory(directoryName);	
+	create_directory(directoryTaskName);
+	create_directory(directoryRecipeName);
 
 	bool res = P.parse_ability_file(abilityName + ".ability");
 	if (res == false)
 		return -1;
 
-	res = P.parse_task_file(abilityName + ".task");
-	if (res == false)
-		return -1;
+	if (exists(taskDirectory)) {
+		  directory_iterator end_itr; // default construction yields past-the-end
+		   for (directory_iterator itr( taskDirectory ); itr != end_itr; ++itr ) {
+			   if (is_regular_file(itr->path())) {
+				   res = P.parse_task_file(itr->path().string());
+				   if (res == false)
+					   return -1;
+			   } else if (is_directory(itr->path())) {
+					directory_iterator end_itr2; 
+					for (directory_iterator itr2(*itr); itr2 != end_itr2; ++itr2 ) {
+						if (is_regular_file(itr2->path())) {
+							recipe_decl_list rec_decls;
+							res = P.parse_recipe_file(itr2->path().string(), rec_decls);
+							if (res == false) {
+								std::cerr << "Fail to parse " << itr2->path().string() << std::endl;
+								return -1;
+							}
+
+							generate_recipe gen(u, abilityName, directoryRecipeName);
+							std::for_each(rec_decls.recipes.begin(),
+										  rec_decls.recipes.end(),
+										  gen);
+							if (gen.success == false)
+								return -1;
+						}
+					}
+			   }
+		   }
+	}
 
 	{
 		std::string fileName = directoryName + "/types.hh";
@@ -145,10 +212,6 @@ int main(int argc, char** argv)
 			define_func = false;
 		} else {
 			std::string fileNameImpl = directoryName + "/funcs.cc";
-			if (exists(fileNameImpl)) {
-				// don't touch to the current funcs.cc, write a template one
-				fileNameImpl = directoryName + "/funcs.template.cc";
-			}
 			std::ofstream oss_impl(fileNameImpl.c_str());
 			u.dump_ability_functions_impl(oss_impl, abilityName);
 			define_func = true;
@@ -174,12 +237,12 @@ int main(int argc, char** argv)
 	}
 
 	{
-		std::ofstream oss("src/main.cc");
+		std::ofstream oss(".hyper/src/main.cc");
 		build_main(oss, abilityName);
 	}
 
 	{
-		std::ofstream oss("src/CMakeLists.txt");
+		std::ofstream oss(".hyper/src/CMakeLists.txt");
 		std::set<std::string> depends = u.get_function_depends(abilityName);
 		build_base_cmake(oss, abilityName, define_func, depends);
 	}
