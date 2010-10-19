@@ -107,6 +107,51 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 	oss << hyper::compiler::replace_by(additionnal_link, "@NAME@", name);
 }
 
+/*
+ * Assume src always exists
+ */
+bool are_file_equals(const path& src, const path& dst)
+{
+	if (!exists(dst)) 
+		return false;
+
+	std::string src_content = read_from_file(src.string());
+	std::string dst_content = read_from_file(dst.string());
+
+	return (src_content == dst_content);
+}
+
+void copy_if_different(const path& base_src, const path& base_dst,
+					   const path& current_path)
+{
+	path src(base_src);
+	src /= current_path;
+
+	path dst(base_dst);
+	dst /= current_path;
+
+	create_directory(dst);
+
+	directory_iterator end_itr; 
+	for (directory_iterator itr( src ); itr != end_itr; ++itr ) {
+		if (is_regular_file(itr->path())) {
+			path src_file(src);
+			src_file /= itr->path().filename();
+			path dst_file(dst);
+			dst_file /= itr->path().filename();
+			if (!are_file_equals(src_file, dst_file)) {
+				std::cout << "copying " << src_file << " to " << dst_file << std::endl;
+				copy_file(src_file, dst_file, copy_option::overwrite_if_exists);
+			}
+
+		} else if (is_directory(itr->path())) {
+			path current(current_path);
+			current /= itr->path().filename();
+			copy_if_different(base_src, base_dst, current);
+		}
+	}
+}
+
 struct generate_recipe 
 {
 	const universe& u;
@@ -247,7 +292,8 @@ int main(int argc, char** argv)
 		build_base_cmake(oss, abilityName, define_func, depends);
 	}
 
-
+	/* Now for all files in .hyper/src, copy different one into real src */
+	copy_if_different(".hyper/src", "src", "");
 
 	return 0;
 }
