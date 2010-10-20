@@ -198,6 +198,39 @@ struct generate_recipe
 	}
 };
 
+struct generate_task
+{
+	const universe& u;
+	ability& ab;
+	const typeList& tList;
+
+	bool success;
+	std::string directoryName;
+
+	generate_task(universe& u_,
+				  const std::string& abilityName, 
+				  const std::string& directoryName_) :
+		u(u_), ab(u_.get_ability(abilityName)), tList(u.types()),
+		success(true), directoryName(directoryName_)
+	{}
+
+	void operator() (const task_decl& decl)
+	{
+		task t(decl, ab, tList);
+		bool valid = t.validate(u);
+		if (!valid) {
+			std::cerr << t.get_name() << " seems not valid " << std::endl;
+		}
+		valid &= ab.add_task(t);
+		success = success && valid;
+		if (success) {
+			std::string fileName = directoryName + "/" + t.get_name() + ".cc";
+			std::ofstream oss(fileName.c_str());
+			t.dump(oss, u);
+		}
+	}
+};
+
 int main(int argc, char** argv)
 {
 	if (argc != 2)
@@ -228,8 +261,17 @@ int main(int argc, char** argv)
 		  directory_iterator end_itr; // default construction yields past-the-end
 		   for (directory_iterator itr( taskDirectory ); itr != end_itr; ++itr ) {
 			   if (is_regular_file(itr->path())) {
-				   res = P.parse_task_file(itr->path().string());
-				   if (res == false)
+				   task_decl_list task_decls;
+				   res = P.parse_task_file(itr->path().string(), task_decls);
+				   if (res == false) {
+					   std::cerr << "Fail to parse " << itr->path().string() << std::endl;
+					   return -1;
+				   }
+				   generate_task gen(u, abilityName, directoryTaskName);
+				   std::for_each(task_decls.list.begin(), 
+								 task_decls.list.end(),
+								 gen);
+				   if (gen.success == false)
 					   return -1;
 			   } else if (is_directory(itr->path())) {
 					directory_iterator end_itr2; 
