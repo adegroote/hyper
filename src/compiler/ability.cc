@@ -104,6 +104,10 @@ struct compute_fun_depends
 
 struct print_initializer_helpers : boost::static_visitor<std::string>
 {
+	std::string var_name;
+
+	print_initializer_helpers(const std::string& name) : var_name(name) {}
+
 	template <typename T>
 	std::string operator () (const T&) const { assert(false); return ""; }
 
@@ -111,14 +115,14 @@ struct print_initializer_helpers : boost::static_visitor<std::string>
 
 	std::string operator () (const expression_ast& e) const
 	{
-		return boost::apply_visitor(print_initializer_helpers(), e.expr);
+		return boost::apply_visitor(print_initializer_helpers(var_name), e.expr);
 	}
 
 	template <typename T>
 	std::string operator () (const Constant<T>& c) const
 	{
 		std::ostringstream oss;
-		oss << " = " << c.value;
+		oss << ", " << var_name << "(" << c.value << ")";
 		return oss.str();
 	}
 
@@ -130,9 +134,9 @@ struct print_initializer_helpers : boost::static_visitor<std::string>
 	}
 };
 
-std::string print_initializer(const expression_ast& init)
+std::string print_initializer(const expression_ast& init, const std::string& name)
 {
-	return boost::apply_visitor(print_initializer_helpers(), init.expr);
+	return boost::apply_visitor(print_initializer_helpers(name), init.expr);
 }
 
 struct print_symbol
@@ -148,8 +152,19 @@ struct print_symbol
 	{
 		type t = tList.get(p.second.t);
 		oss << "\t\t\t\t" << scope::get_context_identifier(t.name, name);
-		oss << " " << p.second.name;
-		oss << print_initializer(p.second.initializer) << ";" << std::endl;
+		oss << " " << p.second.name << ";" << std::endl;
+	}
+};
+
+struct initialize_variable 
+{
+	std::ostream& oss;
+
+	initialize_variable(std::ostream& oss_) : oss(oss_) {};
+
+	void operator () (const std::pair<std::string, symbol>& p) const
+	{
+		oss << print_initializer(p.second.initializer, p.second.name);
 	}
 };
 
@@ -207,7 +222,6 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	std::for_each(fun_depends.begin(), fun_depends.end(), dump_depends(oss, "import.hh"));
 	oss << std::endl;
 	oss << "#include <model/ability.hh>" << std::endl;
-	oss << "#include <model/task.hh>" << std::endl;
 
 	namespaces n(oss, name_);
 
@@ -218,7 +232,12 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	std::for_each(readable_list.begin(), readable_list.end(), print);
 	std::for_each(private_list.begin(), private_list.end(), print);
 
-	oss << "\t\t\t\tability() : model::ability(\"" << name_ << "\") {\n" ;
+	initialize_variable initialize(oss);
+	oss << "\t\t\t\tability() : model::ability(\"" << name_ << "\")";
+	std::for_each(controlable_list.begin(), controlable_list.end(), initialize);
+	std::for_each(readable_list.begin(), readable_list.end(), initialize);
+	std::for_each(private_list.begin(), private_list.end(), initialize);
+	oss << "{\n" ;
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy_symbol(oss));
 	std::for_each(readable_list.begin(), readable_list.end(), add_proxy_symbol(oss));
 	std::for_each(fun_depends.begin(), fun_depends.end(), add_import_funcs(oss));
