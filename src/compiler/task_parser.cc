@@ -50,13 +50,6 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl_li
 	return os;
 }
 
-std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl_list_context& l)
-{
-	os << l.ability_name;
-	os << "{" << l.list << "}";
-	return os;
-}
-
 function<error_handler_> const error_handler = error_handler_();
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -70,14 +63,8 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::vector<task_decl>, list)
 )
 
-BOOST_FUSION_ADAPT_STRUCT(
-	task_decl_list_context,
-	(std::string, ability_name)
-	(task_decl_list, list)
-)
-
 template <typename Iterator>
-struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_space<Iterator> >
+struct  grammar_task : qi::grammar<Iterator, task_decl_list(), white_space<Iterator> >
 {
     typedef white_space<Iterator> white_space_;
 
@@ -87,13 +74,7 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_spa
 	    using qi::lit;
         using namespace qi::labels;
 
-		task_decl_ = 
-				   lit("in")
-				>> lit("context")
-				>> scoped_identifier
-				>> -lit(';')
-				>> task_list
-				;
+		task_decl_ = task_list;
 
 		task_list = (*task);
 
@@ -113,7 +94,7 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list_context(), white_spa
 		qi::on_error<qi::fail> (task_decl_, error_handler(_4, _3, _2));
 	}
 
-	qi::rule<Iterator, task_decl_list_context(), white_space_> task_decl_;
+	qi::rule<Iterator, task_decl_list(), white_space_> task_decl_;
 	qi::rule<Iterator, std::vector<task_decl>(), white_space_> task_list;
 	qi::rule<Iterator, task_decl(), white_space_> task;
 
@@ -131,16 +112,16 @@ bool parser::parse_expression(const std::string& expr)
 	return r;
 }	
 
+bool parser::parse_task(const std::string& expr, task_decl_list& res)
+{
+	grammar_task<std::string::const_iterator> g;
+    return parse(g, expr, res);
+}
+
 bool parser::parse_task(const std::string& expr)
 {
-	task_decl_list_context result;
-	grammar_task<std::string::const_iterator> g;
-    bool r = parse(g, expr, result);
-
-	if (r)
-		return u.add_task(result);
-	else
-		return false;
+	task_decl_list result;
+	return parse_task(expr, result);
 }
 
 bool parser::parse_task_file(const std::string& fileName)
@@ -148,3 +129,10 @@ bool parser::parse_task_file(const std::string& fileName)
 	std::string content = read_from_file(fileName);
 	return parse_task(content);
 }
+
+bool parser::parse_task_file(const std::string& fileName, task_decl_list& res)
+{
+	std::string content = read_from_file(fileName);
+	return parse_task(content, res);
+}
+

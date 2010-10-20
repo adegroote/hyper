@@ -7,6 +7,7 @@
 #include <compiler/symbols.hh>
 #include <compiler/task.hh>
 
+#include <list>
 #include <set>
 
 namespace hyper {
@@ -38,7 +39,7 @@ namespace hyper {
 
 				std::string name_;
 
-				std::vector<task> tasks;
+				std::list<task> tasks;
 
 			public:
 				ability(const std::string& name, const symbolList& controlables,

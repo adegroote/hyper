@@ -1,6 +1,7 @@
 #include <compiler/ability.hh>
 #include <compiler/scope.hh>
 #include <compiler/task.hh>
+#include <compiler/task_parser.hh>
 #include <compiler/types.hh>
 #include <compiler/universe.hh>
 #include <compiler/utils.hh>
@@ -389,14 +390,49 @@ namespace {
 			oss << indent << "};" << std::endl;
 		}
 	};
+
+	struct cond_validate
+	{
+		bool& res;
+		const ability& ab;
+		const universe& u;
+
+		cond_validate(bool &res_, const ability& ab_, const universe& u_):
+			res(res_), ab(ab_), u(u_)
+		{}
+
+		void operator() (const expression_ast& cond) 
+		{
+			res = cond.is_valid_predicate(ab, u, boost::none) && res;
+		}
+	};
 }
 
 namespace hyper {
 	namespace compiler {
 
-			
-			void task::dump(std::ostream& oss, const typeList& tList, 
-							  const universe&u, const ability& context) const
+			task::task(const task_decl& decl, const ability& a_, const typeList& tList_):
+				name(decl.name), pre(decl.conds.pre.list), post(decl.conds.post.list),
+				ability_context(a_), tList(tList_) 
+			{}
+
+			bool task::validate(const universe& u) const
+			{
+				bool res = true;
+				{
+				cond_validate valid(res, ability_context, u);
+				std::for_each(pre.begin(), pre.end(), valid); 
+				res = valid.res && res;
+				}
+				{
+				cond_validate valid(res, ability_context, u);
+				std::for_each(post.begin(), post.end(), valid); 
+				res = valid.res && res;
+				}
+				return res;
+			}
+
+			void task::dump(std::ostream& oss, const universe& u) const
 			{
 				const std::string indent="\t\t\t\t\t";
 				const std::string next_indent = indent + "\t";
@@ -404,11 +440,11 @@ namespace hyper {
 				oss << next_indent << "const ability& a;" << std::endl;
 				oss << next_indent << name << "(const ability& a_) : a(a_) {}" << std::endl;
 				{
-				expression_dump e_dump(u, context, *this, oss, tList, "pre_");
+				expression_dump e_dump(u, ability_context, *this, oss, tList, "pre_");
 				std::for_each(pre.begin(), pre.end(), e_dump);
 				}
 				{
-				expression_dump e_dump(u, context, *this, oss, tList, "post_");
+				expression_dump e_dump(u, ability_context, *this, oss, tList, "post_");
 				std::for_each(post.begin(), post.end(), e_dump);
 				}
 				oss << indent << "};" << std::endl;
@@ -416,12 +452,12 @@ namespace hyper {
 
 			std::ostream& operator << (std::ostream& oss, const task& t)
 			{
-				oss << "Task " << t.name << std::endl;
+				oss << "Task " << t.get_name() << std::endl;
 				oss << "Pre : " << std::endl;
-				std::copy(t.pre.begin(), t.pre.end(), 
+				std::copy(t.pre_begin(), t.pre_end(), 
 						std::ostream_iterator<expression_ast>( oss, "\n" ));
 				oss << std::endl << "Post : " << std::endl;
-				std::copy(t.post.begin(), t.post.end(),
+				std::copy(t.post_begin(), t.post_end(),
 						std::ostream_iterator<expression_ast>( oss, "\n" ));
 				return oss;
 			}

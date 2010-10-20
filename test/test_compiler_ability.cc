@@ -1,4 +1,6 @@
 #include <compiler/ability.hh>
+#include <compiler/task.hh>
+#include <compiler/task_parser.hh>
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE ( compiler_ability_test )
@@ -42,10 +44,14 @@ BOOST_AUTO_TEST_CASE ( compiler_ability_test )
 	BOOST_CHECK(p.second.acl == READABLE);
 	BOOST_CHECK(p.second.s.name == "r1");
 
-	task a, b, c;
-	a.name = "a";
-	b.name = "b";
-	c.name = "a";
+	task_decl a_decl, b_decl, c_decl;
+	a_decl.name = "a";
+	b_decl.name = "b";
+	c_decl.name = "a";
+
+	task a(a_decl, test, tlist);
+	task b(b_decl, test, tlist);
+	task c(c_decl, test, tlist);
 
 	BOOST_CHECK(test.add_task(a) == true);
 	BOOST_CHECK(test.add_task(b) == true);

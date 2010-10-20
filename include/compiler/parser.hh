@@ -12,6 +12,7 @@ namespace hyper {
 	namespace compiler {
 		class universe;
 		struct recipe_decl_list;
+		struct task_decl_list;
 
 		class parser {
 			private:
@@ -23,7 +24,9 @@ namespace hyper {
 				bool parse_ability_file(const std::string&);
 				bool parse_expression(const std::string&);
 				bool parse_task(const std::string&);
+				bool parse_task(const std::string&, task_decl_list&);
 				bool parse_task_file(const std::string&);
+				bool parse_task_file(const std::string&, task_decl_list&);
 				bool parse_recipe(const std::string&);
 				bool parse_recipe(const std::string&, recipe_decl_list&);
 				bool parse_recipe_file(const std::string&);

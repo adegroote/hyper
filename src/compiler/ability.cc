@@ -36,7 +36,7 @@ struct same_name {
 
 	bool operator() (const task& t) const
 	{
-		return (t.name == name);
+		return (t.get_name() == name);
 	}
 };
 
@@ -50,11 +50,11 @@ ability::add_task(const task& t)
 	 *   - we probably won't have a lot of task, so O(n) against O(ln n) is
 	 *   probably not so important
 	 */
-	std::vector<task>::const_iterator it;
-	it = std::find_if(tasks.begin(), tasks.end(), same_name(t.name));
+	std::list<task>::const_iterator it;
+	it = std::find_if(tasks.begin(), tasks.end(), same_name(t.get_name()));
 
 	if (it != tasks.end()) {
-		std::cerr << "Can't add the task named " << t.name;
+		std::cerr << "Can't add the task named " << t.get_name();
 		std::cerr << " because a task with the same already exists" << std::endl;
 		return false;
 	}
@@ -149,8 +149,8 @@ struct compute_fun_depends
 	void operator() (const task& t) const
 	{
 		compute_fun_expression_depends c(s, tList, name);
-		std::for_each(t.pre.begin(), t.pre.end(), c);
-		std::for_each(t.post.begin(), t.post.end(), c);
+		std::for_each(t.pre_begin(), t.pre_end(), c);
+		std::for_each(t.post_begin(), t.post_end(), c);
 	}
 };
 
@@ -268,9 +268,8 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 
 	std::for_each(tasks.begin(), tasks.end(),
 				  boost::bind(&task::dump, _1, boost::ref(oss), 
-											   boost::cref(tList), 
-											   boost::cref(u),
-											   boost::cref(*this)));
+											   boost::cref(u)
+											   ));
 
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);

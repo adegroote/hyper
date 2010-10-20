@@ -51,8 +51,6 @@ namespace hyper {
 
 				bool add(const ability_decl& decl);
 
-				bool add_task(const task_decl_list_context& decl);
-
 				std::pair<bool, symbolACL> 
 				get_symbol(const std::string& name, const ability&, 
 						   const boost::optional<symbolList>& s = boost::none) const;

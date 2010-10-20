@@ -9,6 +9,8 @@
 #include <compiler/parser.hh>
 #include <compiler/universe.hh>
 #include <compiler/utils.hh>
+#include <compiler/task.hh>
+#include <compiler/task_parser.hh>
 #include <compiler/recipe.hh>
 #include <compiler/recipe_parser.hh>
 
@@ -43,6 +45,7 @@ void build_main(std::ostream& oss, const std::string& name)
 }
 
 void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
+					  bool has_task, bool has_recipe,
 					  const std::set<std::string>& depends)
 {
 	std::string base_cmake1 = 
@@ -68,9 +71,11 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 		"\n"
 		;
 
+
 	std::string build_ability = 
 		"add_executable(@NAME@ main.cc)\n"
 		;
+
 	std::string link_function =
 		"target_link_libraries(@NAME@ hyper_@NAME@)\n"
 		;
@@ -152,12 +157,19 @@ void copy_if_different(const path& base_src, const path& base_dst,
 	}
 }
 
+bool is_directory_empty(const path& directory)
+{
+	directory_iterator end_itr;
+	directory_iterator itr(directory);
+	return (itr != end_itr);
+}
+
 struct generate_recipe 
 {
 	const universe& u;
 	const ability& ab;
-	task t;
 	const typeList& tList;
+	task t;
 
 	bool success;
 	std::string directoryName;
@@ -166,6 +178,7 @@ struct generate_recipe
 					const std::string& abilityName, 
 					const std::string& directoryName_) :
 		u(u_), ab(u.get_ability(abilityName)), tList(u.types()), 
+		t(task_decl(), ab, tList),
 		success(true), directoryName(directoryName_) 
 	{}
 
@@ -289,7 +302,10 @@ int main(int argc, char** argv)
 	{
 		std::ofstream oss(".hyper/src/CMakeLists.txt");
 		std::set<std::string> depends = u.get_function_depends(abilityName);
-		build_base_cmake(oss, abilityName, define_func, depends);
+		build_base_cmake(oss, abilityName, define_func, 
+						 is_directory_empty(directoryTaskName),
+						 is_directory_empty(directoryRecipeName),
+						 depends);
 	}
 
 	/* Now for all files in .hyper/src, copy different one into real src */

@@ -2,6 +2,7 @@
 
 #include <compiler/ability.hh>
 #include <compiler/task.hh>
+#include <compiler/task_parser.hh>
 #include <compiler/parser.hh>
 #include <compiler/recipe.hh>
 #include <compiler/recipe_parser.hh>
@@ -19,7 +20,7 @@ namespace {
 		task t;
 
 		recipe_test(const universe& u_, parser& P_, const ability& ab_):
-			u(u_), P(P_), ab(ab_)
+			u(u_), P(P_), ab(ab_), t(task_decl(), ab, u.types())
 		{}
 
 		void do_build_test(const std::string& recipe_descr, bool expect_valid)

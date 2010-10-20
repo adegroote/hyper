@@ -36,13 +36,6 @@ namespace hyper {
 		};
 
 		std::ostream& operator << (std::ostream&, const task_decl_list& l);
-
-		struct task_decl_list_context {
-			std::string ability_name;
-			task_decl_list list;
-		};
-
-		std::ostream& operator << (std::ostream&, const task_decl_list_context & l);
 	}
 }
 #endif /* _COMPILER_TASK_PARSER_HH_ */
