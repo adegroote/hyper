@@ -44,7 +44,7 @@ namespace hyper {
 		
 			~namespaces()
 			{
-				oss << std::endl << "\t};\n};" << std::endl;
+				oss << std::endl << "\t};\n}" << std::endl;
 			}
 		};
 
