@@ -266,11 +266,6 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	print_symbol print(oss, tList, name_);
 	oss << "\t\t\tstruct ability : public model::ability {" << std::endl;
 
-	std::for_each(tasks.begin(), tasks.end(),
-				  boost::bind(&task::dump, _1, boost::ref(oss), 
-											   boost::cref(u)
-											   ));
-
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
 	std::for_each(private_list.begin(), private_list.end(), print);
