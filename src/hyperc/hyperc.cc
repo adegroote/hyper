@@ -71,9 +71,21 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 		"\n"
 		;
 
+	std::string base_src=
+		"set(SRC main.cc)\n";
+
+	std::string recipe_src=
+		"file(GLOB recipes @NAME@/recipes/*cc)\n"
+		"set(SRC ${recipes} ${SRC})\n"
+		;
+
+	std::string task_src=
+		"file(GLOB tasks @NAME@/tasks/*cc)\n"
+		"set(SRC ${tasks} ${SRC})\n"
+		;
 
 	std::string build_ability = 
-		"add_executable(@NAME@ main.cc)\n"
+		"add_executable(@NAME@ ${SRC})\n"
 		;
 
 	std::string link_function =
@@ -97,6 +109,11 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 	if (has_func)
 		oss << hyper::compiler::replace_by(build_function, "@NAME@", name);
 
+	oss << base_src;
+	if (has_task)
+		oss << hyper::compiler::replace_by(task_src, "@NAME@", name);
+	if (has_recipe)
+		oss << hyper::compiler::replace_by(recipe_src, "@NAME@", name);
 	oss << hyper::compiler::replace_by(build_ability, "@NAME@", name);
 	if (has_func)
 		oss << hyper::compiler::replace_by(link_function, "@NAME@", name);
