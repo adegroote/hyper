@@ -163,6 +163,10 @@ void copy_if_different(const path& base_src, const path& base_dst,
 			dst_file /= itr->path().filename();
 			if (!are_file_equals(src_file, dst_file)) {
 				std::cout << "copying " << src_file << " to " << dst_file << std::endl;
+				// XXX there is to have a bug when overwriting files, so remove
+				// the dst_file before copying the new one
+				if (exists(dst_file))
+					remove(dst_file);
 				copy_file(src_file, dst_file, copy_option::overwrite_if_exists);
 			}
 
