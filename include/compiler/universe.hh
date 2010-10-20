@@ -77,7 +77,7 @@ namespace hyper {
 				void dump_ability(std::ostream& oss, const std::string& name) const;
 				std::set<std::string> get_function_depends(const std::string& name) const;
 
-				/* For TU only */
+				ability& get_ability(const std::string& name);
 				const ability& get_ability(const std::string& name) const;
 		};
 	}
