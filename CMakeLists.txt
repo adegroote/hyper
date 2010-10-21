@@ -26,7 +26,7 @@ endif()
 
 include(CheckIncludeFile)
 
-find_package(Boost 1.42 REQUIRED COMPONENTS unit_test_framework filesystem system thread serialization)
+find_package(Boost 1.42 REQUIRED COMPONENTS unit_test_framework filesystem system thread serialization program_options)
 include_directories(${Boost_INCLUDE_DIRS})
 message(STATUS "boost libraries "${Boost_LIBRARIES})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
@@ -74,7 +74,7 @@ install(DIRECTORY include/network include/model include/logic include/compiler
 # hypercc rules
 file(GLOB hyperc_sources ${HYPER_SOURCE_DIR}/src/hyperc/*.cc)
 add_executable(hyperc ${hyperc_sources})
-target_link_libraries(hyperc hyper_compiler ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries(hyperc hyper_compiler ${Boost_FILESYSTEM_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY})
 install(TARGETS hyperc DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 # hyperruntime rules

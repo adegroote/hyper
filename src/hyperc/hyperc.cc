@@ -5,6 +5,7 @@
 #include <set>
 
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
 
 #include <compiler/depends.hh>
 #include <compiler/parser.hh>
@@ -17,11 +18,13 @@
 
 using namespace hyper::compiler;
 using namespace boost::filesystem;
+namespace po = boost::program_options;
 
 void
-usage() 
+usage(const po::options_description& desc)
 {
-	std::cerr << "Usage: hyperc <ability>" << std::endl;
+	std::cout << "Usage: hyperc [options]\n";
+	std::cout << desc;
 }
 
 void build_main(std::ostream& oss, const std::string& name)
@@ -263,13 +266,38 @@ struct generate_task
 
 int main(int argc, char** argv)
 {
-	if (argc != 2)
+	try {
+	po::options_description desc("Allowed options");
+	desc.add_options()
+		("help,h", "produce help message")
+		("verbose,v", po::value<int>()->implicit_value(1),
+		 "enable verbosity (optionally specify level)")
+		("include-path,I", po::value< std::vector<std::string> >(), 
+		 "include path")
+		("input-file", po::value< std::string >(), "input file")
+		;
+
+	po::positional_options_description p;
+	p.add("input-file", -1);
+
+	po::variables_map vm;
+	po::store(po::command_line_parser(argc, argv).
+			options(desc).positional(p).run(), vm);
+	po::notify(vm);
+
+	if (vm.count("help")) {
+		usage(desc);
+		return 0;
+	}
+
+	if (!vm.count("input-file"))
 	{
-		usage();
+		usage(desc);
 		return -1;
 	}
 
-	std::string abilityName = argv[1];
+	std::string abilityName = vm["input-file"].as < std::string > ();
+	std::vector<std::string> include_dirs = vm["include-path"].as < std::vector<std::string> >();
 	std::string directoryName = ".hyper/src/" + abilityName;
 	std::string directoryTaskName = directoryName + "/tasks";
 	std::string directoryRecipeName = directoryName + "/recipes";
@@ -390,6 +418,10 @@ int main(int argc, char** argv)
 	if (exists(dst_abilityFileName))
 		remove(dst_abilityFileName);
 	copy_file(abilityFileName, dst_abilityFileName);
+	} catch (std::exception &e) { 
+		std::cerr << e.what() << std::endl;
+		return -1;
+	}
 
 	return 0;
 }
