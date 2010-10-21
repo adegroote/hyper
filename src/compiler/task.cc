@@ -443,12 +443,10 @@ namespace hyper {
 				std::for_each(pre.begin(), pre.end(),
 							  boost::bind(&add_depends,_1, 
 													   boost::cref(ability_context.name()),
-													   boost::cref(u.types()),
 													   boost::ref(fun_depends)));
 				std::for_each(post.begin(), post.end(),
 							  boost::bind(&add_depends,_1, 
 													   boost::cref(ability_context.name()),
-													   boost::cref(u.types()),
 													   boost::ref(fun_depends)));
 				
 				oss << "#include <" << ability_context.name() << "/ability.hh>" << std::endl;

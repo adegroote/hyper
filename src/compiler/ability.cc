@@ -83,21 +83,18 @@ struct compute_type_depends
 struct compute_fun_depends
 {
 	std::set<std::string>& s;
-	const typeList& tList;
 	const std::string& name;
 
-	compute_fun_depends(std::set<std::string>& s_, const typeList& tlist_, const std::string& n) :
-		s(s_), tList(tlist_), name(n) {};
+	compute_fun_depends(std::set<std::string>& s_, const std::string& n) :
+		s(s_), name(n) {};
 
 	void operator() (const task& t) const
 	{
 		std::for_each(t.pre_begin(), t.pre_end(), 
 				boost::bind(&add_depends, _1, boost::cref(name),
-											  boost::cref(tList),
 											  boost::ref(s)));
 		std::for_each(t.post_begin(), t.post_end(), 
 				boost::bind(&add_depends, _1, boost::cref(name),
-											  boost::cref(tList),
 											  boost::ref(s)));
 	}
 };
@@ -196,10 +193,10 @@ struct add_import_funcs
 
 
 std::set<std::string> 
-ability::get_function_depends(const typeList& tList) const
+ability::get_function_depends() const
 {
 	std::set<std::string> fun_depends;
-	compute_fun_depends fun_deps(fun_depends, tList, name_);
+	compute_fun_depends fun_deps(fun_depends, name_);
 	std::for_each(tasks.begin(), tasks.end(), fun_deps);
 	return fun_depends;
 }
@@ -213,7 +210,7 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
 	std::for_each(private_list.begin(), private_list.end(), type_deps);
 
-	std::set<std::string> fun_depends = get_function_depends(tList);
+	std::set<std::string> fun_depends = get_function_depends();
 
 	guards g(oss, name_, "_ABILITY_HH_");
 

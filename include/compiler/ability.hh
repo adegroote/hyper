@@ -74,7 +74,7 @@ namespace hyper {
 
 				void dump(std::ostream& oss, const typeList& tList, const universe& u) const;
 
-				std::set<std::string> get_function_depends(const typeList& tList) const;
+				std::set<std::string> get_function_depends() const;
 		};
 	}
 }

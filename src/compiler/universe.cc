@@ -549,7 +549,7 @@ universe::get_function_depends(const std::string& name) const
 		return std::set<std::string>();
 	}
 
-	return it->second->get_function_depends(tList);
+	return it->second->get_function_depends();
 }
 
 ability&
