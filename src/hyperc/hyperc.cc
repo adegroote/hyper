@@ -158,21 +158,16 @@ bool are_file_equals(const path& src, const path& dst)
 void copy_if_different(const path& base_src, const path& base_dst,
 					   const path& current_path)
 {
-	path src(base_src);
-	src /= current_path;
-
-	path dst(base_dst);
-	dst /= current_path;
+	path src = base_src / current_path;
+	path dst = base_dst / current_path;
 
 	create_directory(dst);
 
 	directory_iterator end_itr; 
 	for (directory_iterator itr( src ); itr != end_itr; ++itr ) {
 		if (is_regular_file(itr->path())) {
-			path src_file(src);
-			src_file /= itr->path().filename();
-			path dst_file(dst);
-			dst_file /= itr->path().filename();
+			path src_file = src / itr->path().filename();
+			path dst_file = dst / itr->path().filename();
 			if (!are_file_equals(src_file, dst_file)) {
 				std::cout << "copying " << src_file << " to " << dst_file << std::endl;
 				// XXX there is to have a bug when overwriting files, so remove
@@ -183,8 +178,7 @@ void copy_if_different(const path& base_src, const path& base_dst,
 			}
 
 		} else if (is_directory(itr->path())) {
-			path current(current_path);
-			current /= itr->path().filename();
+			path current = current_path / itr->path().filename();
 			copy_if_different(base_src, base_dst, current);
 		}
 	}
@@ -296,14 +290,18 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	std::string abilityName = vm["input-file"].as < std::string > ();
 	std::vector<std::string> include_dirs = vm["include-path"].as < std::vector<std::string> >();
+	std::vector<path> include_dir_path;
+	std::copy(include_dirs.begin(), include_dirs.end(), std::back_inserter(include_dir_path));
+
+	std::string abilityName = vm["input-file"].as < std::string > ();
 	std::string directoryName = ".hyper/src/" + abilityName;
 	std::string directoryTaskName = directoryName + "/tasks";
 	std::string directoryRecipeName = directoryName + "/recipes";
 	std::string taskDirectory = abilityName;
+
 	universe u;
-	parser P(u);
+	parser P(u, include_dir_path);
 
 	create_directory(".hyper");
 	create_directory(".hyper/src");

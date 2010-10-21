@@ -1,6 +1,54 @@
 #include <compiler/parser.hh>
 #include <compiler/base_parser.hh>
 
+#include <boost/optional/optional.hpp>
+
+
+namespace fs = boost::filesystem;
+typedef boost::optional<fs::path> optional_path;
+
+struct gen_path 
+{
+	std::string filename;
+
+	gen_path(const std::string& filename_) : filename(filename_) {}
+
+	fs::path operator() (const fs::path & path) const {
+		fs::path computed_path = path / filename;
+		return computed_path;
+	}
+};
+
+struct path_exist
+{
+	bool operator() (const fs::path& path) const
+	{
+		return fs::exists(path);
+	}
+};
+
+static inline optional_path 
+search_ability_file(hyper::compiler::parser& p, const std::string& filename)
+{
+	if (fs::exists(filename))
+		return fs::path(filename);
+
+	std::vector<fs::path> generated_path;
+	std::transform(p.include_begin(), p.include_end(),
+				   std::back_inserter(generated_path),
+				   gen_path(filename));
+
+	std::vector<fs::path>::const_iterator it;
+	it = std::find_if(generated_path.begin(), generated_path.end(), path_exist());
+
+	if (it != generated_path.end())
+		return *it;
+
+	return boost::none;
+}
+
+
+
 struct parse_import {
 
 	hyper::compiler::parser &p;
@@ -12,7 +60,11 @@ struct parse_import {
 
 	bool operator()(const std::string& filename) const
 	{
-		return p.parse_ability_file(filename);
+		optional_path ability_path = search_ability_file(p, filename);
+		if (! ability_path ) 
+			return false;
+
+		return p.parse_ability_file((*ability_path).string());
 	}
 };
 
