@@ -21,6 +21,14 @@ struct compute_expression_deps : public boost::static_visitor<void>
 		boost::apply_visitor(compute_expression_deps(d, name), e.expr);
 	}
 
+	void operator() (const std::string& s) const 
+	{
+		std::string scope = scope::get_scope(s);
+		if (scope == "")
+			scope = name;
+		d.var_depends.insert(scope);
+	}
+
 	void operator() (const function_call& f) const
 	{
 		std::string scope = scope::get_scope(f.fName);
