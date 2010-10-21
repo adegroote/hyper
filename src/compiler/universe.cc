@@ -138,12 +138,14 @@ universe::add_types(const std::string& scope_, const type_decl_list& t)
 		type_diagnostic_visitor type_diagnostic(*it1);
 		bool isSuccess = (*it).get<0>();
 		isOk = isOk && isSuccess;
+#ifndef NDEBUG
 		if (isSuccess) {
 			std::cout << "succesfully adding " << boost::apply_visitor(type_decl_name(), *it1);
 			std::cout << std::endl;
 		} else {
 			std::cout << "Failing to add " << boost::apply_visitor(type_decl_name(), *it1);
 			std::cout << std::endl;
+#endif
 		}
 		boost::apply_visitor(type_diagnostic, (*it).get<2>());
 	}
@@ -172,7 +174,9 @@ universe::add_functions(const std::string& scope_, const function_decl_list& f)
 		bool isSuccess = (*it).get<0>();
 		isOk = isOk && isSuccess;
 		if (isSuccess) {
+#ifndef NDEBUG
 			std::cout << "Succesfully adding function " << it1->fName << std::endl;
+#endif
 		} else {
 			std::cerr << fList.get_diagnostic(*it1, *it);
 		}
@@ -203,7 +207,9 @@ universe::add_symbols(const std::string& scope_, const symbol_decl_list& d,
 		bool isSuccess = (*it).first;
 		isOk = isOk && isSuccess;
 		if (isSuccess) {
+#ifndef NDEBUG
 			std::cout << "Succesfully adding symbol " << it1->name << std::endl;
+#endif
 		} else {
 			std::cerr << s.get_diagnostic(*it1, *it);
 		}
