@@ -94,5 +94,5 @@ namespace hyper {
 			boost::apply_visitor(compute_recipe_expression_deps(d, context), e.expr);
 		}
 
-	};
-};
+	}
+}

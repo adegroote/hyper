@@ -17,7 +17,7 @@ namespace hyper {
 		void add_depends(const expression_ast&, const std::string& context, depends& );
 
 		void add_depends(const recipe_expression&, const std::string& context, depends& );
-	};
-};
+	}
+}
 
 #endif /* HYPER_COMPILER_DEPENDS_HH_ */
