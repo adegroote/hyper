@@ -47,24 +47,63 @@ search_ability_file(hyper::compiler::parser& p, const std::string& filename)
 	return boost::none;
 }
 
+namespace hyper {
+	namespace compiler {
+		struct import_exception {
+			std::string filename;
 
+			import_exception(const std::string& filename_) : filename(filename_) {}
+
+			virtual const char* what() = 0;
+		};
+
+		struct import_exception_not_found : public import_exception
+		{
+			import_exception_not_found(const std::string& filename) :
+				import_exception(filename)
+			{}
+
+			virtual const char* what() {
+				std::ostringstream oss;
+				oss << "Can't find the file " << filename;
+				oss << " : please fix the include path " << std::endl;
+				return oss.str().c_str();
+			}
+		};
+
+		struct import_exception_parse_error : public import_exception
+		{
+			import_exception_parse_error(const std::string& filename) :
+				import_exception(filename)
+			{}
+
+			virtual const char* what() {
+				std::ostringstream oss;
+				oss << "Parse error in file " << filename << std::endl;
+				return oss.str().c_str();
+			}
+		};
+	}
+}
 
 struct parse_import {
 
 	hyper::compiler::parser &p;
 
 	template <typename>
-	struct result { typedef bool type; };
+	struct result { typedef void type; };
 
 	parse_import(hyper::compiler::parser & p_) : p(p_) {};
 
-	bool operator()(const std::string& filename) const
+	void operator()(const std::string& filename) const
 	{
 		optional_path ability_path = search_ability_file(p, filename);
 		if (! ability_path ) 
-			return false;
+			throw hyper::compiler::import_exception_not_found(filename);
 
-		return p.parse_ability_file((*ability_path).string());
+		bool res = p.parse_ability_file((*ability_path).string());
+		if (!res) 
+			throw hyper::compiler::import_exception_parse_error((*ability_path).string());
 	}
 };
 

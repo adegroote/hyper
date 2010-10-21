@@ -357,8 +357,15 @@ bool parser::parse_ability_file(const std::string & filename)
 	hyper_ability g(u, *this);
 
 	std::string expr = read_from_file(filename);
-	bool r = parse(g, expr);
+	bool r;
+	try {
+		r = parse(g, expr);
+	} catch (hyper::compiler::import_exception& e) {
+		std::cerr << e.what() << std::endl;
+		return false;
+	}
 
-	parsed_files.push_back(full);
+	if (r) 
+		parsed_files.push_back(full);
 	return r;
 }

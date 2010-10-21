@@ -221,7 +221,15 @@ bool parser::parse_recipe(const std::string& expr)
 bool parser::parse_recipe(const std::string& expr, recipe_decl_list& res)
 {
 	grammar_recipe<std::string::const_iterator> g(*this);
-    return parse(g, expr, res);
+	bool r;
+	try {
+		r = parse(g, expr, res);
+	} catch (hyper::compiler::import_exception &e) 
+	{
+		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return r;
 }
 
 bool parser::parse_recipe_file(const std::string& fileName)
