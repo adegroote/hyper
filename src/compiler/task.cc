@@ -439,19 +439,20 @@ namespace hyper {
 				const std::string indent="\t\t";
 				const std::string next_indent = indent + "\t";
 
-				std::set<std::string> fun_depends;
+				depends deps;
 				std::for_each(pre.begin(), pre.end(),
 							  boost::bind(&add_depends,_1, 
 													   boost::cref(ability_context.name()),
-													   boost::ref(fun_depends)));
+													   boost::ref(deps)));
 				std::for_each(post.begin(), post.end(),
 							  boost::bind(&add_depends,_1, 
 													   boost::cref(ability_context.name()),
-													   boost::ref(fun_depends)));
+													   boost::ref(deps)));
 				
 				oss << "#include <" << ability_context.name() << "/ability.hh>" << std::endl;
 				oss << "#include <model/task.hh>" << std::endl;
-				std::for_each(fun_depends.begin(), fun_depends.end(), dump_depends(oss, "import.hh"));
+				std::for_each(deps.fun_depends.begin(), 
+							  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
 				oss << std::endl;
 
 				namespaces n(oss, ability_context.name());

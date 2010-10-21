@@ -82,20 +82,20 @@ struct compute_type_depends
 
 struct compute_fun_depends
 {
-	std::set<std::string>& s;
+	depends& d;
 	const std::string& name;
 
-	compute_fun_depends(std::set<std::string>& s_, const std::string& n) :
-		s(s_), name(n) {};
+	compute_fun_depends(depends& d_, const std::string& n) :
+		d(d_), name(n) {};
 
 	void operator() (const task& t) const
 	{
 		std::for_each(t.pre_begin(), t.pre_end(), 
 				boost::bind(&add_depends, _1, boost::cref(name),
-											  boost::ref(s)));
+											  boost::ref(d)));
 		std::for_each(t.post_begin(), t.post_end(), 
 				boost::bind(&add_depends, _1, boost::cref(name),
-											  boost::ref(s)));
+											  boost::ref(d)));
 	}
 };
 
@@ -191,14 +191,13 @@ struct add_import_funcs
 };
 
 
-
-std::set<std::string> 
+depends 
 ability::get_function_depends() const
 {
-	std::set<std::string> fun_depends;
-	compute_fun_depends fun_deps(fun_depends, name_);
+	depends d;
+	compute_fun_depends fun_deps(d, name_);
 	std::for_each(tasks.begin(), tasks.end(), fun_deps);
-	return fun_depends;
+	return d;
 }
 
 void
@@ -210,13 +209,13 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
 	std::for_each(private_list.begin(), private_list.end(), type_deps);
 
-	std::set<std::string> fun_depends = get_function_depends();
+	depends deps = get_function_depends();
 
 	guards g(oss, name_, "_ABILITY_HH_");
 
 	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
 	oss << std::endl;
-	std::for_each(fun_depends.begin(), fun_depends.end(), dump_depends(oss, "import.hh"));
+	std::for_each(deps.fun_depends.begin(), deps.fun_depends.end(), dump_depends(oss, "import.hh"));
 	oss << std::endl;
 	oss << "#include <model/ability.hh>" << std::endl;
 
@@ -237,7 +236,7 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	oss << "{\n" ;
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy_symbol(oss));
 	std::for_each(readable_list.begin(), readable_list.end(), add_proxy_symbol(oss));
-	std::for_each(fun_depends.begin(), fun_depends.end(), add_import_funcs(oss));
+	std::for_each(deps.fun_depends.begin(), deps.fun_depends.end(), add_import_funcs(oss));
 	oss << "\t\t\t\t}\n;" << std::endl;
 	oss << "\t\t\t};" << std::endl;
 }

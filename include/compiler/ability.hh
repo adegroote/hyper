@@ -4,6 +4,7 @@
 
 #include <hyperConfig.hh>
 
+#include <compiler/depends.hh>
 #include <compiler/symbols.hh>
 #include <compiler/task.hh>
 
@@ -74,7 +75,7 @@ namespace hyper {
 
 				void dump(std::ostream& oss, const typeList& tList, const universe& u) const;
 
-				std::set<std::string> get_function_depends() const;
+				depends get_function_depends() const;
 		};
 	}
 }

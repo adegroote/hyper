@@ -8,7 +8,12 @@ namespace hyper {
 	namespace compiler {
 		struct expression_ast;
 
-		void add_depends(const expression_ast&, const std::string& context, std::set<std::string>& );
+		struct depends {
+			std::set<std::string> fun_depends;
+			std::set<std::string> var_depends;
+		};
+
+		void add_depends(const expression_ast&, const std::string& context, depends& );
 	};
 };
 

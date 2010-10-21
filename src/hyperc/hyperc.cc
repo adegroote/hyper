@@ -6,6 +6,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include <compiler/depends.hh>
 #include <compiler/parser.hh>
 #include <compiler/universe.hh>
 #include <compiler/utils.hh>
@@ -364,11 +365,11 @@ int main(int argc, char** argv)
 
 	{
 		std::ofstream oss(".hyper/src/CMakeLists.txt");
-		std::set<std::string> depends = u.get_function_depends(abilityName);
+		depends d = u.get_function_depends(abilityName);
 		build_base_cmake(oss, abilityName, define_func, 
 						 is_directory_empty(directoryTaskName),
 						 is_directory_empty(directoryRecipeName),
-						 depends);
+						 d.fun_depends);
 	}
 
 	/* Now for all files in .hyper/src, copy different one into real src */

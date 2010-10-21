@@ -13,6 +13,7 @@
 #include <boost/optional/optional.hpp>
 
 #include <compiler/ability.hh>
+#include <compiler/depends.hh>
 #include <compiler/types.hh>
 #include <compiler/functions_def.hh>
 
@@ -75,7 +76,7 @@ namespace hyper {
 				void dump_ability_import_module_def(std::ostream& oss, const std::string& name) const;
 				void dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const;
 				void dump_ability(std::ostream& oss, const std::string& name) const;
-				std::set<std::string> get_function_depends(const std::string& name) const;
+				depends get_function_depends(const std::string& name) const;
 
 				ability& get_ability(const std::string& name);
 				const ability& get_ability(const std::string& name) const;
