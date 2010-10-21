@@ -2,6 +2,7 @@
 #include <compiler/parser.hh>
 #include <compiler/cond_block_parser.hh>
 #include <compiler/recipe_parser.hh>
+#include <compiler/import_parser.hh>
 #include <compiler/utils.hh>
 
 using namespace hyper::compiler;
@@ -166,13 +167,14 @@ struct  grammar_recipe :
 {
     typedef white_space<Iterator> white_space_;
 
-    grammar_recipe() : 
-		grammar_recipe::base_type(start)
+    grammar_recipe(hyper::compiler::parser &p) : 
+		grammar_recipe::base_type(start),
+		import_list(p)
 	{
 	    using qi::lit;
         using namespace qi::labels;
 
-		start = recipe_list;
+		start = import_list >> recipe_list;
 
 		recipe_list = (*recipe);
 
@@ -206,6 +208,7 @@ struct  grammar_recipe :
 	scoped_identifier_grammar<Iterator> scoped_identifier;
 	cond_block_grammar<Iterator> cond_block;
 	body_block_grammar<Iterator> body_block;
+	import_grammar<Iterator> import_list;
 };
 
 
@@ -217,7 +220,7 @@ bool parser::parse_recipe(const std::string& expr)
 
 bool parser::parse_recipe(const std::string& expr, recipe_decl_list& res)
 {
-	grammar_recipe<std::string::const_iterator> g;
+	grammar_recipe<std::string::const_iterator> g(*this);
     return parse(g, expr, res);
 }
 

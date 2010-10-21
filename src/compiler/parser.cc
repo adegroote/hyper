@@ -4,18 +4,11 @@
 
 #include <compiler/ability_parser.hh>
 #include <compiler/base_parser.hh>
+#include <compiler/import_parser.hh>
 #include <compiler/parser.hh>
 #include <compiler/universe.hh>
 #include <compiler/utils.hh>
 
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_algorithm.hpp>
-#include <boost/spirit/include/phoenix_container.hpp>
-#include <boost/spirit/include/phoenix_fusion.hpp>
-#include <boost/spirit/include/phoenix_statement.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/fusion/include/adapt_struct.hpp>
 
 //#define HYPER_DEBUG_RULES
 //
@@ -107,21 +100,6 @@ struct ability_add_adaptator {
 	}
 };
 
-struct parse_import {
-
-	hyper::compiler::parser &p;
-
-	template <typename>
-	struct result { typedef bool type; };
-
-	parse_import(hyper::compiler::parser & p_) : p(p_) {};
-
-	bool operator()(const std::string& filename) const
-	{
-		return p.parse_ability_file(filename);
-	}
-};
-
 template <typename Iterator>
 struct initializer_grammar: qi::grammar<Iterator, expression_ast(), white_space<Iterator> >
 {
@@ -155,7 +133,7 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 
     grammar_ability(universe& u_, hyper::compiler::parser &p_) : 
 		grammar_ability::base_type(statement, "ability"), 
-		ability_adder(u_), import_adder(p_)
+		ability_adder(u_), import_list(p_)
 	{
 	    using qi::lit;
         using qi::lexeme;
@@ -175,8 +153,7 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				  ;
 
 		ability_ = 
-				  import_list
-				  >> identifier
+				  identifier
 				  >> lit('=')
 				  >> lit("ability")
 				  >> lit('{')
@@ -235,14 +212,6 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				>> lit('}')
 				;
 
-		import_list =
-				*(import				[import_adder(_1)])
-				;
-
-		import =	lit("import")
-					>> constant_string
-					>> -lit(';')
-					;
 
 		v_decl_list = (*v_decl			    [insert(at_c<0>(_val), end(at_c<0>(_val)), 
 											  begin(at_c<0>(_1)), end(at_c<0>(_1)))])
@@ -310,8 +279,6 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 		block_variable.name("block_variable");
 		block_type_decl.name("block_type_decl");
 		block_function_decl.name("block_function_decl");
-		import_list.name("import_list");
-		import.name("import");
 		v_decl.name("var decl");
 		v_decl_list.name("var declaration list");
 		f_decl.name("function declation");
@@ -332,8 +299,6 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 		debug(block_variable);
 		debug(block_type_decl);
 		debug(block_function_decl);
-		debug(import_list);
-		debug(import);
 		debug(v_decl);
 		debug(v_decl_list);
 		debug(f_decl);
@@ -347,8 +312,6 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 
 	qi::rule<Iterator, white_space_> statement;
 	qi::rule<Iterator, white_space_> block_tasks;
-	qi::rule<Iterator, white_space_> import_list;
-	qi::rule<Iterator, std::string(), white_space_> import;
 	qi::rule<Iterator, ability_decl(), white_space_> ability_;
 	qi::rule<Iterator, programming_decl(), white_space_> block_definition; 
 	qi::rule<Iterator, ability_blocks_decl(), white_space_> block_context, ability_description;
@@ -364,11 +327,10 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
 
 	function<ability_add_adaptator> ability_adder;
-	function<parse_import> import_adder;
-	const_string_grammer<Iterator> constant_string;
 	identifier_grammar<Iterator> identifier;
 	scoped_identifier_grammar<Iterator> scoped_identifier;
 	initializer_grammar<Iterator> initializer;
+	import_grammar<Iterator> import_list;
 };
 
 
