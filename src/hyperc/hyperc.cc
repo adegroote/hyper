@@ -69,6 +69,8 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 		"install(TARGETS hyper_@NAME@\n"
 		"		  DESTINATION ${HYPER_ROOT}/lib/hyper/\n"
 		")\n"
+		"install(FILES @NAME@/funcs.hh @NAME@/import.hh\n"
+		"		 DESTINATION ${HYPER_ROOT}/include/hyper/@NAME@/)\n"
 		"\n"
 		;
 
@@ -87,6 +89,12 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 
 	std::string build_ability = 
 		"add_executable(@NAME@ ${SRC})\n"
+		"install(TARGETS @NAME@\n"
+		"		 DESTINATION ${HYPER_ROOT}/bin)\n"
+		"install(FILES @NAME@/types.hh\n"
+		"		 DESTINATION ${HYPER_ROOT}/include/hyper/@NAME@)\n"
+		"install(FILES @NAME@.ability\n"
+		"		 DESTINATION ${HYPER_ROOT}/share/hyper)\n"
 		;
 
 	std::string link_function =
@@ -374,6 +382,14 @@ int main(int argc, char** argv)
 
 	/* Now for all files in .hyper/src, copy different one into real src */
 	copy_if_different(".hyper/src", "src", "");
+
+	/* copy ability file in src to install it */
+	std::string abilityFileName = abilityName + ".ability";
+	std::string dst_abilityFileName = "src/" + abilityFileName;
+
+	if (exists(dst_abilityFileName))
+		remove(dst_abilityFileName);
+	copy_file(abilityFileName, dst_abilityFileName);
 
 	return 0;
 }
