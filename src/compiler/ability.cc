@@ -90,12 +90,14 @@ struct compute_fun_depends
 
 	void operator() (const task& t) const
 	{
+		void (*f)(const expression_ast&, const std::string&, depends&)
+			= &add_depends;
 		std::for_each(t.pre_begin(), t.pre_end(), 
-				boost::bind(&add_depends, _1, boost::cref(name),
-											  boost::ref(d)));
+				boost::bind(f, _1, boost::cref(name),
+								   boost::ref(d)));
 		std::for_each(t.post_begin(), t.post_end(), 
-				boost::bind(&add_depends, _1, boost::cref(name),
-											  boost::ref(d)));
+				boost::bind(f, _1, boost::cref(name),
+								   boost::ref(d)));
 	}
 };
 

@@ -1,6 +1,7 @@
 #include <hyperConfig.hh>
 #include <compiler/depends.hh>
 #include <compiler/scope.hh>
+#include <compiler/recipe_expression.hh>
 #include <compiler/types.hh>
 
 using namespace hyper::compiler;
@@ -53,11 +54,45 @@ struct compute_expression_deps : public boost::static_visitor<void>
 	}
 };
 
+struct compute_recipe_expression_deps : public boost::static_visitor<void>
+{
+	depends& d;	
+	const std::string& name;
+
+	compute_recipe_expression_deps(depends& d_, const std::string& name_) :
+		d(d_), name(name_) {};
+
+	template <typename T>
+	void operator() (const T& e) const { (void)e; }
+
+	void operator() (const let_decl& l) const 
+	{
+		boost::apply_visitor(compute_recipe_expression_deps(d, name), l.bounded.expr);
+	}
+
+	template <recipe_op_kind kind>
+	void operator() (const recipe_op<kind>& op) const 
+	{
+		add_depends(op.content, name, d);
+	}
+
+	void operator() (const expression_ast& e) const
+	{
+		add_depends(e, name, d);
+	}
+};
+
 namespace hyper {
 	namespace compiler {
 		void add_depends(const expression_ast& e, const std::string& context, depends& d)
 		{
 			boost::apply_visitor(compute_expression_deps(d, context), e.expr);
 		}
+
+		void add_depends(const recipe_expression& e, const std::string& context, depends& d)
+		{
+			boost::apply_visitor(compute_recipe_expression_deps(d, context), e.expr);
+		}
+
 	};
 };

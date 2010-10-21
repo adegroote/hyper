@@ -440,14 +440,13 @@ namespace hyper {
 				const std::string next_indent = indent + "\t";
 
 				depends deps;
+				void (*f)(const expression_ast&, const std::string&, depends&) = &add_depends;
 				std::for_each(pre.begin(), pre.end(),
-							  boost::bind(&add_depends,_1, 
-													   boost::cref(ability_context.name()),
-													   boost::ref(deps)));
+							  boost::bind(f ,_1, boost::cref(ability_context.name()),
+												 boost::ref(deps)));
 				std::for_each(post.begin(), post.end(),
-							  boost::bind(&add_depends,_1, 
-													   boost::cref(ability_context.name()),
-													   boost::ref(deps)));
+							  boost::bind(f ,_1, boost::cref(ability_context.name()),
+												 boost::ref(deps)));
 				
 				oss << "#include <" << ability_context.name() << "/ability.hh>" << std::endl;
 				oss << "#include <model/task.hh>" << std::endl;
