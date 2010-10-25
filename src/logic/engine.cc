@@ -444,7 +444,7 @@ namespace {
 
 namespace hyper {
 	namespace logic {
-		engine::engine() : facts_(funcs_), rules_(funcs_) 
+		engine::engine() : rules_(funcs_) 
 		{
 			funcs_.add("equal", 2, new eval<equal, 2>());
 
@@ -577,20 +577,38 @@ namespace hyper {
 			return true; // XXX
 		}
 
-		bool engine::add_fact(const std::string& expr)
+		facts& engine::get_facts(const std::string& identifier)
 		{
-			facts_.add(expr);
-			apply_rules();
+			factsMap::iterator it = facts_.find(identifier);
+			if (it == facts_.end()) {
+				std::pair<factsMap::iterator, bool> p;
+				p = facts_.insert(std::make_pair(identifier, facts(funcs_)));
+				assert(p.second);
+				return p.first->second;
+			}
+			return it->second;
+		}
+				
+
+		bool engine::add_fact(const std::string& expr,
+							  const std::string& identifier)
+		{
+
+			facts& current_facts = get_facts(identifier);
+			current_facts.add(expr);
+			apply_rules(current_facts);
 			return true;
 		}
 
-		bool engine::add_fact(const std::vector<std::string>& exprs)
+		bool engine::add_fact(const std::vector<std::string>& exprs, 
+							  const std::string& identifier)
 		{
 			// help the compiler to choose right overload
 			bool (facts::*f) (const std::string& s) = &facts::add;
-			std::for_each(exprs.begin(), exprs.end(), 
-						  boost::bind(f, boost::ref(facts_), _1));
-			apply_rules();
+			facts& current_facts = get_facts(identifier);
+				std::for_each(exprs.begin(), exprs.end(), 
+						  boost::bind(f, boost::ref(current_facts), _1));
+			apply_rules(current_facts);
 			return true;
 		}
 
@@ -599,17 +617,20 @@ namespace hyper {
 							  const std::vector<std::string>& action)
 		{
 			bool res = rules_.add(identifier, cond, action);
-			apply_rules();
+
+			// XXX rewrite it using boost::phoenix::bind
+			for (factsMap::iterator it = facts_.begin(); it != facts_.end(); ++it)
+				apply_rules(it->second);
 			return res;
 		}
 
-		void engine::apply_rules()
+		void engine::apply_rules(facts& current_facts)
 		{
 			rules::const_iterator it = rules_.begin();
 
 			while (it != rules_.end())
 			{
-				bool new_fact = apply_rule(facts_)(*it);
+				bool new_fact = apply_rule(current_facts)(*it);
 				if (new_fact) 
 					it = rules_.begin();
 				else
@@ -617,13 +638,16 @@ namespace hyper {
 			}
 		}
 
-		boost::logic::tribool engine::infer(const std::string& goal)
+		boost::logic::tribool engine::infer(const std::string& goal,
+											const std::string& identifier)
 		{
 			generate_return r = generate(goal, funcs_);
 			assert(r.res);
 			const function_call& f = r.e;
 
-			boost::logic::tribool b = facts_.matches(f);
+			facts& current_facts = get_facts(identifier);
+
+			boost::logic::tribool b = current_facts.matches(f);
 			if (!boost::logic::indeterminate(b))
 				return b;
 
@@ -632,7 +656,7 @@ namespace hyper {
 
 			while (it != rules_.end())
 			{
-				has_concluded = infer_from_rule(facts_, f)(*it);
+				has_concluded = infer_from_rule(current_facts, f)(*it);
 				if (has_concluded) 
 					return true;
 				++it;
@@ -644,7 +668,9 @@ namespace hyper {
 		std::ostream& operator << (std::ostream& os, const engine& e)
 		{
 			os << "FACTS : " << std::endl;
-			os << e.facts_;
+			std::map<std::string, facts>::const_iterator it;
+			for (it = e.facts_.begin(); it != e.facts_.end(); ++it)
+				os << "\n\t" << it->first << it->second << std::endl;
 			os << "\n ====================================== \n";
 			os << "RULES : " << std::endl;
 			os << e.rules_;
