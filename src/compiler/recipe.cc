@@ -93,7 +93,57 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 		symbolList::add_result res = local.add(let.identifier, *t);
 		return res.first;
 	}
+
+	bool operator() (const set_decl& set) const {
+		std::string identifier = set.identifier;
+		std::string scope = scope::get_scope(identifier);
+		if (scope != "" && scope != a.name()) {
+			std::cerr << "Can't set the remote value : " << identifier << std::endl;
+			std::cerr << "Use make if you want to constraint a remote value" << std::endl;
+			return false;
+		}
+
+		boost::optional<symbol> s = boost::none;
+		if (scope == "") {
+			std::pair<bool, symbol> p2 = local.get(set.identifier);
+			if (p2.first)
+				s = p2.second;
+		} else {
+			std::pair<std::string, std::string> p = scope::decompose(identifier);
+			identifier = p.second;
+		}
+
+		std::pair<bool, symbolACL> p = a.get_symbol(identifier);
+		if (p.first)
+			s = p.second.s;
+
+		if (! s) {
+			std::cerr << "Can't find any reference to symbol " << set.identifier;
+			std::cerr << " in current context" << std::endl;
+			return false;
+		}
+
+		bool valid = set.bounded.is_valid(a, u, local);
+		if (!valid)
+			return valid;
+
+		boost::optional<typeId> t = u.typeOf(a, set.bounded, local);
+		if (!t) {
+			std::cerr << "Can't compute the type of " << set.bounded << std::endl;
+			return false;
+		}
+
+		if (s->t != *t) {
+			std::cerr << "type of " << set.identifier << " and ";
+			std::cerr << set.bounded << " mismatches " << std::endl;
+			return false;
+		}
+
+		return true;
+	}
 };
+
+
 
 struct validate_recipe_expression
 {

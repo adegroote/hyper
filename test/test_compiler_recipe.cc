@@ -44,7 +44,6 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 	BOOST_CHECK( P.parse_ability_file("./example.ability") == true );
 
 	recipe_test check_recipe(u, P, u.get_ability("first"));
-
 	check_recipe.do_build_test("r0 = recipe { pre = {}; post = {}; body = {}; };", true);
 
 	check_recipe.do_build_test("r1 = recipe { pre = {}; post = {}; body = {  make (2 == 1); }; };",
@@ -159,4 +158,35 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 											/* abort ensure clause */ \
 											abort X; }; };",
 								true);
+
+	/* set accepts any valid expression in input, as long as the type matches
+	 * You can only set a local variable (from recipe up to ability)
+	 */
+
+	check_recipe.do_build_test("r19 = recipe { pre = {}; post = {}; \
+									  body = {						\
+										set first::isOk false;		\
+										set i 12;					\
+										let X i+j;					\
+										set X X+1;					\
+										};};", true);
+
+	/* Can't assign a int to a bool */
+	check_recipe.do_build_test("r20 = recipe { pre = {}; post = {}; \
+									  body = {						\
+										set first::isOk 22			\
+										};};", false);
+
+	/* square returns a double, can't assign a double to a bool */
+	check_recipe.do_build_test("r21 = recipe { pre = {}; post = {}; \
+									  body = {						\
+										set first::isOk square(thresold) \
+										};};", false);
+
+	/* set on a remote variable is forbidden */
+	check_recipe.do_build_test("r22 = recipe { pre = {}; post = {}; \
+									  body = {						\
+										set other::isEmpty  false\
+										};};", false);
+	
 }

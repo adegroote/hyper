@@ -41,11 +41,23 @@ namespace hyper {
 			return os;
 		}
 
+		struct set_decl {
+			std::string identifier;
+			expression_ast bounded;
+
+			set_decl() {}
+			set_decl(const std::string& identifier_, expression_ast bounded_) :
+				identifier(identifier_), bounded(bounded_) {}
+		};
+
+		std::ostream& operator<< (std::ostream&, const set_decl&);
+
 		struct recipe_expression {
 			typedef boost::variant<
 				empty,
 				boost::recursive_wrapper<let_decl>,
 				abort_decl, 
+				set_decl,
 				recipe_op<MAKE>,
 				recipe_op<ENSURE>,
 				recipe_op<WAIT>,
@@ -75,6 +87,7 @@ namespace hyper {
 		};
 
 		std::ostream& operator<< (std::ostream&, const let_decl&);
+
 	}
 }
 #endif /* HYPER_COMPILER_RECIPE_EXPRESSION_HH_ */

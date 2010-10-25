@@ -16,6 +16,12 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const abort_decl& a
 	return os;
 }
 
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const set_decl& s)
+{
+	os << "set " << s.identifier << " = " << s.bounded;
+	return os;
+}
+
 struct recipe_expression_print : public boost::static_visitor<void>
 {
 	std::ostream& os;

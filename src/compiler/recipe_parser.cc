@@ -63,6 +63,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::string, identifier)
 )
 
+BOOST_FUSION_ADAPT_STRUCT(
+	set_decl,
+	(std::string, identifier)
+	(expression_ast, bounded)
+)	
+
 phoenix::function<error_handler_> const error_handler = error_handler_();
 
 template <typename Iterator>
@@ -91,6 +97,7 @@ struct body_block_grammar :
 					|   ensure_decl_
 					|   wait_decl_
 					|	abort_decl_
+					|	set_decl_
 					|	expression
 					)
 					>> -lit(';')
@@ -110,6 +117,11 @@ struct body_block_grammar :
 				  >> expression
 				  >> lit(")")
 				  ;
+
+		set_decl_ = lit("set")
+				 >> scoped_identifier
+				 >> expression
+				 ;
 
 		ensure_decl_ = lit("ensure")
 				  >> lit("(")
@@ -131,6 +143,7 @@ struct body_block_grammar :
 		body_decl_list.name("recipe expression list");
 		body_decl.name("recipe expression");
 		let_decl_.name("let declaration");
+		set_decl_.name("set declaration");
 		abort_decl_.name("abort declaration");
 		make_decl_.name("make declaration");
 		ensure_decl_.name("ensure declaration");
@@ -141,6 +154,7 @@ struct body_block_grammar :
 		debug(body_decl_list);
 		debug(body_decl);
 		debug(let_decl_);
+		debug(set_decl_);
 		debug(abort_decl_);
 		debug(make_decl_);
 		debug(ensure_decl_);
@@ -152,6 +166,7 @@ struct body_block_grammar :
 	qi::rule<Iterator, std::vector<recipe_expression>(), white_space_> body_decl_list;
 	qi::rule<Iterator, recipe_expression(), white_space_> body_decl;
 	qi::rule<Iterator, let_decl(), white_space_> let_decl_;
+	qi::rule<Iterator, set_decl(), white_space_> set_decl_;
 	qi::rule<Iterator, abort_decl(), white_space_> abort_decl_;
 	qi::rule<Iterator, recipe_op<MAKE>(), white_space_> make_decl_;
 	qi::rule<Iterator, recipe_op<ENSURE>(), white_space_> ensure_decl_;
@@ -159,6 +174,7 @@ struct body_block_grammar :
 
 	grammar_expression<Iterator> expression;
 	identifier_grammar<Iterator> identifier;
+	scoped_identifier_grammar<Iterator> scoped_identifier;
 };
 
 template <typename Iterator>
