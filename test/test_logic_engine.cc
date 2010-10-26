@@ -55,7 +55,6 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	BOOST_CHECK(e.add_fact("less(distance(center, object), 0.5)"));
 	BOOST_CHECK(e.add_fact("equal(object, balloon)"));
 
-	std::cout << e << std::endl;
 
 	boost::logic::tribool r;
 	r = e.infer("equal(x, 7)");
@@ -99,5 +98,31 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 	r = e.infer("less(distance(object, x), 0.7)");
 	BOOST_CHECK(boost::logic::indeterminate(r));
+
+	/* Add some fact for task1 */
+	BOOST_CHECK(e.add_fact("equal(x, y)", "task1"));
+	BOOST_CHECK(e.add_fact("equal(x, 7)", "task1"));
+
+	/* Add some fact for task2 */
+	BOOST_CHECK(e.add_fact("equal(x, 7)", "task2"));
+
+	std::vector<std::string> res;
+	e.infer("equal(y, 7)", std::back_inserter(res));
+
+	std::cout << e << std::endl;
+
+	BOOST_CHECK(res.size() == 2);
+	BOOST_CHECK(res[0] == "default");
+	BOOST_CHECK(res[1] == "task1");
+
+	res.clear();
+
+	e.infer("less(distance(object, center), 1.0)", std::back_inserter(res));
+	BOOST_CHECK(res.size() == 1);
+	BOOST_CHECK(res[0] == "default");
+
+	res.clear();
+	e.infer("less(distance(object, center), 0.1)", std::back_inserter(res));
+	BOOST_CHECK(res.size() == 0);
 }
 

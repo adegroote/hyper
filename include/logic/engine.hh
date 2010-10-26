@@ -38,6 +38,24 @@ namespace hyper {
 				boost::logic::tribool infer(const std::string& goal, 
 											const std::string& identifier = "default");
 
+				/*
+				 * Fill OutputIterator with the list of identifier which
+				 * matches the goal
+				 */
+				template <typename OutputIterator>
+				OutputIterator infer(const std::string& goal, OutputIterator out)
+				{
+					for (factsMap::const_iterator it = facts_.begin();
+												  it != facts_.end(); ++it)
+					{
+						boost::logic::tribool b = infer(goal, it->first);
+						if (!boost::logic::indeterminate(b) && b)
+							*out++ = it->first;
+					}
+
+					return out;
+				}
+
 				friend std::ostream& operator << (std::ostream&, const engine&);
 		};
 
