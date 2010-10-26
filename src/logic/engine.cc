@@ -255,6 +255,8 @@ namespace {
 		}
 	};
 
+	struct no_candidate {};
+
 	struct unifyM_candidate 
 	{
 		const std::set<std::string>& unbounded;
@@ -269,6 +271,10 @@ namespace {
 
 		std::vector<iter> v;
 
+		/* Throw a no_candidate exception if we don't have any candidate for
+		 * one symbol. It means that the unification can't lead to any
+		 * succesful result
+		 */
 		unifyM_candidate(const std::set<std::string>& unbounded_,
 						 const expressionM& possible_symbol_):
 			unbounded(unbounded_), possible_symbol(possible_symbol_)
@@ -280,6 +286,8 @@ namespace {
 				iter current;
 				current.begin = it->second.begin();
 				current.end = it->second.end();
+				if (current.begin == current.end)
+					throw no_candidate();
 				current.current = current.begin;
 				v.push_back(current);
 			}
@@ -330,27 +338,29 @@ namespace {
 					  const expressionM& possible_symbol)
 	{
 		unifyM m(m_);
-		unifyM_candidate candidates(unbounded, possible_symbol);
-		bool has_next = true;
-		while (has_next)
-		{
-			has_next = candidates.next(m);
-			std::vector<function_call> v_f;
-			std::transform(r.condition.begin(), r.condition.end(),
-						   std::back_inserter(v_f),
-						   generate_inferred_fact(m));
+		try {
+			unifyM_candidate candidates(unbounded, possible_symbol);
+			bool has_next = true;
+			while (has_next)
+			{
+				has_next = candidates.next(m);
+				std::vector<function_call> v_f;
+				std::transform(r.condition.begin(), r.condition.end(),
+						std::back_inserter(v_f),
+						generate_inferred_fact(m));
 
-			std::vector<function_call>::const_iterator it;
-			it = v_f.begin();
-			bool has_matched = true;
-			while (has_matched && it != v_f.end()) {
-				has_matched = facts_.matches(*it);
-				++it;
+				std::vector<function_call>::const_iterator it;
+				it = v_f.begin();
+				bool has_matched = true;
+				while (has_matched && it != v_f.end()) {
+					has_matched = facts_.matches(*it);
+					++it;
+				}
+
+				if (has_matched)
+					return true;
 			}
-
-			if (has_matched)
-				return true;
-		}
+		} catch (no_candidate&) {}
 
 		return false;
 	}
@@ -388,7 +398,7 @@ namespace {
 
 			/* for each bound map, compute all the unbounded key */
 			vector_set_symbols unbounded_symbols(unify_vect.size());
-			for (size_t i = 0; i < unify_vect.size(); ++i)
+			for (size_t i = 0; i < unify_vect.size(); ++i) 
 				std::set_difference(rules_symbols.begin(), rules_symbols.end(),
 									bounded_symbols[i].begin(), bounded_symbols[i].end(),
 									std::inserter(unbounded_symbols[i], unbounded_symbols[i].begin()));
@@ -399,7 +409,7 @@ namespace {
 			 * each category
 			 */
 			vec_expressionM possible_expression(unify_vect.size());
-			for (size_t i = 0; i < unify_vect.size(); ++i)
+			for (size_t i = 0; i < unify_vect.size(); ++i) 
 				std::for_each(unbounded_symbols[i].begin(),
 							  unbounded_symbols[i].end(),
 							  compute_possible_expression(facts_, r, possible_expression[i]));
