@@ -155,6 +155,7 @@ struct print_symbol
 	}
 };
 
+
 struct initialize_variable 
 {
 	std::ostream& oss;
@@ -205,6 +206,7 @@ ability::get_function_depends() const
 void
 ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 {
+	(void) u; // XXX to delete
 	std::set<std::string> type_depends;
 	compute_type_depends type_deps(type_depends, tList);
 	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
@@ -242,3 +244,79 @@ ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
 	oss << "\t\t\t\t}\n;" << std::endl;
 	oss << "\t\t\t};" << std::endl;
 }
+
+struct agent_export_symbol
+{
+	std::ostream& oss;
+	const typeList& tList;
+	const std::string& name;
+	
+	agent_export_symbol(std::ostream& oss_, const typeList& tList_, const std::string& name_) :
+		oss(oss_), tList(tList_), name(name_) {};
+
+	void operator () (const std::pair<std::string, symbol>& p) const
+	{
+		type t = tList.get(p.second.t);
+		oss << "\t\t" << scope::get_context_identifier(t.name, name);
+		oss << " " << p.second.name << "();" << std::endl;
+	}
+};
+
+void
+ability::agent_export_declaration(std::ostream& oss, const typeList& tList) const
+{
+	std::set<std::string> type_depends;
+	compute_type_depends type_deps(type_depends, tList);
+	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
+	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
+
+	guards g(oss, name_, "_EXPORT_AGENT_HH_");
+
+	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
+	oss << std::endl;
+
+	namespaces n(oss, name_);
+
+	agent_export_symbol print(oss, tList, name_);
+
+	std::for_each(controlable_list.begin(), controlable_list.end(), print);
+	std::for_each(readable_list.begin(), readable_list.end(), print);
+
+	oss << "\t\tvoid send_constraint(const std::string);" << std::endl;
+}
+
+struct agent_export_impl
+{
+	std::ostream& oss;
+	const typeList& tList;
+	const std::string& name;
+	
+	agent_export_impl(std::ostream& oss_, const typeList& tList_, const std::string& name_) :
+		oss(oss_), tList(tList_), name(name_) {};
+
+	void operator () (const std::pair<std::string, symbol>& p) const
+	{
+		type t = tList.get(p.second.t);
+		oss << "" << scope::get_context_identifier(t.name, name);
+		oss << " hyper::" << name << "::" << p.second.name << "()" << std::endl;
+		oss << "{" << std::endl;
+		oss << "return " << scope::get_context_identifier(t.name, name) << "();";
+		oss << std::endl;
+		oss << "}" << std::endl;
+	}
+};
+
+void 
+ability::agent_export_implementation(std::ostream& oss, const typeList& tList) const
+{
+	oss << "#include <" << name_ << "/export.hh>" << std::endl;
+	oss << "using namespace hyper::" << name_ << ";" << std::endl;
+	oss << std::endl;
+
+	agent_export_impl print(oss, tList, name_);
+	std::for_each(controlable_list.begin(), controlable_list.end(), print);
+	std::for_each(readable_list.begin(), readable_list.end(), print);
+
+	oss << "void send_constraint(const std::string&) {}" << std::endl;
+}
+

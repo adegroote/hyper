@@ -48,6 +48,23 @@ void build_main(std::ostream& oss, const std::string& name)
 	oss << hyper::compiler::replace_by(main, "@NAME@", name);
 }
 
+void build_swig(std::ostream& oss, const std::string& name)
+{
+	std::string swig = 
+		"%module @NAME@\n"
+		"%include \"typemaps.i\"\n"
+		"%{\n"
+		"	#include \"@NAME@/export.hh\"\n"
+		"	using namespace hyper::@NAME@;\n"
+		"%}\n"
+		"%include \"@NAME@/types.hh\"\n"
+		"%include \"@NAME@/export.hh\"\n"
+		;
+
+	oss << hyper::compiler::replace_by(swig, "@NAME@", name);
+
+}
+
 void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 					  bool has_task, bool has_recipe,
 					  const std::set<std::string>& depends)
@@ -117,6 +134,32 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_logic.so)\n"
 		;
 
+	std::string swig_export =
+		"find_package(SWIG)\n"
+		"include(${SWIG_USE_FILE})\n"
+		"find_package(Ruby)\n"
+		"include_directories(${RUBY_INCLUDE_PATH})\n"
+		"add_custom_command(\n"
+		"	OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp\n"
+		"	COMMAND ${SWIG_EXECUTABLE}\n" 
+		"ARGS -c++ -Wall -v -ruby -prefix \"hyper::\"  -I${Boost_INCLUDE_DIRS} -I${RUBY_INCLUDE_DIR}  -o ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp ${CMAKE_CURRENT_SOURCE_DIR}/@NAME@.i\n"
+		"MAIN_DEPENDENCY @NAME@.i\n"
+		"WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"
+		")\n"
+	"add_library(@NAME@_ruby_wrap SHARED ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp @NAME@/export.cc)\n"
+		"target_link_libraries(@NAME@_ruby_wrap stdc++ ${RUBY_LIBRARY})\n"
+		"target_link_libraries(@NAME@_ruby_wrap ${HYPER_ROOT}/lib/libhyper_network.so)\n"
+		"set_target_properties(@NAME@_ruby_wrap \n"
+		"						PROPERTIES OUTPUT_NAME @NAME@\n"
+		"						PREFIX \"\")\n"
+		"EXECUTE_PROCESS(COMMAND ${RUBY_EXECUTABLE} -r rbconfig -e \"print Config::CONFIG['sitearch']\"\n"
+		"				OUTPUT_VARIABLE RUBY_SITEARCH)\n"
+		"string(REGEX MATCH \"[0-9]+\\\\.[0-9]+\" RUBY_VERSION \"${RUBY_VERSION}\")\n"
+		"install(TARGETS @NAME@_ruby_wrap\n"
+		"			DESTINATION ${HYPER_ROOT}/lib/ruby/${RUBY_VERSION}/${RUBY_SITEARCH}/hyper)\n"
+		;
+
+
 	oss << hyper::compiler::replace_by(base_cmake1, "@NAME@", name);
 	if (has_func)
 		oss << hyper::compiler::replace_by(build_function, "@NAME@", name);
@@ -139,6 +182,8 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 	}
 
 	oss << hyper::compiler::replace_by(additionnal_link, "@NAME@", name);
+
+	oss << hyper::compiler::replace_by(swig_export, "@NAME@", name);
 }
 
 /*
@@ -295,7 +340,8 @@ int main(int argc, char** argv)
 	std::copy(include_dirs.begin(), include_dirs.end(), std::back_inserter(include_dir_path));
 
 	std::string abilityName = vm["input-file"].as < std::string > ();
-	std::string directoryName = ".hyper/src/" + abilityName;
+	std::string baseName = ".hyper/src/";
+	std::string directoryName = baseName + abilityName;
 	std::string directoryTaskName = directoryName + "/tasks";
 	std::string directoryRecipeName = directoryName + "/recipes";
 	std::string taskDirectory = abilityName;
@@ -352,6 +398,8 @@ int main(int argc, char** argv)
 		   }
 	}
 
+	const ability& current_a = u.get_ability(abilityName);
+
 	{
 		std::string fileName = directoryName + "/types.hh";
 		std::ofstream oss(fileName.c_str());
@@ -393,12 +441,14 @@ int main(int argc, char** argv)
 	}
 
 	{
-		std::ofstream oss(".hyper/src/main.cc");
+		std::string fileName = baseName + "main.cc";
+		std::ofstream oss(fileName.c_str());
 		build_main(oss, abilityName);
 	}
 
 	{
-		std::ofstream oss(".hyper/src/CMakeLists.txt");
+		std::string fileName = baseName + "CMakeLists.txt";
+		std::ofstream oss(fileName.c_str());
 		depends d = u.get_function_depends(abilityName);
 		build_base_cmake(oss, abilityName, define_func, 
 						 is_directory_empty(directoryTaskName),
@@ -406,8 +456,24 @@ int main(int argc, char** argv)
 						 d.fun_depends);
 	}
 
+	{
+		std::string fileName = directoryName + "/export.hh";
+		std::ofstream oss(fileName.c_str());
+		current_a.agent_export_declaration(oss, u.types());
+	}
+	{
+		std::string fileName = directoryName + "/export.cc";
+		std::ofstream oss(fileName.c_str());
+		current_a.agent_export_implementation(oss, u.types());
+	}
+	{ 
+		std::string fileName = baseName + abilityName + ".i";
+		std::ofstream oss(fileName.c_str());
+		build_swig(oss, abilityName);
+	}
+
 	/* Now for all files in .hyper/src, copy different one into real src */
-	copy_if_different(".hyper/src", "src", "");
+	copy_if_different(baseName, "src", "");
 
 	/* copy ability file in src to install it */
 	std::string abilityFileName = abilityName + ".ability";
