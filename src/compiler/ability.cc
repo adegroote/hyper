@@ -300,7 +300,9 @@ struct agent_export_impl
 		oss << "" << scope::get_context_identifier(t.name, name);
 		oss << " hyper::" << name << "::" << p.second.name << "()" << std::endl;
 		oss << "{" << std::endl;
-		oss << "return " << scope::get_context_identifier(t.name, name) << "();";
+		oss << "return hyper::model::get_value<";
+		oss << scope::get_context_identifier(t.name, name);
+		oss << ">(\"" << name << "\",\"" << p.second.name << "\");";
 		oss << std::endl;
 		oss << "}" << std::endl;
 	}
@@ -309,6 +311,7 @@ struct agent_export_impl
 void 
 ability::agent_export_implementation(std::ostream& oss, const typeList& tList) const
 {
+	oss << "#include <model/get_value.hh>" << std::endl;
 	oss << "#include <" << name_ << "/export.hh>" << std::endl;
 	oss << "using namespace hyper::" << name_ << ";" << std::endl;
 	oss << std::endl;
