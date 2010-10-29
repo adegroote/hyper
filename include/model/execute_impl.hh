@@ -34,7 +34,9 @@ namespace hyper {
 	namespace model {
 		namespace details {
 			template <typename T>
-			boost::optional<T> _evaluate_expression(const logic::function_call& f, ability &a);
+			boost::optional<T> _evaluate_expression(
+					boost::asio::io_service& io_s, 
+					const logic::function_call& f, ability &a);
 
 			struct computation_error {};
 
@@ -42,8 +44,10 @@ namespace hyper {
 			struct evaluate_logic_expression : public boost::static_visitor<T>
 			{
 				model::ability & a;
+				boost::asio::io_service& io_s; 
 
-				evaluate_logic_expression(model::ability & a_) : a(a_) {}
+				evaluate_logic_expression(boost::asio::io_service& io_s_, model::ability & a_) : 
+					io_s(io_s_), a(a_) {}
 
 				template <typename U> 
 				T operator() (const U& u) const { (void) u; throw computation_error();}
@@ -65,7 +69,7 @@ namespace hyper {
 							value = a.proxy.eval<typename T::value_type>(p.second);
 						else {
 							network::remote_proxy_sync<typename T::value_type, network::name_client>
-								proxy(p.first, p.second, a.name_client);
+								proxy(io_s, p.first, p.second, a.name_client);
 							value = proxy.get(boost::posix_time::millisec(20));
 						}
 					}
@@ -76,15 +80,15 @@ namespace hyper {
 
 				T operator() (const logic::function_call& f) const
 				{
-					return _evaluate_expression<typename T::value_type>(f, a);
+					return _evaluate_expression<typename T::value_type>(io_s, f, a);
 				}
 			};
 
 				
 			template <typename T>
-			T evaluate(const logic::expression &e, ability& a)
+			T evaluate(boost::asio::io_service& io_s, const logic::expression &e, ability& a)
 			{
-				return boost::apply_visitor(evaluate_logic_expression<T>(a), e.expr);
+				return boost::apply_visitor(evaluate_logic_expression<T>(io_s, a), e.expr);
 			}
 
 			template <typename T>
@@ -114,10 +118,12 @@ namespace hyper {
 			{
 				T& func;
 				const std::vector<logic::expression>& e;
+				boost::asio::io_service& io_s;
 				ability &a;
 
-				compute(T& func_, const std::vector<logic::expression> & e_, ability & a_) : 
-					func(func_), e(e_), a(a_) {}
+				compute(T& func_, boost::asio::io_service& io_s_, 
+						const std::vector<logic::expression> & e_, ability & a_) : 
+					func(func_), io_s(io_s_), e(e_), a(a_) {}
 
 				template <typename U>
 				void operator() (U unused)
@@ -128,7 +134,7 @@ namespace hyper {
 								>::type local_return_type;
 
 					(void) unused;
-					boost::get<U::value>(func.args) = evaluate<local_return_type> (e[U::value], a);
+					boost::get<U::value>(func.args) = evaluate<local_return_type> (io_s, e[U::value], a);
 				}
 			};
 
@@ -164,11 +170,13 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 #undef NEW_EVAL_DECL
 
 			template <typename T>
-			boost::optional<T> _evaluate_expression(const logic::function_call& f, ability &a)
+			boost::optional<T> _evaluate_expression(
+					boost::asio::io_service& io_s,
+					const logic::function_call& f, ability &a)
 			{
 				boost::any res;
 				boost::scoped_ptr<function_execution_base> func(a.f_map.get(f.name));
-				func->operator() (f.args, a);
+				func->operator() (io_s, f.args, a);
 				res = func->get_result();
 				// by construction, it must never throw. If it does, need to fix hyper::compiler :D
 				return boost::any_cast<T> (res);
@@ -204,12 +212,14 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 				return new function_execution<T>();
 			}
 
-			void operator() (const std::vector<logic::expression> & e, ability & a)
+			void operator() (
+					boost::asio::io_service &io_s,
+					const std::vector<logic::expression> & e, ability & a)
 			{
 				// compiler normally already has checked that, but ...
 				assert(e.size() == args_size);
 
-				details::compute<function_execution<T> > compute_(*this, e, a);
+				details::compute<function_execution<T> > compute_(*this, io_s, e, a);
 				boost::mpl::for_each<range> (compute_);
 
 				result = details::eval<function_execution<T>, args_size> (args) ();
@@ -228,10 +238,12 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 
 
 		template <typename T>
-		boost::optional<T> evaluate_expression(const logic::function_call& f, ability &a)
+		boost::optional<T> evaluate_expression(
+				boost::asio::io_service& io_s, 
+				const logic::function_call& f, ability &a)
 		{
 			try {
-				return details::_evaluate_expression<T>(f, a);
+				return details::_evaluate_expression<T>(io_s, f, a);
 			} catch (details::computation_error e) {
 				return boost::none;
 			}

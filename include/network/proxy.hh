@@ -331,9 +331,12 @@ namespace hyper {
 		class remote_proxy_sync
 		{
 			public:
-			remote_proxy_sync(const std::string& ability_name,
+			remote_proxy_sync(
+							 boost::asio::io_service& io_service,
+							 const std::string& ability_name,
 							 const std::string& var_name,
 							 Resolver& r):
+				io_service_(io_service),
 				deadline_(io_service_),
 				client(io_service_, ability_name, var_name, r) 
 			{
@@ -382,7 +385,7 @@ namespace hyper {
 				  wait_e = e;
 			  }
 
-			  boost::asio::io_service io_service_;
+			  boost::asio::io_service& io_service_;
 			  boost::asio::deadline_timer deadline_;
 			  remote_proxy<T, Resolver> client;
 		};

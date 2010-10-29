@@ -13,11 +13,15 @@ namespace hyper {
 		struct ability;
 
 		template <typename T>
-		boost::optional<T> evaluate_expression(const logic::function_call& f, ability &a);
+		boost::optional<T> evaluate_expression(
+				boost::asio::io_service& io_s, 
+				const logic::function_call& f, ability &a);
 
 		struct function_execution_base {
-			virtual void operator() (const std::vector<logic::expression> & e, 
-									ability &a) = 0;
+			virtual void operator() (
+					boost::asio::io_service& io_s,
+					const std::vector<logic::expression> & e, 
+					ability &a) = 0;
 			virtual function_execution_base* clone() = 0;
 			virtual boost::any get_result() = 0;
 			virtual ~function_execution_base() {};

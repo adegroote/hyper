@@ -297,7 +297,8 @@ BOOST_AUTO_TEST_CASE ( network_proxy_test )
 		io4_s.run();
 
 		t.x = 92;
-		remote_proxy_sync<int, false_resolv> sync_proxy("test", "x", resolv_);
+		boost::asio::io_service io5_s;
+		remote_proxy_sync<int, false_resolv> sync_proxy(io5_s, "test", "x", resolv_);
 		boost::optional<int> res_sync_proxy = sync_proxy.get(boost::posix_time::seconds(1));
 		BOOST_CHECK(res_sync_proxy);
 		BOOST_CHECK(*res_sync_proxy == 92);

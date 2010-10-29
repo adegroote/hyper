@@ -117,28 +117,29 @@ BOOST_AUTO_TEST_CASE ( model_execute_test )
 	r = generate("square_int(12)", f);
 	BOOST_CHECK(r.res == true);
 
-	boost::optional<int> res = evaluate_expression<int>(r.e, pos_);
+	boost::asio::io_service io_s;
+	boost::optional<int> res = evaluate_expression<int>(io_s, r.e, pos_);
 	BOOST_CHECK(res);
 	BOOST_CHECK(*res == 12 * 12);
 
 	r = generate("add_int(2, 2)", f);
 	BOOST_CHECK(r.res == true);
 
-	res = evaluate_expression<int>(r.e, pos_);
+	res = evaluate_expression<int>(io_s, r.e, pos_);
 	BOOST_CHECK(res);
 	BOOST_CHECK(*res == 2 + 2);
 	
 	r = generate("square_int(add_int(2, 2))", f);
 	BOOST_CHECK(r.res == true);
 
-	res = evaluate_expression<int>(r.e, pos_);
+	res = evaluate_expression<int>(io_s, r.e, pos_);
 	BOOST_CHECK(res);
 	BOOST_CHECK(*res == 16);
 
 	r = generate("add_int(square_int(2), add_int(2, 2))", f);
 	BOOST_CHECK(r.res == true);
 
-	res = evaluate_expression<int>(r.e, pos_);
+	res = evaluate_expression<int>(io_s, r.e, pos_);
 	BOOST_CHECK(res);
 	BOOST_CHECK(*res == 8);
 
@@ -147,14 +148,14 @@ BOOST_AUTO_TEST_CASE ( model_execute_test )
 	r = generate("add_int(y, z)", f);
 	BOOST_CHECK(r.res == true);
 
-	res = evaluate_expression<int>(r.e, pos_);
+	res = evaluate_expression<int>(io_s, r.e, pos_);
 	BOOST_CHECK(res);
 	BOOST_CHECK(*res == 42);
 
 	r = generate("add_int(x, z)", f);
 	BOOST_CHECK(r.res == true);
 
-	res = evaluate_expression<int>(r.e, pos_);
+	res = evaluate_expression<int>(io_s, r.e, pos_);
 	BOOST_CHECK(!res); // x is of type double
 
 	pos_.A.x = 0.0;
@@ -165,7 +166,7 @@ BOOST_AUTO_TEST_CASE ( model_execute_test )
 	BOOST_CHECK(r.res == true);
 
 	boost::optional<double> res_distance;
-	res_distance = evaluate_expression<double>(r.e, pos_);
+	res_distance = evaluate_expression<double>(io_s, r.e, pos_);
 	BOOST_CHECK(res_distance);
 	BOOST_CHECK(std::abs(*res_distance - 10.0) < 1e-6);
 
@@ -174,7 +175,7 @@ BOOST_AUTO_TEST_CASE ( model_execute_test )
 
 	r = generate("distance(pos::A, goal::goal)", f);
 	BOOST_CHECK(r.res == true);
-	res_distance = evaluate_expression<double>(r.e, pos_);
+	res_distance = evaluate_expression<double>(io_s, r.e, pos_);
 	BOOST_CHECK(res_distance);
 	BOOST_CHECK(std::abs(*res_distance - 42.0) < 1e-6);
 
