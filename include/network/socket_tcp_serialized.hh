@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#define FUSION_MAX_VECTOR_SIZE 20
+
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/asio.hpp>

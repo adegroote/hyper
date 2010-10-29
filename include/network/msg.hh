@@ -6,9 +6,13 @@
 #include <iostream>
 #include <string>
 
+#include <logic/expression.hh>
+
 #include <boost/asio.hpp>
-#include <boost/mpl/vector.hpp>
+#include <boost/mpl/vector/vector20.hpp>
 #include <boost/serialization/serialization.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/variant.hpp> 
 #include <boost/serialization/split_member.hpp>
 #include <boost/variant.hpp>
 
@@ -206,7 +210,51 @@ namespace hyper {
 				std::string value;
 		};
 
-		typedef boost::mpl::vector<
+		struct request_constraint
+		{
+			private:
+				friend class boost::serialization::access;
+				template <class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & constraint;
+				}
+			public:
+				std::string constraint;
+		};
+
+		struct request_constraint_ack
+		{
+			private:
+				friend class boost::serialization::access;
+				template <class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & acked & id;
+				}
+			public:
+				bool acked;
+				size_t id;
+		};
+
+		struct request_constraint_answer
+		{
+			private:
+				friend class boost::serialization::access;
+				template <class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & success & id;
+				}
+			public:
+				bool success;
+				size_t id;
+		};
+
+		typedef boost::mpl::vector11<
 			request_name,
 			request_name_answer,
 			register_name,
@@ -214,10 +262,13 @@ namespace hyper {
 			ping,
 			pong,
 			request_variable_value,
-			variable_value
+			variable_value,
+			request_constraint,
+			request_constraint_ack,
+			request_constraint_answer
 		> message_types;
 
-#define MESSAGE_TYPE_MAX	7
+#define MESSAGE_TYPE_MAX 11
 
 		typedef boost::make_variant_over<message_types>::type message_variant;
 
