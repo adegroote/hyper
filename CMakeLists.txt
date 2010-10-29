@@ -38,12 +38,15 @@ include_directories(${HYPER_SOURCE_DIR}/include)
 
 set(model_test_ADDITIONAL_LIBS "hyper_network;hyper_logic;hyper_compiler")
 
+set(network_LIBS "boost_system;boost_thread;boost_serialization")
+
 foreach(lib compiler network logic model)
   string(TOUPPER "${lib}_sources" THIS_LIB_SOURCES)
   string(TOLOWER "hyper_${lib}" HyperLibrary)
   if(EXISTS ${HYPER_SOURCE_DIR}/src/${lib})
     file(GLOB ${THIS_LIB_SOURCES} ${HYPER_SOURCE_DIR}/src/${lib}/*.cc)
     add_library (${HyperLibrary} SHARED ${${THIS_LIB_SOURCES}}) 
+	target_link_libraries(${HyperLibrary}  ${${lib}_LIBS})
     install(TARGETS ${HyperLibrary}
       DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
       )
