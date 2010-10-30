@@ -19,7 +19,7 @@
 #include <boost/mpl/transform.hpp>
 #include <boost/optional/optional.hpp>
 #include <boost/none.hpp>
-#include <boost/optional/optional.hpp>
+#include <boost/thread/locks.hpp>
 
 namespace hyper {
 	namespace network {
