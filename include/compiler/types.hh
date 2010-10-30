@@ -125,7 +125,7 @@ namespace hyper {
 				std::vector<type> select(Pred pred) const
 				{
 					std::vector<type> res;
-					copy_if(types.begin(), types.end(), std::back_inserter(res), pred);
+					hyper::compiler::copy_if(types.begin(), types.end(), std::back_inserter(res), pred);
 					return res;
 				}
 		};
