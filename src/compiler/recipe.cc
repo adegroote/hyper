@@ -1,8 +1,10 @@
 #include <compiler/ability.hh>
 #include <compiler/expression_ast.hh>
+#include <compiler/output.hh>
 #include <compiler/recipe.hh>
 #include <compiler/recipe_parser.hh>
 #include <compiler/recipe_expression.hh>
+#include <compiler/scope.hh>
 #include <compiler/task.hh>
 #include <compiler/universe.hh>
 
