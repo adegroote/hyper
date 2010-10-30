@@ -20,7 +20,7 @@ struct echo_visitor : public boost::static_visitor<output_variant>
 	template <typename T>
 	output_variant operator() (const T& t) const
 	{
-		sleep(2);
+		boost::this_thread::sleep(boost::posix_time::milliseconds(50));
 		return t;
 	}
 };
@@ -127,7 +127,7 @@ struct test_async_client
 					boost::bind(&test_async_client::handle_timeout_register_name,
 								this,
 								boost::asio::placeholders::error),
-					boost::posix_time::seconds(5),
+					boost::posix_time::milliseconds(100),
 					boost::bind(&test_async_client::handle_timeout,
 								this,
 								boost::asio::placeholders::error)
@@ -151,7 +151,7 @@ struct test_async_client
 					boost::bind(&test_async_client::handle_timeout_register_name,
 								this,
 								boost::asio::placeholders::error),
-					boost::posix_time::seconds(1),
+					boost::posix_time::milliseconds(20),
 					boost::bind(&test_async_client::handle_timeout,
 								this,
 								boost::asio::placeholders::error)
