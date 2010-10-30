@@ -34,8 +34,8 @@ namespace hyper {
 
 		struct Nothing {};
 
-		struct symbolList;
-		struct typeList;
+		class symbolList;
+		class typeList;
 
 		typedef boost::variant< Nothing, 
 								detail::typeId,

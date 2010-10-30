@@ -32,7 +32,7 @@ namespace hyper {
 		namespace tcp {
 
 			template <typename AuthorizedMessages>
-			struct serialized_socket;
+			class serialized_socket;
 
 			/* Meta-struct to call async_read with the right @T. 
 			 * @index here is the index in @AuthorizedMessages

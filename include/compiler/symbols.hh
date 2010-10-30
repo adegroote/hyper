@@ -30,7 +30,7 @@ namespace hyper {
 		struct symbol_decl;
 		struct symbol_decl_list;
 
-		struct symbolList {
+		class symbolList {
 			public:
 				enum symbolAddError {
 					noError,
