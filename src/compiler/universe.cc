@@ -543,7 +543,7 @@ universe::dump_ability(std::ostream& oss, const std::string& name) const
 		return;
 	}
 
-	it->second->dump(oss, tList, *this);
+	it->second->dump(oss, tList);
 }
 
 depends

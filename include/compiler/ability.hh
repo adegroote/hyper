@@ -73,8 +73,7 @@ namespace hyper {
 					return name_;
 				}
 
-				void dump(std::ostream& oss, const typeList& tList, const universe& u) const;
-
+				void dump(std::ostream& oss, const typeList& tList) const;
 				void agent_export_declaration(std::ostream& oss, const typeList& tList) const;
 				void agent_export_implementation(std::ostream& oss, const typeList& tList) const;
 

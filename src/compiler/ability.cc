@@ -204,9 +204,8 @@ ability::get_function_depends() const
 }
 
 void
-ability::dump(std::ostream& oss, const typeList& tList, const universe& u) const
+ability::dump(std::ostream& oss, const typeList& tList) const
 {
-	(void) u; // XXX to delete
 	std::set<std::string> type_depends;
 	compute_type_depends type_deps(type_depends, tList);
 	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
