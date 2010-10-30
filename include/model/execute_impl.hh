@@ -244,7 +244,7 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 		{
 			try {
 				return details::_evaluate_expression<T>(io_s, f, a);
-			} catch (details::computation_error e) {
+			} catch (details::computation_error&) {
 				return boost::none;
 			}
 

@@ -52,7 +52,7 @@ namespace hyper {
 				boost::archive::text_iarchive archive(archive_stream);
 				archive >> res;
 				return res;
-			} catch (std::exception& e) {
+			} catch (std::exception& ) {
 				return boost::optional<T>();
 			}
 		}
@@ -129,7 +129,7 @@ namespace hyper {
 					try { 
 						T value = boost::any_cast<T>(it->second());
 						return value;
-					} catch (const boost::bad_any_cast & e) {
+					} catch (const boost::bad_any_cast &) {
 						return boost::none;
 					}
 

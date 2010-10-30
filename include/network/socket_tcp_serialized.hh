@@ -231,7 +231,7 @@ namespace hyper {
 							boost::archive::text_iarchive archive(archive_stream);
 							archive >> t;
 						}
-						catch (std::exception& e)
+						catch (std::exception&)
 						{
 							/* Unable to decode data. */
 							std::cerr << "Unable to decode data : " << std::endl;
@@ -350,7 +350,7 @@ namespace hyper {
 								boost::archive::text_iarchive archive(archive_stream);
 								archive >> t;
 							}
-							catch (std::exception& e)
+							catch (std::exception&)
 							{
 								/* Unable to decode data. */
 								boost::system::error_code error(boost::asio::error::invalid_argument);
