@@ -145,8 +145,8 @@ universe::add_types(const std::string& scope_, const type_decl_list& t)
 		} else {
 			std::cout << "Failing to add " << boost::apply_visitor(type_decl_name(), *it1);
 			std::cout << std::endl;
-#endif
 		}
+#endif
 		boost::apply_visitor(type_diagnostic, (*it).get<2>());
 	}
 
