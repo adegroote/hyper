@@ -360,6 +360,8 @@ namespace hyper {
 				// Block until the asynchronous operation has completed.:D
 				do io_service_.run_one(); while (ec == boost::asio::error::would_block);
 
+				deadline_.expires_at(boost::posix_time::pos_infin);
+
 				return client();
 			}
 
