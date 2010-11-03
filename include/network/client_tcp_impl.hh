@@ -122,6 +122,8 @@ namespace hyper {
 								boost::tuple<Handler>);
 						f = &client::template handle_write<Output, Handler>;
 
+						use_internal_timer_ = false;
+
 						socket_.async_write(in, 
 								boost::bind(f, this,
 									boost::asio::placeholders::error,
@@ -160,6 +162,8 @@ namespace hyper {
 						f = &client::template handle_timeout<HandlerTimeout>;
 
 						async_request<Input, Output, HandlerRead>(in, out, handler_read);
+
+						use_internal_timer_ = true;
 						timer_.expires_from_now(duration);
 						timer_.async_wait(boost::bind(f, this, 
 													  boost::asio::placeholders::error,
@@ -261,7 +265,8 @@ namespace hyper {
 									 boost::tuple<Handler> handler)
 					{
 						timer_.cancel();
-						if (e != boost::asio::error::operation_aborted)
+						if (use_internal_timer_ == false ||
+							e != boost::asio::error::operation_aborted) 
 							boost::get<0>(handler) (e);
 					}
 
@@ -276,6 +281,7 @@ namespace hyper {
 					}
 
 					boost::asio::ip::tcp::resolver resolver_;
+					bool use_internal_timer_;
 					serialized_socket<OutputM> socket_;
 					boost::asio::deadline_timer timer_;
 			};
