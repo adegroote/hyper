@@ -54,9 +54,11 @@ void build_swig(std::ostream& oss, const std::string& name)
 		"%module @NAME@\n"
 		"%include \"typemaps.i\"\n"
 		"%{\n"
+		"	#include <string>\n"
 		"	#include \"@NAME@/export.hh\"\n"
 		"	using namespace hyper::@NAME@;\n"
 		"%}\n"
+		"%include \"std_string.i\"\n"
 		"%include \"@NAME@/types.hh\"\n"
 		"%include \"@NAME@/export.hh\"\n"
 		;

@@ -281,7 +281,7 @@ ability::agent_export_declaration(std::ostream& oss, const typeList& tList) cons
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
 
-	oss << "\t\tvoid send_constraint(const std::string);" << std::endl;
+	oss << "\t\tvoid send_constraint(const std::string&);" << std::endl;
 }
 
 struct agent_export_impl
@@ -310,6 +310,8 @@ struct agent_export_impl
 void 
 ability::agent_export_implementation(std::ostream& oss, const typeList& tList) const
 {
+	oss << "#include <network/rpc.hh>" << std::endl;
+	oss << "#include <network/msg.hh>" << std::endl;
 	oss << "#include <model/get_value.hh>" << std::endl;
 	oss << "#include <" << name_ << "/export.hh>" << std::endl;
 	oss << "using namespace hyper::" << name_ << ";" << std::endl;
@@ -319,6 +321,20 @@ ability::agent_export_implementation(std::ostream& oss, const typeList& tList) c
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
 
-	oss << "void send_constraint(const std::string&) {}" << std::endl;
+	std::string send_constraint_impl =
+		"void hyper::@NAME@::send_constraint(const std::string& s) {\n"
+		"	boost::asio::io_service io_s;\n"
+		"	network::name_client name_(io_s, \"localhost\", \"4242\");\n"
+		"	network::sync_rpc<network::request_constraint, \n"
+		"					  network::request_constraint_ack,\n"
+		"					  network::name_client> rqst_sender(io_s, \"@NAME@\", name_);\n"
+		"	network::request_constraint msg;\n"
+		"	msg.constraint = s;\n"
+		"	rqst_sender.compute(msg, boost::posix_time::seconds(1));\n"
+		"}\n"
+		;
+
+	oss << hyper::compiler::replace_by(send_constraint_impl, "@NAME@", 
+									   name_);
 }
 
