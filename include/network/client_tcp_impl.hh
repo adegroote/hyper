@@ -170,6 +170,29 @@ namespace hyper {
 													  boost::make_tuple(handler_timeout)));
 					}
 
+					/*
+					 * Send a message asynchronously @in.
+					 * On completion, @handler is called.
+					 *
+					 * @Handler must implement callable with the following prototyp
+					 *		void (*) (const boost::system::error_code&)
+					 */
+					template <typename Input, typename Handler>
+					void async_write(const Input& in, Handler handler)
+					{
+						void (client::*f)(
+								const boost::system::error_code& e,
+								unsigned long int,
+								boost::tuple<Handler>);
+						f = &client::template handle_base_write<Handler>;
+
+						socket_.async_write(in, 
+								boost::bind(f, this,
+									boost::asio::placeholders::error,
+									boost::asio::placeholders::bytes_transferred,
+									boost::make_tuple(handler)));
+					}
+
 				private:
 					template <typename Handler>
 					void handle_resolve(const boost::system::error_code& err,
@@ -278,6 +301,17 @@ namespace hyper {
 					{
 						if (e !=  boost::asio::error::operation_aborted)
 							boost::get<0>(handler)(e);
+					}
+
+
+					template <typename Handler>
+					void handle_base_write(const boost::system::error_code& e, 
+									  unsigned long int written,
+									  boost::tuple<Handler> handler)
+									  
+					{
+						(void) written;
+						boost::get<0>(handler)(e);
 					}
 
 					boost::asio::ip::tcp::resolver resolver_;
