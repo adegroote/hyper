@@ -2,7 +2,9 @@
 #define _MODEL_ABILITY_HH_
 
 #include <network/server_tcp_impl.hh>
+#include <network/msg.hh>
 #include <network/proxy.hh>
+#include <network/ping.hh>
 #include <network/nameserver.hh>
 
 #include <model/execute.hh>
@@ -47,6 +49,7 @@ namespace hyper {
 			details::ability_visitor vis;
 			model::functions_map f_map;
 			std::string name;
+			network::ping_process ping;
 
 			boost::shared_ptr<tcp_ability_impl> serv;
 
@@ -54,7 +57,8 @@ namespace hyper {
 				name_client(io_s, "localhost", "4242"),
 				proxy_vis(serializer),
 				vis(proxy_vis),
-				name(name_)
+				name(name_),
+				ping(io_s, boost::posix_time::milliseconds(100), "localhost", "4242")
 			{
 				std::pair<bool, boost::asio::ip::tcp::endpoint> p;
 				p = name_client.register_name(name);
@@ -76,11 +80,13 @@ namespace hyper {
 
 			void run()
 			{
+				ping.run();
 				io_s.run();
 			}
 
 			void stop()
 			{
+				ping.stop();
 				serv->stop();
 			}
 		};
