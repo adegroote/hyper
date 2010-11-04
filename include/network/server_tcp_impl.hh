@@ -131,6 +131,11 @@ namespace hyper {
 					conn_.async_write(t);
 				}
 
+				void operator() (const boost::mpl::void_ &) const
+				{
+					conn_.start();
+				}
+
 				connection<InputM, OutputM, Answer>& conn_;
 			};
 
