@@ -60,14 +60,16 @@ namespace hyper {
 				T operator() (const std::string& s) const
 				{
 					T value = boost::none;;
-					if (!compiler::scope::is_scoped_identifier(s)) 
+					if (!compiler::scope::is_scoped_identifier(s)) {
+						boost::shared_lock<boost::shared_mutex> lock(a.mtx);
 						value =a.proxy.eval<typename T::value_type>(s);
-					else {
+					} else {
 						std::pair<std::string, std::string> p =
 							compiler::scope::decompose(s);
-						if (p.first == a.name) 
+						if (p.first == a.name) {
+							boost::shared_lock<boost::shared_mutex> lock(a.mtx);
 							value = a.proxy.eval<typename T::value_type>(p.second);
-						else {
+						} else {
 							network::remote_proxy_sync<typename T::value_type, network::name_client>
 								proxy(io_s, p.first, p.second, a.name_client);
 							value = proxy.get(boost::posix_time::millisec(20));

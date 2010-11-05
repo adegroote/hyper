@@ -27,12 +27,16 @@ namespace hyper {
 
 			struct ability_visitor : public boost::static_visitor<output_variant>
 			{
+				boost::shared_mutex& mtx;
 				network::proxy_visitor& proxy_vis;
 
-				ability_visitor(network::proxy_visitor& proxy_vis_) : proxy_vis(proxy_vis_) {}
+				ability_visitor(boost::shared_mutex& mtx_, 
+								network::proxy_visitor& proxy_vis_) : 
+					mtx(mtx_), proxy_vis(proxy_vis_) {}
 
 				output_variant operator() (const network::request_variable_value& m) const
 				{
+					boost::shared_lock<boost::shared_mutex> lock(mtx);
 					return proxy_vis(m);
 				}
 
@@ -54,6 +58,10 @@ namespace hyper {
 			tcp_ability_impl;
 
 			boost::asio::io_service io_s;
+
+			/* Lock for the ability context */
+			boost::shared_mutex mtx;
+
 			network::name_client name_client;
 			network::proxy_serializer serializer;
 			network::local_proxy proxy;
@@ -65,10 +73,11 @@ namespace hyper {
 
 			boost::shared_ptr<tcp_ability_impl> serv;
 
+
 			ability(const std::string& name_) : 
 				name_client(io_s, "localhost", "4242"),
 				proxy_vis(serializer),
-				vis(proxy_vis),
+				vis(mtx, proxy_vis),
 				name(name_),
 				ping(io_s, boost::posix_time::milliseconds(100), name, "localhost", "4242")
 			{
