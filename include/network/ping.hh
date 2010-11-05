@@ -14,6 +14,7 @@ namespace hyper {
 			public:
 				explicit ping_process(boost::asio::io_service& io_s,
 							 boost::posix_time::time_duration delay,
+							 const std::string& abilityName,
 							 const std::string& destName,
 							 const std::string destPort);
 

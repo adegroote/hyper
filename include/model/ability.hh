@@ -70,7 +70,7 @@ namespace hyper {
 				proxy_vis(serializer),
 				vis(proxy_vis),
 				name(name_),
-				ping(io_s, boost::posix_time::milliseconds(100), "localhost", "4242")
+				ping(io_s, boost::posix_time::milliseconds(100), name, "localhost", "4242")
 			{
 				std::pair<bool, boost::asio::ip::tcp::endpoint> p;
 				p = name_client.register_name(name);

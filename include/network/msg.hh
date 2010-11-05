@@ -160,9 +160,10 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & value;
+					ar & name & value;
 				}
 			public:
+				std::string name;
 				uint64_t value;
 		};
 

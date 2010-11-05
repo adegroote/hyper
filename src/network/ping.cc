@@ -6,6 +6,7 @@ using namespace hyper::network;
 
 ping_process::ping_process(boost::asio::io_service& io_s,
 						   boost::posix_time::time_duration delay,
+						   const std::string& abilityName,
 						   const std::string& destName,
 						   const std::string destPort) :
 	is_connected(false),
@@ -15,7 +16,10 @@ ping_process::ping_process(boost::asio::io_service& io_s,
 	delay_(delay),
 	c_(io_service_),
 	deadline_(io_service_) 
-{}
+{
+	msg_.value = 0;
+	msg_.name = abilityName;
+}
 
 void ping_process::handle_write(const boost::system::error_code& e)
 {
