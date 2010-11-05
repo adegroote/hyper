@@ -58,6 +58,7 @@ namespace details {
 			std::cerr << "receiving name register request : " << r << std::endl;
 			ability_context ctx;
 			ctx.addr.tcp_endpoint = ip::tcp::endpoint(ip::address_v4::any(), gen.get());
+			ctx.timeout_occurence = 0;
 
 			boost::upgrade_lock<boost::shared_mutex> lock(m);
 			runtime_map::iterator it = map.find(r.name);
@@ -77,8 +78,69 @@ namespace details {
 
 		output_variant operator() (const network::ping& p) const
 		{
-			std::cout << "receive ping message " << p.value << std::endl;
+			boost::upgrade_lock<boost::shared_mutex> lock(m);
+			runtime_map::iterator it = map.find(p.name);
+			if (it != map.end())
+				it->second.timeout_occurence --;
+
 			return boost::mpl::void_();
+		}
+	};
+
+	struct periodic_check
+	{
+		boost::asio::io_service& io_s_;
+
+		boost::posix_time::time_duration delay_;
+		boost::asio::deadline_timer timer_;
+
+		runtime_map& map_;
+		boost::shared_mutex& m_;
+
+		periodic_check(boost::asio::io_service& io_s, 
+					   boost::posix_time::time_duration delay,
+					   runtime_map& map,
+					   boost::shared_mutex &m):
+			io_s_(io_s), delay_(delay), timer_(io_s_),
+			map_(map), m_(m)
+		{}
+
+		void handle_timeout(const boost::system::error_code& e)
+		{
+			if (!e) {
+				std::vector<std::string> dead_agents;
+				boost::upgrade_lock<boost::shared_mutex> lock(m_);
+				runtime_map::iterator it = map_.begin();
+				while (it != map_.end())
+				{
+					if (it->second.timeout_occurence > 1) {
+						dead_agents.push_back(it->first);
+						map_.erase(it++);
+					} else {
+						it->second.timeout_occurence++;
+						++it;
+					}
+				}
+
+				/* XXX : send a global msg to tell to alive agents that the
+				 * following agents are dead */
+				if (! dead_agents.empty()) {
+					std::cout << "the following agents seems dead : ";
+					std::copy(dead_agents.begin(), dead_agents.end(), 
+							  std::ostream_iterator<std::string>(std::cout, " "));
+					std::cout << std::endl;
+				}
+
+				run();
+			}
+		}
+
+		void run()
+		{
+			timer_.expires_from_now(delay_);
+			timer_.async_wait(boost::bind(&periodic_check::handle_timeout, 
+									  this,
+									  boost::asio::placeholders::error));
 		}
 	};
 }
@@ -99,5 +161,10 @@ int main()
 								> tcp_runtime_impl;
 	tcp_runtime_impl runtime("localhost", "4242", runtime_vis, io_s);
 
+	details::periodic_check check(io_s, 
+								   boost::posix_time::milliseconds(100), 
+								   map, m);
+						 
+	check.run();
 	io_s.run();
 }
