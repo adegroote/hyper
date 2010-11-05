@@ -1,3 +1,4 @@
+#define HYPER_UNIT_TEST
 #include <model/ability.hh>
 #include <model/execute_impl.hh>
 #include <boost/test/unit_test.hpp>

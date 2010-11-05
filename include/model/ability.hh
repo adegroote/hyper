@@ -16,8 +16,11 @@ namespace hyper {
 	namespace model {
 
 		namespace details {
-			typedef boost::mpl::vector<network::request_variable_value> input_msg;
-			typedef boost::mpl::vector<network::variable_value> output_msg;
+			typedef boost::mpl::vector<network::request_variable_value,
+									   network::request_constraint>input_msg;
+			typedef boost::mpl::vector<network::variable_value,
+									   network::request_constraint_ack,
+									   network::request_constraint_answer> output_msg;
 
 			typedef boost::make_variant_over<input_msg>::type input_variant;
 			typedef boost::make_variant_over<output_msg>::type output_variant;
@@ -31,6 +34,15 @@ namespace hyper {
 				output_variant operator() (const network::request_variable_value& m) const
 				{
 					return proxy_vis(m);
+				}
+
+				output_variant operator() (const network::request_constraint& r) const
+				{
+					std::cout << "receive constraint " << r.constraint << std::endl;
+					network::request_constraint_ack ack;
+					ack.acked = true;
+					ack.id = 0;
+					return ack;
 				}
 			};
 		}
@@ -80,7 +92,9 @@ namespace hyper {
 
 			void run()
 			{
+#ifndef HYPER_UNIT_TEST
 				ping.run();
+#endif
 				io_s.run();
 			}
 
