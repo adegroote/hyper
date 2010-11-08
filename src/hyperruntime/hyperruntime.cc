@@ -44,7 +44,7 @@ namespace details {
 			network::request_name_answer res_msg;
 			res_msg.name = r.name;
 			res_msg.success = (it != map.end());
-			if (it == map.end()) 
+			if (it != map.end()) 
 				res_msg.endpoint = it->second.addr.tcp_endpoint;
 
 			std::cerr << "answering to name request : " << res_msg << std::endl;
