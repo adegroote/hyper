@@ -81,7 +81,7 @@ namespace details {
 			boost::upgrade_lock<boost::shared_mutex> lock(m);
 			runtime_map::iterator it = map.find(p.name);
 			if (it != map.end())
-				it->second.timeout_occurence --;
+				it->second.timeout_occurence = 0;
 
 			return boost::mpl::void_();
 		}
@@ -113,7 +113,7 @@ namespace details {
 				runtime_map::iterator it = map_.begin();
 				while (it != map_.end())
 				{
-					if (it->second.timeout_occurence > 1) {
+					if (it->second.timeout_occurence > 2) {
 						dead_agents.push_back(it->first);
 						map_.erase(it++);
 					} else {
