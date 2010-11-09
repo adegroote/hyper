@@ -3,8 +3,11 @@
 
 #include <string>
 
+#include <logic/expression.hh>
 #include <logic/function_def.hh>
 #include <model/execute_impl.hh>
+
+#include <boost/logic/tribool.hpp>
 
 namespace hyper {
 	namespace model {
@@ -117,6 +120,65 @@ namespace hyper {
 				static bool apply(const T& t1, const T& t2) 
 				{
 					return !(t1 < t2);
+				}
+			};
+
+			struct logic_less {
+				template <typename T>
+					static bool apply(const T& t1, const T& t2)
+					{
+						return t1 < t2;
+					}
+			};
+
+			struct logic_less_equal {
+				template <typename T>
+					static bool apply(const T& t1, const T& t2)
+					{
+						return t1 <= t2;
+					}
+			};
+
+			struct logic_greater {
+				template <typename T>
+					static bool apply(const T& t1, const T& t2)
+					{
+						return !(t1 <= t2);
+					}
+			};
+
+			struct logic_greater_equal {
+				template <typename T>
+					static bool apply(const T& t1, const T& t2)
+					{
+						return !(t1 <= t2);
+					}
+			};
+
+			template <typename Op>
+			struct logic_eval_ : public boost::static_visitor<boost::logic::tribool>
+			{
+				template <typename T, typename U>
+				boost::logic::tribool operator()(const T&, const U&) const
+				{
+					return boost::logic::indeterminate;
+				}
+
+				template <typename U>
+				boost::logic::tribool operator () (const hyper::logic::Constant<U>& u, 
+												   const hyper::logic::Constant<U>& v) const
+				{
+					return (Op::template apply<U>(u.value, v.value));
+				}
+			};
+
+			template <typename Op>
+			struct logic_eval 
+			{
+				boost::logic::tribool operator() (const hyper::logic::expression& e1, 
+												  const hyper::logic::expression& e2) const
+				{
+					return boost::apply_visitor(logic_eval_<Op>(), e1.expr, e2.expr);
 				}
 			};
 		}

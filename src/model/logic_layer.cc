@@ -1,4 +1,5 @@
 #include <logic/expression.hh>
+#include <logic/eval.hh>
 
 #include <model/ability.hh>
 #include <model/execute_impl.hh>
@@ -57,6 +58,34 @@ namespace {
 
 		return res;
 	}
+
+	void add_transitivy_rule(hyper::logic::engine& e, const std::string& s)
+	{
+		std::string rule_name = s + "_transitivity";
+		std::vector<std::string> cond;
+		std::vector<std::string> action;
+		
+		cond.push_back(s + "(A,B)");
+		cond.push_back(s + "(B,C)");
+		action.push_back(s + "(A,C)");
+
+		e.add_rule(rule_name, cond, action);
+	}
+
+	void add_symetry_rule(hyper::logic::engine& e, const std::string& s)
+	{
+		std::string rule_name = s + "_symetry";
+		std::vector<std::string> cond;
+		std::vector<std::string> action;
+		
+		cond.push_back(s + "(A,B)");
+
+		std::ostringstream oss;
+		oss << "equal(" << s << "(A,B), " << s << "(B, A))";
+		action.push_back(oss.str());
+
+		e.add_rule(rule_name, cond, action);
+	}
 }
 
 namespace hyper {
@@ -106,6 +135,7 @@ namespace hyper {
 			solver(queue, a, engine, execFuncs),
 			thr(boost::bind(&details::logic_solver::run, &solver))
 		{
+			/* Add exec func */
 			add_equalable_type<int>("int");
 			add_equalable_type<double>("double");
 			add_equalable_type<std::string>("string");
@@ -118,6 +148,35 @@ namespace hyper {
 
 			add_numeric_type<int>("int");
 			add_numeric_type<double>("double");
+
+			/* Add logic func */
+			engine.add_predicate("less", 2, new logic::eval<
+											details::logic_eval<details::logic_less>, 2>());
+			engine.add_predicate("less_equal", 2, new logic::eval<
+											details::logic_eval<details::logic_less_equal>, 2>());
+			engine.add_predicate("greater", 2, new logic::eval<
+											details::logic_eval<details::logic_greater>, 2>());
+			engine.add_predicate("greater_equal", 2, new logic::eval<
+											details::logic_eval<details::logic_greater_equal>, 2>());
+
+			engine.add_func("add", 2);
+			engine.add_func("minus", 2);
+			engine.add_func("times", 2);
+			engine.add_func("divides", 2);
+			engine.add_func("negate", 1);
+
+			/* Add logic rules */
+			add_transitivy_rule(engine, "less");
+			add_transitivy_rule(engine, "less_equal");
+			add_transitivy_rule(engine, "greater");
+			add_transitivy_rule(engine, "greater_equal");
+
+			add_symetry_rule(engine, "add");
+			add_symetry_rule(engine, "mines");
+			add_symetry_rule(engine, "times");
+			add_symetry_rule(engine, "divides");
+
+			std::cout << engine << std::endl;
 		}
 
 		logic_layer::~logic_layer() 
