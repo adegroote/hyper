@@ -57,6 +57,8 @@ namespace hyper {
 				}
 
 				friend std::ostream& operator << (std::ostream&, const engine&);
+
+				const funcDefList& funcs() const { return funcs_; }
 		};
 
 		std::ostream& operator << (std::ostream&, const engine&);
