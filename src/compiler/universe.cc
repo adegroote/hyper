@@ -521,7 +521,7 @@ void
 universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const
 {
 	oss << "#include <" << name << "/import.hh>" << std::endl << std::endl;
-	oss << "#include <model/execute_impl.hh>" << std::endl << std::endl;
+	oss << "#include <model/logic_layer_impl.hh>" << std::endl << std::endl;
 
 	//find functions prefixed by name::
 	std::vector<functionDef>  funcs = fList.select(select_ability_funs(name));
@@ -529,7 +529,8 @@ universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& 
 	namespaces n(oss, name);
 	oss << "\t\t\tvoid import_funcs(model::ability &a) {" << std::endl;
 	std::for_each(funcs.begin(), funcs.end(),
-		  boost::bind(&functionDef::output_import, _1, boost::ref(oss)));
+		  boost::bind(&functionDef::output_import, _1, boost::ref(oss),
+													   boost::cref(tList)));
 
 	oss << "\t\t\t}" << std::endl;
 }

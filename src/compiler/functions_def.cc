@@ -63,10 +63,17 @@ functionDef::output_impl(std::ostream& oss, const typeList& tList) const
 }
 
 void
-functionDef::output_import(std::ostream& oss) const
+functionDef::output_import(std::ostream& oss, const typeList& tList) const
 {
-	oss << "\t\t\t\ta.f_map.add(\"" << name() << "\",";
-	oss << " new hyper::model::function_execution<" << name() << ">());";
+	std::pair<bool, typeList::typeId> p = tList.getId("bool");
+	assert(p.first);
+	bool is_predicate = (p.second == returnType());
+	oss << "\t\t\t\ta.logic." ;
+	if (is_predicate) 
+		oss << "add_predicate<";
+	else
+		oss << "add_func<" ;
+	oss << name() << ">(\"" << name() << "\");";
 	oss << std::endl;
 }
 

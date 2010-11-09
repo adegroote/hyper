@@ -24,6 +24,24 @@ namespace hyper {
 		{
 			hyper::model::add_comparable_type<T>(a_.f_map, execFuncs, s);
 		}
+
+		template <typename Func>
+		void logic_layer::add_predicate(const std::string& s)
+		{
+			size_t size_args = boost::mpl::size<typename Func::args_type>::type::value;
+			a_.f_map.add(s, new function_execution<Func>());
+			execFuncs.add(s, size_args, 0);
+			engine.add_predicate(s, size_args, 0);
+		}
+
+		template <typename Func>
+		void logic_layer::add_func(const std::string& s)
+		{
+			size_t size_args = boost::mpl::size<typename Func::args_type>::type::value;
+			a_.f_map.add(s, new function_execution<Func>());
+			execFuncs.add(s, size_args, 0);
+			engine.add_func(s, size_args);
+		}
 	}
 }
 

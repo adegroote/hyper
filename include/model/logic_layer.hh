@@ -59,6 +59,12 @@ namespace hyper {
 			void add_numeric_type(std::string s);
 			template <typename T>
 			void add_comparable_type(std::string s);
+
+			template <typename Func>
+			void add_predicate(const std::string& s);
+
+			template <typename Func>
+			void add_func(const std::string& s);
 		};
 	}
 }

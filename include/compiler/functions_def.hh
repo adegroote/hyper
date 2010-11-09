@@ -47,7 +47,7 @@ namespace hyper {
 
 				void output_proto(std::ostream& os, const typeList& tList) const;
 				void output_impl(std::ostream& os, const typeList& tList) const;
-				void output_import(std::ostream& os) const;
+				void output_import(std::ostream& os, const typeList& tList) const;
 		};
 
 		class functionDefList : public boost::noncopyable
