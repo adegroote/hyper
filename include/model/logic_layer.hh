@@ -5,6 +5,7 @@
 #include <boost/thread/thread.hpp>
 
 #include <logic/engine.hh>
+#include <logic/function_def.hh>
 #include <model/concurrent_queue.hh>
 
 namespace hyper {
@@ -26,11 +27,13 @@ namespace hyper {
 				logic_queue& queue_;
 				bool abort;
 				logic::engine& engine_;
+				logic::funcDefList& execFuncs_;
 
 				logic_solver(logic_queue& queue__, ability& a,
-						logic::engine& engine) :
+						logic::engine& engine,
+						logic::funcDefList& execFuncs) :
 					a_(a), queue_(queue__), abort(false),
-					engine_(engine)
+					engine_(engine), execFuncs_(execFuncs)
 				{}
 
 				void run();
@@ -40,22 +43,22 @@ namespace hyper {
 		struct logic_layer {
 			logic_queue& queue_;
 			logic::engine engine;
+			ability& a_;
+
+			logic::funcDefList execFuncs;
 			details::logic_solver solver;
+
 			boost::thread thr;
 
-			explicit logic_layer(logic_queue& queue, ability &a) :
-				queue_(queue),
-				engine(),
-				solver(queue, a, engine),
-				thr(boost::bind(&details::logic_solver::run, &solver))
-			{}
+			logic_layer(logic_queue& queue, ability &a);
+			~logic_layer();
 
-			~logic_layer() 
-			{
-				solver.abort = true;
-				queue_.push(logic_constraint());
-				thr.join();
-			}
+			template <typename T>
+			void add_equalable_type(std::string s); 
+			template <typename T>
+			void add_numeric_type(std::string s);
+			template <typename T>
+			void add_comparable_type(std::string s);
 		};
 	}
 }

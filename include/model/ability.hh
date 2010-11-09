@@ -76,27 +76,34 @@ namespace hyper {
 
 			/* task manager and how to speak with it */
 			model::logic_queue queue_;
-			model::logic_layer logic;
 
 			network::name_client name_client;
 			network::proxy_serializer serializer;
 			network::local_proxy proxy;
 			network::proxy_visitor proxy_vis;
 			details::ability_visitor vis;
-			model::functions_map f_map;
 			std::string name;
+			model::functions_map f_map;
 			network::ping_process ping;
 
 			boost::shared_ptr<tcp_ability_impl> serv;
 
+			/* XXX
+			 * logic_layer ctor use f_map, so initialize it after it 
+			 *
+			 * I'm not sure f_map and proxy must be exposed directly in the
+			 * ability, as there are only useful to compute a remote
+			 * constraint, which is done only in one place, in the logic_layer
+			 */
+			model::logic_layer logic;
 
 			ability(const std::string& name_) : 
-				logic(queue_, *this),
 				name_client(io_s, "localhost", "4242"),
 				proxy_vis(serializer),
 				vis(mtx, proxy_vis, queue_),
 				name(name_),
-				ping(io_s, boost::posix_time::milliseconds(100), name, "localhost", "4242")
+				ping(io_s, boost::posix_time::milliseconds(100), name, "localhost", "4242"),
+				logic(queue_, *this)
 			{
 				std::pair<bool, boost::asio::ip::tcp::endpoint> p;
 				p = name_client.register_name(name);
