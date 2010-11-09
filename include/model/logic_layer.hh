@@ -8,6 +8,8 @@
 
 namespace hyper {
 	namespace model {
+		struct ability;
+
 		struct logic_constraint
 		{
 			std::string srcAbility;
@@ -19,26 +21,15 @@ namespace hyper {
 
 		namespace details {
 			struct logic_solver {
+				ability& a_;
 				logic_queue& queue_;
 				bool abort;
 
-				logic_solver(logic_queue& queue__) :
-					queue_(queue__), abort(false)
+				logic_solver(logic_queue& queue__, ability& a) :
+					a_(a), queue_(queue__), abort(false)
 				{}
 
-				void run()
-				{
-					logic_constraint ctr;
-					while (! abort)  {
-						queue_.wait_and_pop(ctr);
-						
-						if (abort) 
-							return;
-
-						std::cout << "Handling constraint : " ;
-						std::cout << ctr.constraint << std::endl;
-					}
-				}
+				void run();
 			};
 		}
 
@@ -47,9 +38,9 @@ namespace hyper {
 			details::logic_solver solver;
 			boost::thread thr;
 
-			explicit logic_layer(logic_queue& queue) :
+			explicit logic_layer(logic_queue& queue, ability &a) :
 				queue_(queue),
-				solver(queue),
+				solver(queue, a),
 				thr(boost::bind(&details::logic_solver::run, &solver))
 			{}
 

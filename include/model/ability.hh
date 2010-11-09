@@ -91,7 +91,7 @@ namespace hyper {
 
 
 			ability(const std::string& name_) : 
-				logic(queue_),
+				logic(queue_, *this),
 				name_client(io_s, "localhost", "4242"),
 				proxy_vis(serializer),
 				vis(mtx, proxy_vis, queue_),

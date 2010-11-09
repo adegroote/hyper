@@ -133,6 +133,7 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 		"include_directories(${HYPER_ROOT}/include/hyper)\n"
 		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_network.so)\n"
 		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_compiler.so)\n"
+		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_model.so)\n"
 		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_logic.so)\n"
 		;
 
