@@ -82,6 +82,59 @@ namespace {
 		}
 	};
 
+	struct test_proxy_type_erasure
+	{
+		false_resolv resolver;
+		remote_proxy_base* r_proxy;
+		test & t;
+		
+
+		test_proxy_type_erasure(boost::asio::io_service& io_s, test& t_) : t(t_) 
+		{
+			r_proxy = new remote_proxy<int, false_resolv>(io_s, "test", "x", resolver);
+		}
+
+		~test_proxy_type_erasure()
+		{
+			delete r_proxy;
+		}
+
+		void handle_second_test(const boost::system::error_code& e)
+		{
+			BOOST_CHECK(!e);
+			boost::any res = r_proxy->extract_result();
+			boost::optional<int> value = boost::any_cast<boost::optional<int> > (res);
+			BOOST_CHECK(value);
+			BOOST_CHECK(*value == 14);
+
+			std::cerr << "test_proxy_type_erasure::second_test" << std::endl;
+		}
+
+		void handle_first_test(const boost::system::error_code& e)
+		{
+			BOOST_CHECK(!e);
+			boost::any res = r_proxy->extract_result();
+			boost::optional<int> value = boost::any_cast<boost::optional<int> > (res);
+			BOOST_CHECK(value);
+			BOOST_CHECK(*value == 12);
+
+			std::cerr << "test_proxy_type_erasure::first_test" << std::endl;
+
+			t.x = 14;
+			r_proxy->async_get_result(
+					boost::bind(&test_proxy_type_erasure::handle_second_test, 
+								this, boost::asio::placeholders::error));
+		}
+
+		void test_async()
+		{
+			t.x = 12;
+			r_proxy->async_get_result(
+					boost::bind(&test_proxy_type_erasure::handle_first_test, 
+								this, boost::asio::placeholders::error));
+		}
+	};
+
 	struct test_proxy_error {
 		false_resolv resolver;
 		remote_proxy<int, false_resolv> r_proxy;
@@ -279,29 +332,34 @@ BOOST_AUTO_TEST_CASE ( network_proxy_test )
 		test_proxy_error test_p_error(io2_s, t);
 		test_p_error.test_async();
 		io2_s.run();
+		io2_s.reset();
 
-		boost::asio::io_service io3_s;
-		test_proxy test_p(io3_s, t);
+		test_proxy test_p(io2_s, t);
 		test_p.test_async();
-		io3_s.run();
+		io2_s.run();
+		io2_s.reset();
 
+		test_proxy_type_erasure test_p_erasure(io2_s, t);
+		test_p_erasure.test_async();
+		io2_s.run();
+		io2_s.reset();
 
-
-		boost::asio::io_service io4_s;
 		false_resolv resolv_;
 		t.x = 42;
 		t.y = 43;
 		t.s = "wonderland";
-		test_remote_proxy_n r_proxy_n(io4_s);
+		test_remote_proxy_n r_proxy_n(io2_s);
 		r_proxy_n.test_async();
-		io4_s.run();
+		io2_s.run();
+		io2_s.reset();
 
 		t.x = 92;
-		boost::asio::io_service io5_s;
-		remote_proxy_sync<int, false_resolv> sync_proxy(io5_s, "test", "x", resolv_);
+		remote_proxy_sync<int, false_resolv> sync_proxy(io2_s, "test", "x", resolv_);
 		boost::optional<int> res_sync_proxy = sync_proxy.get(boost::posix_time::seconds(1));
 		BOOST_CHECK(res_sync_proxy);
 		BOOST_CHECK(*res_sync_proxy == 92);
+		io2_s.reset();
+
 
 		// XXX Need to test timeout version ...
 

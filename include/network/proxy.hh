@@ -215,13 +215,26 @@ namespace hyper {
 				}
 		};
 
+
+		/*
+		 * Type erasure for remote_proxy 
+		 */
+		class remote_proxy_base 
+		{
+			public:
+				typedef boost::function<void (const boost::system::error_code&)> callback_fun;
+				virtual void async_get_result(callback_fun) = 0;
+				virtual boost::any extract_result() const = 0;
+				virtual ~remote_proxy_base() {}
+		};
+
 		/*
 		 * In the remote case, @T must be serializable. In the remote case
 		 * proxy, the proxy object is a consummer of a remote publised
 		 * information. 
 		 */
 		template <typename T, typename Resolver>
-		class remote_proxy
+		class remote_proxy : public remote_proxy_base
 		{
 			public:
 				typedef boost::optional<T> type;
@@ -247,7 +260,8 @@ namespace hyper {
 						&remote_proxy::template handle_request<Handler>;
 
 					c.async_request(var_name_, value_,
-							boost::bind(f, this, boost::asio::placeholders::error, handler));
+							boost::bind(f, this,
+										   boost::asio::placeholders::error, handler));
 				}
 
 				template <typename Handler>
@@ -282,7 +296,29 @@ namespace hyper {
 							&remote_proxy::template handle_connect<Handler>;
 
 						c.async_connect(solver.endpoint(), 
-							boost::bind(f, this, boost::asio::placeholders::error, handler));
+							boost::bind(f, this,
+										boost::asio::placeholders::error, handler));
+					}
+				}
+
+				template <typename Handler>
+				void async_get_(boost::tuple<Handler> handler)
+				{
+					finished = false;
+					value_ = boost::none;
+
+					if (!connected) {
+					void (remote_proxy::*f) (const boost::system::error_code&,
+							boost::tuple<Handler>) =
+						&remote_proxy::template handle_resolve<Handler>;
+					solver.name(ability_name_);
+					
+					r_.async_resolve(solver,
+							boost::bind(f, this,
+										 boost::asio::placeholders::error,
+										 handler));
+					} else {
+						send_request<Handler> (handler);
 					}
 				}
 
@@ -302,27 +338,19 @@ namespace hyper {
 				template <typename Handler>
 				void async_get(Handler handler) 
 				{ 
-					finished = false;
-					value_ = boost::none;
+					return async_get_(boost::make_tuple(handler));
+				}
 
-					if (!connected) {
-					void (remote_proxy::*f) (const boost::system::error_code&,
-							boost::tuple<Handler>) =
-						&remote_proxy::template handle_resolve<Handler>;
-					solver.name(ability_name_);
-					
-					r_.async_resolve(solver,
-							boost::bind(f, this,
-										 boost::asio::placeholders::error,
-										 boost::make_tuple(handler)));
-					} else {
-						send_request<Handler> (boost::make_tuple(handler));
-					}
+				void async_get_result(callback_fun f)
+				{
+					return async_get_(boost::make_tuple(f));
 				}
 
 				void abort() { c.close(); };
 
 				const type& operator() () const { return value_; };
+
+				boost::any extract_result() const { return value_; };
 
 				bool is_finished() const { return finished; };
 		};
