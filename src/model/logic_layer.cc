@@ -175,8 +175,6 @@ namespace hyper {
 			add_symetry_rule(engine, "mines");
 			add_symetry_rule(engine, "times");
 			add_symetry_rule(engine, "divides");
-
-			std::cout << engine << std::endl;
 		}
 
 		logic_layer::~logic_layer() 
