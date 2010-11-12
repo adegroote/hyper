@@ -136,6 +136,8 @@ namespace hyper {
 				ping.stop();
 				serv->stop();
 			}
+
+			virtual ~ability() {}
 		};
 	}
 }
