@@ -11,6 +11,11 @@
 #include <network/nameserver.hh>
 
 namespace {
+	struct do_nothing
+	{
+		void operator () (const boost::system::error_code&) {}
+	};
+
 	struct point {
 		private:
 			friend class boost::serialization::access;
@@ -176,6 +181,18 @@ BOOST_AUTO_TEST_CASE ( model_execute_test )
 
 	r = generate("distance(pos::A, goal::goal)", f);
 	BOOST_CHECK(r.res == true);
+	/* There is a small issue with the evaluate_expression,
+	 * we run io_s. But in the remote case, we post a job for name client which
+	 * is not on this io_service : the consequence is that io_s get out of job
+	 * and so returns, without terminating its jobs.
+	 *
+	 * Adding a deadline time to workaround it. The normal use case is to use
+	 * asynchronously, with lots of other jobs (and in real scenario,
+	 * name_client uses the same name_service)
+	 */
+	boost::asio::deadline_timer deadline_(io_s);
+	deadline_.expires_from_now(boost::posix_time::milliseconds(20));
+	deadline_.async_wait(do_nothing());
 	res_distance = evaluate_expression<double>(io_s, r.e, pos_);
 	BOOST_CHECK(res_distance);
 	BOOST_CHECK(std::abs(*res_distance - 42.0) < 1e-6);

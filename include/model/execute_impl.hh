@@ -32,65 +32,108 @@
 
 namespace hyper {
 	namespace model {
+		typedef boost::function<void (const boost::system::error_code&)> fun_cb;
+
 		namespace details {
-			template <typename T>
-			boost::optional<T> _evaluate_expression(
+			void handle_nothing(const boost::system::error_code&)
+			{}
+
+			template <typename T, typename Handler>
+			void  _evaluate_expression(
 					boost::asio::io_service& io_s, 
-					const logic::function_call& f, ability &a);
+					execution_context& ctx,
+					const logic::function_call& f, ability &a,
+					boost::optional<T>& res,
+					Handler handler);
+
+			template <typename T, typename Handler>
+			void handle_evalutate_expression(
+					const boost::system::error_code& e,
+					function_execution_base* func,
+					boost::optional<T>& res, 
+					boost::tuple<Handler> handler);
 
 			struct computation_error {};
 
 			template <typename T>
-			struct evaluate_logic_expression : public boost::static_visitor<T>
+			void handle_remote_proxy_get(const boost::system::error_code& e,
+										 network::remote_proxy_base* proxy,
+										 T& res,
+										 fun_cb cb)
 			{
-				model::ability & a;
-				boost::asio::io_service& io_s; 
+				if (e) {
+					cb(e);
+				} else {
+					boost::any res_ = proxy->extract_result();
+					res = boost::any_cast<T>( res_ );
+					cb(boost::system::error_code());
+				}
+			}
 
-				evaluate_logic_expression(boost::asio::io_service& io_s_, model::ability & a_) : 
-					io_s(io_s_), a(a_) {}
+			template <typename T>
+			struct evaluate_logic_expression : public boost::static_visitor<void>
+			{
+				model::ability& a;
+				execution_context& ctx;
+				boost::asio::io_service& io_s; 
+				T& res;
+				fun_cb cb;
+
+				evaluate_logic_expression(boost::asio::io_service& io_s_, execution_context& ctx_,
+										  model::ability & a_, T& res_, fun_cb cb_) : 
+					io_s(io_s_), ctx(ctx_), a(a_), res(res_), cb(cb_) {}
 
 				template <typename U> 
-				T operator() (const U& u) const { (void) u; throw computation_error();}
+				void operator() (const U& u) const { (void) u; throw computation_error();}
 
-				T operator() (const logic::Constant<typename T::value_type>& c) const
+				void operator() (const logic::Constant<typename T::value_type>& c) const
 				{
-					return c.value;
+					res = c.value;
+					cb(boost::system::error_code());
 				}
 
-				T operator() (const std::string& s) const
+				void operator() (const std::string& s) const
 				{
-					T value = boost::none;;
 					if (!compiler::scope::is_scoped_identifier(s)) {
 						boost::shared_lock<boost::shared_mutex> lock(a.mtx);
-						value =a.proxy.eval<typename T::value_type>(s);
+						res = a.proxy.eval<typename T::value_type>(s);
 					} else {
 						std::pair<std::string, std::string> p =
 							compiler::scope::decompose(s);
 						if (p.first == a.name) {
 							boost::shared_lock<boost::shared_mutex> lock(a.mtx);
-							value = a.proxy.eval<typename T::value_type>(p.second);
+							res = a.proxy.eval<typename T::value_type>(p.second);
 						} else {
-							network::remote_proxy_sync<typename T::value_type, network::name_client>
-								proxy(io_s, p.first, p.second, a.name_client);
-							value = proxy.get(boost::posix_time::millisec(20));
+							network::remote_proxy_base* proxy = 
+								new network::remote_proxy<typename T::value_type, 
+														  network::name_client
+														 >(io_s, p.first, p.second, a.name_client);
+							ctx.v_proxy.push_back(proxy);
+
+							fun_cb local_cb = boost::bind(
+									handle_remote_proxy_get<T>, 
+									boost::asio::placeholders::error,
+									proxy, boost::ref(res), cb);
+
+							return proxy->async_get_result(local_cb);
 						}
 					}
-					if (!value) 
-						throw computation_error();
-					return value;
+					cb(boost::system::error_code());
 				}
 
-				T operator() (const logic::function_call& f) const
+				void operator() (const logic::function_call& f) const
 				{
-					return _evaluate_expression<typename T::value_type>(io_s, f, a);
+					return _evaluate_expression<typename T::value_type>(io_s, ctx, f, a, res, cb);
 				}
 			};
 
 				
 			template <typename T>
-			T evaluate(boost::asio::io_service& io_s, const logic::expression &e, ability& a)
+			void evaluate(boost::asio::io_service& io_s, execution_context& ctx, 
+					   const logic::expression &e, ability& a,
+					   T& res, fun_cb cb)
 			{
-				return boost::apply_visitor(evaluate_logic_expression<T>(io_s, a), e.expr);
+				return boost::apply_visitor(evaluate_logic_expression<T>(io_s, ctx, a, res, cb), e.expr);
 			}
 
 			template <typename T>
@@ -118,14 +161,18 @@ namespace hyper {
 			template <typename T>
 			struct compute
 			{
-				T& func;
-				const std::vector<logic::expression>& e;
+				T* func;
 				boost::asio::io_service& io_s;
+				execution_context& ctx;
+				const std::vector<logic::expression>& e;
 				ability &a;
+				fun_cb cb;
 
-				compute(T& func_, boost::asio::io_service& io_s_, 
-						const std::vector<logic::expression> & e_, ability & a_) : 
-					func(func_), io_s(io_s_), e(e_), a(a_) {}
+				compute(T* func_, boost::asio::io_service& io_s_, 
+						execution_context& ctx_,
+						const std::vector<logic::expression> & e_, ability & a_,
+						fun_cb cb_) : 
+					func(func_), io_s(io_s_), ctx(ctx_), e(e_), a(a_), cb(cb_) {}
 
 				template <typename U>
 				void operator() (U unused)
@@ -136,7 +183,58 @@ namespace hyper {
 								>::type local_return_type;
 
 					(void) unused;
-					boost::get<U::value>(func.args) = evaluate<local_return_type> (io_s, e[U::value], a);
+					void (T::*f) (const boost::system::error_code&, bool &, fun_cb) =
+						&T::handle_arguments_computation;
+
+					fun_cb local_cb = boost::bind(f, func,
+													 boost::asio::placeholders::error,
+													 boost::ref(func->finished[U::value]),
+													 cb); 
+					/* 
+					 * dispatch the computing of the different arguments
+					 * if there are only local arguments, it doesn't change the behaviour
+					 * If there are remote variables, it will improve thing, as
+					 * we don't wait anymore for the completion of the first
+					 * one, than the second one, just dispatch the request and
+					 * wait for the answer
+					 */
+					io_s.dispatch(boost::bind(evaluate<local_return_type>,
+										  boost::ref(io_s),
+										  boost::ref(ctx),
+										  boost::cref(e[U::value]),
+										  boost::ref(a),
+										  boost::ref(boost::get<U::value>(func->args)),
+										  local_cb));
+				}
+			};
+
+			template <typename T>
+			struct func_finished
+			{
+				const T &func;
+				bool & res;
+
+				func_finished(const T& func_, bool& b): func(func_), res(b) {};
+
+				template <typename U> // U models mpl::int_
+				void operator() (U )
+				{
+					res = res &&  (func.finished[U::value]);
+				}
+			};
+
+			template <typename T>
+			struct func_computable
+			{
+				const T& func;
+				bool & res;
+
+				func_computable(const T& func_, bool& b): func(func_), res(b) {}
+
+				template <typename U>
+				void operator() (U )
+				{
+					res = res && boost::get<U::value>(func.args);
 				}
 			};
 
@@ -171,19 +269,48 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 #undef NEW_EVAL_PARAM_DECL
 #undef NEW_EVAL_DECL
 
-			template <typename T>
-			boost::optional<T> _evaluate_expression(
+			template <typename T, typename Handler>
+			void _evaluate_expression(
 					boost::asio::io_service& io_s,
-					const logic::function_call& f, ability &a)
+					execution_context& ctx,
+					const logic::function_call& f, ability &a,
+					boost::optional<T>& res,
+					Handler handler
+					)
 			{
-				boost::any res;
-				boost::scoped_ptr<function_execution_base> func(a.f_map.get(f.name));
-				func->operator() (io_s, f.args, a);
-				res = func->get_result();
-				// by construction, it must never throw. If it does, need to fix hyper::compiler :D
-				return boost::any_cast<T> (res);
+
+				function_execution_base* func = a.f_map.get(f.name);
+				ctx.v_func.push_back(func);
+
+				void (*cb)(const boost::system::error_code& e,
+						  function_execution_base* func,
+						  boost::optional<T>& res,
+						  boost::tuple<Handler> handler) =
+				handle_evalutate_expression<T, Handler>;
+				
+
+				func->async_compute(io_s, ctx, f.args, a, 
+						boost::bind(cb, boost::asio::placeholders::error, 
+										func, boost::ref(res), boost::make_tuple(handler)));
+			}
+
+			template <typename T, typename Handler>
+			void handle_evalutate_expression(
+					const boost::system::error_code& e,
+					function_execution_base* func,
+					boost::optional<T>& res, 
+					boost::tuple<Handler> handler)
+			{
+				if (e)
+					boost::get<0>(handler) (e);
+				else {
+					boost::any res_ = func->get_result();
+					res = boost::any_cast< boost::optional<T> > (res_);
+					boost::get<0>(handler) (boost::system::error_code());
+				}		
 			}
 		}
+
 
 		template <typename T>
 		struct function_execution : public function_execution_base {
@@ -214,30 +341,69 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 				return new function_execution<T>();
 			}
 
-			void operator() (
-					boost::asio::io_service &io_s,
-					const std::vector<logic::expression> & e, ability & a)
+			void async_compute(
+				boost::asio::io_service& io_s,
+				execution_context& ctx,
+				const std::vector<logic::expression> &e, ability& a,
+				fun_cb cb)
 			{
 				// compiler normally already has checked that, but ...
 				assert(e.size() == args_size);
 
-				details::compute<function_execution<T> > compute_(*this, io_s, e, a);
+				details::compute<function_execution<T> > compute_(this, io_s, ctx, e, a, cb);
 				boost::mpl::for_each<range> (compute_);
+			}	
 
-				result = details::eval<function_execution<T>, args_size> (args) ();
+			bool is_finished() const
+			{
+				bool is_finished_ = true;
+				details::func_finished<function_execution<T> > finish_(*this, is_finished_);
+				boost::mpl::for_each<range> (finish_);
+
+				return is_finished_;
+			}
+
+			/* 
+			 * We can compute the resultat of a function only if we can compute
+			 * the value of all of its arguments. If some of this arguments
+			 * eval to none, then the result of the function is none
+			 * (poor maybe monad)
+			 */
+			bool is_computable() const
+			{
+				bool computable = true;
+
+				details::func_computable<function_execution<T> > computable_(*this, computable);
+				boost::mpl::for_each<range> (computable_);
+
+				return computable;
+			}
+
+			void handle_arguments_computation(const boost::system::error_code &e, bool& termined,
+										      fun_cb handler)
+			{
+				termined = true;
+				if (e) {
+					handler(e);
+				} else {
+					if (! is_finished()) // wait for other completion
+						return;
+
+					if (is_computable())
+						result = details::eval<function_execution<T>, args_size> (args) ();
+					else
+						result = boost::none;
+					handler(boost::system::error_code());
+				}
 			}
 
 			boost::any get_result() 
 			{
-				if (!result)
-					throw details::computation_error();
-				else
-					return boost::any(*result);
+				return boost::any(result);
 			}
 
 			virtual ~function_execution() {}
 		};
-
 
 		template <typename T>
 		boost::optional<T> evaluate_expression(
@@ -245,7 +411,12 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 				const logic::function_call& f, ability &a)
 		{
 			try {
-				return details::_evaluate_expression<T>(io_s, f, a);
+				execution_context ctx;
+				boost::optional<T> res;
+				details::_evaluate_expression<T>(io_s, ctx, f, a, res, &details::handle_nothing);
+				io_s.run();
+				io_s.reset();
+				return res;
 			} catch (details::computation_error&) {
 				return boost::none;
 			}
