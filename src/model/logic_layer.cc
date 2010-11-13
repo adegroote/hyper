@@ -139,7 +139,6 @@ namespace hyper {
 		void logic_layer::async_exec(const logic_constraint& ctr)
 		{
 			logic_ctx_ptr ctx = boost::make_shared<logic_context>(ctr);
-			ctx_array.push_back(ctx);
 
 			std::string to_execute = prepare_execution_rqst(ctx->ctr.constraint);
 			logic::generate_return ret_exec =
@@ -153,10 +152,8 @@ namespace hyper {
 
 			ctx->call_exec = ret_exec.e;
 
-			return async_eval_expression(a_.io_s, ctx->exec_ctx, 
-												 ctx->call_exec,
-												 a_,
-												 ctx->exec_res,
+			return async_eval_expression(a_.io_s, ctx->call_exec,
+										  a_, ctx->exec_res,
 				boost::bind(&logic_layer::handle_exec_computation, this,
 							boost::asio::placeholders::error,
 							ctx));
@@ -171,7 +168,6 @@ namespace hyper {
 			if (ctx->exec_res && *(ctx->exec_res)) {
 				std::cout << "Constraint is already enforced, doing nothing";
 				std::cout << std::endl;
-				ctx_array.remove(ctx);
 				return;
 			}
 

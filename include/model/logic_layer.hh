@@ -27,7 +27,6 @@ namespace hyper {
 
 			/* Context for executing remote rqst */
 			logic::function_call call_exec;
-			execution_context exec_ctx;
 			boost::optional<bool> exec_res;
 
 			/* More to come */
@@ -41,8 +40,6 @@ namespace hyper {
 			logic::engine engine;
 			ability& a_;
 			
-			std::list<logic_ctx_ptr> ctx_array;
-
 			logic::funcDefList execFuncs;
 
 			logic_layer(ability &a);

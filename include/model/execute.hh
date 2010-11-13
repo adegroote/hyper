@@ -14,12 +14,10 @@
 namespace hyper {
 	namespace model {
 		struct ability;
-		struct execution_context;
 
 		struct function_execution_base {
 			virtual void async_compute(
 					boost::asio::io_service& io_s,
-					execution_context& ctx,
 					const std::vector<logic::expression> &e,
 					ability &a,
 					boost::function<void (const boost::system::error_code&)> cb) = 0;
@@ -30,15 +28,6 @@ namespace hyper {
 			virtual ~function_execution_base() {};
 		};
 
-		struct execution_context : public boost::noncopyable
-		{
-			std::vector<network::remote_proxy_base*> v_proxy;
-			std::vector<function_execution_base*> v_func;
-
-			bool is_finished() const;
-			~execution_context();
-		};
-
 		template <typename T>
 		boost::optional<T> evaluate_expression(
 				boost::asio::io_service& io_s, 
@@ -47,7 +36,6 @@ namespace hyper {
 		template <typename T, typename Handler>
 		void async_eval_expression(
 			 boost::asio::io_service& io_s,
-			 execution_context& ctx, 
 			 const logic::function_call& f,
 			 ability& a,
 			 boost::optional<T> & res,
