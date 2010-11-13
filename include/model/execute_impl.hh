@@ -423,6 +423,18 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 
 			return boost::none;
 		}
+
+		template <typename T, typename Handler>
+		void async_eval_expression(
+			 boost::asio::io_service& io_s,
+			 execution_context& ctx,
+			 const logic::function_call& f,
+			 ability& a,
+			 boost::optional<T> & res,
+			 Handler handler)
+		{
+			return details::_evaluate_expression(io_s, ctx, f, a, res, handler);
+		}
 	}
 }
 

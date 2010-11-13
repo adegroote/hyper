@@ -16,6 +16,8 @@
 namespace hyper {
 	namespace model {
 
+		struct ability;
+
 		namespace details {
 
 			typedef boost::mpl::vector<network::request_variable_value,
@@ -29,38 +31,14 @@ namespace hyper {
 
 			struct ability_visitor : public boost::static_visitor<output_variant>
 			{
-				boost::shared_mutex& mtx;
-				network::proxy_visitor& proxy_vis;
+				ability &a;
 				mutable size_t constraint_id;
-				logic_queue &q;
 
-				ability_visitor(boost::shared_mutex& mtx_, 
-								network::proxy_visitor& proxy_vis_,
-								logic_queue& q_) : 
-					mtx(mtx_), proxy_vis(proxy_vis_), constraint_id(0), q(q_) {}
+				ability_visitor(ability& a_) : a(a_) {}
 
-				output_variant operator() (const network::request_variable_value& m) const
-				{
-					boost::shared_lock<boost::shared_mutex> lock(mtx);
-					return proxy_vis(m);
-				}
-
-				output_variant operator() (const network::request_constraint& r) const
-				{
-					size_t current_id = constraint_id++;
-
-					logic_constraint ctr;
-					ctr.constraint = r.constraint;
-					ctr.id = current_id;
-					q.push(ctr);
-
-					network::request_constraint_ack ack;
-					ack.acked = true;
-					ack.id = current_id;
-					return ack;
-				}
+				output_variant operator() (const network::request_variable_value& m) const;
+				output_variant operator() (const network::request_constraint& r) const;
 			};
-
 		}
 
 		struct ability {
@@ -73,9 +51,6 @@ namespace hyper {
 
 			/* Lock for the ability context */
 			boost::shared_mutex mtx;
-
-			/* task manager and how to speak with it */
-			model::logic_queue queue_;
 
 			network::name_client name_client;
 			network::proxy_serializer serializer;
@@ -100,10 +75,10 @@ namespace hyper {
 			ability(const std::string& name_) : 
 				name_client(io_s, "localhost", "4242"),
 				proxy_vis(serializer),
-				vis(mtx, proxy_vis, queue_),
+				vis(*this),
 				name(name_),
 				ping(io_s, boost::posix_time::milliseconds(100), name, "localhost", "4242"),
-				logic(queue_, *this)
+				logic(*this)
 			{
 				std::pair<bool, boost::asio::ip::tcp::endpoint> p;
 				p = name_client.register_name(name);

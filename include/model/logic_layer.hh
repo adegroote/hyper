@@ -1,6 +1,8 @@
 #ifndef HYPER_MODEL_LOGIC_LAYER_HH
 #define HYPER_MODEL_LOGIC_LAYER_HH
 
+#include <list>
+
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -19,38 +21,31 @@ namespace hyper {
 			size_t id;
 		};
 
-		typedef concurrent_queue<logic_constraint> logic_queue;
+		struct logic_context
+		{
+			logic_constraint ctr;	
 
-		namespace details {
-			struct logic_solver {
-				ability& a_;
-				logic_queue& queue_;
-				bool abort;
-				logic::engine& engine_;
-				logic::funcDefList& execFuncs_;
+			/* Context for executing remote rqst */
+			logic::function_call call_exec;
+			execution_context exec_ctx;
+			boost::optional<bool> exec_res;
 
-				logic_solver(logic_queue& queue__, ability& a,
-						logic::engine& engine,
-						logic::funcDefList& execFuncs) :
-					a_(a), queue_(queue__), abort(false),
-					engine_(engine), execFuncs_(execFuncs)
-				{}
+			/* More to come */
 
-				void run();
-			};
-		}
+			logic_context(const logic_constraint& ctr_) : ctr(ctr_) {}
+		};
+
+		typedef boost::shared_ptr<logic_context> logic_ctx_ptr;
 
 		struct logic_layer {
-			logic_queue& queue_;
 			logic::engine engine;
 			ability& a_;
+			
+			std::list<logic_ctx_ptr> ctx_array;
 
 			logic::funcDefList execFuncs;
-			details::logic_solver solver;
 
-			boost::thread thr;
-
-			logic_layer(logic_queue& queue, ability &a);
+			logic_layer(ability &a);
 			~logic_layer();
 
 			template <typename T>
@@ -65,6 +60,12 @@ namespace hyper {
 
 			template <typename Func>
 			void add_func(const std::string& s);
+
+			void async_exec(const logic_constraint& ctr);
+
+			private:
+			void handle_exec_computation(const boost::system::error_code&e,
+										 logic_ctx_ptr logic_ctx);
 		};
 	}
 }

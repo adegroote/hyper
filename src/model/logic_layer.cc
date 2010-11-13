@@ -90,50 +90,9 @@ namespace {
 
 namespace hyper {
 	namespace model {
-		namespace details {
-			void logic_solver::run()
-			{
-				logic_constraint ctr;
-				while (! abort)  {
-					queue_.wait_and_pop(ctr);
-
-					if (abort) 
-						return;
-
-					std::cout << "Handling constraint : " ;
-					std::cout << ctr.constraint << std::endl;
-
-					std::string to_execute = prepare_execution_rqst(ctr.constraint);
-
-					logic::generate_return ret_exec =
-						logic::generate(to_execute, execFuncs_);
-
-					if (ret_exec.res == false) {
-						std::cerr << "Can't parse constraint" << std::endl;
-						continue;
-					}
-
-					boost::optional<bool> b =
-						model::evaluate_expression<bool>(a_.io_s, ret_exec.e, a_);
-
-					if (b && *b) {
-						std::cout << "Constraint is already enforced, doing nothing";
-						std::cout << std::endl;
-						continue;
-					}
-
-					std::cout << "Time to do something smart" << std::endl;
-				}
-			}
-		}
-
-
-		logic_layer::logic_layer(logic_queue& queue, ability &a) :
-			queue_(queue),
+		logic_layer::logic_layer(ability &a) :
 			engine(),
-			a_(a),
-			solver(queue, a, engine, execFuncs),
-			thr(boost::bind(&details::logic_solver::run, &solver))
+			a_(a)
 		{
 			/* Add exec func */
 			add_equalable_type<int>("int");
@@ -177,11 +136,51 @@ namespace hyper {
 			add_symetry_rule(engine, "divides");
 		}
 
+		void logic_layer::async_exec(const logic_constraint& ctr)
+		{
+			logic_ctx_ptr ctx = boost::make_shared<logic_context>(ctr);
+			ctx_array.push_back(ctx);
+
+			std::string to_execute = prepare_execution_rqst(ctx->ctr.constraint);
+			logic::generate_return ret_exec =
+						logic::generate(to_execute, execFuncs);
+
+			if (ret_exec.res == false) {
+				std::cerr << "Can't parse constraint" << std::endl;
+				// XXX
+				return;
+			}
+
+			ctx->call_exec = ret_exec.e;
+
+			return async_eval_expression(a_.io_s, ctx->exec_ctx, 
+												 ctx->call_exec,
+												 a_,
+												 ctx->exec_res,
+				boost::bind(&logic_layer::handle_exec_computation, this,
+							boost::asio::placeholders::error,
+							ctx));
+		}
+
+		void logic_layer::handle_exec_computation(const boost::system::error_code& e,
+									 logic_ctx_ptr ctx)
+		{
+			// don't care about e
+			(void) e;
+
+			if (ctx->exec_res && *(ctx->exec_res)) {
+				std::cout << "Constraint is already enforced, doing nothing";
+				std::cout << std::endl;
+				ctx_array.remove(ctx);
+				return;
+			}
+
+			std::cout << "Time to do something smart" << std::endl;
+		}
+
+
 		logic_layer::~logic_layer() 
 		{
-			solver.abort = true;
-			queue_.push(logic_constraint());
-			thr.join();
 		}
 	}
 }

@@ -44,6 +44,16 @@ namespace hyper {
 				boost::asio::io_service& io_s, 
 				const logic::function_call& f, ability &a);
 
+		template <typename T, typename Handler>
+		void async_eval_expression(
+			 boost::asio::io_service& io_s,
+			 execution_context& ctx, 
+			 const logic::function_call& f,
+			 ability& a,
+			 boost::optional<T> & res,
+			 Handler handler
+		);
+
 		class functions_map {
 				typedef std::map<std::string, boost::shared_ptr<function_execution_base> > func_map;
 				func_map m;
