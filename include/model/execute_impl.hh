@@ -317,6 +317,8 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 			boost::array<bool, args_size> finished;
 			result_type result;
 
+			boost::system::error_code err;
+
 			function_execution() {
 				details::init_func<function_execution<T> > init_(*this);
 				boost::mpl::for_each<range> (init_);
@@ -368,18 +370,19 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 										      fun_cb handler)
 			{
 				termined = true;
-				if (e) {
-					handler(e);
-				} else {
-					if (! is_finished()) // wait for other completion
-						return;
+				/* Store the first error received by the system */
+				if (!err) 
+					err = e;
 
-					if (is_computable())
-						result = details::eval<function_execution<T>, args_size> (args) ();
-					else
-						result = boost::none;
-					handler(boost::system::error_code());
-				}
+				if (! is_finished()) // wait for other completion
+					return;
+
+				if (is_computable())
+					result = details::eval<function_execution<T>, args_size> (args) ();
+				else
+					result = boost::none;
+
+				handler(err);
 			}
 
 			boost::any get_result() 
