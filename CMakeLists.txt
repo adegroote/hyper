@@ -85,3 +85,9 @@ file(GLOB hyperruntime_sources ${HYPER_SOURCE_DIR}/src/hyperruntime/*.cc)
 add_executable(hyperruntime ${hyperruntime_sources})
 target_link_libraries(hyperruntime hyper_network ${Boost_LIBRARIES})
 install(TARGETS hyperruntime DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+# hyperlog rules
+file(GLOB hyperlog_sources ${HYPER_SOURCE_DIR}/src/hyperlog/*.cc)
+add_executable(hyperlog ${hyperlog_sources})
+target_link_libraries(hyperlog hyper_network)
+install(TARGETS hyperlog DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
