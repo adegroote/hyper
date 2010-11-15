@@ -39,6 +39,7 @@ include_directories(${HYPER_SOURCE_DIR}/include)
 set(model_test_ADDITIONAL_LIBS "hyper_network;hyper_logic;hyper_compiler")
 
 set(network_LIBS "${Boost_SYSTEM_LIBRARY};${Boost_DATE_TIME_LIBRARY};${Boost_THREAD_LIBRARY};${Boost_SERIALIZATION_LIBRARY}")
+set(model_LIBS "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 
 foreach(lib compiler network logic model)
   string(TOUPPER "${lib}_sources" THIS_LIB_SOURCES)

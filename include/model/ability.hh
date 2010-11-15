@@ -78,9 +78,9 @@ namespace hyper {
 			model::logic_layer logic;
 
 
-			ability(const std::string& name_) : 
+			ability(const std::string& name_, int level = 0) : 
 				name_client(io_s, "localhost", "4242"),
-				logger(io_s, name_, "logger", name_client, 0),
+				logger(io_s, name_, "logger", name_client, level),
 				proxy_vis(serializer),
 				vis(*this),
 				name(name_),
