@@ -113,6 +113,7 @@ namespace hyper {
 			template <typename Resolver>
 			class remote_ability_sink {
 				private:
+					std::string str;
 					async_logger<Resolver> & remote_logger;
 
 				public:
@@ -125,7 +126,9 @@ namespace hyper {
 
 					std::streamsize write(const char* s, std::streamsize n)
 					{
-						remote_logger.log(s);
+						str.clear();
+						str.insert(0, s, n);
+						remote_logger.log(str);
 						return n;
 					}
 			};
