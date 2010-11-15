@@ -7,6 +7,7 @@ namespace hyper {
 					(const network::request_variable_value& m) const
 				{
 					boost::shared_lock<boost::shared_mutex> lock(a.mtx);
+					a.logger(3) << "Handling a request for  the value of " << m.var_name << std::endl;
 					return a.proxy_vis(m);
 				}
 
@@ -14,6 +15,9 @@ namespace hyper {
 					(const network::request_constraint& r) const
 				{
 					size_t current_id = constraint_id++;
+
+					a.logger(3) << "Handling a request for enforcing constraint ";
+					a.logger(3) << r.constraint << std::endl;
 
 					logic_constraint ctr;
 					ctr.constraint = r.constraint;

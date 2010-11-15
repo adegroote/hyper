@@ -2,6 +2,7 @@
 #define _MODEL_ABILITY_HH_
 
 #include <network/server_tcp_impl.hh>
+#include <network/log.hh>
 #include <network/msg.hh>
 #include <network/proxy.hh>
 #include <network/ping.hh>
@@ -53,6 +54,10 @@ namespace hyper {
 			boost::shared_mutex mtx;
 
 			network::name_client name_client;
+
+			/* Logger for the system */
+			network::logger<network::name_client> logger;
+
 			network::proxy_serializer serializer;
 			network::local_proxy proxy;
 			network::proxy_visitor proxy_vis;
@@ -72,8 +77,10 @@ namespace hyper {
 			 */
 			model::logic_layer logic;
 
+
 			ability(const std::string& name_) : 
 				name_client(io_s, "localhost", "4242"),
+				logger(io_s, name_, "logger", name_client, 0),
 				proxy_vis(serializer),
 				vis(*this),
 				name(name_),

@@ -145,13 +145,15 @@ namespace hyper {
 						logic::generate(to_execute, execFuncs);
 
 			if (ret_exec.res == false) {
-				std::cerr << "Can't parse constraint" << std::endl;
+				a_.logger(3) << "Fail to parse constraint " << ctr.constraint << std::endl;
 				// XXX
 				return;
 			}
 
 			ctx->call_exec = ret_exec.e;
 
+			a_.logger(5) << "Computation of the state for constraint " << ctr.constraint;
+			a_.logger(5) << std::endl;
 			return async_eval_expression(a_.io_s, ctx->call_exec,
 										  a_, ctx->exec_res,
 				boost::bind(&logic_layer::handle_exec_computation, this,
@@ -164,14 +166,16 @@ namespace hyper {
 		{
 			// don't care about e
 			(void) e;
+			a_.logger(5) << "Finish the computation of constraint " << ctx->ctr.constraint;
+			a_.logger(5) << std::endl;
 
 			if (ctx->exec_res && *(ctx->exec_res)) {
-				std::cout << "Constraint is already enforced, doing nothing";
-				std::cout << std::endl;
+				a_.logger(3) << "Constraint " << ctx->ctr.constraint << " is alreay enforced";
+				a_.logger(3) << std::endl;
 				return;
 			}
 
-			std::cout << "Time to do something smart" << std::endl;
+			a_.logger(3) << "Time to do something smart" << std::endl;
 		}
 
 
