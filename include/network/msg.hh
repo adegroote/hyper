@@ -8,12 +8,16 @@
 
 #include <logic/expression.hh>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/posix_time/time_serialize.hpp>
 #include <boost/mpl/vector/vector20.hpp>
 #include <boost/serialization/serialization.hpp>
-#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/variant.hpp> 
 #include <boost/serialization/split_member.hpp>
+
 #include <boost/variant.hpp>
 
 namespace hyper {
@@ -255,7 +259,33 @@ namespace hyper {
 				size_t id;
 		};
 
-		typedef boost::mpl::vector11<
+		struct log_msg
+		{
+			private:
+				friend class boost::serialization::access;
+				template <class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & date & src & msg;
+				}
+
+			public:
+				boost::posix_time::ptime date;
+				std::string src;
+				std::string msg;
+
+				log_msg() {}
+				log_msg(const std::string& src_, const std::string& msg_) :
+					date(boost::posix_time::microsec_clock::local_time()),
+					src(src_), msg(msg_)
+				{
+					boost::trim(msg);
+				}
+		};
+
+
+		typedef boost::mpl::vector12<
 			request_name,
 			request_name_answer,
 			register_name,
@@ -266,10 +296,11 @@ namespace hyper {
 			variable_value,
 			request_constraint,
 			request_constraint_ack,
-			request_constraint_answer
+			request_constraint_answer,
+			log_msg
 		> message_types;
 
-#define MESSAGE_TYPE_MAX 11
+#define MESSAGE_TYPE_MAX 12
 
 		typedef boost::make_variant_over<message_types>::type message_variant;
 

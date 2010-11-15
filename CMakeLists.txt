@@ -26,7 +26,7 @@ endif()
 
 include(CheckIncludeFile)
 
-find_package(Boost 1.42 REQUIRED COMPONENTS unit_test_framework filesystem system thread serialization program_options)
+find_package(Boost 1.42 REQUIRED COMPONENTS unit_test_framework date_time filesystem system thread serialization program_options)
 include_directories(${Boost_INCLUDE_DIRS})
 message(STATUS "boost libraries "${Boost_LIBRARIES})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
@@ -38,7 +38,7 @@ include_directories(${HYPER_SOURCE_DIR}/include)
 
 set(model_test_ADDITIONAL_LIBS "hyper_network;hyper_logic;hyper_compiler")
 
-set(network_LIBS "${Boost_SYSTEM_LIBRARY};${Boost_THREAD_LIBRARY};${Boost_SERIALIZATION_LIBRARY}")
+set(network_LIBS "${Boost_SYSTEM_LIBRARY};${Boost_DATE_TIME_LIBRARY};${Boost_THREAD_LIBRARY};${Boost_SERIALIZATION_LIBRARY}")
 
 foreach(lib compiler network logic model)
   string(TOUPPER "${lib}_sources" THIS_LIB_SOURCES)
