@@ -31,17 +31,12 @@ void build_main(std::ostream& oss, const std::string& name)
 {
 	std::string main = 
 		"#include <iostream>\n"
+		"#include <model/main.hh>\n"
 		"#include <@NAME@/ability.hh>\n"
 		"\n"
-		"int main()\n"
+		"int main(int argc, char** argv)\n"
 		"{\n"
-		"	try { \n"
-		"		hyper::@NAME@::ability @NAME@;\n"
-		"		@NAME@.run();\n"
-		"	} catch (boost::system::system_error& e) {\n"
-		"		std::cerr << \"Catched exception from ability @NAME@ :\";\n"
-		"		std::cerr << e.what() << std::endl;\n"
-		"	}\n"
+		"	return hyper::model::main<hyper::@NAME@::ability>(argc, argv, \"@NAME@\");\n"
 		"}\n"
 	;
 

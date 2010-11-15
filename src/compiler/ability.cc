@@ -232,7 +232,7 @@ ability::dump(std::ostream& oss, const typeList& tList) const
 	std::for_each(private_list.begin(), private_list.end(), print);
 
 	initialize_variable initialize(oss);
-	oss << "\t\t\t\tability() : model::ability(\"" << name_ << "\")";
+	oss << "\t\t\t\tability(int level) : model::ability(\"" << name_ << "\", level)";
 	std::for_each(controlable_list.begin(), controlable_list.end(), initialize);
 	std::for_each(readable_list.begin(), readable_list.end(), initialize);
 	std::for_each(private_list.begin(), private_list.end(), initialize);
