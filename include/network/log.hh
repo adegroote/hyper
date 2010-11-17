@@ -2,6 +2,7 @@
 #define HYPER_NETWORK_LOGGER_HH_
 
 #include <iosfwd>                          // streamsize
+#include <deque>
 #include <sstream>
 #include <string>
 
@@ -30,11 +31,9 @@ namespace hyper {
 				bool connected;
 				tcp::client<boost::mpl::vector<log_msg> > c;
 
-				typedef boost::shared_ptr<log_msg> ptr_log_msg;
+				std::deque<log_msg> msgs_;
 
-
-				void handle_write(ptr_log_msg msg_,
-								  const boost::system::error_code& e)
+				void handle_write(const boost::system::error_code& e)
 				{
 					if (e) {
 						// XXX be more smart about real kind of error
@@ -43,32 +42,33 @@ namespace hyper {
 					}
 				}
 
-				void write_log(ptr_log_msg msg_)
+				void write_log()
 				{
-					c.async_write(*msg_, 
-							boost::bind(&async_logger::handle_write, this, msg_,
-										boost::asio::placeholders::error));
+					while (!msgs_.empty()) {
+						c.async_write(msgs_.front(), 
+								boost::bind(&async_logger::handle_write, this, 
+											boost::asio::placeholders::error));
+						msgs_.pop_front();
+					}
 				}
 
-				void handle_connect(ptr_log_msg msg_,
-									const boost::system::error_code& e)
+				void handle_connect(const boost::system::error_code& e)
 				{
 					if (e) {
 						// XXX what to do : log to another logger :D	
 					} else {
 						connected=true;
-						write_log(msg_);
+						write_log();
 					}
 				}
 
-				void handle_resolve(ptr_log_msg msg_,
-									const boost::system::error_code& e)
+				void handle_resolve(const boost::system::error_code& e)
 				{
 					if (e) {
 						// XXX what to do : log to another logger :D	
 					} else {
 						c.async_connect(solver.endpoint(), 
-							boost::bind(&async_logger::handle_connect, this, msg_,
+							boost::bind(&async_logger::handle_connect, this, 
 										boost::asio::placeholders::error));
 					}
 				}
@@ -82,18 +82,18 @@ namespace hyper {
 
 				void log(const std::string& s)
 				{
-					ptr_log_msg msg_ = boost::make_shared<log_msg>(src_, s); 
+					msgs_.push_back(log_msg(src_, s));
+					if (msgs_.size() != 1)
+						return;
 
 					if (!connected) {
-
 						solver.name(dst_);
 					
 						r_.async_resolve(solver,
 								boost::bind(&async_logger::handle_resolve, this,
-											 msg_,
 											 boost::asio::placeholders::error));
 					} else {
-						write_log(msg_);
+						write_log();
 					}
 				}
 		};
