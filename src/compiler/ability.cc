@@ -203,6 +203,34 @@ ability::get_function_depends() const
 	return d;
 }
 
+struct add_task_header
+{
+	std::ostream &oss;
+	std::string abilityName;
+
+	add_task_header(std::ostream& oss_, const std::string& name) : 
+		oss(oss_), abilityName(name) {};
+
+	void operator() (const task& t) const
+	{
+		oss << "#include <" << abilityName << "/tasks/" << t.get_name();
+		oss << ".hh>" << std::endl;
+	}
+};
+
+struct add_task_declaration
+{
+	std::ostream &oss;
+
+	add_task_declaration(std::ostream& oss_) : oss(oss_) {}
+
+	void operator() (const task& t) const
+	{
+		oss << "\t\t\t\t\tlogic.tasks.push_back(model::task_ptr(new ";
+		oss << t.exported_name() << "(*this)));" << std::endl;
+	}
+};
+
 void
 ability::dump(std::ostream& oss, const typeList& tList) const
 {
@@ -220,7 +248,9 @@ ability::dump(std::ostream& oss, const typeList& tList) const
 	oss << std::endl;
 	std::for_each(deps.fun_depends.begin(), deps.fun_depends.end(), dump_depends(oss, "import.hh"));
 	oss << std::endl;
+	std::for_each(tasks.begin(), tasks.end(), add_task_header(oss, name_));
 	oss << "#include <model/ability.hh>" << std::endl;
+	oss << "#include <model/logic_layer_impl.hh>" << std::endl;
 
 	namespaces n(oss, name_);
 
@@ -240,6 +270,7 @@ ability::dump(std::ostream& oss, const typeList& tList) const
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy_symbol(oss));
 	std::for_each(readable_list.begin(), readable_list.end(), add_proxy_symbol(oss));
 	std::for_each(deps.fun_depends.begin(), deps.fun_depends.end(), add_import_funcs(oss));
+	std::for_each(tasks.begin(), tasks.end(), add_task_declaration(oss));
 	oss << "\t\t\t\t}\n;" << std::endl;
 	oss << "\t\t\t};" << std::endl;
 }

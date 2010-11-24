@@ -8,7 +8,8 @@
 
 #include <logic/engine.hh>
 #include <logic/function_def.hh>
-#include <model/concurrent_queue.hh>
+#include <model/task.hh>
+
 
 namespace hyper {
 	namespace model {
@@ -39,6 +40,7 @@ namespace hyper {
 		struct logic_layer {
 			logic::engine engine;
 			ability& a_;
+			std::vector<task_ptr> tasks;
 			
 			logic::funcDefList execFuncs;
 

@@ -5,6 +5,8 @@
 #include <model/ability.hh>
 #include <model/operator.hh>
 
+#include <boost/make_shared.hpp>
+
 namespace hyper {
 	namespace model {
 		template <typename T>

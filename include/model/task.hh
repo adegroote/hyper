@@ -8,6 +8,7 @@
 
 #include <boost/mpl/size.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace hyper {
 	namespace model {
@@ -27,6 +28,8 @@ namespace hyper {
 
 				virtual ~task() {};
 		};
+
+		typedef boost::shared_ptr<task> task_ptr;
 
 		/*
 		 * Expression will be sub-classed to build real computational

@@ -36,6 +36,7 @@ namespace hyper {
 		typedef boost::function<void (const boost::system::error_code&)> fun_cb;
 
 		namespace details {
+			inline
 			void handle_nothing(const boost::system::error_code&)
 			{}
 
