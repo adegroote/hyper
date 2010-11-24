@@ -32,6 +32,9 @@ namespace hyper {
 				void dump_include(std::ostream& oss, const universe& u) const;
 
 				const std::string& get_name() const { return name; };
+				
+				inline
+				std::string exported_name() const { return "_task_" + name; }; 
 
 				typedef std::vector<expression_ast>::const_iterator const_iterator;
 				const_iterator pre_begin() const { return pre.begin(); }

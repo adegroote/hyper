@@ -460,15 +460,19 @@ namespace hyper {
 				const std::string indent="\t\t";
 				const std::string next_indent = indent + "\t";
 
-				oss << "#include <" << ability_context.name();
-				oss << "/ability.hh>" << std::endl;
+				std::string exported_name_big = exported_name();
+				std::transform(exported_name_big.begin(), exported_name_big.end(), 
+							   exported_name_big.begin(), toupper);
+				guards g(oss, ability_context.name(), exported_name_big + "_HH");
+
 				oss << "#include <model/task.hh>" << std::endl;
 
 				namespaces n(oss, ability_context.name());
-				oss << indent << "struct " << name;
+				oss << indent << "struct ability;" << std::endl;
+				oss << indent << "struct " << exported_name();
 				oss << " : public model::task {" << std::endl;
 
-				oss << next_indent << name;
+				oss << next_indent << exported_name();
 				oss << "(ability& a_);" << std::endl; 
 
 				oss << indent << "};" << std::endl;
@@ -489,6 +493,8 @@ namespace hyper {
 												 boost::ref(deps)));
 				
 				oss << "#include <" << ability_context.name();
+				oss << "/ability.hh>" << std::endl;
+				oss << "#include <" << ability_context.name();
 				oss << "/tasks/" << name << ".hh>" << std::endl;
 
 				std::for_each(deps.fun_depends.begin(), 
@@ -498,8 +504,8 @@ namespace hyper {
 				namespaces n(oss, ability_context.name());
 
 				/* Generate constructor */
-				oss << indent << name << "::" << name;
-				oss << "(ability & a_) :" ;
+				oss << indent << exported_name() << "::" << exported_name();
+				oss << "(hyper::" << ability_context.name() << "::ability & a_) :" ;
 				oss << "model::task(a_, " << quoted_string(name);
 				oss << ") {" << std::endl;
 
