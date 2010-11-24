@@ -29,6 +29,7 @@ namespace hyper {
 				task(const task_decl&, const ability&, const typeList&);
 				bool validate(const universe& u) const;
 				void dump(std::ostream& oss, const universe& u) const;
+				void dump_include(std::ostream& oss, const universe& u) const;
 
 				const std::string& get_name() const { return name; };
 

@@ -294,9 +294,16 @@ struct generate_task
 		valid &= ab.add_task(t);
 		success = success && valid;
 		if (success) {
+			{
 			std::string fileName = directoryName + "/" + t.get_name() + ".cc";
 			std::ofstream oss(fileName.c_str());
 			t.dump(oss, u);
+			}
+			{
+			std::string fileName = directoryName + "/" + t.get_name() + ".hh";
+			std::ofstream oss(fileName.c_str());
+			t.dump_include(oss, u);
+			}
 		}
 	}
 };

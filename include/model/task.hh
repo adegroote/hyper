@@ -4,11 +4,29 @@
 #include <network/nameserver.hh>
 #include <network/proxy.hh>
 
+#include <logic/expression.hh>
+
 #include <boost/mpl/size.hpp>
 #include <boost/mpl/vector.hpp>
 
 namespace hyper {
 	namespace model {
+
+		struct ability;
+
+
+		class task
+		{
+			private:
+				const ability& a;
+				std::string name;
+
+			public:
+				task(const ability& a_, const std::string& name_) 
+					: a(a_), name(name_) {}
+
+				virtual ~task() {};
+		};
 
 		/*
 		 * Expression will be sub-classed to build real computational

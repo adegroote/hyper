@@ -161,20 +161,20 @@ namespace {
 	
 	template <binary_op_kind op> struct logic_function {};
 	template <> struct logic_function<ADD> { static std::string name() { return "add";}};
-	template <> struct logic_function<SUB> { static std::string name() { return "sub";}};
-	template <> struct logic_function<MUL> { static std::string name() { return "mul";}};
-	template <> struct logic_function<DIV> { static std::string name() { return "div";}};
+	template <> struct logic_function<SUB> { static std::string name() { return "minus";}};
+	template <> struct logic_function<MUL> { static std::string name() { return "times";}};
+	template <> struct logic_function<DIV> { static std::string name() { return "divides";}};
 	template <> struct logic_function<EQ> { static std::string name() { return "equal";}};
 	template <> struct logic_function<NEQ>{ static std::string name() { return "not_equal";}};
 	template <> struct logic_function<LT> { static std::string name() { return"less";}};
-	template <> struct logic_function<LTE>{ static std::string name() { return "less_or_equal";}};
+	template <> struct logic_function<LTE>{ static std::string name() { return "less_equal";}};
 	template <> struct logic_function<GT> { static std::string name() { return"greater";}};
-	template <> struct logic_function<GTE>{ static std::string name() { return "geater_or_equal";}};
+	template <> struct logic_function<GTE>{ static std::string name() { return "geater_equal";}};
 	template <> struct logic_function<AND>{ static std::string name() { return "and";}};
 	template <> struct logic_function<OR> { static std::string name() { return "or";}};
 
 	template <unary_op_kind op> struct logic_unary_function {};
-	template <> struct logic_unary_function<NEG> { static std::string name() { return "neg";}};
+	template <> struct logic_unary_function<NEG> { static std::string name() { return "negate";}};
 	
 	struct dump_logic_expression_ast  : public boost::static_visitor<std::string>
 	{
@@ -248,6 +248,27 @@ namespace {
 			oss << boost::apply_visitor(dump_logic_expression_ast(), op.subject.expr);
 			oss << ")";
 			return oss.str();
+		}
+	};
+
+	std::string generate_logic_expression(const expression_ast& e)
+	{
+		return boost::apply_visitor(dump_logic_expression_ast(), e.expr);
+	}
+	
+	struct generate_logic_fact {
+		std::string name;
+		std::ostream &oss;
+
+		generate_logic_fact(const std::string& name_, std::ostream& oss_):
+			name(name_), oss(oss_)
+		{}
+
+		void operator() (const expression_ast& e) const
+		{
+			oss << "\t\t\ta_.logic.engine.add_fact(";
+			oss << quoted_string(generate_logic_expression(e));
+			oss << ", " << quoted_string(name) <<  ");" << std::endl;
 		}
 	};
 
@@ -434,6 +455,25 @@ namespace hyper {
 				return res;
 			}
 
+			void task::dump_include(std::ostream& oss, const universe& u) const
+			{
+				const std::string indent="\t\t";
+				const std::string next_indent = indent + "\t";
+
+				oss << "#include <" << ability_context.name();
+				oss << "/ability.hh>" << std::endl;
+				oss << "#include <model/task.hh>" << std::endl;
+
+				namespaces n(oss, ability_context.name());
+				oss << indent << "struct " << name;
+				oss << " : public model::task {" << std::endl;
+
+				oss << next_indent << name;
+				oss << "(ability& a_);" << std::endl; 
+
+				oss << indent << "};" << std::endl;
+			}
+
 			void task::dump(std::ostream& oss, const universe& u) const
 			{
 				const std::string indent="\t\t";
@@ -448,14 +488,27 @@ namespace hyper {
 							  boost::bind(f ,_1, boost::cref(ability_context.name()),
 												 boost::ref(deps)));
 				
-				oss << "#include <" << ability_context.name() << "/ability.hh>" << std::endl;
-				oss << "#include <model/task.hh>" << std::endl;
+				oss << "#include <" << ability_context.name();
+				oss << "/tasks/" << name << ".hh>" << std::endl;
+
 				std::for_each(deps.fun_depends.begin(), 
 							  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
 				oss << std::endl;
 
 				namespaces n(oss, ability_context.name());
 
+				/* Generate constructor */
+				oss << indent << name << "::" << name;
+				oss << "(ability & a_) :" ;
+				oss << "model::task(a_, " << quoted_string(name);
+				oss << ") {" << std::endl;
+
+				generate_logic_fact e_fact(name, oss);
+				std::for_each(post.begin(), post.end(), e_fact);
+
+				oss << indent << "}" << std::endl;
+
+#if 0
 				oss << indent << "struct " << name << " {" << std::endl;
 				oss << next_indent << "const ability& a;" << std::endl;
 				oss << next_indent << name << "(const ability& a_) : a(a_) {}" << std::endl;
@@ -468,6 +521,7 @@ namespace hyper {
 				std::for_each(post.begin(), post.end(), e_dump);
 				}
 				oss << indent << "};" << std::endl;
+#endif
 			}
 
 			std::ostream& operator << (std::ostream& oss, const task& t)

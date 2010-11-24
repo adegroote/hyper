@@ -64,6 +64,12 @@ namespace hyper {
 				oss << "#include <" << s << "/" << depend_kind << ">" << std::endl;
 			}
 		};
+
+		inline
+		std::string quoted_string(const std::string& s)
+		{
+			return "\"" + s + "\"";
+		}
 	}
 }
 
