@@ -175,7 +175,25 @@ namespace hyper {
 				return;
 			}
 
-			a_.logger(3) << "Time to do something smart" << std::endl;
+			a_.io_s.post(boost::bind(&logic_layer::compute_potential_task,
+									 this, ctx));
+		}
+
+		void logic_layer::compute_potential_task(logic_ctx_ptr ctx)
+		{
+			std::string to_logic = prepare_logic_rqst(ctx->ctr.constraint);
+			std::vector<std::string> res;
+
+			a_.logger(5) << "Searching some task to handle " << to_logic << std::endl;
+			engine.infer(to_logic, std::back_inserter(res));
+			a_.logger(5) << "Find " << res.size() << " task(s) to handle " << to_logic << std::endl;
+
+			if (res.size() == 0) {
+				// XXX send back an answer to the agent
+				return;
+			}
+
+			// compute precondition for each succesful task
 		}
 
 

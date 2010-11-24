@@ -65,6 +65,7 @@ namespace hyper {
 			private:
 			void handle_exec_computation(const boost::system::error_code&e,
 										 logic_ctx_ptr logic_ctx);
+			void compute_potential_task(logic_ctx_ptr ctx);
 		};
 	}
 }
