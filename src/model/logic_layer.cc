@@ -131,7 +131,7 @@ namespace hyper {
 			add_transitivy_rule(engine, "greater_equal");
 
 			add_symetry_rule(engine, "add");
-			add_symetry_rule(engine, "mines");
+			add_symetry_rule(engine, "minus");
 			add_symetry_rule(engine, "times");
 			add_symetry_rule(engine, "divides");
 		}
