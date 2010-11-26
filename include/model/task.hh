@@ -1,6 +1,8 @@
 #ifndef _HYPER_MODEL_TASK_HH_
 #define _HYPER_MODEL_TASK_HH_
 
+#include <numeric>
+
 #include <network/nameserver.hh>
 #include <network/proxy.hh>
 
@@ -15,18 +17,20 @@ namespace hyper {
 
 		struct ability;
 
+		typedef std::vector<std::string> conditionV;
+		typedef boost::function<void (conditionV)> condition_execution_callback;
 
-		class task
+		struct task
 		{
-			private:
-				const ability& a;
-				std::string name;
+			const ability& a;
+			std::string name;
 
-			public:
-				task(const ability& a_, const std::string& name_) 
-					: a(a_), name(name_) {}
+			task(const ability& a_, const std::string& name_) 
+				: a(a_), name(name_) {}
 
-				virtual ~task() {};
+			virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
+
+			virtual ~task() {};
 		};
 
 		typedef boost::shared_ptr<task> task_ptr;
@@ -35,6 +39,83 @@ namespace hyper {
 		 * Expression will be sub-classed to build real computational
 		 * expression on top of a specification 
 		 * */
+
+
+
+		template <int N, typename A>
+		class evaluate_conditions {
+			public:
+				typedef boost::function<void (const A&, 
+											  bool&, 
+											  evaluate_conditions<N, A>&,
+											  size_t)> fun_call;
+
+				typedef std::pair<fun_call, std::string> condition;
+
+			private:
+				A& a;
+				bool is_computing;
+				boost::array<bool, N> terminated;
+				boost::array<bool, N> success;
+				boost::array<condition, N> condition_calls;
+				std::vector<condition_execution_callback> callbacks;
+
+				bool is_terminated() const
+				{
+					return std::accumulate(terminated.begin(), terminated.end(),
+							true, std::logical_and<bool>());
+				}
+
+				struct reset {
+					void operator() (bool& b) const { b = false; }
+				};
+
+			public:
+				evaluate_conditions(A& a_, 
+									boost::array<condition, N> condition_calls_) :
+					a(a_), is_computing(false), condition_calls(condition_calls_) 
+				{}
+
+				void async_compute(condition_execution_callback cb)
+				{
+					callbacks.push_back(cb);
+					if (is_computing) 
+						return;
+
+					/* Reinit the state of the object */
+					std::for_each(terminated.begin(), terminated.end(), reset());
+
+					is_computing = true;
+					for (size_t i = 0; i != N; ++i) {
+						a.io_s.post(boost::bind(condition_calls[i].first, boost::cref(a), 
+															  boost::ref(success[i]),
+															  boost::ref(*this), i));
+					}
+				}
+
+				void handle_computation(size_t i)
+				{
+					terminated[i] = true;
+
+					if (!is_terminated())
+						return;
+
+					// generate a vector for condition not enforced
+					conditionV res;
+					for (size_t j = 0; j != N; ++j) {
+						if (!success[j])
+							res.push_back(condition_calls[j].second);
+					}
+
+					// for each callback call it
+					for (size_t j = 0; j < callbacks.size(); ++j) {
+						a.io_s.post(boost::bind(callbacks[j],res));
+					}
+
+					is_computing = false;
+					callbacks.clear();
+				}
+		};
 
 		template <typename vectorT>
 		class expression
