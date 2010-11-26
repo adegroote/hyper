@@ -48,6 +48,21 @@ namespace hyper {
 			}
 		};
 
+		struct anonymous_namespaces
+		{
+			std::ostream& oss;
+		
+			anonymous_namespaces(std::ostream& oss_) : oss(oss_)
+			{
+				oss << "namespace {" << std::endl;
+			}
+		
+			~anonymous_namespaces()
+			{
+				oss << "\n}" << std::endl;
+			}
+		};
+
 		struct dump_depends
 		{
 			std::ostream & oss;

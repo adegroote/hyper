@@ -13,6 +13,7 @@
 namespace {
 	using namespace hyper::compiler;
 
+	/* Extract the list of a symbol from a compiler::expression_ast */
 	struct symbol_list : public boost::static_visitor<void>
 	{
 		std::vector<std::string> &sym_list;
@@ -321,6 +322,7 @@ namespace {
 		std::ostream& oss;
 		const typeList& tList;
 		size_t counter;
+		size_t num_conds;
 		const std::string base_expr;
 
 		expression_dump(const universe& u_,
@@ -328,6 +330,7 @@ namespace {
 						const task& task_context_,
 						std::ostream& oss_,
 						const typeList& tList_,
+						size_t num_conds_,
 						const std::string& base_expr_):
 			u(u_),
 			ability_context(ability_context_),
@@ -335,12 +338,13 @@ namespace {
 			oss(oss_), 
 			tList(tList_),
 			counter(0),
+			num_conds(num_conds_),
 			base_expr(base_expr_)
 		{}
 
 		void operator() (const expression_ast& e) 
 		{ 
-			const std::string indent = "\t\t\t\t";
+			const std::string indent = "\t\t";
 			const std::string indent_next = indent + "\t";
 			const std::string indent_next_next = indent_next + "\t";
 			std::vector<std::string> syms;
@@ -383,34 +387,37 @@ namespace {
 						  build_mpl_vector(mpl_vector, tList));
 			mpl_vector = "boost::mpl::vector<" + mpl_vector + ">";
 
-			std::ostringstream expression_oss;
-			expression_oss << base_expr << "expression_" << counter++;
-			std::string expression_name = expression_oss.str();
-			oss << indent << "struct " << expression_name;
-			oss << " : public model::expression<" << mpl_vector << " > {" << std::endl;
-			oss << indent_next << "const ability &a;" << std::endl;
-			if (has_remote_symbols)
-			{
-				oss << indent_next << expression_name;
-				oss << "(const ability& a_, boost::asio::io_service &io_s,";
-				oss << "const model::expression< " << mpl_vector << " >::arg_list& l,";
-				oss << "network::name_client& r) : " << std::endl;
+			std::string class_name = "hyper::" + ability_context.name() + "::ability";
 
-				oss << indent_next << "a(a_), model::expression< " << mpl_vector << " >(";
-				oss << "io_s, l, r) {}" << std::endl;
-			}
-
-			if (!has_remote_symbols) {
-				oss << indent_next << expression_name << "(const ability& a_) : a(a_) {}";
-				oss << std::endl;
-			}
+			oss << indent << "void " << base_expr << "condition_" << counter++;
+			oss << "(const " << class_name << " & a, " << std::endl;
+			oss << indent_next << "bool& res, hyper::model::evaluate_conditions<";
+			oss << num_conds << ", " << class_name << ">& cond, size_t i)" << std::endl;
+			oss << indent << "{" << std::endl;
 
 			dump_expression_ast dump(remote_syms);
-			oss << indent_next << "bool real_compute() const {" << std::endl;
-			std::string compute_expr = boost::apply_visitor(dump, e.expr);
-			oss << indent_next_next << "return (" << compute_expr << ");" << std::endl;
-			oss << indent_next << "}" << std::endl;
-			oss << indent << "};" << std::endl;
+			if (!has_remote_symbols) {
+				std::string compute_expr = boost::apply_visitor(dump, e.expr);
+				oss << indent_next << "res = " << compute_expr << ";" << std::endl;
+			}
+
+			oss << indent_next << "return cond.handle_computation(i);" << std::endl;
+			oss << indent << "}" << std::endl;
+			oss << std::endl;
+		}
+	};
+
+	struct generate_precond {
+		std::ostream& oss;
+		size_t counter;
+
+		generate_precond(std::ostream& oss_) : oss(oss_), counter(0) {}
+
+		void operator() (const expression_ast& e) const
+		{
+			oss << "\t\t\t\t\t(pre_condition_" << counter;
+			oss << ", " << quoted_string(generate_logic_expression(e)) << ")";
+			oss << std::endl;
 		}
 	};
 
@@ -472,8 +479,14 @@ namespace hyper {
 				oss << indent << "struct " << exported_name();
 				oss << " : public model::task {" << std::endl;
 
+				oss << next_indent << "hyper::model::evaluate_conditions<";
+				oss << pre.size() << ", ability> preds;" << std::endl; 
+
 				oss << next_indent << exported_name();
 				oss << "(ability& a_);" << std::endl; 
+				oss << next_indent;
+				oss << "void async_evaluate_preconditions(model::condition_execution_callback cb);";
+				oss << std::endl;
 
 				oss << indent << "};" << std::endl;
 			}
@@ -497,9 +510,17 @@ namespace hyper {
 				oss << "#include <" << ability_context.name();
 				oss << "/tasks/" << name << ".hh>" << std::endl;
 
+				oss << "#include <boost/assign/list_of.hpp>" << std::endl;
+
 				std::for_each(deps.fun_depends.begin(), 
 							  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
 				oss << std::endl;
+
+				{
+				anonymous_namespaces n(oss);
+				expression_dump e_dump(u, ability_context, *this, oss, tList, pre.size(), "pre_");
+				std::for_each(pre.begin(), pre.end(), e_dump);
+				}
 
 				namespaces n(oss, ability_context.name());
 
@@ -507,21 +528,26 @@ namespace hyper {
 				oss << indent << exported_name() << "::" << exported_name();
 				oss << "(hyper::" << ability_context.name() << "::ability & a_) :" ;
 				oss << "model::task(a_, " << quoted_string(name);
-				oss << ") {" << std::endl;
+				oss << "),\n";
+				oss << indent << "preds(a_, boost::assign::list_of<hyper::model::evaluate_conditions<";
+				oss << pre.size() << ",ability>::condition>";
+				generate_precond e_cond(oss);
+				std::for_each(pre.begin(), pre.end(), e_cond);
+				oss << indent << ")" << std::endl;
+				oss << indent << "{" << std::endl;
 
 				generate_logic_fact e_fact(name, oss);
 				std::for_each(post.begin(), post.end(), e_fact);
 
-				oss << indent << "}" << std::endl;
+				oss << indent << "}\n\n";
 
+				oss << indent << "void " << exported_name();
+				oss << "::async_evaluate_preconditions(model::condition_execution_callback cb)";
+				oss << std::endl;
+				oss << indent << "{" << std::endl;
+				oss << next_indent << "preds.async_compute(cb);\n"; 
+				oss << indent << "}" << std::endl;
 #if 0
-				oss << indent << "struct " << name << " {" << std::endl;
-				oss << next_indent << "const ability& a;" << std::endl;
-				oss << next_indent << name << "(const ability& a_) : a(a_) {}" << std::endl;
-				{
-				expression_dump e_dump(u, ability_context, *this, oss, tList, "pre_");
-				std::for_each(pre.begin(), pre.end(), e_dump);
-				}
 				{
 				expression_dump e_dump(u, ability_context, *this, oss, tList, "post_");
 				std::for_each(post.begin(), post.end(), e_dump);
