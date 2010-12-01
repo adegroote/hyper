@@ -179,6 +179,24 @@ namespace hyper {
 									 this, ctx));
 		}
 
+		struct test_precondition
+		{
+			logic_layer& layer;
+			logic_ctx_ptr ctx;
+
+			test_precondition(logic_layer& layer_, logic_ctx_ptr ctx_) : 
+				layer(layer_), ctx(ctx_) {}
+
+			void operator() (const std::string& task)
+			{
+				layer.a_.logger(5) << " Start evaluation precondition for task " << task;
+				layer.a_.logger(5) << std::endl;
+				layer.tasks[task]->async_evaluate_preconditions(
+						boost::bind(&logic_layer::handle_evaluation_preconds,
+								    &layer, ctx, task, _1));
+			}
+		};
+
 		void logic_layer::compute_potential_task(logic_ctx_ptr ctx)
 		{
 			std::string to_logic = prepare_logic_rqst(ctx->ctr.constraint);
@@ -194,8 +212,50 @@ namespace hyper {
 			}
 
 			// compute precondition for each succesful task
+			std::copy(res.begin(), res.end(), std::back_inserter(ctx->seqs.deps)); 
+			std::for_each(res.begin(), res.end(), test_precondition(*this, ctx));
 		}
 
+		struct class_task_evaluation
+		{
+			bool operator() (const task_evaluation& t1, const task_evaluation& t2)
+			{
+				return ((*(t1.failed_conds)).size() < (*(t2.failed_conds)).size());
+			}
+		};
+
+		void logic_layer::handle_evaluation_preconds(logic_ctx_ptr ctx, 
+				const std::string& name, conditionV failed)
+		{
+			a_.logger(5) << " End evaluation precondition for task " << name;
+			a_.logger(5) << std::endl;
+
+			std::vector<task_evaluation>::iterator it;
+			std::vector<task_evaluation>& deps = ctx->seqs.deps;
+			it = find(deps.begin(), deps.end(), task_evaluation(name));
+			assert (it != deps.end());
+			it->failed_conds = failed;
+			
+			if (! ctx->seqs.all_deps_evaluated())
+				return;
+
+			std::sort(deps.begin(), deps.end(), class_task_evaluation());
+
+			const conditionV& needed_precond = *deps[0].failed_conds;
+
+			if (needed_precond.empty()) {
+				a_.logger(3) << " Executing " << deps[0].name << " to handle ";
+				a_.logger(3) << ctx->ctr.constraint << std::endl;
+				// XXX do it
+			} else {
+				a_.logger(3) << " Need to handle the following conditions " << std::endl;
+				std::copy(needed_precond.begin(), needed_precond.end(), 
+						std::ostream_iterator<std::string>(a_.logger(3), "\n"));
+				a_.logger(3) << std::endl;
+				// XXX do it
+			}
+
+		}
 
 		logic_layer::~logic_layer() 
 		{

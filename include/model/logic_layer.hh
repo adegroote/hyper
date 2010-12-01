@@ -30,8 +30,10 @@ namespace hyper {
 			logic::function_call call_exec;
 			boost::optional<bool> exec_res;
 
-			/* More to come */
+			/* Logic layer evaluation */
+			task_evaluation_seq seqs;
 
+			/* More to come */
 			logic_context(const logic_constraint& ctr_) : ctr(ctr_) {}
 		};
 
@@ -61,6 +63,10 @@ namespace hyper {
 			void add_func(const std::string& s);
 
 			void async_exec(const logic_constraint& ctr);
+
+			/* XXX */
+			void handle_evaluation_preconds(logic_ctx_ptr ctx, 
+				const std::string& name, conditionV failed);
 
 			private:
 			void handle_exec_computation(const boost::system::error_code&e,

@@ -2,6 +2,7 @@
 #define _HYPER_MODEL_TASK_HH_
 
 #include <numeric>
+#include <string>
 
 #include <network/nameserver.hh>
 #include <network/proxy.hh>
@@ -35,6 +36,45 @@ namespace hyper {
 
 		typedef boost::shared_ptr<task> task_ptr;
 
+		struct task_evaluation 
+		{
+			std::string name;
+			boost::optional<conditionV> failed_conds;
+
+			task_evaluation() : name(), failed_conds(boost::none) {}
+			task_evaluation(const std::string& name_) : name(name_), 
+										failed_conds(boost::none) {}
+
+			bool operator == (const task_evaluation& t1) const
+			{
+				return name == t1.name;
+			}
+		};
+
+		struct task_evaluation_seq
+		{
+			task_evaluation current_task;
+			std::vector<task_evaluation> deps;
+
+			task_evaluation_seq() {}
+			task_evaluation_seq(const std::string& name) : current_task(name) {}
+
+			private:
+			struct evaluate_terminaison {
+				bool operator() (bool current, const task_evaluation& eval)
+				{
+					return (current && eval.failed_conds);
+				}
+			};
+
+			public:
+			bool all_deps_evaluated() const
+			{
+				return std::accumulate(deps.begin(), deps.end(), true, 
+									  evaluate_terminaison());
+			}
+		};
+
 		/*
 		 * Expression will be sub-classed to build real computational
 		 * expression on top of a specification 
@@ -65,6 +105,7 @@ namespace hyper {
 					return std::accumulate(terminated.begin(), terminated.end(),
 							true, std::logical_and<bool>());
 				}
+
 
 				struct reset {
 					void operator() (bool& b) const { b = false; }
