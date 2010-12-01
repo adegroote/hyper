@@ -40,7 +40,7 @@ namespace hyper {
 		struct logic_layer {
 			logic::engine engine;
 			ability& a_;
-			std::vector<task_ptr> tasks;
+			std::map<std::string, task_ptr> tasks;
 			
 			logic::funcDefList execFuncs;
 

@@ -2,9 +2,10 @@
 #ifndef _OUTPUT_COMPILER_HH_
 #define _OUTPUT_COMPILER_HH_
 
-#include <iostream>
-#include <string>
 #include <algorithm>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 namespace hyper {
 	namespace compiler {
@@ -63,6 +64,7 @@ namespace hyper {
 			}
 		};
 
+
 		struct dump_depends
 		{
 			std::ostream & oss;
@@ -84,6 +86,15 @@ namespace hyper {
 		std::string quoted_string(const std::string& s)
 		{
 			return "\"" + s + "\"";
+		}
+
+		inline
+		std::string times(size_t nb, const std::string& s)
+		{
+			std::ostringstream oss;
+			for (size_t i = 0; i < nb; i++)
+				oss << s;
+			return oss.str();
 		}
 	}
 }
