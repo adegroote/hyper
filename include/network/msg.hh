@@ -29,6 +29,8 @@ namespace hyper {
 			uint32_t size;
 		};
 
+		typedef size_t identifier;
+
 		struct request_name
 		{
 			private:
@@ -168,7 +170,7 @@ namespace hyper {
 				}
 			public:
 				std::string name;
-				uint64_t value;
+				identifier value;
 		};
 
 		struct pong
@@ -182,7 +184,7 @@ namespace hyper {
 					ar & value;
 				}
 			public:
-				uint64_t value;
+				identifier value;
 		};
 
 		struct request_variable_value
@@ -193,9 +195,10 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & var_name;
+					ar & id & var_name;
 				}
 			public:
+				identifier id;
 				std::string var_name;
 		};
 
@@ -207,9 +210,10 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & var_name & success & value ;
+					ar & id & var_name & success & value ;
 				}
 			public:
+				identifier id;
 				std::string var_name;
 				bool success;
 				std::string value;
@@ -223,9 +227,10 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & constraint;
+					ar & id & constraint;
 				}
 			public:
+				identifier id;
 				std::string constraint;
 		};
 
@@ -240,8 +245,8 @@ namespace hyper {
 					ar & acked & id;
 				}
 			public:
+				identifier id;
 				bool acked;
-				size_t id;
 		};
 
 		struct request_constraint_answer
@@ -252,11 +257,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & success & id;
+					ar & id & success;
 				}
 			public:
+				identifier id;
 				bool success;
-				size_t id;
 		};
 
 		struct log_msg
