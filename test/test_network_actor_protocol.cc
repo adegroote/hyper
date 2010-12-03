@@ -52,15 +52,15 @@ namespace {
 	struct simple_server_visitor : public boost::static_visitor<output_serv_variant>
 	{
 		request_constraint_answer ans;
-		actor_client<simple_agent> & client;
+		actor_client_database<simple_agent> & db;
 
-		simple_server_visitor(actor_client<simple_agent> & client_) : client(client_) {}
+		simple_server_visitor(actor_client_database<simple_agent> & db_) : db(db_) {}
 
 		boost::mpl::void_ operator() (const request_constraint& r) 
 		{
 			ans.id = r.id;
 			ans.success = true;
-			client.async_write(ans, dont_care);
+			db[r.src].async_write(ans, dont_care);
 
 			return boost::mpl::void_();
 		}
@@ -105,12 +105,12 @@ namespace {
 
 	struct agent_serv {
 		simple_agent agent;
-		actor_client<simple_agent> client;
+		actor_client_database<simple_agent> db;
 		simple_server_visitor vis;
 		server_serv serv;
 
-		agent_serv() : client(agent, "client"),
-			vis(client),
+		agent_serv() : db(agent),
+			vis(db),
 			serv("127.0.0.1", "5001", vis, agent.io_s) {
 				agent.name = "server";
 			}

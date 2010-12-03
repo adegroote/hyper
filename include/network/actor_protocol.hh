@@ -11,6 +11,7 @@
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/void.hpp>
 #include <boost/optional.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/variant/variant.hpp>
 #include <boost/variant/get.hpp>
 
@@ -273,6 +274,34 @@ namespace hyper {
 												 this, 
 												 boost::asio::placeholders::error,
 												 input.id, boost::make_tuple(handler)));
+				}
+		};
+
+		template <typename Actor>
+		class actor_client_database 
+		{
+			private:
+				typedef actor_client<Actor> type;
+				typedef boost::shared_ptr<type> ptr_type;
+				typedef std::map<std::string, ptr_type > db_type;
+				typedef typename db_type::iterator iterator;
+				typedef typename db_type::const_iterator const_iterator;
+
+				Actor &actor;
+				db_type db;
+
+			public:
+				actor_client_database(Actor & actor_) : actor(actor_) {}
+				actor_client<Actor>& operator[](const std::string& s)
+				{
+					iterator it = db.find(s);
+					if (it != db.end())
+						return *(it->second);
+
+					std::pair<iterator, bool> p;
+					p = db.insert(std::make_pair(s, ptr_type(new type(actor, s))));
+					assert (p.second);
+					return *(p.first->second);
 				}
 		};
 	}
