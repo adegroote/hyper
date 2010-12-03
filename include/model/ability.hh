@@ -78,7 +78,7 @@ namespace hyper {
 
 			network::proxy_serializer serializer;
 			network::local_proxy proxy;
-			network::proxy_visitor proxy_vis;
+			network::actor::proxy_visitor<ability> proxy_vis;
 			network::actor_protocol_visitor<ability> actor_vis;
 			details::ability_visitor vis;
 			std::string name;
@@ -104,7 +104,7 @@ namespace hyper {
 				logger(io_s, name_, "logger", name_client, level),
 				client_db(*this),
 				base_id(0),
-				proxy_vis(serializer),
+				proxy_vis(*this, serializer),
 				actor_vis(*this),
 				vis(*this),
 				name(name_),

@@ -36,6 +36,8 @@ namespace hyper {
 		typedef boost::function<void (const boost::system::error_code&)> fun_cb;
 
 		namespace details {
+			typedef network::actor::remote_proxy<model::ability> ability_remote_proxy;
+
 			inline
 			void handle_nothing(const boost::system::error_code&)
 			{}
@@ -49,19 +51,13 @@ namespace hyper {
 
 			struct computation_error {};
 
-			template <typename T>
+			static
 			void handle_remote_proxy_get(const boost::system::error_code& e,
-										 boost::shared_ptr<network::remote_proxy_base> proxy,
-										 T& res,
+										 ability_remote_proxy* proxy,
 										 fun_cb cb)
 			{
-				if (e) {
-					cb(e);
-				} else {
-					boost::any res_ = proxy->extract_result();
-					res = boost::any_cast<T>( res_ );
-					cb(boost::system::error_code());
-				}
+				delete proxy;
+				cb(e);
 			}
 
 			template <typename T>
@@ -71,7 +67,7 @@ namespace hyper {
 				boost::asio::io_service& io_s; 
 				T& res;
 				fun_cb cb;
-
+				
 				evaluate_logic_expression(boost::asio::io_service& io_s_, 
 										  model::ability & a_, T& res_, fun_cb cb_) : 
 					io_s(io_s_), a(a_), res(res_), cb(cb_) {}
@@ -97,17 +93,14 @@ namespace hyper {
 							boost::shared_lock<boost::shared_mutex> lock(a.mtx);
 							res = a.proxy.eval<typename T::value_type>(p.second);
 						} else {
-							boost::shared_ptr<network::remote_proxy_base> proxy(new
-								network::remote_proxy<typename T::value_type, 
-														  network::name_client
-														 > (io_s, p.first, p.second, a.name_client));
+							ability_remote_proxy* proxy (new ability_remote_proxy(a));
 
 							fun_cb local_cb = boost::bind(
-									handle_remote_proxy_get<T>, 
+									handle_remote_proxy_get, 
 									boost::asio::placeholders::error,
-									proxy, boost::ref(res), cb);
+									proxy, cb);
 
-							return proxy->async_get_result(local_cb);
+							return proxy->async_get(p.first, p.second, res, local_cb);
 						}
 					}
 					cb(boost::system::error_code());

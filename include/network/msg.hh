@@ -195,11 +195,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id & str & var_name;
+					ar & id & src & var_name;
 				}
 			public:
 				mutable identifier id;
-				mutable std::string str;
+				mutable std::string src;
 				std::string var_name;
 		};
 

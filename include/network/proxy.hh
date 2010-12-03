@@ -161,7 +161,6 @@ namespace hyper {
 			}
 		};
 
-
 		template <typename T>
 		class proxy_async_client 
 		{
@@ -651,6 +650,96 @@ namespace hyper {
 					(void) unused;
 					boost::get<U::value>(t)->async_get(handler);
 				}
+			};
+		}
+
+	
+		namespace actor {
+			
+
+			typedef boost::mpl::vector< request_variable_value > proxy_input_msg;
+			typedef boost::mpl::vector< boost::mpl::void_ > proxy_output_msg;
+			typedef boost::make_variant_over< proxy_input_msg>::type proxy_input_variant;
+			typedef boost::make_variant_over< proxy_output_msg>::type proxy_output_variant;
+			
+			template <typename Actor>
+			struct proxy_visitor : public boost::static_visitor<proxy_output_variant>
+			{
+				proxy_serializer& s;
+				Actor &actor;
+
+				proxy_visitor(Actor& actor_, proxy_serializer& s_) : 
+					actor(actor_), s(s_) {};
+
+				void handle_proxy_output(const boost::system::error_code& e, 
+						variable_value* v) const
+				{
+					(void) e;
+					delete v;
+				}
+
+				proxy_output_variant operator() (const request_variable_value& r) const
+				{
+					std::pair<bool, std::string> p = s.eval(r.var_name);
+
+					variable_value* res(new variable_value);
+					res->id = r.id;
+					res->var_name = r.var_name;
+					res->success = p.first;
+					res->value = p.second;
+					
+					actor.client_db[r.src].async_write(*res, 
+							boost::bind(&proxy_visitor::handle_proxy_output,
+									    this, boost::asio::placeholders::error,
+										res));
+
+					return boost::mpl::void_();
+				}
+			};
+
+			template <typename Actor>
+			class remote_proxy 
+			{
+				private:
+					request_variable_value msg;
+					variable_value ans;
+					Actor & actor;
+
+					template <typename T, typename Handler>
+					void handle_get(const boost::system::error_code& e,
+								    T& output,
+									boost::tuple<Handler> handler)
+					{
+						if (e || ans.success == false ) 
+							output = boost::none;
+						else
+							output = deserialize_value<typename T::value_type>(ans.value);
+
+						boost::get<0>(handler)(e);
+					}
+
+				public:
+					remote_proxy(Actor& actor_) : actor(actor_) {}
+					
+					template <typename T, typename Handler>
+					void async_get(const std::string& actor_dst,
+								   const std::string& var_name,
+								   T & output,
+								   Handler handler)
+					{
+
+						void (remote_proxy::*f)(const boost::system::error_code&,
+								T& output,
+								boost::tuple<Handler> handler) =
+							&remote_proxy::template handle_get<T, Handler>;
+
+						msg.var_name = var_name;
+						actor.client_db[actor_dst].async_request(msg, ans,
+								boost::bind(f, this,
+										   boost::asio::placeholders::error,
+										   boost::ref(output),
+										   boost::make_tuple(handler)));
+					}
 			};
 		}
 	}
