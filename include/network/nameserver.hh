@@ -104,12 +104,15 @@ namespace hyper {
 		class name_client {
 			typedef tcp::client<ns::output_msg> ns_client;
 			ns_client client;
+			boost::asio::io_service& io_s;
+			bool is_resolving;
 
 			template <typename Handler>
 			void handle_resolve(const boost::system::error_code &e,
 								name_resolve& solv,
 								boost::tuple<Handler> handler)
 			{
+				is_resolving = false;
 				if (e) {
 					boost::get<0>(handler)(e);
 				} else {
@@ -122,21 +125,28 @@ namespace hyper {
 				}
 			}
 
-			public:
-
-			/*
-			 * Can throw a boost::system::error_code if we can connect
-			 */
-			name_client(boost::asio::io_service&, 
-							 const std::string&, const std::string&);
-
-			std::pair<bool, boost::asio::ip::tcp::endpoint> register_name(const std::string&);
-			std::pair<bool, boost::asio::ip::tcp::endpoint> sync_resolve(const std::string&);
-
 			template <typename Handler>
-			void async_resolve(name_resolve & solv,
-							   Handler handler)
+			void async_resolve_(name_resolve & solv,
+							   boost::tuple<Handler> handler)
 			{
+				/* 
+				 * If we already are in the resolving state, (meaning that we
+				 * are sent a name request, and we are waiting for an answer),
+				 * just postpone the job. It will be scheduled later. Of
+				 * course, if we are out of luck, it can be postponed until the
+				 * end of the universe, but the probably is near 0.0
+				 */
+				if (is_resolving) {
+					void (name_client::*postpone)(
+									   name_resolve& solv,
+									   boost::tuple<Handler>) =
+						&name_client::template async_resolve_<Handler>;
+
+					io_s.post(boost::bind(postpone, this, boost::ref(solv),
+										  handler));
+					return;
+				}
+
 				network::request_name rn;
 				rn.name = solv.name();
 
@@ -148,7 +158,25 @@ namespace hyper {
 				client.async_request(rn, solv.rna, 
 						boost::bind(f, this, boost::asio::placeholders::error,
 											 boost::ref(solv),
-											 boost::make_tuple(handler)));
+											 handler));
+				is_resolving = true;
+			}
+
+			public:
+
+			/*
+			 * Can throw a boost::system::error_code if we can't connect
+			 */
+			name_client(boost::asio::io_service&, 
+							 const std::string&, const std::string&);
+
+			std::pair<bool, boost::asio::ip::tcp::endpoint> register_name(const std::string&);
+			std::pair<bool, boost::asio::ip::tcp::endpoint> sync_resolve(const std::string&);
+
+			template <typename Handler>
+			void async_resolve(name_resolve & solv, Handler handler)
+			{
+				async_resolve_(solv, boost::make_tuple(handler));
 			}
 		};
 	}

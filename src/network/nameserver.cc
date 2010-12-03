@@ -126,7 +126,7 @@ namespace hyper {
 
 		name_client::name_client(boost::asio::io_service& io_s,
 						const std::string& addr, const std::string& port) :
-			client(io_s)
+			client(io_s), io_s(io_s), is_resolving(false)
 		{
 			client.connect(addr, port);
 		}
