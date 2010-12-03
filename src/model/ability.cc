@@ -30,6 +30,17 @@ namespace hyper {
 					ack.id = current_id;
 					return ack;
 				}
+
+				output_variant ability_visitor::operator() (const network::variable_value& v) const
+				{
+					return a.actor_vis(v);
+				}
+
+				output_variant ability_visitor::operator() 
+					(const network::request_constraint_answer& v) const
+				{
+					return a.actor_vis(v);
+				}
 		}
 	}
 }
