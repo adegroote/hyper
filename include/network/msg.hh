@@ -195,10 +195,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id & var_name;
+					ar & id & str & var_name;
 				}
 			public:
-				identifier id;
+				mutable identifier id;
+				mutable std::string str;
 				std::string var_name;
 		};
 
@@ -210,10 +211,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id & var_name & success & value ;
+					ar & id & str & var_name & success & value ;
 				}
 			public:
-				identifier id;
+				mutable identifier id;
+				mutable std::string str;
 				std::string var_name;
 				bool success;
 				std::string value;
@@ -227,10 +229,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id & constraint;
+					ar & id & src & constraint;
 				}
 			public:
-				identifier id;
+				mutable identifier id;
+				mutable std::string src;
 				std::string constraint;
 		};
 
@@ -242,10 +245,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & acked & id;
+					ar & id & src & acked; 
 				}
 			public:
-				identifier id;
+				mutable identifier id;
+				mutable std::string src;
 				bool acked;
 		};
 
@@ -257,10 +261,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id & success;
+					ar & id & src & success;
 				}
 			public:
-				identifier id;
+				mutable identifier id;
+				mutable std::string src;
 				bool success;
 		};
 
