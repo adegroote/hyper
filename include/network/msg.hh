@@ -211,11 +211,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id & str & var_name & success & value ;
+					ar & id & src & var_name & success & value ;
 				}
 			public:
 				mutable identifier id;
-				mutable std::string str;
+				mutable std::string src;
 				std::string var_name;
 				bool success;
 				std::string value;

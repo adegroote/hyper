@@ -15,6 +15,7 @@
 #include <boost/variant/variant.hpp>
 #include <boost/variant/get.hpp>
 
+#include <network/log.hh>
 #include <network/msg.hh>
 #include <network/nameserver.hh>
 #include <network/client_tcp_impl.hh>
@@ -102,7 +103,16 @@ namespace hyper {
 		 *	- a method identifier gen_identifier()
 		 *	- a callback_database db to deal with async request
 		 *	- a resolver name_client
+		 *	- a logger logger
 		 */
+
+		template <typename Input>
+		std::string actor_identifier(const Input & input)
+		{
+			std::ostringstream oss;
+			oss << "[" << input.src << ", " << input.id << "]";
+			return oss.str();
+		}
 
 		/* actor_protocol_visitor only accepts message with an id field */
 		template <typename Actor>
@@ -115,6 +125,8 @@ namespace hyper {
 			boost::mpl::void_ operator() (const T& t) const
 			{
 				identifier id = t.id;
+				actor.logger(DEBUG_PROTOCOL) << actor_identifier(t);
+				actor.logger(DEBUG_PROTOCOL) << " triggered" << std::endl;
 				actor.db.trigger(id, t);
 				return boost::mpl::void_();
 			}
@@ -146,6 +158,8 @@ namespace hyper {
 				{
 					if (e)
 					{
+						actor.logger(DEBUG_PROTOCOL) << "[" << actor.name << ", " << id;
+						actor.logger(DEBUG_PROTOCOL) << " ] Writing failed" << std::endl;
 						actor.db.remove(id);
 						boost::get<0>(handler) (e);
 					}
@@ -157,11 +171,15 @@ namespace hyper {
 									 Output& output,
 									 boost::tuple<Handler> handler)
 				{
+					actor.logger(DEBUG_PROTOCOL) << "[" << actor.name << ", " << id;
+					actor.logger(DEBUG_PROTOCOL) << "] Callback called " << std::endl;
 					boost::system::error_code e;
 					try {
 						 output =  actor.db.template get_input<Output>(id);
 					} catch (const boost::bad_get&)
 						{
+							actor.logger(DEBUG_PROTOCOL) << "[" << actor.name << ", " << id;
+							actor.logger(DEBUG_PROTOCOL) << "] Callback invalid answer " << std::endl;
 							e  = boost::asio::error::invalid_argument;
 						}
 					actor.db.remove(id);
@@ -175,6 +193,7 @@ namespace hyper {
 							boost::tuple<Handler>) =
 						&actor_client::template handle_basic_write<Handler>;
 
+					actor.logger(DEBUG_PROTOCOL) << actor_identifier(input) << " Writing " << std::endl;
 					c_.async_write(input,
 							boost::bind(f, this,
 										   boost::asio::placeholders::error, handler));

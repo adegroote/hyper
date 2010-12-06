@@ -12,7 +12,7 @@ namespace hyper {
 			boost::thread thr;
 			
 			ability_test(const std::string& name_) : 
-				ability(name_ +  "_test", 20), target(name_),
+				ability(name_ +  "_test", DEBUG_ALL), target(name_),
 				thr(boost::bind(&ability::run, this))
 			{}
 

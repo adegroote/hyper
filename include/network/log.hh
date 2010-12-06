@@ -134,6 +134,15 @@ namespace hyper {
 			};
 		}
 
+#define NOTHING			0
+#define CRITICAL		1
+#define ERROR			2
+#define WARNING			3
+#define INFORMATION		4
+#define DEBUG			5
+#define DEBUG_PROTOCOL  6
+#define DEBUG_ALL		7
+
 		/* 
 		 * Log on remote ability dst_ every message where lvl is >= than level_
 		 * The logger is usable as a classic stream
@@ -155,7 +164,7 @@ namespace hyper {
 				}
 
 				std::ostream& operator() (int lvl) {
-					if (lvl < level_)
+					if (lvl > level_)
 						return void_;
 					return out_;
 				}

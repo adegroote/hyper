@@ -77,28 +77,29 @@ BOOST_AUTO_TEST_CASE ( network_logger_test )
 
 	res.clear();
 
-	hyper::network::logger<false_resolv> real_logger_(io_s2, "test", "logger", solver, 3);
+	hyper::network::logger<false_resolv> real_logger_(io_s2, "test", "logger", 
+													   solver, INFORMATION);
 	deadline_.expires_from_now(boost::posix_time::milliseconds(10));
 	deadline_.async_wait(do_nothing());
-	real_logger_(4) << "first message" << std::endl;
+	real_logger_(CRITICAL) << "first message" << std::endl;
 	io_s2.run();
 	io_s2.reset();
 
 	deadline_.expires_from_now(boost::posix_time::milliseconds(10));
 	deadline_.async_wait(do_nothing());
-	real_logger_(5) << "second message" << std::endl;
+	real_logger_(INFORMATION) << "second message" << std::endl;
 	io_s2.run();
 	io_s2.reset();
 
 	deadline_.expires_from_now(boost::posix_time::milliseconds(10));
 	deadline_.async_wait(do_nothing());
-	real_logger_(2) << "third message" << std::endl;
+	real_logger_(DEBUG) << "third message" << std::endl;
 	io_s2.run();
 	io_s2.reset();
 
 	deadline_.expires_from_now(boost::posix_time::milliseconds(10));
 	deadline_.async_wait(do_nothing());
-	real_logger_(3) << "fourth message" << std::endl;
+	real_logger_(INFORMATION) << "fourth message" << std::endl;
 	io_s2.run();
 	io_s2.reset();
 

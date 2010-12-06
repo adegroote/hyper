@@ -40,6 +40,9 @@ namespace {
 		boost::asio::io_service io_s;
 		false_resolv name_client;
 		callback_database<input_client> db;
+		hyper::network::logger<false_resolv> logger;
+
+		simple_agent() : logger(io_s, name, "logger", name_client, NOTHING) {}
 
 		size_t gen_identifier() { return identifier++; }
 	};

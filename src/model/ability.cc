@@ -7,7 +7,8 @@ namespace hyper {
 					(const network::request_variable_value& m) const
 				{
 					boost::shared_lock<boost::shared_mutex> lock(a.mtx);
-					a.logger(3) << "Handling a request for  the value of " << m.var_name << std::endl;
+					a.logger(INFORMATION) << "[" << m.src << ", " << m.id;
+					a.logger(INFORMATION) << "] Request for  the value of " << m.var_name << std::endl;
 					return a.proxy_vis(m);
 				}
 
@@ -16,8 +17,8 @@ namespace hyper {
 				{
 					size_t current_id = constraint_id++;
 
-					a.logger(3) << "Handling a request for enforcing constraint ";
-					a.logger(3) << r.constraint << std::endl;
+					a.logger(INFORMATION) << "Handling a request for enforcing constraint ";
+					a.logger(INFORMATION) << r.constraint << std::endl;
 
 					logic_constraint ctr;
 					ctr.constraint = r.constraint;
@@ -33,12 +34,14 @@ namespace hyper {
 
 				output_variant ability_visitor::operator() (const network::variable_value& v) const
 				{
+					a.logger(INFORMATION) << "[" << v.src << "," << v.id << "] Answer " << std::endl;
 					return a.actor_vis(v);
 				}
 
 				output_variant ability_visitor::operator() 
 					(const network::request_constraint_answer& v) const
 				{
+					a.logger(INFORMATION) << "[" << v.src << "," << v.id << "] Answer " << std::endl;
 					return a.actor_vis(v);
 				}
 		}
