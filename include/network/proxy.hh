@@ -684,6 +684,7 @@ namespace hyper {
 
 					variable_value* res(new variable_value);
 					res->id = r.id;
+					res->src = r.src;
 					res->var_name = r.var_name;
 					res->success = p.first;
 					res->value = p.second;
