@@ -290,8 +290,9 @@ struct agent_export_symbol
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
 		type t = tList.get(p.second.t);
-		oss << "\t\t" << scope::get_context_identifier(t.name, name);
-		oss << " " << p.second.name << "();" << std::endl;
+		oss << "\t\t\thyper::model::future_value<";
+		oss << scope::get_context_identifier(t.name, name);
+		oss << "> " << p.second.name << "();" << std::endl;
 	}
 };
 
@@ -305,17 +306,22 @@ ability::agent_export_declaration(std::ostream& oss, const typeList& tList) cons
 
 	guards g(oss, name_, "_EXPORT_AGENT_HH_");
 
+	oss << "#include <model/ability_test.hh>\n\n";
+
 	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
 	oss << std::endl;
 
 	namespaces n(oss, name_);
 
-	agent_export_symbol print(oss, tList, name_);
 
+	agent_export_symbol print(oss, tList, name_);
+	
+	oss << "\t\tstruct ability_test : public model::ability_test {\n" ;
+	oss << "\t\t\tability_test() : model::ability_test(" << quoted_string(name_);
+	oss << ") {} \n" << std::endl;
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
-
-	oss << "\t\tvoid send_constraint(const std::string&);" << std::endl;
+	oss << "\t\t};" << std::endl;
 }
 
 struct agent_export_impl
@@ -330,12 +336,12 @@ struct agent_export_impl
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
 		type t = tList.get(p.second.t);
-		oss << "" << scope::get_context_identifier(t.name, name);
-		oss << " hyper::" << name << "::" << p.second.name << "()" << std::endl;
+		oss << "hyper::model::future_value<" << scope::get_context_identifier(t.name, name);
+		oss << "> ability_test::"  << p.second.name << "()" << std::endl;
 		oss << "{" << std::endl;
-		oss << "return hyper::model::get_value<";
+		oss << "\treturn get_value<";
 		oss << scope::get_context_identifier(t.name, name);
-		oss << ">(\"" << name << "\",\"" << p.second.name << "\");";
+		oss << ">(" << quoted_string(p.second.name) << ");";
 		oss << std::endl;
 		oss << "}" << std::endl;
 	}
@@ -354,21 +360,5 @@ ability::agent_export_implementation(std::ostream& oss, const typeList& tList) c
 	agent_export_impl print(oss, tList, name_);
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
-
-	std::string send_constraint_impl =
-		"void hyper::@NAME@::send_constraint(const std::string& s) {\n"
-		"	boost::asio::io_service io_s;\n"
-		"	network::name_client name_(io_s, \"localhost\", \"4242\");\n"
-		"	network::sync_rpc<network::request_constraint, \n"
-		"					  network::request_constraint_ack,\n"
-		"					  network::name_client> rqst_sender(io_s, \"@NAME@\", name_);\n"
-		"	network::request_constraint msg;\n"
-		"	msg.constraint = s;\n"
-		"	rqst_sender.compute(msg, boost::posix_time::seconds(1));\n"
-		"}\n"
-		;
-
-	oss << hyper::compiler::replace_by(send_constraint_impl, "@NAME@", 
-									   name_);
 }
 

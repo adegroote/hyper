@@ -51,10 +51,12 @@ void build_swig(std::ostream& oss, const std::string& name)
 		"%{\n"
 		"	#include <string>\n"
 		"	#include \"@NAME@/export.hh\"\n"
+		"	#include <model/future.hh>\n"
 		"	using namespace hyper::@NAME@;\n"
 		"%}\n"
 		"%include \"std_string.i\"\n"
 		"%include \"@NAME@/types.hh\"\n"
+		"%include <model/future.hh>\n"
 		"%include \"@NAME@/export.hh\"\n"
 		;
 
@@ -73,7 +75,7 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 		"enable_language(C)\n"
 		"include(CheckIncludeFile)\n"
 		"\n"
-		"find_package(Boost 1.42 REQUIRED COMPONENTS system thread serialization filesystem)\n"
+		"find_package(Boost 1.42 REQUIRED COMPONENTS system thread serialization filesystem date_time)\n"
 		"set(BOOST_FOUND ${Boost_FOUND})\n"
 		"include_directories(${Boost_INCLUDE_DIRS})\n"
 		"message(STATUS \"boost libraries \"${Boost_LIBRARIES})\n"
@@ -140,13 +142,16 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 		"add_custom_command(\n"
 		"	OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp\n"
 		"	COMMAND ${SWIG_EXECUTABLE}\n" 
-		"ARGS -c++ -Wall -v -ruby -prefix \"hyper::\"  -I${Boost_INCLUDE_DIRS} -I${RUBY_INCLUDE_DIR}  -o ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp ${CMAKE_CURRENT_SOURCE_DIR}/@NAME@.i\n"
+		"ARGS -c++ -Wall -v -ruby -prefix \"hyper::\" -I${HYPER_ROOT}/include/hyper -I${Boost_INCLUDE_DIRS} -I${RUBY_INCLUDE_DIR}  -o ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp ${CMAKE_CURRENT_SOURCE_DIR}/@NAME@.i\n"
 		"MAIN_DEPENDENCY @NAME@.i\n"
+		"DEPENDS @NAME@/export.hh\n"
 		"WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"
 		")\n"
 	"add_library(@NAME@_ruby_wrap SHARED ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp @NAME@/export.cc)\n"
 		"target_link_libraries(@NAME@_ruby_wrap stdc++ ${RUBY_LIBRARY})\n"
 		"target_link_libraries(@NAME@_ruby_wrap ${HYPER_ROOT}/lib/libhyper_network.so)\n"
+		"target_link_libraries(@NAME@_ruby_wrap ${HYPER_ROOT}/lib/libhyper_model.so)\n"
+		"target_link_libraries(@NAME@_ruby_wrap ${HYPER_ROOT}/lib/libhyper_logic.so)\n"
 		"set_target_properties(@NAME@_ruby_wrap \n"
 		"						PROPERTIES OUTPUT_NAME @NAME@\n"
 		"						PREFIX \"\")\n"
@@ -475,6 +480,7 @@ int main(int argc, char** argv)
 		std::string fileName = baseName + abilityName + ".i";
 		std::ofstream oss(fileName.c_str());
 		build_swig(oss, abilityName);
+		u.dump_swig_ability_types(oss, abilityName);
 	}
 
 	/* Now for all files in .hyper/src, copy different one into real src */
