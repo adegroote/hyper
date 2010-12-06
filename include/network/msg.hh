@@ -16,6 +16,7 @@
 #include <boost/mpl/vector/vector20.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/variant.hpp> 
+#include <boost/serialization/vector.hpp>
 #include <boost/serialization/split_member.hpp>
 
 #include <boost/variant.hpp>
@@ -173,7 +174,7 @@ namespace hyper {
 				identifier value;
 		};
 
-		struct pong
+		struct inform_death_agent
 		{
 			private:
 				friend class boost::serialization::access;
@@ -181,10 +182,10 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & value;
+					ar & dead_agents;
 				}
 			public:
-				identifier value;
+				std::vector<std::string> dead_agents;
 		};
 
 		struct request_variable_value
@@ -301,7 +302,7 @@ namespace hyper {
 			register_name,
 			register_name_answer,
 			ping,
-			pong,
+			inform_death_agent,
 			request_variable_value,
 			variable_value,
 			request_constraint,

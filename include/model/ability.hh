@@ -25,7 +25,8 @@ namespace hyper {
 			typedef boost::mpl::vector<network::request_variable_value,
 									   network::request_constraint,
 									   network::variable_value,
-									   network::request_constraint_answer> input_msg;
+									   network::request_constraint_answer,
+									   network::inform_death_agent> input_msg;
 			typedef boost::mpl::vector<network::variable_value,
 									   network::request_constraint_ack,
 									   network::request_constraint_answer,
@@ -48,6 +49,7 @@ namespace hyper {
 				output_variant operator() (const network::request_constraint& r) const;
 				output_variant operator() (const network::variable_value & v) const;
 				output_variant operator() (const network::request_constraint_answer& v) const;
+				output_variant operator() (const network::inform_death_agent& d) const;
 			};
 		}
 

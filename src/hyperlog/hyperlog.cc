@@ -8,7 +8,8 @@
 
 
 namespace {
-	typedef boost::mpl::vector<hyper::network::log_msg> input_msg;
+	typedef boost::mpl::vector<hyper::network::log_msg,
+							   hyper::network::inform_death_agent> input_msg;
 	typedef boost::mpl::vector<boost::mpl::void_> output_msg;
 
 	typedef boost::make_variant_over<input_msg>::type input_variant;
@@ -23,6 +24,12 @@ namespace {
 		output_variant operator() (const hyper::network::log_msg& msg) const
 		{
 			log_msgs_.push_back(msg);
+			return boost::mpl::void_();
+		}
+
+		output_variant operator() (const hyper::network::inform_death_agent& msg) const
+		{
+			// don't care but avoids some warning message
 			return boost::mpl::void_();
 		}
 	};

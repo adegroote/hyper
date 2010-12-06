@@ -1,3 +1,5 @@
+#include <network/actor_protocol.hh>
+#include <network/log.hh>
 #include <network/nameserver.hh>
 
 using namespace hyper;
@@ -23,22 +25,51 @@ namespace details {
 	
 	typedef std::map<std::string, ability_context> runtime_map;
 
+	struct trivial_name_client {
+		const runtime_map& map;
+
+		trivial_name_client(const runtime_map& map_) : map(map_) {}
+
+		template <typename Handler>
+		void async_resolve(network::name_resolve & solv, Handler handler)
+		{
+			runtime_map::const_iterator it = map.find(solv.name());
+			solv.rna.success = (it != map.end());
+			if (it != map.end()) 
+				solv.rna.endpoint = it->second.addr.tcp_endpoint;
+			handler(boost::system::error_code());
+		}
+	};
+
+	struct runtime_actor {
+		std::string name;
+		boost::asio::io_service io_s;
+		trivial_name_client name_client;
+		network::logger<trivial_name_client> logger;
+
+		runtime_actor(const runtime_map& map) : 
+					name("runtime"), 
+				    name_client(map),
+					logger(io_s, name, "logger", name_client, NOTHING)
+		{}
+	};
+
+	typedef hyper::network::actor_client_database<runtime_actor> client_db;
+
 	struct runtime_visitor : public boost::static_visitor<output_variant>
 	{
 		runtime_map &map;
-		boost::shared_mutex& m;
 		network::tcp::ns_port_generator& gen;
 
-		runtime_visitor(runtime_map& map_, boost::shared_mutex& m_,
+		runtime_visitor(runtime_map& map_, 
 						network::tcp::ns_port_generator& gen_) :
-			map(map_), m(m_), gen(gen_) 
+			map(map_), gen(gen_) 
 		{}
 
 		output_variant operator() (const network::request_name& r) const
 		{
 			std::cerr << "receiving name request : " << r << std::endl;
 
-			boost::shared_lock<boost::shared_mutex> lock(m);
 			runtime_map::iterator it = map.find(r.name);
 
 			network::request_name_answer res_msg;
@@ -60,7 +91,6 @@ namespace details {
 			ctx.addr.tcp_endpoint = ip::tcp::endpoint(ip::address_v4::any(), gen.get());
 			ctx.timeout_occurence = 0;
 
-			boost::upgrade_lock<boost::shared_mutex> lock(m);
 			runtime_map::iterator it = map.find(r.name);
 			bool already_here = (it != map.end());
 			if (!already_here) {
@@ -78,7 +108,6 @@ namespace details {
 
 		output_variant operator() (const network::ping& p) const
 		{
-			boost::upgrade_lock<boost::shared_mutex> lock(m);
 			runtime_map::iterator it = map.find(p.name);
 			if (it != map.end())
 				it->second.timeout_occurence = 0;
@@ -95,21 +124,44 @@ namespace details {
 		boost::asio::deadline_timer timer_;
 
 		runtime_map& map_;
-		boost::shared_mutex& m_;
+		client_db& db_;
 
 		periodic_check(boost::asio::io_service& io_s, 
 					   boost::posix_time::time_duration delay,
-					   runtime_map& map,
-					   boost::shared_mutex &m):
+					   runtime_map& map, client_db& db) :
 			io_s_(io_s), delay_(delay), timer_(io_s_),
-			map_(map), m_(m)
+			map_(map), db_(db)
 		{}
+
+
+		void handle_write(const boost::system::error_code&, 
+						  boost::shared_ptr<network::inform_death_agent> ptr)
+		{
+			// do nothing, decrement ptr ref, so it will be released correctly
+			// when all write are finished
+		}
+
+		struct inform_survivor {
+			periodic_check & check;
+			boost::shared_ptr<network::inform_death_agent> ptr;
+
+			inform_survivor(periodic_check& check_,
+					boost::shared_ptr<network::inform_death_agent> ptr_) :
+				check(check_), ptr(ptr_) {}
+
+			void operator() (const std::pair<std::string, ability_context>& p) const
+			{
+				check.db_[p.first].async_write(*ptr, 
+						boost::bind(&periodic_check::handle_write, &check, 
+									boost::asio::placeholders::error,
+									ptr));
+			}
+		};
 
 		void handle_timeout(const boost::system::error_code& e)
 		{
 			if (!e) {
 				std::vector<std::string> dead_agents;
-				boost::upgrade_lock<boost::shared_mutex> lock(m_);
 				runtime_map::iterator it = map_.begin();
 				while (it != map_.end())
 				{
@@ -122,13 +174,17 @@ namespace details {
 					}
 				}
 
-				/* XXX : send a global msg to tell to alive agents that the
-				 * following agents are dead */
 				if (! dead_agents.empty()) {
+					boost::shared_ptr<network::inform_death_agent> ptr_msg;
+					ptr_msg = boost::make_shared<network::inform_death_agent>();
+
 					std::cout << "the following agents seems dead : ";
 					std::copy(dead_agents.begin(), dead_agents.end(), 
 							  std::ostream_iterator<std::string>(std::cout, " "));
 					std::cout << std::endl;
+
+					std::swap(ptr_msg->dead_agents, dead_agents);
+					std::for_each(map_.begin(), map_.end(), inform_survivor(*this, ptr_msg));
 				}
 
 				run();
@@ -143,28 +199,29 @@ namespace details {
 									  boost::asio::placeholders::error));
 		}
 	};
+
 }
 
 
 int main()
 {
-	boost::asio::io_service io_s;
-
-	boost::shared_mutex m;
 	details::runtime_map map;
+	details::runtime_actor actor(map);
+	details::client_db db(actor);
+
 	network::tcp::ns_port_generator gen("5000");
-	details::runtime_visitor runtime_vis(map, m, gen);
+	details::runtime_visitor runtime_vis(map, gen);
 
 	typedef network::tcp::server<details::input_msg, 
 								  details::output_msg, 
 								  details::runtime_visitor
 								> tcp_runtime_impl;
-	tcp_runtime_impl runtime("localhost", "4242", runtime_vis, io_s);
+	tcp_runtime_impl runtime("localhost", "4242", runtime_vis, actor.io_s);
 
-	details::periodic_check check(io_s, 
+	details::periodic_check check( actor.io_s, 
 								   boost::posix_time::milliseconds(100), 
-								   map, m);
+								   map, db);
 						 
 	check.run();
-	io_s.run();
+	actor.io_s.run();
 }

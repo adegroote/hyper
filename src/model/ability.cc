@@ -44,6 +44,20 @@ namespace hyper {
 					a.logger(INFORMATION) << "[" << v.src << "," << v.id << "] Answer " << std::endl;
 					return a.actor_vis(v);
 				}
+
+				output_variant ability_visitor::operator() 
+					(const network::inform_death_agent& d) const
+				{
+					a.logger(INFORMATION) << "Receive information about the death of agent(s) : ";
+					std::copy(d.dead_agents.begin(), d.dead_agents.end(), 
+							  std::ostream_iterator<std::string>(a.logger(INFORMATION), ", "));
+					a.logger(INFORMATION) << std::endl;
+
+					std::for_each(d.dead_agents.begin(), d.dead_agents.end(),
+								  boost::bind(&ability::cb_db::cancel, &a.db, _1));
+
+					return boost::mpl::void_();
+				}
 		}
 	}
 }
