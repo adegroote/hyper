@@ -142,12 +142,19 @@ namespace hyper {
 				std::string actor_dst;
 				name_resolve solver;
 
-				template <typename Handler>
+				template <typename Input, typename Handler>
 				void handle_basic_write(const boost::system::error_code& e,
+										const Input& input,
+										bool first_try,
 										boost::tuple<Handler> handler)
 				{
-					if (e)
+					if (e) {
 						connected = false;
+						c_.close();
+						if (first_try) 
+							return async_write_(input, false, handler);
+						
+					}
 					boost::get<0>(handler) (e);
 				}
 
@@ -159,7 +166,7 @@ namespace hyper {
 					if (e)
 					{
 						actor.logger(DEBUG_PROTOCOL) << "[" << actor.name << ", " << id;
-						actor.logger(DEBUG_PROTOCOL) << " ] Writing failed" << std::endl;
+						actor.logger(DEBUG_PROTOCOL) << "] Writing failed" << std::endl;
 						actor.db.remove(id);
 						boost::get<0>(handler) (e);
 					}
@@ -187,34 +194,37 @@ namespace hyper {
 				}
 
 				template <typename Input, typename Handler>
-				void write(const Input& input, boost::tuple<Handler> handler)
+				void write(const Input& input, bool first_try, boost::tuple<Handler> handler)
 				{
 					void (actor_client::*f) (const boost::system::error_code&,
-							boost::tuple<Handler>) =
-						&actor_client::template handle_basic_write<Handler>;
+							const Input& input, bool, boost::tuple<Handler>) =
+						&actor_client::template handle_basic_write<Input, Handler>;
 
 					actor.logger(DEBUG_PROTOCOL) << actor_identifier(input) << " Writing " << std::endl;
-					c_.async_write(input,
-							boost::bind(f, this,
-										   boost::asio::placeholders::error, handler));
+					c_.async_write(input, 
+							boost::bind(f, this, 
+										   boost::asio::placeholders::error, 
+										   boost::cref(input), first_try, handler));
 				}
 
 				template <typename Input, typename Handler>
 				void handle_connect(const boost::system::error_code& e,
 									const Input& input,
+									bool first_try,
 									boost::tuple<Handler> handler)
 				{
-					if (e) 
+					if (e) {
 						boost::get<0>(handler)(e);
-					else {
+					} else {
 						connected=true;
-						write (input, handler);
+						write (input, first_try, handler);
 					}
 				}
 
 				template <typename Input, typename Handler>
 				void handle_resolve(const boost::system::error_code& e,
 									const Input& input,
+									bool first_try,
 									boost::tuple<Handler> handler)
 				{
 					if (e) 
@@ -222,6 +232,7 @@ namespace hyper {
 					else {
 						void (actor_client::*f) (const boost::system::error_code&,
 								const Input& input,
+								bool,
 								boost::tuple<Handler>) =
 							&actor_client::template handle_connect<Input, Handler>;
 
@@ -229,16 +240,18 @@ namespace hyper {
 							boost::bind(f, this, 
 										boost::asio::placeholders::error, 
 										boost::cref(input),
+										first_try,
 										handler));
 					}
 				}
 
 				template <typename Input, typename Handler>
-				void async_write_(const Input& input, boost::tuple<Handler> handler)
+				void async_write_(const Input& input, bool first_try, boost::tuple<Handler> handler)
 				{
 					if (!connected) {
 					void (actor_client::*f) (const boost::system::error_code&,
 							const Input& input,
+							bool,
 							boost::tuple<Handler>) =
 						&actor_client::template handle_resolve<Input, Handler>;
 					solver.name(actor_dst);
@@ -247,9 +260,10 @@ namespace hyper {
 							boost::bind(f, this, 
 										 boost::asio::placeholders::error,
 										 boost::cref(input),
+										 first_try,
 										 handler));
 					} else {
-						write(input, handler);
+						write(input, first_try, handler);
 					}
 				}
 
@@ -262,7 +276,7 @@ namespace hyper {
 				template <typename Input, typename Handler>
 				void async_write(const Input& input, Handler handler)
 				{
-					return async_write_(input, boost::make_tuple(handler));
+					return async_write_(input, true, boost::make_tuple(handler));
 				}
 
 				template <typename Input, typename Output, typename Handler>
