@@ -27,7 +27,7 @@ namespace hyper {
 		class callback_database 
 		{
 			public:
-				typedef boost::function<void ()> fun_cb;
+				typedef boost::function<void (const boost::system::error_code&)> fun_cb;
 				typedef typename boost::make_variant_over<InputM>::type msg_variant;
 
 			private:
@@ -42,11 +42,15 @@ namespace hyper {
 				std::map<identifier, cb_info> map_cb;
 				std::map<std::string, set_id> id_by_actor;
 
+				void cancel_helper(identifier id)
+				{
+					map_cb[id].cb(boost::asio::error::connection_reset);
+				}
+
 				void remove_helper(identifier id)
 				{
 					map_cb.erase(id);
 				}
-
 
 			public:
 				void add(const std::string& actor, identifier id, fun_cb cb)
@@ -69,7 +73,7 @@ namespace hyper {
 
 					cb_info& info = map_cb[id];
 					info.input = input;
-					info.cb();
+					info.cb(boost::system::error_code());
 				}
 
 				template <typename T>
@@ -93,7 +97,7 @@ namespace hyper {
 				{
 					set_id& s = id_by_actor[actor];
 					std::for_each(s.begin(), s.end(), 
-								  boost::bind(&callback_database::remove_helper, this, _1));
+								  boost::bind(&callback_database::cancel_helper, this, _1));
 				}
 		};
 
@@ -173,22 +177,24 @@ namespace hyper {
 				}
 
 				template <typename Output, typename Handler>
-				void handle_request(
+				void handle_request(const boost::system::error_code& err,
 									 identifier id,
 									 Output& output,
 									 boost::tuple<Handler> handler)
 				{
 					actor.logger(DEBUG_PROTOCOL) << "[" << actor.name << ", " << id;
 					actor.logger(DEBUG_PROTOCOL) << "] Callback called " << std::endl;
-					boost::system::error_code e;
-					try {
-						 output =  actor.db.template get_input<Output>(id);
-					} catch (const boost::bad_get&)
+					boost::system::error_code e = err;
+					if (!err) {
+						try {
+							output =  actor.db.template get_input<Output>(id);
+						} catch (const boost::bad_get&)
 						{
 							actor.logger(DEBUG_PROTOCOL) << "[" << actor.name << ", " << id;
 							actor.logger(DEBUG_PROTOCOL) << "] Callback invalid answer " << std::endl;
 							e  = boost::asio::error::invalid_argument;
 						}
+					}
 					actor.db.remove(id);
 					boost::get<0>(handler)(e);
 				}
@@ -293,6 +299,7 @@ namespace hyper {
 						= &actor_client::template handle_write<Handler>;
 
 					void (actor_client::*request_cb)(
+							const boost::system::error_code&,
 							identifier id,
 							Output &,
 							boost::tuple<Handler>)
@@ -300,7 +307,9 @@ namespace hyper {
 
 					actor.db.add(actor.name, input.id, 
 								 boost::bind(request_cb,
-											 this, input.id, boost::ref(output),
+											 this, 
+											 boost::asio::placeholders::error,
+											 input.id, boost::ref(output),
 											 boost::make_tuple(handler)));
 
 					async_write(input, boost::bind(write_cb,
