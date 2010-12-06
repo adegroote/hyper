@@ -206,7 +206,6 @@ namespace hyper {
 							const Input& input, bool, boost::tuple<Handler>) =
 						&actor_client::template handle_basic_write<Input, Handler>;
 
-					actor.logger(DEBUG_PROTOCOL) << actor_identifier(input) << " Writing " << std::endl;
 					c_.async_write(input, 
 							boost::bind(f, this, 
 										   boost::asio::placeholders::error, 
@@ -312,6 +311,7 @@ namespace hyper {
 											 input.id, boost::ref(output),
 											 boost::make_tuple(handler)));
 
+					actor.logger(DEBUG_PROTOCOL) << actor_identifier(input) << " Writing " << std::endl;
 					async_write(input, boost::bind(write_cb,
 												 this, 
 												 boost::asio::placeholders::error,
