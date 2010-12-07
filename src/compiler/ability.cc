@@ -321,6 +321,9 @@ ability::agent_export_declaration(std::ostream& oss, const typeList& tList) cons
 	oss << ") {} \n" << std::endl;
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
+	oss << "\t\t\tvoid enforce(const std::string& ctr) {\n";
+	oss << "\t\t\t\treturn send_constraint(ctr);\n";
+	oss << "\t\t\t}\n";
 	oss << "\t\t};" << std::endl;
 }
 
@@ -362,3 +365,52 @@ ability::agent_export_implementation(std::ostream& oss, const typeList& tList) c
 	std::for_each(readable_list.begin(), readable_list.end(), print);
 }
 
+struct dump_swig {
+	std::ostream& oss;
+
+	dump_swig(std::ostream& oss) : oss(oss) {}
+
+	void operator() (const std::string& s) const {
+		std::string type_name;
+		if (scope::is_scoped_identifier(s)) {
+			std::pair<std::string, std::string> p;
+			p = scope::decompose(s);
+			type_name = p.second;
+		} else {
+			type_name = s;
+		}
+		oss << "%template(Future_" << type_name << ") ";
+		oss << "hyper::model::future_value<";
+		if (scope::is_basic_identifier(s)) 
+			oss << s;
+		else 
+			oss << "hyper::" << s;
+		oss << ">;\n";
+	}
+};
+
+struct extract_types
+{
+	std::set<std::string> &s;
+	const typeList& tList;
+
+	extract_types(std::set<std::string>& s_, const typeList& tlist_) :
+		s(s_), tList(tlist_) {};
+
+	void operator() (const std::pair<std::string, symbol>& p) const
+	{
+		s.insert(tList.get(p.second.t).name);
+	}
+};
+
+void
+ability::dump_swig_ability_types(std::ostream& oss, const typeList& tList) const
+{
+	// search the list of type used in the variable 
+	std::set<std::string> types;
+	extract_types type_deps(types, tList);
+	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
+	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
+
+	std::for_each(types.begin(), types.end(), dump_swig(oss));
+}

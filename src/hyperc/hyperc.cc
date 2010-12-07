@@ -480,7 +480,7 @@ int main(int argc, char** argv)
 		std::string fileName = baseName + abilityName + ".i";
 		std::ofstream oss(fileName.c_str());
 		build_swig(oss, abilityName);
-		u.dump_swig_ability_types(oss, abilityName);
+		current_a.dump_swig_ability_types(oss, u.types());
 	}
 
 	/* Now for all files in .hyper/src, copy different one into real src */

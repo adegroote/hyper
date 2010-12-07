@@ -76,6 +76,7 @@ namespace hyper {
 				void dump(std::ostream& oss, const typeList& tList) const;
 				void agent_export_declaration(std::ostream& oss, const typeList& tList) const;
 				void agent_export_implementation(std::ostream& oss, const typeList& tList) const;
+				void dump_swig_ability_types(std::ostream& oss, const typeList& tList) const;
 
 				depends get_function_depends() const;
 		};

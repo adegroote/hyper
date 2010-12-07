@@ -431,27 +431,6 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 	return types.size();
 }
 
-struct dump_swig {
-	std::ostream& oss;
-
-	dump_swig(std::ostream& oss) : oss(oss) {}
-
-	void operator() (const type& t) const {
-		std::pair<std::string, std::string> p = scope::decompose(t.name);
-		oss << "%template(Future_" << p.second << ") ";
-		oss << "hyper::model::future_value<hyper::" << t.name << ">;\n";
-	}
-};
-
-size_t
-universe::dump_swig_ability_types(std::ostream& oss, const std::string& name) const
-{
-	// find types prefixed by name::
-	std::vector<type> types = tList.select(select_ability_type(name));
-
-	std::for_each(types.begin(), types.end(), dump_swig(oss));
-}
-
 struct select_ability_funs
 {
 	std::string search_string;
