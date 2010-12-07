@@ -49,8 +49,6 @@ namespace hyper {
 					boost::optional<T>& res,
 					Handler handler);
 
-			struct computation_error {};
-
 			static
 			void handle_remote_proxy_get(const boost::system::error_code& e,
 										 ability_remote_proxy* proxy,
@@ -73,7 +71,7 @@ namespace hyper {
 					io_s(io_s_), a(a_), res(res_), cb(cb_) {}
 
 				template <typename U> 
-				void operator() (const U& u) const { (void) u; throw computation_error();}
+				void operator() (const U&) const { cb(boost::asio::error::invalid_argument);}
 
 				void operator() (const logic::Constant<typename T::value_type>& c) const
 				{
@@ -103,7 +101,10 @@ namespace hyper {
 							return proxy->async_get(p.first, p.second, res, local_cb);
 						}
 					}
-					cb(boost::system::error_code());
+					if (res)
+						cb(boost::system::error_code());
+					else
+						cb(boost::asio::error::invalid_argument);
 				}
 
 				void operator() (const logic::function_call& f) const
@@ -262,7 +263,10 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 				else {
 					boost::any res_ = func->get_result();
 					res = boost::any_cast< boost::optional<T> > (res_);
-					boost::get<0>(handler) (boost::system::error_code());
+					if (res) 
+						boost::get<0>(handler) (boost::system::error_code());
+					else
+						boost::get<0>(handler) (boost::asio::error::invalid_argument);
 				}		
 			}
 
@@ -392,17 +396,11 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 				boost::asio::io_service& io_s, 
 				const logic::function_call& f, ability &a)
 		{
-			try {
-				boost::optional<T> res;
-				details::_evaluate_expression<T>(io_s, f, a, res, &details::handle_nothing);
-				io_s.run();
-				io_s.reset();
-				return res;
-			} catch (details::computation_error&) {
-				return boost::none;
-			}
-
-			return boost::none;
+			boost::optional<T> res;
+			details::_evaluate_expression<T>(io_s, f, a, res, &details::handle_nothing);
+			io_s.run();
+			io_s.reset();
+			return res;
 		}
 
 		template <typename T, typename Handler>

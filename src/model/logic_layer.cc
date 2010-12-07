@@ -164,10 +164,15 @@ namespace hyper {
 		void logic_layer::handle_exec_computation(const boost::system::error_code& e,
 									 logic_ctx_ptr ctx)
 		{
-			// don't care about e
-			(void) e;
 			a_.logger(DEBUG) << "Finish the computation of constraint " << ctx->ctr.constraint;
 			a_.logger(DEBUG) << std::endl;
+
+			if (e  || !ctx->exec_res) {
+				a_.logger(DEBUG) << "Constraint " << ctx->ctr.constraint << " failed to evalutate";
+				a_.logger(DEBUG) << std::endl;
+				// XXX send a back message to caller
+				return;
+			}
 
 			if (ctx->exec_res && *(ctx->exec_res)) {
 				a_.logger(INFORMATION) << "Constraint " << ctx->ctr.constraint << " is alreay enforced";
