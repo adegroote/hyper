@@ -8,14 +8,14 @@
 namespace hyper {
 	namespace model {
 		template <typename T>
-		void ability::export_variable(const std::string& name, const T& value)
+		void ability::export_variable(const std::string& name, T& value)
 		{
 			export_variable_helper(name, value);
 			updater.add(name);
 		}
 
 		template <typename T>
-		void ability::export_variable(const std::string& name, const T& value,
+		void ability::export_variable(const std::string& name, T& value,
 									  const std::string& update)
 		{
 			export_variable_helper(name, value);

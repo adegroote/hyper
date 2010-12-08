@@ -108,9 +108,7 @@ struct print_initializer_helpers : boost::static_visitor<std::string>
 	print_initializer_helpers(const std::string& name) : var_name(name) {}
 
 	template <typename T>
-	std::string operator () (const T&) const { assert(false); return ""; }
-
-	std::string operator () (const empty &) const { return ""; }
+	std::string operator () (const T&) const { return ""; }
 
 	std::string operator () (const expression_ast& e) const
 	{
@@ -123,13 +121,6 @@ struct print_initializer_helpers : boost::static_visitor<std::string>
 		std::ostringstream oss;
 		oss << ", " << var_name << "(" << c.value << ")";
 		return oss.str();
-	}
-
-	std::string operator () (const function_call& f) const
-	{
-		assert(f.args.size() == 0);
-		// XXX TODO, implement 
-		return "";
 	}
 };
 
@@ -168,6 +159,27 @@ struct initialize_variable
 	}
 };
 
+struct compute_updater : public boost::static_visitor<std::string>
+{
+	template <typename T>
+	std::string operator () (const T&) const { return ""; }
+
+	std::string operator () (const expression_ast& e) const
+	{
+		return boost::apply_visitor(compute_updater(), e.expr);
+	}
+
+	std::string operator () (const std::string& s) const
+	{
+		return quoted_string(s);
+	}
+
+	std::string operator () (const function_call& f) const
+	{
+		return quoted_string(f.fName);
+	}
+};
+
 struct add_proxy_symbol
 {
 	std::ostream& oss;
@@ -176,8 +188,14 @@ struct add_proxy_symbol
 
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
-		oss << "\t\t\t\t\texport_variable(\"" << p.second.name << "\",";
-		oss << p.second.name << ");" << std::endl;
+		std::string updater = 
+			boost::apply_visitor(compute_updater(), p.second.initializer.expr);
+		oss << "\t\t\t\t\texport_variable(" << quoted_string(p.second.name) << ", ";
+		oss << p.second.name;
+		if (updater == "") 
+			oss << ");" << std::endl;
+		else 
+			oss << ", " << updater << ");" << std::endl;
 	}
 };
 
@@ -252,7 +270,7 @@ ability::dump(std::ostream& oss, const typeList& tList) const
 	std::for_each(deps.fun_depends.begin(), deps.fun_depends.end(), dump_depends(oss, "import.hh"));
 	oss << std::endl;
 	std::for_each(tasks.begin(), tasks.end(), add_task_header(oss, name_));
-	oss << "#include <model/ability.hh>" << std::endl;
+	oss << "#include <model/ability_impl.hh>" << std::endl;
 	oss << "#include <model/logic_layer_impl.hh>" << std::endl;
 
 	namespaces n(oss, name_);

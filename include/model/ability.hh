@@ -127,10 +127,10 @@ namespace hyper {
 
 
 			template <typename T>
-			void export_variable(const std::string& name, const T& value);
+			void export_variable(const std::string& name, T& value);
 
 			template <typename T>
-			void export_variable(const std::string& name, const T& value, 
+			void export_variable(const std::string& name, T& value, 
 								 const std::string& update);
 
 			void run()
