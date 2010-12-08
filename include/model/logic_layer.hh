@@ -17,10 +17,18 @@ namespace hyper {
 
 		struct logic_constraint
 		{
-			std::string srcAbility;
 			std::string constraint;
 			size_t id;
+			std::string src;
 		};
+
+		inline
+		std::ostream& operator << (std::ostream& oss, 
+								   const logic_constraint& c)
+		{
+			oss << "[" << c.src << ", " << c.id << "]";
+			return oss;
+		}
 
 		struct logic_context
 		{

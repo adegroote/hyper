@@ -145,15 +145,14 @@ namespace hyper {
 						logic::generate(to_execute, execFuncs);
 
 			if (ret_exec.res == false) {
-				a_.logger(WARNING) << "Fail to parse constraint " << ctr.constraint << std::endl;
+				a_.logger(WARNING) << ctr << " Fail to parse" << std::endl;
 				// XXX
 				return;
 			}
 
 			ctx->call_exec = ret_exec.e;
 
-			a_.logger(DEBUG) << "Computation of the state for constraint " << ctr.constraint;
-			a_.logger(DEBUG) << std::endl;
+			a_.logger(DEBUG) << ctr << " Computation of the state " << std::endl;
 			return async_eval_expression(a_.io_s, ctx->call_exec,
 										  a_, ctx->exec_res,
 				boost::bind(&logic_layer::handle_exec_computation, this,
@@ -164,19 +163,16 @@ namespace hyper {
 		void logic_layer::handle_exec_computation(const boost::system::error_code& e,
 									 logic_ctx_ptr ctx)
 		{
-			a_.logger(DEBUG) << "Finish the computation of constraint " << ctx->ctr.constraint;
-			a_.logger(DEBUG) << std::endl;
+			a_.logger(DEBUG) <<  ctx->ctr << " Finish the constraint computation " << std::endl;
 
 			if (e  || !ctx->exec_res) {
-				a_.logger(DEBUG) << "Constraint " << ctx->ctr.constraint << " failed to evalutate";
-				a_.logger(DEBUG) << std::endl;
+				a_.logger(DEBUG) << ctx->ctr << " Failed to evaluate" << std::endl;
 				// XXX send a back message to caller
 				return;
 			}
 
 			if (ctx->exec_res && *(ctx->exec_res)) {
-				a_.logger(INFORMATION) << "Constraint " << ctx->ctr.constraint << " is alreay enforced";
-				a_.logger(INFORMATION) << std::endl;
+				a_.logger(INFORMATION) << ctx->ctr << " Already enforced" << std::endl;
 				return;
 			}
 
@@ -194,6 +190,7 @@ namespace hyper {
 
 			void operator() (const std::string& task)
 			{
+				layer.a_.logger(DEBUG) << ctx->ctr;
 				layer.a_.logger(DEBUG) << " Start evaluation precondition for task " << task;
 				layer.a_.logger(DEBUG) << std::endl;
 				layer.tasks[task]->async_evaluate_preconditions(
@@ -207,9 +204,10 @@ namespace hyper {
 			std::string to_logic = prepare_logic_rqst(ctx->ctr.constraint);
 			std::vector<std::string> res;
 
-			a_.logger(DEBUG) << "Searching some task to handle " << to_logic << std::endl;
+			a_.logger(DEBUG) << ctx-> ctr << " Searching some task to handle it" << std::endl;
 			engine.infer(to_logic, std::back_inserter(res));
-			a_.logger(DEBUG) << "Find " << res.size() << " task(s) to handle " << to_logic << std::endl;
+			a_.logger(DEBUG) << ctx->ctr << " Find " << res.size();
+			a_.logger(DEBUG) << " task(s) to handle it" << std::endl;
 
 			if (res.size() == 0) {
 				// XXX send back an answer to the agent
@@ -232,8 +230,8 @@ namespace hyper {
 		void logic_layer::handle_evaluation_preconds(logic_ctx_ptr ctx, 
 				const std::string& name, conditionV failed)
 		{
-			a_.logger(DEBUG) << " End evaluation precondition for task " << name;
-			a_.logger(DEBUG) << std::endl;
+			a_.logger(DEBUG) << ctx->ctr << " End evaluation precondition for task ";
+			a_.logger(DEBUG) << name << std::endl;
 
 			std::vector<task_evaluation>::iterator it;
 			std::vector<task_evaluation>& deps = ctx->seqs.deps;
@@ -249,11 +247,12 @@ namespace hyper {
 			const conditionV& needed_precond = *deps[0].failed_conds;
 
 			if (needed_precond.empty()) {
-				a_.logger(INFORMATION) << " Executing " << deps[0].name << " to handle ";
-				a_.logger(INFORMATION) << ctx->ctr.constraint << std::endl;
+				a_.logger(INFORMATION) << ctx->ctr << " Executing " << deps[0].name;
+				a_.logger(INFORMATION) << " to handle it " << std::endl;
 				// XXX do it
 			} else {
-				a_.logger(INFORMATION) << " Need to handle the following conditions " << std::endl;
+				a_.logger(INFORMATION) << ctx->ctr;
+				a_.logger(INFORMATION) << " Need to handle the following conditions\n";
 				std::copy(needed_precond.begin(), needed_precond.end(), 
 						std::ostream_iterator<std::string>(a_.logger(3), "\n"));
 				a_.logger(INFORMATION) << std::endl;

@@ -41,7 +41,6 @@ namespace hyper {
 			struct ability_visitor : public boost::static_visitor<output_variant>
 			{
 				ability &a;
-				mutable size_t constraint_id;
 
 				ability_visitor(ability& a_) : a(a_) {}
 

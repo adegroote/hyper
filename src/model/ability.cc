@@ -15,21 +15,18 @@ namespace hyper {
 				output_variant ability_visitor::operator()
 					(const network::request_constraint& r) const
 				{
-					size_t current_id = constraint_id++;
-
-					a.logger(INFORMATION) << "Handling a request for enforcing constraint ";
-					a.logger(INFORMATION) << r.constraint << std::endl;
 
 					logic_constraint ctr;
 					ctr.constraint = r.constraint;
-					ctr.id = current_id;
+					ctr.id = r.id;
+					ctr.src = r.src;
+
+					a.logger(INFORMATION) << ctr << " Handling ";
+					a.logger(INFORMATION) << r.constraint << std::endl;
 
 					a.logic.async_exec(ctr);
 
-					network::request_constraint_ack ack;
-					ack.acked = true;
-					ack.id = current_id;
-					return ack;
+					return boost::mpl::void_();
 				}
 
 				output_variant ability_visitor::operator() (const network::variable_value& v) const
