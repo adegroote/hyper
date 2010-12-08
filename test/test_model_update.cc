@@ -1,5 +1,5 @@
 #define HYPER_UNIT_TEST
-#include <model/ability.hh>
+#include <model/ability_impl.hh>
 #include <model/update_impl.hh>
 #include <boost/test/unit_test.hpp>
 

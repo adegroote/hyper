@@ -10,6 +10,7 @@
 #include <network/server_tcp_impl.hh>
 
 #include <model/execute.hh>
+#include <model/update.hh>
 #include <model/logic_layer.hh>
 
 #include <boost/make_shared.hpp>
@@ -77,6 +78,7 @@ namespace hyper {
 			network::actor_client_database<ability> client_db;
 			network::identifier base_id;
 
+			model::updater updater;
 			network::proxy_serializer serializer;
 			network::local_proxy proxy;
 			network::actor::proxy_visitor<ability> proxy_vis;
@@ -87,7 +89,6 @@ namespace hyper {
 			network::ping_process ping;
 
 			boost::shared_ptr<tcp_ability_impl> serv;
-
 
 
 			/* XXX
@@ -105,6 +106,7 @@ namespace hyper {
 				logger(io_s, name_, "logger", name_client, level),
 				client_db(*this),
 				base_id(0),
+				updater(*this),
 				proxy_vis(*this, serializer),
 				actor_vis(*this),
 				vis(*this),
@@ -123,12 +125,13 @@ namespace hyper {
 					std::cout << "failed to get an addr" << std::endl;
 			};
 
+
 			template <typename T>
-			void export_variable(const std::string& name, const T& value)
-			{
-				serializer.register_variable(name, value);
-				proxy.register_variable(name, value);
-			}
+			void export_variable(const std::string& name, const T& value);
+
+			template <typename T>
+			void export_variable(const std::string& name, const T& value, 
+								 const std::string& update);
 
 			void run()
 			{
@@ -150,6 +153,14 @@ namespace hyper {
 			}
 
 			virtual ~ability() {}
+
+			private:
+			template <typename T>
+			void export_variable_helper(const std::string& name, const T& value)
+			{
+				serializer.register_variable(name, value);
+				proxy.register_variable(name, value);
+			}
 		};
 	}
 }

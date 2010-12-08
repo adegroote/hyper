@@ -1,5 +1,5 @@
 #ifndef HYPER_MODEL_UPDATE_HH_
-#define HYPER_MODEL_UPDATE_HH_o
+#define HYPER_MODEL_UPDATE_HH_
 
 #include <map>
 #include <string>

@@ -1,15 +1,56 @@
 #include <model/ability.hh>
 
+namespace {
+	using namespace hyper;
+
+	void handle_write_value(const boost::system::error_code& ,
+			network::variable_value* ans)
+	{
+		delete ans;
+	}
+
+	void handle_update_value(const boost::system::error_code& e,
+			model::ability &a,
+			const network::request_variable_value& m)
+	{
+		a.logger(DEBUG) << "[" << m.src << ", " << m.id << "]";
+		a.logger(DEBUG) << " Value updated " << std::endl;
+		if (e) {
+			network::variable_value* ans(new network::variable_value());
+			ans->id = m.id;
+			ans->src = m.src;
+			ans->var_name = m.var_name;
+			ans->success = false;
+			return a.client_db[m.src].async_write(*ans, 
+					boost::bind(&handle_write_value,
+						boost::asio::placeholders::error,
+						ans));
+		}
+
+		boost::shared_lock<boost::shared_mutex> lock(a.mtx);
+		a.proxy_vis(m);
+	}
+}
+
 namespace hyper {
 	namespace model {
 		namespace details {
+
+
 				output_variant ability_visitor::operator() 
 					(const network::request_variable_value& m) const
 				{
-					boost::shared_lock<boost::shared_mutex> lock(a.mtx);
 					a.logger(INFORMATION) << "[" << m.src << ", " << m.id;
 					a.logger(INFORMATION) << "] Request for  the value of " << m.var_name << std::endl;
-					return a.proxy_vis(m);
+
+					a.logger(DEBUG) << "[" << m.src << ", " << m.id << "]";
+					a.logger(DEBUG) << " Updating value " << std::endl;
+
+					model::updater::cb_type f = boost::bind(&handle_update_value,
+												boost::asio::placeholders::error,
+												boost::ref(a), m);
+					a.updater.async_update(m.var_name, f);
+					return boost::mpl::void_();
 				}
 
 				output_variant ability_visitor::operator()
