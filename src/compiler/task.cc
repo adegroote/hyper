@@ -267,7 +267,7 @@ namespace {
 
 		void operator() (const expression_ast& e) const
 		{
-			oss << "\t\t\ta_.logic.engine.add_fact(";
+			oss << "\t\t\ta_.logic().engine.add_fact(";
 			oss << quoted_string(generate_logic_expression(e));
 			oss << ", " << quoted_string(name) <<  ");" << std::endl;
 		}

@@ -68,7 +68,7 @@ functionDef::output_import(std::ostream& oss, const typeList& tList) const
 	std::pair<bool, typeList::typeId> p = tList.getId("bool");
 	assert(p.first);
 	bool is_predicate = (p.second == returnType());
-	oss << "\t\t\t\ta.logic." ;
+	oss << "\t\t\t\ta.logic()." ;
 	if (is_predicate) 
 		oss << "add_predicate<";
 	else

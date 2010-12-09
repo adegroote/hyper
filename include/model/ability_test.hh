@@ -4,6 +4,7 @@
 #include <model/ability.hh>
 #include <model/future.hh>
 
+#include <boost/thread/thread.hpp>
 
 namespace hyper {
 	namespace model {

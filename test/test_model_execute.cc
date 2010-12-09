@@ -114,10 +114,10 @@ BOOST_AUTO_TEST_CASE ( model_execute_test )
 	boost::thread thr( boost::bind(& boost::asio::io_service::run, &io_nameserv_s));
 
 	pos_ability pos_;
-	boost::thread thr2( boost::bind(& pos_ability::run, &pos_));
+	boost::thread thr2( boost::bind(& pos_ability::test_run, &pos_));
 
 	goal_ability goal_;
-	boost::thread thr3 (boost::bind(& goal_ability::run, &goal_));
+	boost::thread thr3 (boost::bind(& goal_ability::test_run, &goal_));
 
 	generate_return r;
 	r = generate("square_int(12)", f);

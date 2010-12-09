@@ -245,7 +245,7 @@ struct add_task_declaration
 	void operator() (const task& t) const
 	{
 		oss << times(5, "\t");
-		oss << "logic.tasks.insert(std::make_pair(";
+		oss << "logic().tasks.insert(std::make_pair(";
 		oss << quoted_string(t.get_name()) << ", \n";
 		oss << times(12, "\t") << "model::task_ptr(new ";
 		oss << t.exported_name() << "(*this))));" << std::endl;
