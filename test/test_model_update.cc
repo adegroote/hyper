@@ -64,7 +64,7 @@ namespace {
 			valid_test++;
 
 			goal.j = 42;
-			update.async_update("z",
+			update.async_update("z", 1, "test",
 					boost::bind(&update_test::handle_second_test, 
 						this,
 						boost::asio::placeholders::error));
@@ -75,7 +75,7 @@ namespace {
 			pos.x = 42.0;
 			pos.y = 3;
 			pos.z = 0;
-			update.async_update("x",
+			update.async_update("x", 0, "test",
 					boost::bind(&update_test::handle_first_test, 
 						this,
 						boost::asio::placeholders::error));

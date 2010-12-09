@@ -46,8 +46,10 @@ namespace hyper {
 			template <typename T>
 			void call_proxy(ability &a, 
 							const std::string& var, T& local_value, 
+							network::identifier id, const std::string& src,
 							updater::cb_type cb)
 			{
+				(void) id; (void) src;
 				void (*f) (const boost::system::error_code&, 
 						   remote_args<T>* args,
 						   updater::cb_type cb) = cb_proxy<T>;
@@ -71,10 +73,11 @@ namespace hyper {
 		{
 			void (*f) (ability& a, 
 					   const std::string& var, T& local_value,
+					   network::identifier id, const std::string& src,
 					   cb_type cb) = details::call_proxy<T>;
 			// copy remote_var or we will have dangling reference
 			fun_type fun = boost::bind(f, boost::ref(a), remote_var,
-										  boost::ref(local_value), _1);
+										  boost::ref(local_value), _1, _2, _3);
 			std::pair<map_type::iterator, bool> p;
 			p = map.insert(std::make_pair(var, fun));
 			return p.second;

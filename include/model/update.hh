@@ -4,6 +4,8 @@
 #include <map>
 #include <string>
 
+#include <network/msg.hh>
+
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
 
@@ -16,7 +18,8 @@ namespace hyper {
 			typedef boost::function<void (const boost::system::error_code&)> cb_type;
 
 			private:
-			typedef boost::function<void (cb_type)> fun_type;
+			typedef boost::function<void (network::identifier, const std::string&, cb_type)> 
+				fun_type;
 			typedef std::map<std::string, fun_type> map_type;
 			map_type map;
 			ability & a;
@@ -31,7 +34,8 @@ namespace hyper {
 				
 				bool add(const std::string& var);
 
-				void async_update(const std::string& var, cb_type cb);
+				void async_update(const std::string& var, network::identifier id, 
+								  const std::string& str, cb_type cb);
 		};
 	}
 }
