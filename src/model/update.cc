@@ -14,7 +14,8 @@ namespace {
 				   hyper::network::identifier id, const std::string& src,
 				   hyper::model::updater::cb_type cb)
 	{
-		// XXX to implement
+		// XXX What about the callback
+		a.logic().async_exec(var, id, src);
 	}
 }
 
@@ -33,7 +34,7 @@ namespace hyper {
 		bool updater::add(const std::string& var, const std::string& task)
 		{
 			fun_type f = boost::bind(call_task, boost::ref(a),
-											    boost::cref(var),
+											    task,
 											    _1, _2, _3);
 			std::pair<map_type::iterator, bool> p;
 			p = map.insert(std::make_pair(var, f));

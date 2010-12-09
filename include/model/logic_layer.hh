@@ -42,6 +42,7 @@ namespace hyper {
 			task_evaluation_seq seqs;
 
 			/* More to come */
+			logic_context() {}
 			logic_context(const logic_constraint& ctr_) : ctr(ctr_) {}
 		};
 
@@ -71,6 +72,7 @@ namespace hyper {
 			void add_func(const std::string& s);
 
 			void async_exec(const logic_constraint& ctr);
+			void async_exec(const std::string& task, network::identifier id, const std::string& src);
 
 			/* XXX */
 			void handle_evaluation_preconds(logic_ctx_ptr ctx, 

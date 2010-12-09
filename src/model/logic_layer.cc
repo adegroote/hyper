@@ -160,6 +160,37 @@ namespace hyper {
 							ctx));
 		}
 
+		struct test_precondition
+		{
+			logic_layer& layer;
+			logic_ctx_ptr ctx;
+
+			test_precondition(logic_layer& layer_, logic_ctx_ptr ctx_) : 
+				layer(layer_), ctx(ctx_) {}
+
+			void operator() (const std::string& task)
+			{
+				layer.a_.logger(DEBUG) << ctx->ctr;
+				layer.a_.logger(DEBUG) << " Start evaluation precondition for task " << task;
+				layer.a_.logger(DEBUG) << std::endl;
+				layer.tasks[task]->async_evaluate_preconditions(
+						boost::bind(&logic_layer::handle_evaluation_preconds,
+								    &layer, ctx, task, _1));
+			}
+		};
+
+		void logic_layer::async_exec(const std::string& task, network::identifier id,
+									 const std::string& src)
+
+		{
+			logic_ctx_ptr ctx = boost::make_shared<logic_context>();
+			ctx->ctr.id = id;
+			ctx->ctr.src = src;
+
+			ctx->seqs.deps.push_back(task);
+			test_precondition(*this, ctx)(ctx->seqs.deps.back().name);
+		}
+
 		void logic_layer::handle_exec_computation(const boost::system::error_code& e,
 									 logic_ctx_ptr ctx)
 		{
@@ -180,24 +211,6 @@ namespace hyper {
 									 this, ctx));
 		}
 
-		struct test_precondition
-		{
-			logic_layer& layer;
-			logic_ctx_ptr ctx;
-
-			test_precondition(logic_layer& layer_, logic_ctx_ptr ctx_) : 
-				layer(layer_), ctx(ctx_) {}
-
-			void operator() (const std::string& task)
-			{
-				layer.a_.logger(DEBUG) << ctx->ctr;
-				layer.a_.logger(DEBUG) << " Start evaluation precondition for task " << task;
-				layer.a_.logger(DEBUG) << std::endl;
-				layer.tasks[task]->async_evaluate_preconditions(
-						boost::bind(&logic_layer::handle_evaluation_preconds,
-								    &layer, ctx, task, _1));
-			}
-		};
 
 		void logic_layer::compute_potential_task(logic_ctx_ptr ctx)
 		{
