@@ -2,6 +2,7 @@
 #include <logic/eval.hh>
 
 #include <model/ability.hh>
+#include <model/compute_task_tree.hh>
 #include <model/execute_impl.hh>
 #include <model/logic_layer_impl.hh>
 
@@ -138,7 +139,8 @@ namespace hyper {
 
 		void logic_layer::async_exec(const logic_constraint& ctr)
 		{
-			logic_ctx_ptr ctx = boost::make_shared<logic_context>(ctr);
+			logic_ctx_ptr ctx = boost::shared_ptr<logic_context>(
+					new logic_context(ctr, *this));
 
 			std::string to_execute = prepare_execution_rqst(ctx->ctr.constraint);
 			logic::generate_return ret_exec =
@@ -160,35 +162,24 @@ namespace hyper {
 							ctx));
 		}
 
-		struct test_precondition
+
+		void logic_layer::handle_eval_task_tree(bool success, logic_ctx_ptr ctx) 
 		{
-			logic_layer& layer;
-			logic_ctx_ptr ctx;
-
-			test_precondition(logic_layer& layer_, logic_ctx_ptr ctx_) : 
-				layer(layer_), ctx(ctx_) {}
-
-			void operator() (const std::string& task)
-			{
-				layer.a_.logger(DEBUG) << ctx->ctr;
-				layer.a_.logger(DEBUG) << " Start evaluation precondition for task " << task;
-				layer.a_.logger(DEBUG) << std::endl;
-				layer.tasks[task]->async_evaluate_preconditions(
-						boost::bind(&logic_layer::handle_evaluation_preconds,
-								    &layer, ctx, task, _1));
-			}
-		};
+			a_.logger(DEBUG) <<  ctx->ctr << " Finish computation of async_task " << std::endl;
+		}
 
 		void logic_layer::async_exec(const std::string& task, network::identifier id,
 									 const std::string& src)
 
 		{
-			logic_ctx_ptr ctx = boost::make_shared<logic_context>();
+			logic_ctx_ptr ctx = boost::shared_ptr<logic_context>(
+					new logic_context(*this));
 			ctx->ctr.id = id;
 			ctx->ctr.src = src;
 
-			ctx->seqs.deps.push_back(task);
-			test_precondition(*this, ctx)(ctx->seqs.deps.back().name);
+			ctx->logic_tree.async_eval_task(task, 
+					boost::bind(&logic_layer::handle_eval_task_tree, this,
+							   _1, ctx));
 		}
 
 		void logic_layer::handle_exec_computation(const boost::system::error_code& e,
@@ -207,71 +198,10 @@ namespace hyper {
 				return;
 			}
 
-			a_.io_s.post(boost::bind(&logic_layer::compute_potential_task,
-									 this, ctx));
-		}
-
-
-		void logic_layer::compute_potential_task(logic_ctx_ptr ctx)
-		{
 			std::string to_logic = prepare_logic_rqst(ctx->ctr.constraint);
-			std::vector<std::string> res;
-
-			a_.logger(DEBUG) << ctx-> ctr << " Searching some task to handle it" << std::endl;
-			engine.infer(to_logic, std::back_inserter(res));
-			a_.logger(DEBUG) << ctx->ctr << " Find " << res.size();
-			a_.logger(DEBUG) << " task(s) to handle it" << std::endl;
-
-			if (res.size() == 0) {
-				// XXX send back an answer to the agent
-				return;
-			}
-
-			// compute precondition for each succesful task
-			std::copy(res.begin(), res.end(), std::back_inserter(ctx->seqs.deps)); 
-			std::for_each(res.begin(), res.end(), test_precondition(*this, ctx));
-		}
-
-		struct class_task_evaluation
-		{
-			bool operator() (const task_evaluation& t1, const task_evaluation& t2)
-			{
-				return ((*(t1.failed_conds)).size() < (*(t2.failed_conds)).size());
-			}
-		};
-
-		void logic_layer::handle_evaluation_preconds(logic_ctx_ptr ctx, 
-				const std::string& name, conditionV failed)
-		{
-			a_.logger(DEBUG) << ctx->ctr << " End evaluation precondition for task ";
-			a_.logger(DEBUG) << name << std::endl;
-
-			std::vector<task_evaluation>::iterator it;
-			std::vector<task_evaluation>& deps = ctx->seqs.deps;
-			it = find(deps.begin(), deps.end(), task_evaluation(name));
-			assert (it != deps.end());
-			it->failed_conds = failed;
-			
-			if (! ctx->seqs.all_deps_evaluated())
-				return;
-
-			std::sort(deps.begin(), deps.end(), class_task_evaluation());
-
-			const conditionV& needed_precond = *deps[0].failed_conds;
-
-			if (needed_precond.empty()) {
-				a_.logger(INFORMATION) << ctx->ctr << " Executing " << deps[0].name;
-				a_.logger(INFORMATION) << " to handle it " << std::endl;
-				// XXX do it
-			} else {
-				a_.logger(INFORMATION) << ctx->ctr;
-				a_.logger(INFORMATION) << " Need to handle the following conditions\n";
-				std::copy(needed_precond.begin(), needed_precond.end(), 
-						std::ostream_iterator<std::string>(a_.logger(3), "\n"));
-				a_.logger(INFORMATION) << std::endl;
-				// XXX do it
-			}
-
+			ctx->logic_tree.async_eval_cond(to_logic, 
+					boost::bind(&logic_layer::handle_eval_task_tree, this,
+							   _1, ctx));
 		}
 
 		logic_layer::~logic_layer() 

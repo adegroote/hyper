@@ -8,7 +8,7 @@
 
 #include <logic/engine.hh>
 #include <logic/function_def.hh>
-#include <model/task.hh>
+#include <model/compute_task_tree.hh>
 
 
 namespace hyper {
@@ -39,11 +39,12 @@ namespace hyper {
 			boost::optional<bool> exec_res;
 
 			/* Logic layer evaluation */
-			task_evaluation_seq seqs;
+			compute_task_tree logic_tree;
 
 			/* More to come */
-			logic_context() {}
-			logic_context(const logic_constraint& ctr_) : ctr(ctr_) {}
+			logic_context(logic_layer& logic) : logic_tree(logic, *this) {}
+			logic_context(const logic_constraint& ctr_, logic_layer& logic) : 
+				ctr(ctr_), logic_tree(logic, *this) {}
 		};
 
 		typedef boost::shared_ptr<logic_context> logic_ctx_ptr;
@@ -74,14 +75,10 @@ namespace hyper {
 			void async_exec(const logic_constraint& ctr);
 			void async_exec(const std::string& task, network::identifier id, const std::string& src);
 
-			/* XXX */
-			void handle_evaluation_preconds(logic_ctx_ptr ctx, 
-				const std::string& name, conditionV failed);
-
 			private:
 			void handle_exec_computation(const boost::system::error_code&e,
 										 logic_ctx_ptr logic_ctx);
-			void compute_potential_task(logic_ctx_ptr ctx);
+			void handle_eval_task_tree(bool success, logic_ctx_ptr ptr);
 		};
 	}
 }
