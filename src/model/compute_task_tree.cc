@@ -4,6 +4,7 @@
 #include <model/ability.hh>
 #include <model/compute_task_tree.hh>
 #include <model/logic_layer.hh>
+#include <model/task.hh>
 
 namespace {
 	using namespace hyper::model;

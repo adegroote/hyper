@@ -8,8 +8,8 @@
 
 #include <logic/engine.hh>
 #include <logic/function_def.hh>
+#include <model/task_fwd.hh>
 #include <model/compute_task_tree.hh>
-
 
 namespace hyper {
 	namespace model {

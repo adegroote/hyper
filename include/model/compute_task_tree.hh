@@ -7,7 +7,7 @@
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <model/task.hh> // conditionV definition
+#include <model/task_fwd.hh>
 
 namespace hyper {
 	namespace model {

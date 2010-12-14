@@ -1,4 +1,5 @@
 #include <model/task.hh>
+#include <model/evaluate_conditions.hh>
 #include <boost/test/unit_test.hpp>
 
 #include <network/nameserver.hh>
