@@ -84,19 +84,29 @@ namespace hyper {
 				guards g(oss, ability_context.name(), exported_name_big + "_HH");
 
 				oss << "#include <model/task.hh>" << std::endl;
+				oss << "#include <model/evaluate_conditions.hh>" << std::endl;
 
 				namespaces n(oss, ability_context.name());
 				oss << indent << "struct ability;" << std::endl;
 				oss << indent << "struct " << exported_name();
 				oss << " : public model::task {" << std::endl;
 
-				oss << next_indent << "hyper::model::evaluate_conditions<";
-				oss << pre.size() << ", ability> preds;" << std::endl; 
+				if (!pre.empty()) {
+					oss << next_indent << "hyper::model::evaluate_conditions<";
+					oss << pre.size() << ", ability> preds;" << std::endl; 
+				}
+
+				if (!post.empty()) {
+					oss << next_indent << "hyper::model::evaluate_conditions<";
+					oss << post.size() << ", ability> posts;" << std::endl; 
+				}
 
 				oss << next_indent << exported_name();
 				oss << "(ability& a_);" << std::endl; 
 				oss << next_indent;
 				oss << "void async_evaluate_preconditions(model::condition_execution_callback cb);";
+				oss << std::endl;
+				oss << "void async_evaluate_postconditions(model::condition_execution_callback cb);";
 				oss << std::endl;
 
 				oss << indent << "};" << std::endl;
@@ -133,18 +143,37 @@ namespace hyper {
 				std::for_each(pre.begin(), pre.end(), e_dump);
 				}
 
+				{
+				anonymous_namespaces n(oss);
+				exec_expression_output e_dump(u, ability_context, *this, oss, 
+											  tList, pre.size(), "post_");
+				std::for_each(post.begin(), post.end(), e_dump);
+				}
+
 				namespaces n(oss, ability_context.name());
 
 				/* Generate constructor */
 				oss << indent << exported_name() << "::" << exported_name();
 				oss << "(hyper::" << ability_context.name() << "::ability & a_) :" ;
-				oss << "model::task(a_, " << quoted_string(name);
-				oss << "),\n";
+				oss << "model::task(a_, " << quoted_string(name) << ")";
+				if (!pre.empty())
+				{
+				oss << ",\n";
 				oss << indent << "preds(a_, boost::assign::list_of<hyper::model::evaluate_conditions<";
 				oss << pre.size() << ",ability>::condition>";
 				generate_condition e_cond(oss);
 				std::for_each(pre.begin(), pre.end(), e_cond);
 				oss << indent << ")" << std::endl;
+				}
+				if (!post.empty()) 
+				{
+				oss << ",\n";
+				oss << indent << "posts(a_, boost::assign::list_of<hyper::model::evaluate_conditions<";
+				oss << post.size() << ",ability>::condition>";
+				generate_condition e_cond(oss);
+				std::for_each(post.begin(), post.end(), e_cond);
+				oss << indent << ")" << std::endl;
+				}
 				oss << indent << "{" << std::endl;
 
 				generate_logic_fact e_fact(name, oss);
@@ -156,15 +185,21 @@ namespace hyper {
 				oss << "::async_evaluate_preconditions(model::condition_execution_callback cb)";
 				oss << std::endl;
 				oss << indent << "{" << std::endl;
-				oss << next_indent << "preds.async_compute(cb);\n"; 
+				if (pre.empty()) 
+					oss << next_indent << "cb(hyper::model::conditionV());\n";
+				else
+					oss << next_indent << "preds.async_compute(cb);\n"; 
 				oss << indent << "}" << std::endl;
-#if 0
-				{
-				exec_expression_output e_dump(u, ability_context, *this, oss, tList, "post_");
-				std::for_each(post.begin(), post.end(), e_dump);
-				}
-				oss << indent << "};" << std::endl;
-#endif
+
+				oss << indent << "void " << exported_name();
+				oss << "::async_evaluate_postconditions(model::condition_execution_callback cb)";
+				oss << std::endl;
+				oss << indent << "{" << std::endl;
+				if (post.empty()) 
+					oss << next_indent << "cb(hyper::model::conditionV());\n";
+				else
+					oss << next_indent << "posts.async_compute(cb);\n"; 
+				oss << indent << "}" << std::endl;
 			}
 
 			std::ostream& operator << (std::ostream& oss, const task& t)
