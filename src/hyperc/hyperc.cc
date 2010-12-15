@@ -266,9 +266,16 @@ struct generate_recipe
 		}
 		success = success && valid;
 		if (success) {
+			{
 			std::string fileName = directoryName + "/" + r.get_name() + ".cc";
 			std::ofstream oss(fileName.c_str());
 			r.dump(oss, u);
+			}
+			{
+			std::string fileName = directoryName + "/" + r.get_name() + ".hh";
+			std::ofstream oss(fileName.c_str());
+			r.dump_include(oss, u);
+			}
 		}
 	}
 };

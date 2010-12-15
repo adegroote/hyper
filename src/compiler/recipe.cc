@@ -1,12 +1,17 @@
+#include <boost/bind.hpp>
+
 #include <compiler/ability.hh>
-#include <compiler/expression_ast.hh>
-#include <compiler/output.hh>
 #include <compiler/recipe.hh>
 #include <compiler/recipe_parser.hh>
 #include <compiler/recipe_expression.hh>
 #include <compiler/scope.hh>
 #include <compiler/task.hh>
 #include <compiler/universe.hh>
+
+#include <compiler/condition_output.hh>
+#include <compiler/logic_expression_output.hh>
+#include <compiler/exec_expression_output.hh>
+#include <compiler/output.hh>
 
 using namespace hyper::compiler;
 
@@ -201,9 +206,100 @@ namespace hyper {
 				   are_valid_recipe_expressions(body.begin(), body.end(), context_a, u, local_symbol);
 		}
 
+		void recipe::dump_include(std::ostream& oss, const universe& u) const
+		{
+			const std::string indent="\t\t";
+			const std::string next_indent = indent + "\t";
+
+			std::string exported_name_big = context_t.get_name() + exported_name();
+			std::transform(exported_name_big.begin(), exported_name_big.end(), 
+						   exported_name_big.begin(), toupper);
+			guards g(oss, context_a.name(), exported_name_big + "_HH");
+
+			oss << "#include <model/recipe.hh>" << std::endl;
+			oss << "#include <model/evaluate_conditions.hh>" << std::endl;
+
+			namespaces n(oss, context_a.name());
+			oss << indent << "struct ability;" << std::endl;
+			oss << indent << "struct " << exported_name();
+			oss << " : public model::recipe {" << std::endl;
+
+			if (!pre.empty()) {
+				oss << next_indent << "hyper::model::evaluate_conditions<";
+				oss << pre.size() << ", ability> preds;" << std::endl; 
+			}
+
+			oss << next_indent << exported_name();
+			oss << "(ability& a_);" << std::endl; 
+			oss << next_indent;
+			oss << "void async_evaluate_preconditions(model::condition_execution_callback cb);";
+			oss << std::endl;
+			oss << next_indent << "bool do_execute();\n"; 
+
+			oss << indent << "};" << std::endl;
+		}
+
 		void recipe::dump(std::ostream& oss, const universe& u) const
 		{
-			(void) oss; (void) u;
+			const std::string indent="\t\t";
+			const std::string next_indent = indent + "\t";
+
+			depends deps;
+			void (*f)(const expression_ast&, const std::string&, depends&) = &add_depends;
+			std::for_each(pre.begin(), pre.end(),
+						  boost::bind(f ,_1, boost::cref(context_a.name()),
+											 boost::ref(deps)));
+			
+			oss << "#include <" << context_a.name();
+			oss << "/ability.hh>" << std::endl;
+			oss << "#include <" << context_a.name();
+			oss << "/recipes/" << name << ".hh>" << std::endl;
+
+			oss << "#include <boost/assign/list_of.hpp>" << std::endl;
+
+			std::for_each(deps.fun_depends.begin(), 
+						  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
+			oss << std::endl;
+
+			{
+			anonymous_namespaces n(oss);
+			exec_expression_output e_dump(u, context_a, context_t, *this, oss, tList, pre.size(), "pre_");
+			std::for_each(pre.begin(), pre.end(), e_dump);
+			}
+
+			namespaces n(oss, context_a.name());
+
+			/* Generate constructor */
+			oss << indent << exported_name() << "::" << exported_name();
+			oss << "(hyper::" << context_a.name() << "::ability & a_) :" ;
+			oss << "model::recipe(" << quoted_string(name);
+			oss << ", a_)";
+			if (!pre.empty()) {
+			oss << "\n,";
+			oss << indent << "preds(a_, boost::assign::list_of<hyper::model::evaluate_conditions<";
+			oss << pre.size() << ",ability>::condition>";
+			generate_condition e_cond(oss);
+			std::for_each(pre.begin(), pre.end(), e_cond);
+			oss << indent << ")" << std::endl;
+			}
+			oss << indent << "{" << std::endl;
+			oss << indent << "}\n\n";
+
+			oss << indent << "void " << exported_name();
+			oss << "::async_evaluate_preconditions(model::condition_execution_callback cb)";
+			oss << std::endl;
+			oss << indent << "{" << std::endl;
+			if (pre.empty()) 
+				oss << next_indent << "cb(hyper::model::conditionV());\n";
+			else
+				oss << next_indent << "preds.async_compute(cb);\n"; 
+			oss << indent << "}" << std::endl;
+
+			oss << indent << "bool " << exported_name();
+			oss << "::do_execute()\n";
+			oss << indent << "{\n";
+			oss << indent << "}\n";
+			oss << std::endl;
 		}
 	}
 }

@@ -37,9 +37,11 @@ namespace hyper {
 				 * verifying the coherency of the recipe
 				 */
 				bool validate(const universe&) ;
+				void dump_include(std::ostream& oss, const universe&) const;
 				void dump(std::ostream& oss, const universe&) const;
 
 				const std::string& get_name() const { return name; }
+				std::string exported_name() const {	return "_recipe_" + name; }
 		};
 	}
 }
