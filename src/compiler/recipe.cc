@@ -278,7 +278,7 @@ namespace hyper {
 			oss << "\n,";
 			oss << indent << "preds(a_, boost::assign::list_of<hyper::model::evaluate_conditions<";
 			oss << pre.size() << ",ability>::condition>";
-			generate_condition e_cond(oss);
+			generate_condition e_cond(oss, "pre");
 			std::for_each(pre.begin(), pre.end(), e_cond);
 			oss << indent << ")" << std::endl;
 			}

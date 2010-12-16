@@ -9,9 +9,11 @@ namespace hyper {
 
 		struct generate_condition {
 			std::ostream& oss;
+			std::string base;
 			size_t counter;
 
-			generate_condition(std::ostream& oss_) : oss(oss_), counter(0) {}
+			generate_condition(std::ostream& oss_, const std::string& base_) : 
+				oss(oss_), base(base_), counter(0) {}
 
 			void operator() (const expression_ast& e) const;
 		};
