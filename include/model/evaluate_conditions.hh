@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <model/eval_conditions_fwd.hh>
+#include <model/task_fwd.hh>
 
 #include <boost/asio.hpp>
 #include <boost/array.hpp>

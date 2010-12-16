@@ -4,7 +4,9 @@
 #include <string>
 
 #include <logic/expression.hh>
+#include <model/logic_layer_fwd.hh>
 #include <model/task_fwd.hh>
+#include <model/recipe_fwd.hh>
 #include <network/nameserver.hh>
 #include <network/proxy.hh>
 
@@ -12,25 +14,53 @@
 #include <boost/mpl/vector.hpp>
 #include <boost/shared_ptr.hpp>
 
+
 namespace hyper {
 	namespace model {
 
 		struct ability;
 
-		typedef std::vector<std::string> conditionV;
-		typedef boost::function<void (conditionV)> condition_execution_callback;
-
-		struct task
+		class task
 		{
-			const ability& a;
-			std::string name;
+			private:
+				ability& a;
+				std::string name;
+				typedef std::vector<recipe_ptr> vect_recipes;
+				vect_recipes recipes;
 
-			task(const ability& a_, const std::string& name_) 
-				: a(a_), name(name_) {}
+				struct state {
+					size_t index; // index in vect_recipes
+					size_t nb_preconds; // nb of preconditions
+					conditionV failed; // failed precondition
 
-			virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
+					bool operator< (const state& s) const
+					{
+						if (failed.size() != s.failed.size())
+							return (failed.size() < s.failed.size());
+						return nb_preconds > s.nb_preconds;
+					}
+				};
 
-			virtual ~task() {};
+				std::vector<state> recipe_states;
+
+				bool is_running;
+				std::vector<task_execution_callback> pending_cb;
+			public:
+				task(ability& a_, const std::string& name_) 
+					: a(a_), name(name_), is_running(false) {}
+
+				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
+				virtual void async_evaluate_postconditions(condition_execution_callback cb) = 0;
+				void execute(task_execution_callback cb);
+				virtual ~task() {};
+
+			private:
+				void handle_initial_postcondition_handle(conditionV failed);
+				void handle_precondition_handle(conditionV failed);
+				void handle_execute(bool res);
+				void handle_final_postcondition_handle(conditionV failed);
+				void async_evaluate_recipe_preconditions(conditionV, size_t i);
+				void end_execute(bool res);
 		};
 
 

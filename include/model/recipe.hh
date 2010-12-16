@@ -26,11 +26,11 @@ namespace hyper {
 				void end_execute(bool res);
 
 			protected:
-				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
 				virtual bool do_execute() = 0;
 			public:
 				recipe(const std::string& name, ability& a);
 				void execute(recipe_execution_callback cb);
+				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
 				virtual ~recipe();
 		};
 	}
