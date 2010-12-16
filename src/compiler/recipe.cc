@@ -229,6 +229,8 @@ namespace hyper {
 				oss << pre.size() << ", ability> preds;" << std::endl; 
 			}
 
+			oss << next_indent << "ability &a; " << std::endl;
+
 			oss << next_indent << exported_name();
 			oss << "(ability& a_);" << std::endl; 
 			oss << next_indent;
@@ -273,7 +275,7 @@ namespace hyper {
 			oss << indent << exported_name() << "::" << exported_name();
 			oss << "(hyper::" << context_a.name() << "::ability & a_) :" ;
 			oss << "model::recipe(" << quoted_string(name);
-			oss << ", a_)";
+			oss << ", a_), a(a_)";
 			if (!pre.empty()) {
 			oss << "\n,";
 			oss << indent << "preds(a_, boost::assign::list_of<hyper::model::evaluate_conditions<";
