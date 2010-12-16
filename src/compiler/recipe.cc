@@ -211,7 +211,7 @@ namespace hyper {
 			const std::string indent="\t\t";
 			const std::string next_indent = indent + "\t";
 
-			std::string exported_name_big = context_t.get_name() + exported_name();
+			std::string exported_name_big = context_t.get_name() + "_" + exported_name();
 			std::transform(exported_name_big.begin(), exported_name_big.end(), 
 						   exported_name_big.begin(), toupper);
 			guards g(oss, context_a.name(), exported_name_big + "_HH");

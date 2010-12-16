@@ -75,6 +75,16 @@ ability::get_task(const std::string& name) const
 	return *it;
 }
 
+task& 
+ability::get_task(const std::string& name) 
+{
+	std::list<task>::iterator it;
+	it = std::find_if(tasks.begin(), tasks.end(), same_name(name));
+	if (it == tasks.end())
+		throw std::runtime_error("Unknow task " + name);
+	return *it;
+}
+
 
 struct compute_type_depends 
 {

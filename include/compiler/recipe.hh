@@ -31,7 +31,7 @@ namespace hyper {
 				symbolList local_symbol;
 			
 			public:
-				recipe(const recipe_decl&i, const ability&, const task&, const typeList&);
+				recipe(const recipe_decl&, const ability&, const task&, const typeList&);
 				/*
 				 * This method is not const, because it currently build local_symbol, while
 				 * verifying the coherency of the recipe

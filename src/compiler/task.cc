@@ -1,9 +1,14 @@
+#include <stdexcept>
+
+#include <boost/make_shared.hpp>
+
 #include <compiler/ability.hh>
 #include <compiler/condition_output.hh>
 #include <compiler/depends.hh>
 #include <compiler/logic_expression_output.hh>
 #include <compiler/exec_expression_output.hh>
 #include <compiler/output.hh>
+#include <compiler/recipe.hh>
 #include <compiler/scope.hh>
 #include <compiler/task.hh>
 #include <compiler/task_parser.hh>
@@ -47,6 +52,17 @@ namespace {
 			res = cond.is_valid_predicate(ab, u, boost::none) && res;
 		}
 	};
+
+	struct same_name {
+		std::string name;
+
+		same_name(const std::string& name_): name(name_) {};
+
+		bool operator() (const boost::shared_ptr<recipe>& r) const
+		{
+			return (r->get_name() == name);
+		}
+	};
 }
 
 namespace hyper {
@@ -71,6 +87,39 @@ namespace hyper {
 				res = valid.res && res;
 				}
 				return res;
+			}
+
+			bool task::add_recipe(const recipe& r)
+			{
+				std::vector<boost::shared_ptr<recipe> >::const_iterator it;
+				it = std::find_if(recipes.begin(), recipes.end(), same_name(r.get_name()));
+
+				if (it != recipes.end()) {
+					std::cerr << "Can't add the recipe named " << r.get_name();
+					std::cerr << " because a recipe with the same already exists" << std::endl;
+					return false;
+				}
+
+				recipes.push_back(boost::make_shared<recipe>(r));
+				return true;
+			}
+
+			const recipe& task::get_recipe(const std::string& name) const
+			{
+				std::vector<boost::shared_ptr<recipe> >::const_iterator it;
+				it = std::find_if(recipes.begin(), recipes.end(), same_name(name));
+				if (it == recipes.end())
+					throw std::runtime_error("Can't find recipe " + name);
+				return *(*it);
+			}
+
+			recipe& task::get_recipe(const std::string& name)
+			{
+				std::vector<boost::shared_ptr<recipe> >::iterator it;
+				it = std::find_if(recipes.begin(), recipes.end(), same_name(name));
+				if (it == recipes.end())
+					throw std::runtime_error("Can't find recipe " + name);
+				return *(*it);
 			}
 
 			void task::dump_include(std::ostream& oss, const universe& u) const

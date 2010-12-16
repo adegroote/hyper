@@ -242,18 +242,18 @@ bool is_directory_empty(const path& directory)
 struct generate_recipe 
 {
 	const universe& u;
-	const ability& ab;
 	const typeList& tList;
-	const task& t;
+	ability& ab;
+	task& t;
 
 	bool success;
 	std::string directoryName;
 
-	generate_recipe(const universe& u_,
+	generate_recipe(universe& u_,
 					const std::string& abilityName, 
 					const std::string& taskName,
 					const std::string& directoryName_) :
-		u(u_), ab(u.get_ability(abilityName)), tList(u.types()), 
+		u(u_), ab(u_.get_ability(abilityName)), tList(u.types()), 
 		t(ab.get_task(taskName)),
 		success(true), directoryName(directoryName_) 
 	{}
@@ -266,6 +266,7 @@ struct generate_recipe
 			std::cerr << r.get_name() << " seems not valid " << std::endl;
 		}
 		success = success && valid;
+		success = success && t.add_recipe(r);
 		if (success) {
 			{
 			std::string fileName = directoryName + "/" + r.get_name() + ".cc";
