@@ -79,6 +79,7 @@ namespace hyper {
 			void handle_exec_computation(const boost::system::error_code&e,
 										 logic_ctx_ptr logic_ctx);
 			void handle_eval_task_tree(bool success, logic_ctx_ptr ptr);
+			void handle_exec_task_tree(bool success, logic_ctx_ptr ptr);
 		};
 	}
 }

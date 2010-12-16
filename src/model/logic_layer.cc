@@ -162,10 +162,19 @@ namespace hyper {
 							ctx));
 		}
 
+		void logic_layer::handle_exec_task_tree(bool success, logic_ctx_ptr ctx)
+		{
+			a_.logger(DEBUG) <<  ctx->ctr << " End execution " << success << std::endl;
+		}
 
 		void logic_layer::handle_eval_task_tree(bool success, logic_ctx_ptr ctx) 
 		{
 			a_.logger(DEBUG) <<  ctx->ctr << " Finish computation of async_task " << std::endl;
+			if (success) {
+				a_.logger(DEBUG) <<  ctx->ctr << " Start execution " << std::endl;
+				ctx->logic_tree.async_execute(
+						boost::bind(&logic_layer::handle_exec_task_tree, this, _1, ctx));
+			}
 		}
 
 		void logic_layer::async_exec(const std::string& task, network::identifier id,
