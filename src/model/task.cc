@@ -94,9 +94,21 @@ namespace hyper {
 
 			is_running = true;
 
-			return async_evaluate_postconditions(boost::bind(
-						&task::handle_initial_postcondition_handle, 
-						this, _1));
+
+			/* Handle correctly the special case where we don't have
+			 * postcondition.  It means that they can't be called using the
+			 * logic solver, but that the call has been forced (by an update
+			 * stuff for example). In this case, don't report ok now, try to
+			 * really execute it */
+			if (has_postconditions())
+				return async_evaluate_postconditions(boost::bind(
+							&task::handle_initial_postcondition_handle, 
+							this, _1));
+			else
+				return async_evaluate_preconditions(boost::bind(
+							&task::handle_precondition_handle, 
+							this, _1));
+
 		}
 
 		void task::end_execute(bool res)

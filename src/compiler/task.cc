@@ -182,8 +182,15 @@ namespace hyper {
 				oss << next_indent;
 				oss << "void async_evaluate_preconditions(model::condition_execution_callback cb);";
 				oss << std::endl;
-				oss << "void async_evaluate_postconditions(model::condition_execution_callback cb);";
+				oss << "void async_evaluate_postconditions(model::condition_execution_callback cb);";				
 				oss << std::endl;
+				oss << indent << "bool has_postconditions() const {" << std::endl;
+				oss << next_indent << "return ";
+				if (post.empty()) 
+					oss << "false";
+				else
+					oss << "true";
+				oss << ";\n" << indent << "}\n";
 
 				oss << indent << "};" << std::endl;
 			}

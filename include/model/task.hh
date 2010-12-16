@@ -55,6 +55,9 @@ namespace hyper {
 				void execute(task_execution_callback cb);
 				virtual ~task() {};
 
+			protected:
+				virtual bool has_postconditions() const = 0;
+
 			private:
 				void handle_initial_postcondition_handle(conditionV failed);
 				void handle_precondition_handle(conditionV failed);
