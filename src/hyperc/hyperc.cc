@@ -244,16 +244,17 @@ struct generate_recipe
 	const universe& u;
 	const ability& ab;
 	const typeList& tList;
-	task t;
+	const task& t;
 
 	bool success;
 	std::string directoryName;
 
 	generate_recipe(const universe& u_,
 					const std::string& abilityName, 
+					const std::string& taskName,
 					const std::string& directoryName_) :
 		u(u_), ab(u.get_ability(abilityName)), tList(u.types()), 
-		t(task_decl(), ab, tList),
+		t(ab.get_task(taskName)),
 		success(true), directoryName(directoryName_) 
 	{}
 
@@ -393,6 +394,7 @@ int main(int argc, char** argv)
 				   if (gen.success == false)
 					   return -1;
 			   } else if (is_directory(itr->path())) {
+				    std::string taskName = itr->path().filename();
 					directory_iterator end_itr2; 
 					for (directory_iterator itr2(*itr); itr2 != end_itr2; ++itr2 ) {
 						if (is_regular_file(itr2->path())) {
@@ -403,7 +405,7 @@ int main(int argc, char** argv)
 								return -1;
 							}
 
-							generate_recipe gen(u, abilityName, directoryRecipeName);
+							generate_recipe gen(u, abilityName, taskName, directoryRecipeName);
 							std::for_each(rec_decls.recipes.begin(),
 										  rec_decls.recipes.end(),
 										  gen);

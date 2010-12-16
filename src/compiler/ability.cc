@@ -1,5 +1,6 @@
 #include <set>
 #include <sstream>
+#include <stdexcept>
 
 #include <compiler/ability.hh>
 #include <compiler/depends.hh>
@@ -63,6 +64,17 @@ ability::add_task(const task& t)
 	tasks.push_back(t);
 	return true;
 }
+
+const task& 
+ability::get_task(const std::string& name) const
+{
+	std::list<task>::const_iterator it;
+	it = std::find_if(tasks.begin(), tasks.end(), same_name(name));
+	if (it == tasks.end())
+		throw std::runtime_error("Unknow task " + name);
+	return *it;
+}
+
 
 struct compute_type_depends 
 {

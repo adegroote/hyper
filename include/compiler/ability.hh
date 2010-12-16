@@ -68,6 +68,8 @@ namespace hyper {
 				 */
 				bool add_task(const task& t);
 
+				const task& get_task(const std::string& name) const;
+
 				const std::string name() const
 				{
 					return name_;
