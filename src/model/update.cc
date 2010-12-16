@@ -14,8 +14,7 @@ namespace {
 				   hyper::network::identifier id, const std::string& src,
 				   hyper::model::updater::cb_type cb)
 	{
-		// XXX What about the callback
-		a.logic().async_exec(var, id, src);
+		a.logic().async_exec(var, id, src, cb);
 	}
 }
 

@@ -34,6 +34,7 @@ namespace hyper {
 		struct logic_context
 		{
 			logic_constraint ctr;	
+			boost::optional<logic_layer_cb> cb;
 
 			/* Context for executing remote rqst */
 			logic::function_call call_exec;
@@ -73,7 +74,8 @@ namespace hyper {
 			void add_func(const std::string& s);
 
 			void async_exec(const logic_constraint& ctr);
-			void async_exec(const std::string& task, network::identifier id, const std::string& src);
+			void async_exec(const std::string& task, network::identifier id, 
+							const std::string& src, logic_layer_cb cb);
 
 			private:
 			void handle_exec_computation(const boost::system::error_code&e,

@@ -165,6 +165,14 @@ namespace hyper {
 		void logic_layer::handle_exec_task_tree(bool success, logic_ctx_ptr ctx)
 		{
 			a_.logger(DEBUG) <<  ctx->ctr << " End execution " << success << std::endl;
+			if (ctx->cb) {
+				if (success) {
+					(*ctx->cb)(boost::system::error_code());
+				} else {
+					// XXX need to use real error
+					(*ctx->cb)(boost::asio::error::invalid_argument);
+				}
+			}
 		}
 
 		void logic_layer::handle_eval_task_tree(bool success, logic_ctx_ptr ctx) 
@@ -178,13 +186,14 @@ namespace hyper {
 		}
 
 		void logic_layer::async_exec(const std::string& task, network::identifier id,
-									 const std::string& src)
+									 const std::string& src, logic_layer_cb cb)
 
 		{
 			logic_ctx_ptr ctx = boost::shared_ptr<logic_context>(
 					new logic_context(*this));
 			ctx->ctr.id = id;
 			ctx->ctr.src = src;
+			ctx->cb = cb;
 
 			ctx->logic_tree.async_eval_task(task, 
 					boost::bind(&logic_layer::handle_eval_task_tree, this,
