@@ -37,6 +37,33 @@ namespace {
 		}
 	};
 
+	struct generate_recipe {
+		std::ostream& oss;
+
+		generate_recipe(std::ostream& oss_) : oss(oss_) {}
+
+		void operator() (const boost::shared_ptr<recipe>& r) const
+		{
+			oss << "\t\t\tadd_recipe(boost::shared_ptr<" << r->exported_name() << ">(new ";
+			oss << r->exported_name() << "(a_)));\n";
+		}
+	};
+
+	struct include_recipe {
+		std::ostream& oss;
+		std::string abilityName;
+
+		include_recipe(std::ostream& oss_, const std::string& abilityName_) :
+			oss(oss_), abilityName(abilityName_) 
+		{}
+
+		void operator() (const boost::shared_ptr<recipe>& r) const
+		{
+			oss << "#include <" << abilityName << "/recipes/";
+			oss << r->get_name() << ".hh>\n";
+		}
+	};
+
 	struct cond_validate
 	{
 		bool& res;
@@ -180,6 +207,9 @@ namespace hyper {
 				oss << "#include <" << ability_context.name();
 				oss << "/tasks/" << name << ".hh>" << std::endl;
 
+				std::for_each(recipes.begin(), recipes.end(), 
+							  include_recipe(oss, ability_context.name()));
+
 				oss << "#include <boost/assign/list_of.hpp>" << std::endl;
 
 				std::for_each(deps.fun_depends.begin(), 
@@ -225,6 +255,7 @@ namespace hyper {
 				}
 				oss << indent << "{" << std::endl;
 
+				std::for_each(recipes.begin(), recipes.end(), generate_recipe(oss));
 				generate_logic_fact e_fact(name, oss);
 				std::for_each(post.begin(), post.end(), e_fact);
 

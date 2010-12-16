@@ -282,20 +282,18 @@ struct generate_recipe
 	}
 };
 
-struct generate_task
+struct add_task
 {
 	const universe& u;
 	ability& ab;
 	const typeList& tList;
 
 	bool success;
-	std::string directoryName;
 
-	generate_task(universe& u_,
-				  const std::string& abilityName, 
-				  const std::string& directoryName_) :
+	add_task(universe& u_,
+				  const std::string& abilityName) :
 		u(u_), ab(u_.get_ability(abilityName)), tList(u.types()),
-		success(true), directoryName(directoryName_)
+		success(true)
 	{}
 
 	void operator() (const task_decl& decl)
@@ -307,17 +305,30 @@ struct generate_task
 		}
 		valid &= ab.add_task(t);
 		success = success && valid;
-		if (success) {
-			{
+	}
+};
+
+struct generate_task
+{
+	const universe& u;
+	std::string directoryName;
+
+	generate_task(universe& u_,
+				  const std::string& directoryName_) :
+		u(u_), directoryName(directoryName_)
+	{}
+
+	void operator() (const task& t)
+	{
+		{
 			std::string fileName = directoryName + "/" + t.get_name() + ".cc";
 			std::ofstream oss(fileName.c_str());
 			t.dump(oss, u);
-			}
-			{
+		}
+		{
 			std::string fileName = directoryName + "/" + t.get_name() + ".hh";
 			std::ofstream oss(fileName.c_str());
 			t.dump_include(oss, u);
-			}
 		}
 	}
 };
@@ -390,11 +401,11 @@ int main(int argc, char** argv)
 					   std::cerr << "Fail to parse " << itr->path().string() << std::endl;
 					   return -1;
 				   }
-				   generate_task gen(u, abilityName, directoryTaskName);
+				   add_task adder(u, abilityName);
 				   std::for_each(task_decls.list.begin(), 
 								 task_decls.list.end(),
-								 gen);
-				   if (gen.success == false)
+								 adder);
+				   if (adder.success == false)
 					   return -1;
 			   } else if (is_directory(itr->path())) {
 				    std::string taskName = itr->path().filename();
@@ -421,6 +432,9 @@ int main(int argc, char** argv)
 	}
 
 	const ability& current_a = u.get_ability(abilityName);
+
+	std::for_each(current_a.task_begin(), current_a.task_end(),
+				  generate_task(u, directoryTaskName));
 
 	{
 		std::string fileName = directoryName + "/types.hh";

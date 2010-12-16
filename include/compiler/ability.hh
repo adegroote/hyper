@@ -41,6 +41,7 @@ namespace hyper {
 				std::string name_;
 
 				std::list<task> tasks;
+				typedef std::list<task>::const_iterator task_const_iterator;
 
 			public:
 				ability(const std::string& name, const symbolList& controlables,
@@ -70,6 +71,9 @@ namespace hyper {
 
 				const task& get_task(const std::string& name) const;
 				task& get_task(const std::string& name);
+
+				task_const_iterator task_begin() const { return tasks.begin(); }
+				task_const_iterator task_end() const { return tasks.end(); }
 
 				const std::string name() const
 				{

@@ -41,7 +41,8 @@ namespace hyper {
 				void dump(std::ostream& oss, const universe&) const;
 
 				const std::string& get_name() const { return name; }
-				std::string exported_name() const {	return "_recipe_" + name; }
+				std::string exported_name() const {	return "_" + context_t.get_name() + 
+														   "_recipe_" + name; }
 		};
 	}
 }
