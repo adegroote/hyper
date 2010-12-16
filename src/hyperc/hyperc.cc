@@ -353,9 +353,11 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	std::vector<std::string> include_dirs = vm["include-path"].as < std::vector<std::string> >();
 	std::vector<path> include_dir_path;
-	std::copy(include_dirs.begin(), include_dirs.end(), std::back_inserter(include_dir_path));
+	if (vm.count("include-path")) {
+		std::vector<std::string> include_dirs = vm["include-path"].as < std::vector<std::string> >();
+		std::copy(include_dirs.begin(), include_dirs.end(), std::back_inserter(include_dir_path));
+	}
 
 	std::string abilityName = vm["input-file"].as < std::string > ();
 	std::string baseName = ".hyper/src/";
