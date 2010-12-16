@@ -49,6 +49,7 @@ namespace hyper {
 				task(ability& a_, const std::string& name_) 
 					: a(a_), name(name_), is_running(false) {}
 
+				void add_recipe(recipe_ptr ptr);
 				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
 				virtual void async_evaluate_postconditions(condition_execution_callback cb) = 0;
 				void execute(task_execution_callback cb);
