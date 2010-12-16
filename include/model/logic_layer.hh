@@ -8,6 +8,7 @@
 
 #include <logic/engine.hh>
 #include <logic/function_def.hh>
+#include <model/logic_layer_fwd.hh>
 #include <model/task_fwd.hh>
 #include <model/compute_task_tree.hh>
 
@@ -47,7 +48,6 @@ namespace hyper {
 				ctr(ctr_), logic_tree(logic, *this) {}
 		};
 
-		typedef boost::shared_ptr<logic_context> logic_ctx_ptr;
 
 		struct logic_layer {
 			logic::engine engine;
