@@ -264,3 +264,7 @@ void exec_expression_output::operator() (const expression_ast& e)
 	oss << std::endl;
 }
 
+std::string hyper::compiler::expression_ast_output(const expression_ast& e) 
+{
+	return boost::apply_visitor(dump_expression_ast(std::vector<std::string>()), e.expr);
+}

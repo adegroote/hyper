@@ -1,6 +1,7 @@
 #include <boost/bind.hpp>
 
 #include <compiler/ability.hh>
+#include <compiler/depends.hh>
 #include <compiler/recipe.hh>
 #include <compiler/recipe_parser.hh>
 #include <compiler/recipe_expression.hh>
@@ -189,6 +190,55 @@ bool are_valid_recipe_expressions(Iterator begin, Iterator end,
 	return b;
 }
 
+struct dump_recipe_visitor : public boost::static_visitor<std::string>
+{
+	const universe& u;
+	const ability &a;
+	const task& t;
+
+	dump_recipe_visitor(const universe & u_, const ability& a_, const task& t_) : 
+		u(u_), a(a_), t(t_) {}
+
+	template <typename T> 
+	std::string operator() (const T&) const { return ""; }
+
+	std::string operator() (const set_decl& s) const
+	{
+		std::ostringstream oss;
+		std::pair<bool, symbolACL> p = a.get_symbol(s.identifier);
+		assert(p.first);
+		const typeList& tList = u.types();
+		symbol sym = p.second.s;
+		type t = tList.get(sym.t);
+		std::string tmp_identifier = "_" + s.identifier + "_tmp";
+
+		oss << "\t\t\t" << "{\n";
+		oss << "\t\t\t\t" << t.name << " " << tmp_identifier << " = ";
+		oss << expression_ast_output(s.bounded) << ";\n";
+		oss << "\t\t\t\tboost::shared_lock<boost::shared_mutex> lock(a.mtx);\n";
+		oss << "\t\t\t\ta." << s.identifier << " = " << tmp_identifier << ";\n";
+		oss << "\t\t\t}\n";
+
+		return oss.str();
+	}
+};
+
+struct dump_recipe_expression {
+	std::ostream& oss;
+	const universe &u;
+	const ability &a;
+	const task& t;
+
+	dump_recipe_expression(std::ostream& oss_, const universe& u_,
+						   const ability & a_, const task& t_) : 
+		oss(oss_), u(u_), a(a_), t(t_) {}
+
+	void operator() (const recipe_expression& r)
+	{
+		oss << boost::apply_visitor(dump_recipe_visitor(u, a, t), r.expr);
+	}
+};
+
 namespace hyper {
 	namespace compiler {
 		recipe::recipe(const recipe_decl& r_parser, const ability& a, 
@@ -215,6 +265,7 @@ namespace hyper {
 			std::transform(exported_name_big.begin(), exported_name_big.end(), 
 						   exported_name_big.begin(), toupper);
 			guards g(oss, context_a.name(), exported_name_big + "_HH");
+
 
 			oss << "#include <model/recipe.hh>" << std::endl;
 			oss << "#include <model/evaluate_conditions.hh>" << std::endl;
@@ -247,10 +298,14 @@ namespace hyper {
 			const std::string next_indent = indent + "\t";
 
 			depends deps;
-			void (*f)(const expression_ast&, const std::string&, depends&) = &add_depends;
+			void (*f1)(const expression_ast&, const std::string&, depends&) = &add_depends;
+			void (*f2)(const recipe_expression&, const std::string&, depends&) = &add_depends;
 			std::for_each(pre.begin(), pre.end(),
-						  boost::bind(f ,_1, boost::cref(context_a.name()),
+						  boost::bind(f1 ,_1, boost::cref(context_a.name()),
 											 boost::ref(deps)));
+			std::for_each(body.begin(), body.end(),
+						  boost::bind(f2 ,_1, boost::cref(context_a.name()),
+						  boost::ref(deps)));
 			
 			oss << "#include <" << context_a.name();
 			oss << "/ability.hh>" << std::endl;
@@ -300,6 +355,10 @@ namespace hyper {
 			oss << indent << "bool " << exported_name();
 			oss << "::do_execute()\n";
 			oss << indent << "{\n";
+			oss << next_indent << "std::cerr << __PRETTY_FUNCTION__ << std::endl;" << std::endl;
+			std::for_each(body.begin(), body.end(), 
+						  dump_recipe_expression(oss, u, context_a, context_t));
+			oss << next_indent << "return true;" << std::endl;
 			oss << indent << "}\n";
 			oss << std::endl;
 		}

@@ -66,6 +66,8 @@ namespace hyper {
 
 			void operator() (const expression_ast& e);
 		};
+
+		std::string expression_ast_output(const expression_ast& e);
 	}
 }
 

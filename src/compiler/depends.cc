@@ -80,6 +80,11 @@ struct compute_recipe_expression_deps : public boost::static_visitor<void>
 	{
 		add_depends(e, name, d);
 	}
+
+	void operator() (const set_decl& s) const
+	{
+		add_depends(s.bounded, name, d);
+	}
 };
 
 namespace hyper {
