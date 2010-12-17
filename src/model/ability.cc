@@ -28,6 +28,17 @@ namespace {
 	typedef boost::make_variant_over<input_msg>::type input_variant;
 	typedef boost::make_variant_over<output_msg>::type output_variant;
 
+	struct close_dead_agent {
+		model::ability &a;
+
+		close_dead_agent(model::ability& a_) : a(a_) {}
+
+		void operator() (const std::string& agent) 
+		{
+			a.client_db[agent].close();
+		}
+	};
+
 	struct ability_visitor : public boost::static_visitor<output_variant>
 	{
 		model::ability &a;
@@ -113,6 +124,8 @@ namespace {
 
 			std::for_each(d.dead_agents.begin(), d.dead_agents.end(),
 					boost::bind(&model::ability::cb_db::cancel, &a.db, _1));
+			std::for_each(d.dead_agents.begin(), d.dead_agents.end(),
+						  close_dead_agent(a));
 
 			return boost::mpl::void_();
 		}

@@ -153,8 +153,7 @@ namespace hyper {
 										boost::tuple<Handler> handler)
 				{
 					if (e) {
-						connected = false;
-						c_.close();
+						close();
 						if (first_try) 
 							return async_write_(input, false, handler);
 						
@@ -316,6 +315,12 @@ namespace hyper {
 												 this, 
 												 boost::asio::placeholders::error,
 												 input.id, boost::make_tuple(handler)));
+				}
+
+				void close() {
+					std::cout << __FUNCTION__ << std::endl;
+					connected = false;
+					c_.close();
 				}
 		};
 
