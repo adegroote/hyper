@@ -408,7 +408,11 @@ int main(int argc, char** argv)
 				   if (adder.success == false)
 					   return -1;
 			   } else if (is_directory(itr->path())) {
+#if BOOST_FILESYSTEM_VERSION == 3
+				    std::string taskName = itr->path().filename().string();
+#elif BOOST_FILESYSTEM_VERSION == 2
 				    std::string taskName = itr->path().filename();
+#endif
 					directory_iterator end_itr2; 
 					for (directory_iterator itr2(*itr); itr2 != end_itr2; ++itr2 ) {
 						if (is_regular_file(itr2->path())) {
