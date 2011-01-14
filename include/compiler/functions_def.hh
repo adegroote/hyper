@@ -2,14 +2,16 @@
 #define _FUNCTIONS_DEF_HH_
 
 #include <cassert>
+#include <map>
 #include <string>
 #include <sstream>
 #include <stdexcept>
 
-#include <compiler/functions_def_parser.hh>
-#include <compiler/types.hh>
-
 #include <boost/tuple/tuple.hpp>
+#include <boost/noncopyable.hpp>
+
+#include <compiler/functions_def_parser.hh>
+#include <compiler/types_fwd.hh>
 
 namespace hyper {
 	namespace compiler {
@@ -17,14 +19,14 @@ namespace hyper {
 		{
 			private:
 				std::string name_;
-				std::vector < typeList::typeId > argsType_;
-				typeList::typeId returnType_;
+				std::vector < typeId > argsType_;
+				typeId returnType_;
 
 			public:
 				functionDef() {};
 				functionDef(const std::string &name, 
-							const std::vector < typeList::typeId > & args,
-							typeList::typeId returns):
+							const std::vector < typeId > & args,
+							typeId returns):
 					name_(name), argsType_(args), returnType_(returns) 
 				{};
 
@@ -36,11 +38,11 @@ namespace hyper {
 					return argsType_.size();
 				};
 				
-				typeList::typeId returnType() const {
+				typeId returnType() const {
 					return returnType_;
 				}
 
-				typeList::typeId argsType(size_t i) const {
+				typeId argsType(size_t i) const {
 					assert(i < arity());
 					return argsType_[i];
 				};

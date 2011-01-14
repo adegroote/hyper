@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE ( Compiler_types_test)
 	BOOST_CHECK(p.get<0>() == false);
 	BOOST_CHECK(p.get<1>() == 1);
 
-	std::pair < bool, typeList::typeId > p1;
+	std::pair < bool, typeId > p1;
 	// typeList::getId check
 	p1 = list.getId("int");
 	BOOST_CHECK(p1.first == true);

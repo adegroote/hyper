@@ -158,7 +158,7 @@ struct add_type : public boost::static_visitor < typeList::add_result >
 		typeList::new_decl_error error;
 		error.new_name_error = typeList::notTested;
 
-		std::pair < bool, typeList::typeId> ref = tList.getId(decl.oldname);
+		std::pair < bool, typeId> ref = tList.getId(decl.oldname);
 		if (ref.first == false) {
 			error.old_name_error = typeList::unknowType;
 			return boost::make_tuple(false, 0, error);
@@ -208,7 +208,7 @@ typeList::add(const type_decl_list& list)
 }
 
 
-std::pair <bool, typeList::typeId> typeList::getId(const std::string &name) const
+std::pair <bool, typeId> typeList::getId(const std::string &name) const
 {
 	typeMap::const_iterator it = mapsId.find(name);
 	if (it == mapsId.end())
@@ -216,13 +216,13 @@ std::pair <bool, typeList::typeId> typeList::getId(const std::string &name) cons
 	return std::make_pair(true, it->second);
 }
 
-type typeList::get(typeList::typeId t) const
+type typeList::get(typeId t) const
 {
 	assert(t < types.size());
 	return types[t];
 }
 
-type& typeList::get(typeList::typeId t)
+type& typeList::get(typeId t)
 {
 	assert(t < types.size());
 	return types[t];

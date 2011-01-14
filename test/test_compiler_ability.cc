@@ -1,6 +1,7 @@
 #include <compiler/ability.hh>
 #include <compiler/task.hh>
 #include <compiler/task_parser.hh>
+#include <compiler/types.hh>
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE ( compiler_ability_test )

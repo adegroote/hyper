@@ -7,6 +7,7 @@
 
 #include <compiler/symbols.hh>
 #include <compiler/symbols_parser.hh>
+#include <compiler/types.hh>
 
 using namespace hyper::compiler;
 using std::make_pair;
@@ -15,7 +16,7 @@ symbolList::add_result
 symbolList::add(const std::string &name, const std::string& tname, 
 				const expression_ast& initializer)
 {
-	std::pair < bool, typeList::typeId> p;
+	std::pair < bool, typeId> p;
 	p = tlist.getId(tname);
 	if (p.first == false)
 		return make_pair(false, unknowType);

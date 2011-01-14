@@ -12,6 +12,7 @@
 #include <boost/tuple/tuple.hpp>
 
 #include <compiler/utils.hh>
+#include <compiler/types_fwd.hh>
 #include <compiler/types_parser.hh>
 
 namespace hyper {
@@ -28,17 +29,13 @@ namespace hyper {
 			structType
 		};
 
-		namespace detail {
-			typedef std::size_t typeId;
-		}
-
 		struct Nothing {};
 
 		class symbolList;
 		class typeList;
 
 		typedef boost::variant< Nothing, 
-								detail::typeId,
+								typeId,
 								boost::shared_ptr<symbolList>
 							  > typeInternal;
 
@@ -53,9 +50,6 @@ namespace hyper {
 		};
 
 		class typeList : public boost::noncopyable {
-			public:
-				typedef detail::typeId typeId;
-
 			private:
 				typedef std::vector<type> typeV;
 				typedef std::map<std::string, typeId> typeMap;
@@ -92,7 +86,7 @@ namespace hyper {
 				typedef boost::variant< native_decl_error, struct_decl_error, new_decl_error > 
 						add_error;
 
-				typedef boost::tuple<bool, typeList::typeId, add_error> add_result;
+				typedef boost::tuple<bool, typeId, add_error> add_result;
 
 				typeList() {};
 				/* 
@@ -111,15 +105,15 @@ namespace hyper {
 				 * return < true, id> if we find a type with this name
 				 * return < false, _> otherwise
 				 */
-				std::pair < bool, typeList::typeId > getId(const std::string & name) const;
+				std::pair < bool, typeId > getId(const std::string & name) const;
 
 				/*
 				 * Return the real type associated to its id
 				 * Pre : id is a valid typeId, from add or getId
 				 */
-				type get(typeList::typeId id) const;
+				type get(typeId id) const;
 
-				type& get(typeList::typeId);
+				type& get(typeId);
 				
 				template <typename Pred>
 				std::vector<type> select(Pred pred) const

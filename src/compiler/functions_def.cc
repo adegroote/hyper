@@ -6,6 +6,7 @@
 
 #include <compiler/functions_def.hh>
 #include <compiler/scope.hh>
+#include <compiler/types.hh>
 
 using namespace hyper::compiler;
 using std::make_pair;
@@ -65,7 +66,7 @@ functionDef::output_impl(std::ostream& oss, const typeList& tList) const
 void
 functionDef::output_import(std::ostream& oss, const typeList& tList) const
 {
-	std::pair<bool, typeList::typeId> p = tList.getId("bool");
+	std::pair<bool, typeId> p = tList.getId("bool");
 	assert(p.first);
 	bool is_predicate = (p.second == returnType());
 	oss << "\t\t\t\ta.logic()." ;
@@ -86,17 +87,17 @@ functionDefList::add(const std::string &name,
 	if (it != functionDefs.end())
 		return make_tuple(false, alreadyExist, 0);
 
-	std::pair < bool, typeList::typeId > preturn;
+	std::pair < bool, typeId > preturn;
 	preturn = tlist.getId(return_name);
 	if (preturn.first == false) 
 		return make_tuple(false, unknowReturnType, 0);
-	typeList::typeId returnTypeId = preturn.second;
+	typeId returnTypeId = preturn.second;
 
 
-	std::vector < typeList::typeId > v;
+	std::vector < typeId > v;
 	for (size_t i = 0; i < argsName.size(); ++i)
 	{
-		std::pair < bool, typeList::typeId> p;
+		std::pair < bool, typeId> p;
 		p = tlist.getId(argsName[i]);
 		if (p.first == false)
 			return make_tuple(false, unknowArgsType, i);

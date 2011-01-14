@@ -8,21 +8,20 @@
 
 #include <boost/noncopyable.hpp>
 
-#include <compiler/types.hh>
 #include <compiler/expression_ast.hh>
+#include <compiler/types_fwd.hh>
 
 namespace hyper {
 	namespace compiler {
 
-		typedef std::size_t typeId;
 
 		struct symbol {
 			std::string name;
-			typeList::typeId t;
+			typeId t;
 			expression_ast initializer;
 
 			symbol() {};
-			symbol(const std::string& name_, typeList::typeId t_, 
+			symbol(const std::string& name_, typeId t_, 
 				   const expression_ast& initializer_ = empty()) : 
 				name(name_), t(t_), initializer(initializer_) {};
 		};
