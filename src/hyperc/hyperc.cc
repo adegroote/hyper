@@ -391,54 +391,63 @@ int main(int argc, char** argv)
 	if (res == false)
 		return -1;
 
-	if (exists(taskDirectory)) {
-		  directory_iterator end_itr; // default construction yields past-the-end
-		   for (directory_iterator itr( taskDirectory ); itr != end_itr; ++itr ) {
-			   if (is_regular_file(itr->path())) {
-				   task_decl_list task_decls;
-				   res = P.parse_task_file(itr->path().string(), task_decls);
-				   if (res == false) {
-					   std::cerr << "Fail to parse " << itr->path().string() << std::endl;
-					   return -1;
-				   }
-				   add_task adder(u, abilityName);
-				   std::for_each(task_decls.list.begin(), 
-								 task_decls.list.end(),
-								 adder);
-				   if (adder.success == false)
-					   return -1;
-			   } else if (is_directory(itr->path())) {
-#if BOOST_FILESYSTEM_VERSION == 3
-				    std::string taskName = itr->path().filename().string();
-#elif BOOST_FILESYSTEM_VERSION == 2
-				    std::string taskName = itr->path().filename();
-#endif
-					directory_iterator end_itr2; 
-					for (directory_iterator itr2(*itr); itr2 != end_itr2; ++itr2 ) {
-						if (is_regular_file(itr2->path())) {
-							recipe_decl_list rec_decls;
-							res = P.parse_recipe_file(itr2->path().string(), rec_decls);
-							if (res == false) {
-								std::cerr << "Fail to parse " << itr2->path().string() << std::endl;
-								return -1;
-							}
-
-							generate_recipe gen(u, abilityName, taskName, directoryRecipeName);
-							std::for_each(rec_decls.recipes.begin(),
-										  rec_decls.recipes.end(),
-										  gen);
-							if (gen.success == false)
-								return -1;
-						}
-					}
-			   }
-		   }
-	}
-
 	const ability& current_a = u.get_ability(abilityName);
 
-	std::for_each(current_a.task_begin(), current_a.task_end(),
-				  generate_task(u, directoryTaskName));
+	if (exists(taskDirectory)) {
+		directory_iterator end_itr; // default construction yields past-the-end
+
+		// parse and generate all tasks
+		for (directory_iterator itr( taskDirectory ); itr != end_itr; ++itr ) {
+			if (is_regular_file(itr->path())) {
+				task_decl_list task_decls;
+				res = P.parse_task_file(itr->path().string(), task_decls);
+				if (res == false) {
+					std::cerr << "Fail to parse " << itr->path().string() << std::endl;
+					return -1;
+				}
+				add_task adder(u, abilityName);
+				std::for_each(task_decls.list.begin(), 
+						task_decls.list.end(),
+						adder);
+				if (adder.success == false)
+					return -1;
+			} 
+		} 
+
+		std::for_each(current_a.task_begin(), current_a.task_end(),
+					  generate_task(u, directoryTaskName));
+
+		// now, enter in sub-directories to generate all recipes
+		for (directory_iterator itr( taskDirectory ); itr != end_itr; ++itr ) {
+			if (is_directory(itr->path())) {
+#if BOOST_FILESYSTEM_VERSION == 3
+				std::string taskName = itr->path().filename().string();
+#elif BOOST_FILESYSTEM_VERSION == 2
+				std::string taskName = itr->path().filename();
+#endif
+				directory_iterator end_itr2; 
+				for (directory_iterator itr2(*itr); itr2 != end_itr2; ++itr2 ) {
+					if (is_regular_file(itr2->path())) {
+						recipe_decl_list rec_decls;
+						res = P.parse_recipe_file(itr2->path().string(), rec_decls);
+						if (res == false) {
+							std::cerr << "Fail to parse " << itr2->path().string() << std::endl;
+							return -1;
+						}
+
+						generate_recipe gen(u, abilityName, taskName, directoryRecipeName);
+						std::for_each(rec_decls.recipes.begin(),
+								rec_decls.recipes.end(),
+								gen);
+						if (gen.success == false)
+							return -1;
+					}
+				}
+			}
+		}
+	}
+
+
 
 	{
 		std::string fileName = directoryName + "/types.hh";
