@@ -210,6 +210,7 @@ namespace hyper {
 			{
 				const std::string indent="\t\t";
 				const std::string next_indent = indent + "\t";
+				const std::string next_next_indent = indent + "\t";
 
 				depends deps;
 				void (*f)(const expression_ast&, const std::string&, depends&) = &add_depends;
@@ -264,19 +265,23 @@ namespace hyper {
 				if (!pre.empty())
 				{
 				oss << ",\n";
-				oss << indent << "preds(a_, boost::assign::list_of<hyper::model::evaluate_conditions<";
-				oss << pre.size() << ",ability>::condition>";
+				oss << indent << "preds(a_, \n";
+				oss << next_indent << "boost::assign::list_of<hyper::model::evaluate_conditions<";
+				oss << pre.size() << ",ability>::condition>\n";
 				generate_condition e_cond(oss, "pre");
 				std::for_each(pre.begin(), pre.end(), e_cond);
+				oss << pre_symbols.remote_list_variables(next_next_indent);
 				oss << indent << ")" << std::endl;
 				}
 				if (!post.empty()) 
 				{
 				oss << ",\n";
-				oss << indent << "posts(a_, boost::assign::list_of<hyper::model::evaluate_conditions<";
-				oss << post.size() << ",ability>::condition>";
+				oss << indent << "posts(a_, \n";
+				oss << next_indent << "boost::assign::list_of<hyper::model::evaluate_conditions<";
+				oss << post.size() << ",ability>::condition>\n";
 				generate_condition e_cond(oss, "post");
 				std::for_each(post.begin(), post.end(), e_cond);
+				oss << post_symbols.remote_list_variables(next_next_indent);
 				oss << indent << ")" << std::endl;
 				}
 				oss << indent << "{" << std::endl;

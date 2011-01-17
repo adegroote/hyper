@@ -302,6 +302,7 @@ namespace hyper {
 		{
 			const std::string indent="\t\t";
 			const std::string next_indent = indent + "\t";
+			const std::string next_next_indent = next_indent + "\t";
 
 			depends deps;
 			void (*f1)(const expression_ast&, const std::string&, depends&) = &add_depends;
@@ -343,10 +344,12 @@ namespace hyper {
 			oss << ", a_), a(a_)";
 			if (!pre.empty()) {
 			oss << "\n,";
-			oss << indent << "preds(a_, boost::assign::list_of<hyper::model::evaluate_conditions<";
-			oss << pre.size() << ",ability>::condition>";
+			oss << indent << "preds(a_, \n";
+			oss << next_indent << "boost::assign::list_of<hyper::model::evaluate_conditions<";
+			oss << pre.size() << ",ability>::condition>\n";
 			generate_condition e_cond(oss, "pre");
 			std::for_each(pre.begin(), pre.end(), e_cond);
+			oss << pre_symbols.remote_list_variables(next_next_indent);
 			oss << indent << ")" << std::endl;
 			}
 			oss << indent << "{" << std::endl;

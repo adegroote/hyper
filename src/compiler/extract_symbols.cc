@@ -1,5 +1,6 @@
 #include <compiler/expression_ast.hh>
 #include <compiler/extract_symbols.hh>
+#include <compiler/output.hh>
 #include <compiler/scope.hh>
 #include <compiler/universe.hh>
 
@@ -83,6 +84,22 @@ namespace {
 			mpl_vector+= tList.get(t).name;
 		}
 	};
+
+	struct add_variable
+	{
+		std::ostringstream& oss;
+		std::string indent;
+		
+		add_variable(std::ostringstream& oss, const std::string& indent):
+			oss(oss), indent(indent) {}
+
+		void operator() (const std::string& sym) const
+		{
+			std::pair<std::string, std::string> p;
+			p = hyper::compiler::scope::decompose(sym);
+			oss << indent << "(" << quoted_string(p.first) << ", " << quoted_string(p.second) << ")\n";
+		}
+	};
 }
 
 namespace hyper {
@@ -119,6 +136,18 @@ namespace hyper {
 			std::for_each(remote_sym_type.begin(), remote_sym_type.end(),
 					build_mpl_vector(mpl_vector, u.types()));
 			return "boost::mpl::vector<" + mpl_vector + ">";
+		}
+
+		std::string extract_symbols::remote_list_variables(const std::string& base_indent) const
+		{
+			std::ostringstream oss;
+			std::string next_indent = base_indent + "\t";
+			if (remote.empty()) 
+				return "";
+
+			oss << base_indent << "boost::assign::list_of<std::pair<std::string, std::string> >\n";
+			std::for_each(remote.begin(), remote.end(), add_variable(oss, next_indent));
+			return oss.str();
 		}
 	}
 }
