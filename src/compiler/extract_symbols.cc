@@ -145,7 +145,7 @@ namespace hyper {
 			if (remote.empty()) 
 				return "";
 
-			oss << base_indent << "boost::assign::list_of<std::pair<std::string, std::string> >\n";
+			oss << base_indent << ",boost::assign::list_of<std::pair<std::string, std::string> >\n";
 			std::for_each(remote.begin(), remote.end(), add_variable(oss, next_indent));
 			return oss.str();
 		}

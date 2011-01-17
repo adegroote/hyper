@@ -330,6 +330,9 @@ namespace hyper {
 						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
 			{
 			anonymous_namespaces n(oss);
+			oss << indent << "using namespace hyper;\n";
+			oss << indent << "using namespace hyper::" << context_a.name() << ";\n";
+
 			std::string context_name = "hyper::" + context_a.name() + "::" + exported_name();
 			exec_expression_output e_dump(context_a, context_name, oss, "pre_", pre_symbols.remote);
 			std::for_each(pre.begin(), pre.end(), e_dump);
@@ -343,10 +346,10 @@ namespace hyper {
 			oss << "model::recipe(" << quoted_string(name);
 			oss << ", a_), a(a_)";
 			if (!pre.empty()) {
-			oss << "\n,";
+			oss << ",\n";
 			oss << indent << "preds(a_, \n";
-			oss << next_indent << "boost::assign::list_of<hyper::model::evaluate_conditions<";
-			oss << pre.size() << ",ability>::condition>\n";
+			oss << next_indent << "boost::assign::list_of<hyper::" << context_a.name(); 
+			oss << "::" << exported_name() << "::pre_conditions::condition>\n";
 			generate_condition e_cond(oss, "pre");
 			std::for_each(pre.begin(), pre.end(), e_cond);
 			oss << pre_symbols.remote_list_variables(next_next_indent);

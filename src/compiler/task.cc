@@ -244,6 +244,8 @@ namespace hyper {
 
 				{
 				anonymous_namespaces n(oss);
+				oss << indent << "using namespace hyper;\n";
+				oss << indent << "using namespace hyper::" << ability_context.name() << ";\n";
 				exec_expression_output e_dump(ability_context, context_name, oss, 
 											   "pre_", pre_symbols.remote);
 				std::for_each(pre.begin(), pre.end(), e_dump);
@@ -251,6 +253,8 @@ namespace hyper {
 
 				{
 				anonymous_namespaces n(oss);
+				oss << indent << "using namespace hyper;\n";
+				oss << indent << "using namespace hyper::" << ability_context.name() << ";\n";
 				exec_expression_output e_dump(ability_context, context_name, oss, 
 											  "post_", post_symbols.remote);
 				std::for_each(post.begin(), post.end(), e_dump);
@@ -266,19 +270,19 @@ namespace hyper {
 				{
 				oss << ",\n";
 				oss << indent << "preds(a_, \n";
-				oss << next_indent << "boost::assign::list_of<hyper::model::evaluate_conditions<";
-				oss << pre.size() << ",ability>::condition>\n";
+				oss << next_indent << "boost::assign::list_of<hyper::" << ability_context.name(); 
+				oss << "::" << exported_name() << "::pre_conditions::condition>\n";
 				generate_condition e_cond(oss, "pre");
 				std::for_each(pre.begin(), pre.end(), e_cond);
 				oss << pre_symbols.remote_list_variables(next_next_indent);
-				oss << indent << ")" << std::endl;
+				oss << indent << ")";
 				}
 				if (!post.empty()) 
 				{
 				oss << ",\n";
 				oss << indent << "posts(a_, \n";
-				oss << next_indent << "boost::assign::list_of<hyper::model::evaluate_conditions<";
-				oss << post.size() << ",ability>::condition>\n";
+				oss << next_indent << "boost::assign::list_of<hyper::" << ability_context.name();
+				oss << "::" << exported_name() << "::post_conditions::condition>\n";
 				generate_condition e_cond(oss, "post");
 				std::for_each(post.begin(), post.end(), e_cond);
 				oss << post_symbols.remote_list_variables(next_next_indent);
