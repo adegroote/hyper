@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include <network/proxy.hh>
 #include <model/eval_conditions_fwd.hh>
 #include <model/task_fwd.hh>
 
@@ -14,20 +15,24 @@
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
+#include <boost/mpl/vector.hpp>
 
 namespace hyper {
 	namespace model {
 
-		template <int N, typename A>
+		template <int N, typename A, typename vectorT=boost::mpl::vector<> >
 		class evaluate_conditions {
 			public:
 				typedef boost::function<void (const A&, 
 											  bool&, 
-											  evaluate_conditions<N, A>&,
+											  evaluate_conditions<N, A, vectorT>&,
 											  size_t)> fun_call;
 
 				typedef std::pair<fun_call, std::string> condition;
 
+				typedef network::actor::remote_values<vectorT> remote_values;
+
+				remote_values remote;
 			private:
 				A& a;
 				bool is_computing;
@@ -53,9 +58,17 @@ namespace hyper {
 					a(a_), is_computing(false), condition_calls(condition_calls_) 
 				{}
 
+				evaluate_conditions(A& a_, 
+									boost::array<condition, N> condition_calls_,
+									const typename remote_values::remote_vars_conf& vars):
+					a(a_), is_computing(false), 
+					condition_calls(condition_calls_), remote(vars) 
+				{}
+
 				void async_compute(condition_execution_callback cb)
 				{
 					callbacks.push_back(cb);
+					remote.reset();
 					if (is_computing) 
 						return;
 
