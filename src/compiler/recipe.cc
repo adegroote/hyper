@@ -2,6 +2,7 @@
 
 #include <compiler/ability.hh>
 #include <compiler/depends.hh>
+#include <compiler/extract_symbols.hh>
 #include <compiler/recipe.hh>
 #include <compiler/recipe_parser.hh>
 #include <compiler/recipe_expression.hh>
@@ -318,9 +319,14 @@ namespace hyper {
 						  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
 			oss << std::endl;
 
+			extract_symbols pre_symbols(context_a.name());
+			std::for_each(pre.begin(), pre.end(), 
+						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
 			{
 			anonymous_namespaces n(oss);
-			exec_expression_output e_dump(u, context_a, context_t, *this, oss, tList, pre.size(), "pre_");
+			exec_expression_output e_dump(u, context_a, context_t, *this, oss, 
+										  tList, pre.size(), "pre_",
+										  pre_symbols.remote);
 			std::for_each(pre.begin(), pre.end(), e_dump);
 			}
 

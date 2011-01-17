@@ -7,6 +7,7 @@
 #include <compiler/depends.hh>
 #include <compiler/logic_expression_output.hh>
 #include <compiler/exec_expression_output.hh>
+#include <compiler/extract_symbols.hh>
 #include <compiler/output.hh>
 #include <compiler/recipe.hh>
 #include <compiler/scope.hh>
@@ -223,16 +224,24 @@ namespace hyper {
 							  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
 				oss << std::endl;
 
+				/* Extract local and remote symbols for pre and post-conditions */
+				extract_symbols pre_symbols(ability_context.name()), post_symbols(ability_context.name());
+				std::for_each(pre.begin(), pre.end(), boost::bind(&extract_symbols::extract, &pre_symbols, _1));
+				std::for_each(post.begin(), post.end(), boost::bind(&extract_symbols::extract, &post_symbols, _1));
+
 				{
 				anonymous_namespaces n(oss);
-				exec_expression_output e_dump(u, ability_context, *this, oss, tList, pre.size(), "pre_");
+				exec_expression_output e_dump(u, ability_context, *this, oss, 
+											   tList, pre.size(), "pre_",
+											   pre_symbols.remote);
 				std::for_each(pre.begin(), pre.end(), e_dump);
 				}
 
 				{
 				anonymous_namespaces n(oss);
 				exec_expression_output e_dump(u, ability_context, *this, oss, 
-											  tList, pre.size(), "post_");
+											  tList, pre.size(), "post_",
+											  post_symbols.remote);
 				std::for_each(post.begin(), post.end(), e_dump);
 				}
 

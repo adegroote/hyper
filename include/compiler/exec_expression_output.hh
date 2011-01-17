@@ -26,6 +26,7 @@ namespace hyper {
 			size_t counter;
 			size_t num_conds;
 			const std::string base_expr;
+			const std::set<std::string> remote_symbols;
 
 			exec_expression_output(const universe& u_,
 					const ability& ability_context_, 
@@ -33,7 +34,8 @@ namespace hyper {
 					std::ostream& oss_,
 					const typeList& tList_,
 					size_t num_conds_,
-					const std::string& base_expr_):
+					const std::string& base_expr_,
+					const std::set<std::string> remote_symbols):
 				u(u_),
 				ability_context(ability_context_),
 				task_context(task_context_),
@@ -42,7 +44,8 @@ namespace hyper {
 				tList(tList_),
 				counter(0),
 				num_conds(num_conds_),
-				base_expr(base_expr_)
+				base_expr(base_expr_),
+				remote_symbols(remote_symbols)
 			{}
 
 			exec_expression_output(const universe& u_,
@@ -52,7 +55,8 @@ namespace hyper {
 					std::ostream& oss_,
 					const typeList& tList_,
 					size_t num_conds_,
-					const std::string& base_expr_):
+					const std::string& base_expr_,
+					const std::set<std::string> remote_symbols):
 				u(u_),
 				ability_context(ability_context_),
 				task_context(task_context_),
@@ -61,7 +65,8 @@ namespace hyper {
 				tList(tList_),
 				counter(0),
 				num_conds(num_conds_),
-				base_expr(base_expr_)
+				base_expr(base_expr_),
+				remote_symbols(remote_symbols)
 			{}
 
 			void operator() (const expression_ast& e);
