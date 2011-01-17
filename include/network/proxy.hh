@@ -698,6 +698,94 @@ namespace hyper {
 				}
 			};
 
+			template <typename T>
+			struct remote_value
+			{
+				std::string src;
+				std::string var;
+				boost::optional<T> value;
+			};
+
+			namespace details {
+				template <typename T>
+				struct to_remote_value {
+					typedef remote_value<T> type;
+				};
+
+				template <typename vectorT>
+				struct to_remote_tuple {
+					typedef typename boost::mpl::transform<
+								vectorT, 
+								to_remote_value<boost::mpl::_1> 
+							>::type seq;
+
+					typedef typename to_tuple<seq>::type type;
+				};
+
+				template <typename tupleT, int size>
+				struct init_remote_values
+				{
+					typedef boost::array<std::pair<std::string, std::string>,
+										 size
+										> remote_vars_conf;
+					tupleT& t;
+					const remote_vars_conf& vars;
+
+					init_remote_values(tupleT& t,
+									   const remote_vars_conf& vars) :
+						t(t), vars(vars) {}
+
+					template <typename U>
+					void operator() (U)
+					{
+						boost::get<U::value>(t).src = vars[U::value].first;
+						boost::get<U::value>(t).var = vars[U::value].second;
+						boost::get<U::value>(t).value = boost::none;
+					}
+				};
+
+				template <typename tupleT>
+				struct reset_remote_values
+				{
+					tupleT & t;
+
+					reset_remote_values(tupleT& t_): t(t_) {};
+
+					template <typename U> // U models mpl::int_
+					void operator() (U) 
+					{
+						boost::get<U::value>(t).value = boost::none;
+					}
+				};
+			}
+
+			template <typename vectorT>
+			struct remote_values
+			{
+				typedef details::to_remote_tuple<vectorT> tupleT;
+				enum { size = boost::mpl::size<vectorT>::type::value };
+				typedef boost::mpl::range_c<size_t, 0, size> range;
+				typedef boost::array<std::pair<std::string, std::string>,
+									 size> remote_vars_conf;
+
+				tupleT values;
+
+				// XXX only valid if size == 0
+				remote_values() {}
+
+				remote_values(const remote_vars_conf& vars)
+				{
+					details::init_remote_values<tupleT, size> init_(values, vars);
+					boost::mpl::for_each<range> (init_);
+				}
+
+				void reset()
+				{
+					details::reset_remote_values<tupleT> reset_(values);
+					boost::mpl::for_each<range> (reset_);
+				}
+			};
+
 			template <typename Actor>
 			class remote_proxy 
 			{
@@ -740,6 +828,28 @@ namespace hyper {
 										   boost::asio::placeholders::error,
 										   boost::ref(output),
 										   boost::make_tuple(handler)));
+					}
+
+					template <typename T, typename Handler>
+					void async_get(remote_value<T>& value, Handler handler)
+					{
+
+						void (remote_proxy::*f)(const boost::system::error_code&,
+								T& output,
+								boost::tuple<Handler> handler) =
+							&remote_proxy::template handle_get<T, Handler>;
+
+						msg.var_name = value.var;
+						actor.client_db[value.src].async_request(msg, ans,
+								boost::bind(f, this,
+										   boost::asio::placeholders::error,
+										   boost::ref(value.output),
+										   boost::make_tuple(handler)));
+					}
+
+					template <typename vectorT, typename Handler>
+					void async_get(remote_values<vectorT> values, Handler handler)
+					{
 					}
 			};
 		}
