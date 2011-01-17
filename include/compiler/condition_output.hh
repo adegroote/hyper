@@ -10,7 +10,7 @@ namespace hyper {
 		struct generate_condition {
 			std::ostream& oss;
 			std::string base;
-			size_t counter;
+			mutable size_t counter;
 
 			generate_condition(std::ostream& oss_, const std::string& base_) : 
 				oss(oss_), base(base_), counter(0) {}
