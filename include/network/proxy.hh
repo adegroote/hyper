@@ -712,6 +712,12 @@ namespace hyper {
 					typedef remote_value<T> type;
 				};
 
+				template <typename T>
+				struct to_internal_type
+				{
+					typedef const typename boost::optional<T>& type;
+				};
+
 				template <typename vectorT>
 				struct to_remote_tuple {
 					typedef typename boost::mpl::transform<
@@ -762,11 +768,16 @@ namespace hyper {
 			template <typename vectorT>
 			struct remote_values
 			{
-				typedef details::to_remote_tuple<vectorT> tupleT;
+				typedef typename details::to_remote_tuple<vectorT>::type tupleT;
 				enum { size = boost::mpl::size<vectorT>::type::value };
 				typedef boost::mpl::range_c<size_t, 0, size> range;
 				typedef boost::array<std::pair<std::string, std::string>,
 									 size> remote_vars_conf;
+
+				typedef typename boost::mpl::transform<
+					vectorT,
+					details::to_internal_type<boost::mpl::_1>
+				>::type seqReturn;
 
 				tupleT values;
 
@@ -783,6 +794,12 @@ namespace hyper {
 				{
 					details::reset_remote_values<tupleT> reset_(values);
 					boost::mpl::for_each<range> (reset_);
+				}
+
+				template <size_t i>
+				typename boost::mpl::at<seqReturn, boost::mpl::int_<i> >::type at_c() const
+				{
+					return (boost::get<i>(values)).value;
 				}
 			};
 
