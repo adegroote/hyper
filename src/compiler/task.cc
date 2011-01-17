@@ -160,8 +160,14 @@ namespace hyper {
 							   exported_name_big.begin(), toupper);
 				guards g(oss, ability_context.name(), exported_name_big + "_HH");
 
+				/* Extract local and remote symbols for pre and post-conditions */
+				extract_symbols pre_symbols(ability_context.name()), post_symbols(ability_context.name());
+				std::for_each(pre.begin(), pre.end(), boost::bind(&extract_symbols::extract, &pre_symbols, _1));
+				std::for_each(post.begin(), post.end(), boost::bind(&extract_symbols::extract, &post_symbols, _1));
+
 				oss << "#include <model/task.hh>" << std::endl;
 				oss << "#include <model/evaluate_conditions.hh>" << std::endl;
+
 
 				namespaces n(oss, ability_context.name());
 				oss << indent << "struct ability;" << std::endl;
@@ -169,13 +175,17 @@ namespace hyper {
 				oss << " : public model::task {" << std::endl;
 
 				if (!pre.empty()) {
-					oss << next_indent << "hyper::model::evaluate_conditions<";
-					oss << pre.size() << ", ability> preds;" << std::endl; 
+					oss << next_indent << "typedef hyper::model::evaluate_conditions<";
+					oss << pre.size() << ", ability, " << pre_symbols.remote_vector_type_output(u);
+					oss << " > pre_conditions;" << std::endl; 
+					oss << next_indent << "pre_conditions preds;" << std::endl;
 				}
 
 				if (!post.empty()) {
-					oss << next_indent << "hyper::model::evaluate_conditions<";
-					oss << post.size() << ", ability> posts;" << std::endl; 
+					oss << next_indent << "typedef hyper::model::evaluate_conditions<";
+					oss << post.size() << ", ability, " << post_symbols.remote_vector_type_output(u);
+					oss << " > post_conditions;" << std::endl; 
+					oss << next_indent << "post_conditions posts;" << std::endl;
 				}
 
 				oss << next_indent << exported_name();
@@ -229,19 +239,19 @@ namespace hyper {
 				std::for_each(pre.begin(), pre.end(), boost::bind(&extract_symbols::extract, &pre_symbols, _1));
 				std::for_each(post.begin(), post.end(), boost::bind(&extract_symbols::extract, &post_symbols, _1));
 
+				std::string context_name = "hyper::" + ability_context.name() + "::" + exported_name();
+
 				{
 				anonymous_namespaces n(oss);
-				exec_expression_output e_dump(u, ability_context, *this, oss, 
-											   tList, pre.size(), "pre_",
-											   pre_symbols.remote);
+				exec_expression_output e_dump(ability_context, context_name, oss, 
+											   "pre_", pre_symbols.remote);
 				std::for_each(pre.begin(), pre.end(), e_dump);
 				}
 
 				{
 				anonymous_namespaces n(oss);
-				exec_expression_output e_dump(u, ability_context, *this, oss, 
-											  tList, pre.size(), "post_",
-											  post_symbols.remote);
+				exec_expression_output e_dump(ability_context, context_name, oss, 
+											  "post_", post_symbols.remote);
 				std::for_each(post.begin(), post.end(), e_dump);
 				}
 

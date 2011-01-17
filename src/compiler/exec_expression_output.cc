@@ -123,8 +123,8 @@ void exec_expression_output::operator() (const expression_ast& e)
 
 	oss << indent << "void " << base_expr << "condition_" << counter++;
 	oss << "(const " << class_name << " & a, " << std::endl;
-	oss << indent_next << "bool& res, hyper::model::evaluate_conditions<";
-	oss << num_conds << ", " << class_name << ">& cond, size_t i)" << std::endl;
+	oss << indent_next << "bool& res, " << context_name << "::" ;
+	oss << base_expr << "conditions& cond, size_t i)" << std::endl;
 	oss << indent << "{" << std::endl;
 
 	dump_expression_ast dump(remote_symbols);

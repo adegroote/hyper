@@ -8,6 +8,7 @@ namespace hyper {
 	namespace compiler {
 
 		struct expression_ast;
+		struct universe;
 
 		struct extract_symbols {
 			std::set<std::string> local;
@@ -16,6 +17,8 @@ namespace hyper {
 
 			extract_symbols(const std::string& context);
 			void extract(const expression_ast& e);
+
+			std::string remote_vector_type_output(const universe& u) const;
 		};
 	}
 }

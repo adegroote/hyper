@@ -267,6 +267,9 @@ namespace hyper {
 						   exported_name_big.begin(), toupper);
 			guards g(oss, context_a.name(), exported_name_big + "_HH");
 
+			extract_symbols pre_symbols(context_a.name());
+			std::for_each(pre.begin(), pre.end(), 
+						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
 
 			oss << "#include <model/recipe.hh>" << std::endl;
 			oss << "#include <model/evaluate_conditions.hh>" << std::endl;
@@ -277,8 +280,10 @@ namespace hyper {
 			oss << " : public model::recipe {" << std::endl;
 
 			if (!pre.empty()) {
-				oss << next_indent << "hyper::model::evaluate_conditions<";
-				oss << pre.size() << ", ability> preds;" << std::endl; 
+				oss << next_indent << "typedef hyper::model::evaluate_conditions<";
+				oss << pre.size() << ", ability, " << pre_symbols.remote_vector_type_output(u);
+				oss << " > pre_conditions;" << std::endl; 
+				oss << next_indent << "pre_conditions preds;" << std::endl;
 			}
 
 			oss << next_indent << "ability &a; " << std::endl;
@@ -324,9 +329,8 @@ namespace hyper {
 						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
 			{
 			anonymous_namespaces n(oss);
-			exec_expression_output e_dump(u, context_a, context_t, *this, oss, 
-										  tList, pre.size(), "pre_",
-										  pre_symbols.remote);
+			std::string context_name = "hyper::" + context_a.name() + "::" + exported_name();
+			exec_expression_output e_dump(context_a, context_name, oss, "pre_", pre_symbols.remote);
 			std::for_each(pre.begin(), pre.end(), e_dump);
 			}
 
