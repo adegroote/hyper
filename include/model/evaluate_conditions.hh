@@ -9,6 +9,7 @@
 
 #include <network/proxy.hh>
 #include <model/eval_conditions_fwd.hh>
+#include <model/update.hh>
 #include <model/task_fwd.hh>
 
 #include <boost/asio.hpp>
@@ -52,7 +53,7 @@ namespace hyper {
 				boost::array<bool, N> terminated;
 				boost::array<bool, N> success;
 				boost::array<condition, N> condition_calls;
-				boost::array<details::updating_value, M> updating_status;
+				local_vars updating_status;
 				std::vector<condition_execution_callback> callbacks;
 
 				bool is_terminated() const
@@ -71,8 +72,8 @@ namespace hyper {
 					bool local_terminaison = true;
 					bool remote_terminaison = true;
 
-					for (size_t i = 0; i != M; i++)
-						local_terminaison &= updating_status[i].terminated;
+					if (M)
+						local_terminaison = updating_status.is_terminated();
 
 					if (boost::mpl::size<vectorT>::type::value)
 						remote_terminaison = remote.is_terminated();
@@ -95,9 +96,8 @@ namespace hyper {
 					check_all_variables_up2date();
 				}
 
-				void eval_local_update(const boost::system::error_code&e, int i)
+				void eval_local_update(const boost::system::error_code&)
 				{
-					updating_status[i].terminated = true;
 					check_all_variables_up2date();
 				}
 
@@ -114,22 +114,18 @@ namespace hyper {
 				evaluate_conditions(A& a_, 
 									boost::array<condition, N> condition_calls_,
 									boost::array<std::string, M> update_status_) :
-					a(a_), is_computing(false), condition_calls(condition_calls_) 
-				{
-					for (size_t i = 0; i < M; ++i)
-						updating_status[i].value = update_status_[i];
-				}
+					a(a_), is_computing(false), condition_calls(condition_calls_),
+					updating_status(update_status_)
+				{}
 
 				evaluate_conditions(A& a_, 
 									boost::array<condition, N> condition_calls_,
 									boost::array<std::string, M> update_status_,
 									const typename remote_values::remote_vars_conf& vars):
 					a(a_), is_computing(false), 
-					condition_calls(condition_calls_), remote(vars) 
-				{
-					for (size_t i = 0; i < M; ++i)
-						updating_status[i].value = update_status_[i];
-				}
+					condition_calls(condition_calls_), remote(vars),
+					updating_status(update_status_)
+				{}
 
 				void async_compute(condition_execution_callback cb)
 				{
@@ -140,8 +136,7 @@ namespace hyper {
 					/* Reinit the state of the object */
 					std::for_each(terminated.begin(), terminated.end(), reset());
 					remote.reset();
-					for (size_t i = 0; i != M; ++i)
-						updating_status[i].terminated = false;
+					updating_status.reset();
 
 					is_computing = true;
 
@@ -202,10 +197,10 @@ namespace hyper {
 				struct local_update {
 					A& a;
 					evaluate_conditions<N, A, M, vectorT>& conds;
-					boost::array<updating_value, M>& updating_status;
+					local_vars& updating_status;
 
 					local_update(A& a, evaluate_conditions<N, A, M, vectorT>& conds, 
-								       boost::array<updating_value, M>& updating_status):
+								       local_vars& updating_status):
 						a(a), conds(conds), updating_status(updating_status) {}
 
 					void operator() ()
@@ -213,12 +208,11 @@ namespace hyper {
 						/* second and third arguments are not good here, we
 						 * need to know in which condition we call this update
 						 * condition */
-						for (size_t i = 0; i != M; ++i)
-							a.updater.async_update(updating_status[i].value, 0, a.name, 
+						a.updater.async_update(updating_status, 0, a.name, 
 									boost::bind(&evaluate_conditions<N, A, M, vectorT>::eval_local_update,
 												&conds,
-												boost::asio::placeholders::error,
-												i));
+												boost::asio::placeholders::error
+												));
 					}
 				};
 
@@ -226,10 +220,10 @@ namespace hyper {
 				struct local_update<N, A, vectorT, 0> {
 					A& a;
 					evaluate_conditions<N, A, 0, vectorT>& conds;
-					boost::array<updating_value, 0>& updating_status;
+					local_vars& updating_status;
 
 					local_update(A& a, evaluate_conditions<N, A, 0, vectorT>& conds, 
-								       boost::array<updating_value, 0>& updating_status):
+								       local_vars& updating_status):
 						a(a), conds(conds), updating_status(updating_status) {}
 
 					void operator() () {}
