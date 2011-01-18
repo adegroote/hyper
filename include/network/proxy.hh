@@ -702,8 +702,11 @@ namespace hyper {
 			struct remote_value
 			{
 				std::string src;
-				std::string var;
+				request_variable_value msg;
+				variable_value ans;
+
 				boost::optional<T> value;
+				bool terminated;
 			};
 
 			namespace details {
@@ -745,8 +748,9 @@ namespace hyper {
 					void operator() (U)
 					{
 						boost::get<U::value>(t).src = vars[U::value].first;
-						boost::get<U::value>(t).var = vars[U::value].second;
+						boost::get<U::value>(t).msg.var_name = vars[U::value].second;
 						boost::get<U::value>(t).value = boost::none;
+						boost::get<U::value>(t).terminated = false;
 					}
 				};
 
@@ -761,8 +765,29 @@ namespace hyper {
 					void operator() (U) 
 					{
 						boost::get<U::value>(t).value = boost::none;
+						boost::get<U::value>(t).terminated = false;
 					}
 				};
+
+				template <typename tupleT>
+				struct remote_values_is_terminated 
+				{
+					tupleT& t;
+					bool &res;
+
+					remote_values_is_terminated(tupleT& t, bool& res) :
+						t(t), res(res) 
+					{}
+
+					template <typename U>
+					void operator() (U)
+					{
+						res = res && boost::get<U::value>(t).terminated;
+					}
+				};
+
+				template <typename Actor, typename tupleT, typename Handler>
+				struct remote_value_async_get;
 			}
 
 			template <typename vectorT>
@@ -796,6 +821,14 @@ namespace hyper {
 					boost::mpl::for_each<range> (reset_);
 				}
 
+				bool is_terminated()
+				{
+					bool res;
+					details::remote_values_is_terminated<tupleT> is_terminated_(values, res);
+					boost::mpl::for_each<range> (is_terminated_);
+					return res;
+				}
+
 				template <size_t i>
 				typename boost::mpl::at<seqReturn, boost::mpl::int_<i> >::type at_c() const
 				{
@@ -824,6 +857,30 @@ namespace hyper {
 						boost::get<0>(handler)(e);
 					}
 
+					template <typename vectorT, typename Handler>
+					void handle_remote_values_get(const boost::system::error_code& e,
+									remote_values<vectorT>& values,
+									boost::tuple<Handler> handler)
+					{
+						if (values.is_terminated())
+							boost::get<0>(handler)(e);
+					}
+
+					template <typename T, typename Handler>
+					void handle_remote_value_get(const boost::system::error_code& e,
+									remote_value<T>& value,
+									boost::tuple<Handler> handler)
+					{
+						value.terminated = true;
+
+						if (e || value.ans.success == false ) 
+							value.output = boost::none;
+						else
+							value.output = deserialize_value<typename T::value_type>(ans.value);
+
+						boost::get<0>(handler)(e);
+					}
+
 				public:
 					remote_proxy(Actor& actor_) : actor(actor_) {}
 					
@@ -833,7 +890,6 @@ namespace hyper {
 								   T & output,
 								   Handler handler)
 					{
-
 						void (remote_proxy::*f)(const boost::system::error_code&,
 								T& output,
 								boost::tuple<Handler> handler) =
@@ -850,25 +906,57 @@ namespace hyper {
 					template <typename T, typename Handler>
 					void async_get(remote_value<T>& value, Handler handler)
 					{
-
 						void (remote_proxy::*f)(const boost::system::error_code&,
-								T& output,
+								remote_value<T>& output,
 								boost::tuple<Handler> handler) =
-							&remote_proxy::template handle_get<T, Handler>;
+							&remote_proxy::template handle_remote_value_get<T, Handler>;
 
-						msg.var_name = value.var;
-						actor.client_db[value.src].async_request(msg, ans,
-								boost::bind(f, this,
-										   boost::asio::placeholders::error,
-										   boost::ref(value.output),
-										   boost::make_tuple(handler)));
+						actor.client_db[value.src].async_request(
+								value.msg, value.ans, 
+								boost::bind(f, this, 
+											boost::asio::placeholders::error,
+											boost::ref(value),
+											boost::make_tuple(handler)));
 					}
 
 					template <typename vectorT, typename Handler>
-					void async_get(remote_values<vectorT> values, Handler handler)
+					void async_get(remote_values<vectorT>& values, Handler handler)
 					{
+						values.reset();
+						void (remote_proxy::*f)(const boost::system::error_code&,
+									remote_values<vectorT>& values, 
+									boost::tuple<Handler> handler)
+							= & remote_proxy::template handle_remote_values_get<vectorT, Handler>;
+
+						details::remote_value_async_get<Actor, 
+											   typename remote_values<vectorT>::tupleT,
+											   Handler> async_get_(actor, values.values, 
+									boost::bind(f, this, boost::asio::placeholders::error,
+														 boost::ref(values),
+														 boost::make_tuple(handler)));
+						boost::mpl::for_each<typename remote_values<vectorT>::range> (async_get_);
 					}
 			};
+
+			namespace details {
+				template <typename Actor, typename tupleT, typename Handler>
+				struct remote_value_async_get
+				{
+					remote_proxy<Actor>& proxy;
+					tupleT& t;
+					Handler handler;
+
+					remote_value_async_get(remote_proxy<Actor>& proxy, tupleT& t, Handler handler) : 
+						proxy(proxy), t(t), handler(handler)
+					{}
+
+					template <typename U>
+					void operator() (U)
+					{
+						proxy.async_get(boost::get<U::value>(t), handler);
+					}
+				};
+			}
 		}
 	}
 }
