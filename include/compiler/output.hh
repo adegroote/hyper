@@ -69,16 +69,20 @@ namespace hyper {
 		{
 			std::ostream & oss;
 			std::string depend_kind;
+			char start;
 			
 			dump_depends(std::ostream& oss_, const std::string& kind) : 
-				oss(oss_), depend_kind(kind) {};
+				oss(oss_), depend_kind(kind), start('#') {};
 		
+			dump_depends(std::ostream& oss_, const std::string& kind, char start) : 
+				oss(oss_), depend_kind(kind), start(start) {};
+
 			void operator() (const std::string& s) const
 			{
 				if (s == "")
 					return;
 		
-				oss << "#include <" << s << "/" << depend_kind << ">" << std::endl;
+				oss << start << "include <" << s << "/" << depend_kind << ">" << std::endl;
 			}
 		};
 

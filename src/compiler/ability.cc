@@ -397,6 +397,7 @@ ability::agent_export_implementation(std::ostream& oss, const typeList& tList) c
 	oss << "#include <network/msg.hh>" << std::endl;
 	oss << "#include <model/get_value.hh>" << std::endl;
 	oss << "#include <" << name_ << "/export.hh>" << std::endl;
+	oss << "using namespace hyper;" << std::endl;
 	oss << "using namespace hyper::" << name_ << ";" << std::endl;
 	oss << std::endl;
 
@@ -446,11 +447,23 @@ struct extract_types
 void
 ability::dump_swig_ability_types(std::ostream& oss, const typeList& tList) const
 {
-	// search the list of type used in the variable 
-	std::set<std::string> types;
-	extract_types type_deps(types, tList);
-	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
-	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
+	{
+		// search the list of ability we depends on
+		std::set<std::string> type_depends;
+		compute_type_depends type_deps(type_depends, tList);
+		std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
+		std::for_each(readable_list.begin(), readable_list.end(), type_deps);
 
-	std::for_each(types.begin(), types.end(), dump_swig(oss));
+		std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh", '%'));
+	}
+
+	{
+		// search the list of type used in the variable 
+		std::set<std::string> types;
+		extract_types type_deps(types, tList);
+		std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
+		std::for_each(readable_list.begin(), readable_list.end(), type_deps);
+	
+		std::for_each(types.begin(), types.end(), dump_swig(oss));
+	}
 }
