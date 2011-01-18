@@ -874,9 +874,9 @@ namespace hyper {
 						value.terminated = true;
 
 						if (e || value.ans.success == false ) 
-							value.output = boost::none;
+							value.value = boost::none;
 						else
-							value.output = deserialize_value<typename T::value_type>(ans.value);
+							value.value = deserialize_value<T>(ans.value);
 
 						boost::get<0>(handler)(e);
 					}
@@ -930,7 +930,8 @@ namespace hyper {
 
 						details::remote_value_async_get<Actor, 
 											   typename remote_values<vectorT>::tupleT,
-											   Handler> async_get_(actor, values.values, 
+											   boost::function<void (const boost::system::error_code&)>
+											   > async_get_(*this, values.values, 
 									boost::bind(f, this, boost::asio::placeholders::error,
 														 boost::ref(values),
 														 boost::make_tuple(handler)));
