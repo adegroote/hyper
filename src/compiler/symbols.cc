@@ -12,6 +12,35 @@
 using namespace hyper::compiler;
 using std::make_pair;
 
+namespace {
+	struct is_updater : public boost::static_visitor<bool>
+	{
+		template <typename T>
+		bool operator () (const T&) const { return false; }
+	
+		bool operator () (const expression_ast& e) const
+		{
+			return boost::apply_visitor(is_updater(), e.expr);
+		}
+	
+		bool operator () (const std::string&) const
+		{
+			return true;
+		}
+	
+		bool operator () (const function_call&) const
+		{
+			return true;
+		}
+	};
+}
+
+bool
+symbol::has_updater() const
+{
+	return boost::apply_visitor(is_updater(), initializer.expr);
+}
+
 symbolList::add_result
 symbolList::add(const std::string &name, const std::string& tname, 
 				const expression_ast& initializer)

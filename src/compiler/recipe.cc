@@ -267,7 +267,7 @@ namespace hyper {
 						   exported_name_big.begin(), toupper);
 			guards g(oss, context_a.name(), exported_name_big + "_HH");
 
-			extract_symbols pre_symbols(context_a.name());
+			extract_symbols pre_symbols(context_a);
 			std::for_each(pre.begin(), pre.end(), 
 						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
 
@@ -281,7 +281,7 @@ namespace hyper {
 
 			if (!pre.empty()) {
 				oss << next_indent << "typedef hyper::model::evaluate_conditions<";
-				oss << pre.size() << ", ability, " << pre_symbols.local.size() << ", ";
+				oss << pre.size() << ", ability, " << pre_symbols.local_with_updater.size() << ", ";
 				oss << pre_symbols.remote_vector_type_output(u);
 				oss << " > pre_conditions;" << std::endl; 
 				oss << next_indent << "pre_conditions preds;" << std::endl;
@@ -326,7 +326,7 @@ namespace hyper {
 						  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
 			oss << std::endl;
 
-			extract_symbols pre_symbols(context_a.name());
+			extract_symbols pre_symbols(context_a);
 			std::for_each(pre.begin(), pre.end(), 
 						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
 			{
@@ -353,7 +353,7 @@ namespace hyper {
 			oss << "::" << exported_name() << "::pre_conditions::condition>\n";
 			generate_condition e_cond(oss, "pre");
 			std::for_each(pre.begin(), pre.end(), e_cond);
-			oss << pre_symbols.local_list_variables(next_next_indent);
+			oss << pre_symbols.local_list_variables_updated(next_next_indent);
 			oss << pre_symbols.remote_list_variables(next_next_indent);
 			oss << indent << ")" << std::endl;
 			}

@@ -24,6 +24,8 @@ namespace hyper {
 			symbol(const std::string& name_, typeId t_, 
 				   const expression_ast& initializer_ = empty()) : 
 				name(name_), t(t_), initializer(initializer_) {};
+
+			bool has_updater() const;
 		};
 
 		struct symbol_decl;

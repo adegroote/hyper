@@ -23,15 +23,24 @@ namespace {
 
 		void operator() (const std::string& sym) const
 		{
+			std::string local_symbol = "";
+
 			if (scope::is_scoped_identifier(sym)) {
 				std::pair<std::string, std::string> p;
 				p = scope::decompose(sym);
-				if (p.first == syms.context) 
-					syms.local.insert(p.second);
+				if (p.first == syms.a.name()) 
+					local_symbol = p.second;
 				else
 					syms.remote.insert(sym);
 			} else {
-				syms.local.insert(sym);
+				local_symbol = sym;
+			}
+
+			if (local_symbol != "") {
+				syms.local.insert(local_symbol);
+				std::pair< bool, symbolACL > p = syms.a.get_symbol(local_symbol);
+				if (p.first && p.second.s.has_updater())
+					syms.local_with_updater.insert(local_symbol);
 			}
 		}
 
@@ -114,11 +123,22 @@ namespace {
 			oss << indent << "(" << quoted_string(sym) << ")\n";
 		}
 	};
+
+	template <typename Iterator>
+	std::string generate_local_list(const std::string& base_indent, Iterator begin, Iterator end)
+	{
+		std::ostringstream oss;
+		std::string next_indent = base_indent + "\t";
+
+		oss << base_indent << ",boost::assign::list_of<std::string>\n";
+		std::for_each(begin, end, add_local_variable(oss, next_indent));
+		return oss.str();
+	}
 }
 
 namespace hyper {
 	namespace compiler {
-		extract_symbols::extract_symbols(const std::string& context) : context(context) {}
+		extract_symbols::extract_symbols(const ability& a) : a(a) {}
 
 		void extract_symbols::extract(const expression_ast& e)
 		{
@@ -138,7 +158,7 @@ namespace hyper {
 			std::transform(remote.begin(), remote.end(), 
 					std::back_inserter(remote_symbols),
 					boost::bind(&universe::get_symbol, boost::cref(u),
-						_1, boost::cref(u.get_ability(context)), boost::none));
+						_1, boost::cref(a), boost::none));
 
 			/* Generate list of type for each symbol to compute the associed vectorT */
 			std::vector<typeId> remote_sym_type;
@@ -166,14 +186,21 @@ namespace hyper {
 
 		std::string extract_symbols::local_list_variables(const std::string& base_indent) const
 		{
-			std::ostringstream oss;
-			std::string next_indent = base_indent + "\t";
 			if (local.empty()) 
 				return "";
 
-			oss << base_indent << ",boost::assign::list_of<std::string>\n";
-			std::for_each(local.begin(), local.end(), add_local_variable(oss, next_indent));
-			return oss.str();
+			return generate_local_list(base_indent, local.begin(), local.end());
+		}
+
+		std::string extract_symbols::local_list_variables_updated(
+				const std::string& base_indent) const
+																  
+		{
+			if (local_with_updater.empty())
+				return "";
+
+			return generate_local_list(base_indent, local_with_updater.begin(), 
+													local_with_updater.end());
 		}
 	}
 }
