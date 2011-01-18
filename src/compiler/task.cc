@@ -176,14 +176,16 @@ namespace hyper {
 
 				if (!pre.empty()) {
 					oss << next_indent << "typedef hyper::model::evaluate_conditions<";
-					oss << pre.size() << ", ability, " << pre_symbols.remote_vector_type_output(u);
+					oss << pre.size() << ", ability, " << pre_symbols.local.size() << ", ";
+					oss << pre_symbols.remote_vector_type_output(u);
 					oss << " > pre_conditions;" << std::endl; 
 					oss << next_indent << "pre_conditions preds;" << std::endl;
 				}
 
 				if (!post.empty()) {
 					oss << next_indent << "typedef hyper::model::evaluate_conditions<";
-					oss << post.size() << ", ability, " << post_symbols.remote_vector_type_output(u);
+					oss << post.size() << ", ability, " << post_symbols.local.size() << ", ";
+					oss << post_symbols.remote_vector_type_output(u);
 					oss << " > post_conditions;" << std::endl; 
 					oss << next_indent << "post_conditions posts;" << std::endl;
 				}
@@ -274,6 +276,7 @@ namespace hyper {
 				oss << "::" << exported_name() << "::pre_conditions::condition>\n";
 				generate_condition e_cond(oss, "pre");
 				std::for_each(pre.begin(), pre.end(), e_cond);
+				oss << pre_symbols.local_list_variables(next_next_indent);
 				oss << pre_symbols.remote_list_variables(next_next_indent);
 				oss << indent << ")";
 				}
@@ -285,6 +288,7 @@ namespace hyper {
 				oss << "::" << exported_name() << "::post_conditions::condition>\n";
 				generate_condition e_cond(oss, "post");
 				std::for_each(post.begin(), post.end(), e_cond);
+				oss << post_symbols.local_list_variables(next_next_indent);
 				oss << post_symbols.remote_list_variables(next_next_indent);
 				oss << indent << ")" << std::endl;
 				}

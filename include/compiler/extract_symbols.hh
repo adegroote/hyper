@@ -20,6 +20,7 @@ namespace hyper {
 
 			std::string remote_vector_type_output(const universe& u) const;
 			std::string remote_list_variables(const std::string& base_indent) const;
+			std::string local_list_variables(const std::string& base_indent) const;
 		};
 	}
 }

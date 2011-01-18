@@ -100,6 +100,20 @@ namespace {
 			oss << indent << "(" << quoted_string(p.first) << ", " << quoted_string(p.second) << ")\n";
 		}
 	};
+
+	struct add_local_variable
+	{
+		std::ostringstream& oss;
+		std::string indent;
+		
+		add_local_variable(std::ostringstream& oss, const std::string& indent):
+			oss(oss), indent(indent) {}
+
+		void operator() (const std::string& sym) const
+		{
+			oss << indent << "(" << quoted_string(sym) << ")\n";
+		}
+	};
 }
 
 namespace hyper {
@@ -147,6 +161,18 @@ namespace hyper {
 
 			oss << base_indent << ",boost::assign::list_of<std::pair<std::string, std::string> >\n";
 			std::for_each(remote.begin(), remote.end(), add_variable(oss, next_indent));
+			return oss.str();
+		}
+
+		std::string extract_symbols::local_list_variables(const std::string& base_indent) const
+		{
+			std::ostringstream oss;
+			std::string next_indent = base_indent + "\t";
+			if (local.empty()) 
+				return "";
+
+			oss << base_indent << ",boost::assign::list_of<std::string>\n";
+			std::for_each(local.begin(), local.end(), add_local_variable(oss, next_indent));
 			return oss.str();
 		}
 	}

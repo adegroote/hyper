@@ -20,12 +20,18 @@
 namespace hyper {
 	namespace model {
 
-		template <int N, typename A, typename vectorT=boost::mpl::vector<> >
+		/*
+		 * N corresponds to the number of conditions to compute
+		 * A is the associated ability model
+		 * M is the number of local_variables to update
+		 * vectorT is the list of type of remote variables we need to retrieve
+		 */
+		template <int N, typename A, int M = 0, typename vectorT=boost::mpl::vector<> >
 		class evaluate_conditions {
 			public:
 				typedef boost::function<void (const A&, 
 											  bool&, 
-											  evaluate_conditions<N, A, vectorT>&,
+											  evaluate_conditions<N, A, M, vectorT>&,
 											  size_t)> fun_call;
 
 				typedef std::pair<fun_call, std::string> condition;
@@ -34,11 +40,14 @@ namespace hyper {
 
 				remote_values remote;
 			private:
+				struct updating_value { std::string value; bool terminated; };
+
 				A& a;
 				bool is_computing;
 				boost::array<bool, N> terminated;
 				boost::array<bool, N> success;
 				boost::array<condition, N> condition_calls;
+				boost::array<updating_value, M> updating_status;
 				std::vector<condition_execution_callback> callbacks;
 
 				bool is_terminated() const
@@ -60,10 +69,23 @@ namespace hyper {
 
 				evaluate_conditions(A& a_, 
 									boost::array<condition, N> condition_calls_,
+									boost::array<std::string, M> update_status_) :
+					a(a_), is_computing(false), condition_calls(condition_calls_) 
+				{
+					for (size_t i = 0; i < M; ++i)
+						updating_status[i].value = update_status_[i];
+				}
+
+				evaluate_conditions(A& a_, 
+									boost::array<condition, N> condition_calls_,
+									boost::array<std::string, M> update_status_,
 									const typename remote_values::remote_vars_conf& vars):
 					a(a_), is_computing(false), 
 					condition_calls(condition_calls_), remote(vars) 
-				{}
+				{
+					for (size_t i = 0; i < M; ++i)
+						updating_status[i].value = update_status_[i];
+				}
 
 				void async_compute(condition_execution_callback cb)
 				{
