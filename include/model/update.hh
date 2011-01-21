@@ -74,6 +74,9 @@ namespace hyper {
 				void async_update(local_vars& vars, network::identifier id,
 								  const std::string& str, cb_type cb);
 		};
+
+		template <typename A, size_t N, typename vectorT>
+		class update_variables;
 	}
 }
 

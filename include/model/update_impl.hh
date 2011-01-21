@@ -82,6 +82,122 @@ namespace hyper {
 			p = map.insert(std::make_pair(var, fun));
 			return p.second;
 		}
+
+		template <typename A>
+		class update_variables<A, 0, boost::mpl::vector<> >
+		{
+			public:
+				template <typename Handler>
+				void async_update(Handler handler)
+				{
+					return handler(boost::system::error_code());
+				}
+		};
+
+		template <typename A, size_t N>
+		class update_variables<A, N, boost::mpl::vector<> >
+		{
+			private:
+				A& a;
+				local_vars update_status;
+
+			public:
+				update_variables(A& a, const boost::array<std::string, N>& update) :
+					a(a), update_status(update) {}
+
+				template <typename Handler>
+				void async_update(Handler handler)
+				{
+					a.updater.async_update(update_status, 0, a.name, handler);
+				}
+		};
+
+		template <typename A, typename vectorT>
+		class update_variables<A, 0, vectorT> 
+		{
+			public:
+				typedef network::actor::remote_values<vectorT> remote_values;
+				typedef typename remote_values::seqReturn seqReturn;
+				typedef typename remote_values::remote_vars_conf remote_vars_conf;
+
+			private:
+				network::actor::remote_proxy<A> proxy;
+				remote_values remote;
+
+			public:
+				update_variables(A& a, const typename remote_values::remote_vars_conf& vars):
+					proxy(a), remote_values(vars)
+				{}
+
+				template <typename Handler>
+				void async_update(Handler handler)
+				{
+					proxy.async_get(remote, handler);
+				}
+
+				template<size_t i>
+				typename boost::mpl::at<seqReturn, boost::mpl::int_<i> >::type
+				at_c() const
+				{
+					return remote.at_c<i>();
+				}
+		};
+
+		template <typename A, size_t N, typename vectorT>
+		class update_variables 
+		{
+			public:
+				typedef network::actor::remote_values<vectorT> remote_values;
+				typedef typename remote_values::seqReturn seqReturn;
+				typedef typename remote_values::remote_vars_conf remote_vars_conf;
+
+			private:
+				A& a;
+				network::actor::remote_proxy<A> proxy;
+				local_vars local_update_status;
+				remote_values remote_update_status;
+
+				template <typename Handler>
+				void handle_update(const boost::system::error_code& e, 
+								   boost::tuple<Handler> handler)
+				{
+					if (local_update_status.is_terminated() && 
+						remote_update_status.is_terminated())
+						boost::get<0>(handler)(e);
+				}
+
+			public:
+				update_variables(A& a, const boost::array<std::string, N>& update,
+								 const typename remote_values::remote_vars_conf& vars):
+					a(a), proxy(a), local_update_status(update),
+					remote_update_status(vars)
+				{}
+				
+				template <typename Handler>
+				void async_update(Handler handler)
+				{
+					void (update_variables::*f) (const boost::system::error_code& e, 
+												 boost::tuple<Handler>)
+						= &update_variables::template handle_update<Handler>;
+
+					boost::function<void (const boost::system::error_code&)> 
+					local_handler  =
+						boost::bind(f, this, boost::asio::placeholders::error,
+											 boost::make_tuple(handler));
+
+					local_update_status.reset();
+					remote_update_status.reset();
+					a.updater.async_update(local_update_status, 0, a.name, local_handler);
+					proxy.async_get(remote_update_status, local_handler);
+				}
+
+				template<size_t i>
+				typename boost::mpl::at<seqReturn, boost::mpl::int_<i> >::type
+				at_c() const
+				{
+					return remote_update_status.at_c<i>();
+				}
+		};
 	}
 }
 

@@ -9,7 +9,7 @@
 
 #include <network/proxy.hh>
 #include <model/eval_conditions_fwd.hh>
-#include <model/update.hh>
+#include <model/update_impl.hh>
 #include <model/task_fwd.hh>
 
 #include <boost/asio.hpp>
@@ -17,16 +17,10 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/utility/enable_if.hpp>
 
 namespace hyper {
 	namespace model {
-		namespace details {
-			struct updating_value { std::string value; bool terminated; };
-
-			template <int N, typename A, typename vectorT, int M>
-			struct local_update;
-		}
-
 		/*
 		 * N corresponds to the number of conditions to compute
 		 * A is the associated ability model
@@ -44,8 +38,9 @@ namespace hyper {
 				typedef std::pair<fun_call, std::string> condition;
 
 				typedef network::actor::remote_values<vectorT> remote_values;
+				typedef update_variables<A, M, vectorT> updater_type;
+				updater_type updater;
 
-				remote_values remote;
 			private:
 
 				A& a;
@@ -53,8 +48,8 @@ namespace hyper {
 				boost::array<bool, N> terminated;
 				boost::array<bool, N> success;
 				boost::array<condition, N> condition_calls;
-				local_vars updating_status;
 				std::vector<condition_execution_callback> callbacks;
+
 
 				bool is_terminated() const
 				{
@@ -67,43 +62,15 @@ namespace hyper {
 					void operator() (bool& b) const { b = false; }
 				};
 
-				void check_all_variables_up2date()
+				void handle_update(const boost::system::error_code& e)
 				{
-					bool local_terminaison = true;
-					bool remote_terminaison = true;
-
-					if (M)
-						local_terminaison = updating_status.is_terminated();
-
-					if (boost::mpl::size<vectorT>::type::value)
-						remote_terminaison = remote.is_terminated();
-
-					if (!(local_terminaison && remote_terminaison))
-						return; // wait for completion of updating
-					
-					// every variables are up 2 date, just compute conditions
+					// XXX deal correctly with e
 					for (size_t i = 0; i != N; ++i) {
 						a.io_s.post(boost::bind(condition_calls[i].first, boost::cref(a), 
 															  boost::ref(success[i]),
 															  boost::ref(*this), i));
 					}
 				}
-
-				void eval_remote_update(const boost::system::error_code&e, 
-									    network::actor::remote_proxy<A>* proxy)
-				{
-					delete proxy;
-					check_all_variables_up2date();
-				}
-
-				void eval_local_update(const boost::system::error_code&)
-				{
-					check_all_variables_up2date();
-				}
-
-				template <int N1, typename A1, typename vectorT1, int M1>
-				friend struct details::local_update;
-
 
 			public:
 				evaluate_conditions(A& a_, 
@@ -115,7 +82,7 @@ namespace hyper {
 									boost::array<condition, N> condition_calls_,
 									boost::array<std::string, M> update_status_) :
 					a(a_), is_computing(false), condition_calls(condition_calls_),
-					updating_status(update_status_)
+					updater(a, update_status_)
 				{}
 
 				evaluate_conditions(A& a_, 
@@ -123,8 +90,8 @@ namespace hyper {
 									boost::array<std::string, M> update_status_,
 									const typename remote_values::remote_vars_conf& vars):
 					a(a_), is_computing(false), 
-					condition_calls(condition_calls_), remote(vars),
-					updating_status(update_status_)
+					condition_calls(condition_calls_), 
+					updater(a, update_status_, vars)
 				{}
 
 				void async_compute(condition_execution_callback cb)
@@ -135,37 +102,12 @@ namespace hyper {
 
 					/* Reinit the state of the object */
 					std::for_each(terminated.begin(), terminated.end(), reset());
-					remote.reset();
-					updating_status.reset();
 
 					is_computing = true;
 
-					/* Use a functor template here to be sure that it won't
-					 * produce code in M == 0 case. I'm quite sure it does the
-					 * right thing in release mode, but it still try to
-					 * interpret the code. However, in test case, an agent does
-					 * not have a name or an update function (contrary to a
-					 * real ability), so use this functor to make sure it
-					 * dispatch to the right thing (void if nothing to do))
-					 */
-					details::local_update<N, A, vectorT, M>(a, *this, updating_status) ();
-
-					if (boost::mpl::size<vectorT>::type::value) {
-						network::actor::remote_proxy<A>* proxy = new
-							network::actor::remote_proxy<A>(a);
-
-						proxy->async_get(remote, 
-								boost::bind(&evaluate_conditions::eval_remote_update,
-											this,
-											boost::asio::placeholders::error,
-											proxy));
-					}
-
-					/* 
-					 * If M == 0 and vectorT is empty, everything is up2date 
-					 * we just need to compute conditions
-					 */
-					check_all_variables_up2date();
+					updater.async_update(boost::bind(
+								&evaluate_conditions::handle_update, this,
+								boost::asio::placeholders::error));
 				}
 
 				void handle_computation(size_t i)
@@ -191,44 +133,6 @@ namespace hyper {
 					callbacks.clear();
 				}
 		};
-
-		namespace details {
-				template <int N, typename A, typename vectorT, int M>
-				struct local_update {
-					A& a;
-					evaluate_conditions<N, A, M, vectorT>& conds;
-					local_vars& updating_status;
-
-					local_update(A& a, evaluate_conditions<N, A, M, vectorT>& conds, 
-								       local_vars& updating_status):
-						a(a), conds(conds), updating_status(updating_status) {}
-
-					void operator() ()
-					{
-						/* second and third arguments are not good here, we
-						 * need to know in which condition we call this update
-						 * condition */
-						a.updater.async_update(updating_status, 0, a.name, 
-									boost::bind(&evaluate_conditions<N, A, M, vectorT>::eval_local_update,
-												&conds,
-												boost::asio::placeholders::error
-												));
-					}
-				};
-
-				template <int N, typename A, typename vectorT>
-				struct local_update<N, A, vectorT, 0> {
-					A& a;
-					evaluate_conditions<N, A, 0, vectorT>& conds;
-					local_vars& updating_status;
-
-					local_update(A& a, evaluate_conditions<N, A, 0, vectorT>& conds, 
-								       local_vars& updating_status):
-						a(a), conds(conds), updating_status(updating_status) {}
-
-					void operator() () {}
-				};
-		}
 	}
 }
 
