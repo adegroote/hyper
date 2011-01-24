@@ -1,5 +1,6 @@
 #include <hyperConfig.hh>
 
+#include <fstream>
 #include <set>
 
 #include <boost/bind.hpp>
@@ -491,17 +492,33 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 	return funcs.size();
 }
 
+struct output_function_def_impl {
+	std::string directoryName;
+	std::string name;
+	const typeList& tList;
+
+	output_function_def_impl(const std::string& directoryName, const std::string& name,
+							 const typeList& tList) : 
+		directoryName(directoryName), name(name), tList(tList) {}
+
+	void operator() (const functionDef& def)
+	{
+		std::string path = directoryName + "/" + scope::get_identifier(def.name()) + ".cc";
+		std::ofstream oss(path.c_str());
+		oss << "#include <" << name << "/funcs.hh>\n\n";
+		namespaces n(oss, name);
+		def.output_impl(oss, tList);
+	}
+};
+
 size_t
-universe::dump_ability_functions_impl(std::ostream& oss, const std::string& name) const
+universe::dump_ability_functions_impl(const std::string& directoryName, const std::string& name) const
 {
 	//find functions prefixed by name::
 	std::vector<functionDef>  funcs = fList.select(select_ability_funs(name));
 
-	oss << "#include <" << name << "/funcs.hh>" << std::endl << std::endl;
-
-	namespaces n(oss, name);
 	std::for_each(funcs.begin(), funcs.end(), 
-			boost::bind(&functionDef::output_impl, _1, boost::ref(oss), boost::ref(tList)));
+			output_function_def_impl(directoryName, name, tList));
 
 	return funcs.size();
 }

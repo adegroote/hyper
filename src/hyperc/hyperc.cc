@@ -84,7 +84,8 @@ void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
 		"\n"
 		;
 	std::string build_function = 
-		"add_library(hyper_@NAME@ SHARED @NAME@/funcs.cc @NAME@/import.cc)\n"
+		"FILE(GLOB funcs @NAME@/funcs/*.cc)\n"
+		"add_library(hyper_@NAME@ SHARED ${funcs} @NAME@/import.cc)\n"
 		"install(TARGETS hyper_@NAME@\n"
 		"		  DESTINATION ${HYPER_ROOT}/lib/hyper/\n"
 		")\n"
@@ -464,9 +465,9 @@ int main(int argc, char** argv)
 			remove(fileName);
 			define_func = false;
 		} else {
-			std::string fileNameImpl = directoryName + "/funcs.cc";
-			std::ofstream oss_impl(fileNameImpl.c_str());
-			u.dump_ability_functions_impl(oss_impl, abilityName);
+			std::string directoryNameImpl = directoryName + "/funcs/";
+			create_directories(directoryNameImpl);
+			u.dump_ability_functions_impl(directoryNameImpl, abilityName);
 			define_func = true;
 
 			{
