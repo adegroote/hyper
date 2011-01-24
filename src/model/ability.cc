@@ -55,8 +55,8 @@ namespace {
 				const network::request_variable_value& m) const
 		{
 			a.logger(DEBUG) << "[" << m.src << ", " << m.id << "]";
-			a.logger(DEBUG) << " Value updated " << std::endl;
 			if (e) {
+				a.logger(DEBUG) << " Failed to update value " << std::endl;
 				network::variable_value* ans(new network::variable_value());
 				ans->id = m.id;
 				ans->src = m.src;
@@ -66,10 +66,11 @@ namespace {
 						boost::bind(&handle_write_value,
 							boost::asio::placeholders::error,
 							ans));
+			} else {
+				a.logger(DEBUG) << " Value succesfully updated " << std::endl;
+				boost::shared_lock<boost::shared_mutex> lock(a.mtx);
+				proxy_vis(m);
 			}
-
-			boost::shared_lock<boost::shared_mutex> lock(a.mtx);
-			proxy_vis(m);
 		}
 
 		output_variant operator() (const network::request_variable_value& m) const
