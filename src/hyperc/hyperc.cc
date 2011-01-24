@@ -415,8 +415,6 @@ int main(int argc, char** argv)
 			} 
 		} 
 
-		std::for_each(current_a.task_begin(), current_a.task_end(),
-					  generate_task(u, directoryTaskName));
 
 		// now, enter in sub-directories to generate all recipes
 		for (directory_iterator itr( taskDirectory ); itr != end_itr; ++itr ) {
@@ -447,6 +445,12 @@ int main(int argc, char** argv)
 			}
 		}
 	}
+
+	/* Generate task after recipe parsing because we need to know the list of
+	 * recipes for each task
+	 */
+	std::for_each(current_a.task_begin(), current_a.task_end(), 
+			generate_task(u, directoryTaskName));
 
 
 
