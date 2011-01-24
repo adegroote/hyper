@@ -40,7 +40,7 @@ functionDef::output_proto(std::ostream& oss, const typeList& tList) const
 	}
 
 	oss << ");" << std::endl;
-	oss << "\t\t};";
+	oss << "\t\t};\n\n";
 }
 
 void 
@@ -60,7 +60,8 @@ functionDef::output_impl(std::ostream& oss, const typeList& tList) const
 	}
 
 	oss << " )" << std::endl;
-	oss << "\t\t{\n\t\t}" << std::endl;
+	oss << "\t\t{\n#error " << scope::get_identifier(name()) << " not implemented !!\n";
+	oss << "\t\t}" << std::endl;
 }
 
 void
