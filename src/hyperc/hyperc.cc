@@ -533,6 +533,25 @@ int main(int argc, char** argv)
 	if (exists(dst_abilityFileName))
 		remove(dst_abilityFileName);
 	copy_file(abilityFileName, dst_abilityFileName);
+
+	/* Copy func instanciations */
+	path funcsDirectory = "funcs/";
+	path funcsDirectoryDst = "src/" + abilityName + "/funcs/";
+
+	directory_iterator end_itr; 
+	if (define_func && exists(funcsDirectory)) {
+		for (directory_iterator itr( funcsDirectory ); itr != end_itr; ++itr ) {
+			path src_file = funcsDirectory / itr->path().filename();
+			path dst_file = funcsDirectoryDst / itr->path().filename();
+
+			if (exists(dst_file))
+				remove(dst_file);
+			std::cerr << "Copying " << src_file << " to " << dst_file << std::endl;
+			copy_file(src_file, dst_file);
+		}
+	}
+
+
 	} catch (std::exception &e) { 
 		std::cerr << e.what() << std::endl;
 		return -1;
