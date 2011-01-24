@@ -49,7 +49,7 @@ namespace hyper {
 					while( ptr->is_computing )
 						ptr->cond.wait(lock);
 
-					if (ptr->res) 
+					if (!ptr->res) 
 						return T(); // XXX Not a nice way to signal it 
 					else 
 						return *(ptr->res);
