@@ -196,15 +196,19 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 	const universe& u;
 	const ability &a;
 	const task& t;
+	mutable size_t counter;
 
 	dump_recipe_visitor(const universe & u_, const ability& a_, const task& t_) : 
-		u(u_), a(a_), t(t_) {}
+		u(u_), a(a_), t(t_), counter(0) {}
 
 	template <typename T> 
 	std::string operator() (const T&) const { return ""; }
 
 	std::string operator() (const set_decl& s) const
 	{
+		std::string indent = times(3, "\t");
+		std::string next_indent = "\t" + indent;
+
 		std::ostringstream oss;
 		std::pair<bool, symbolACL> p = a.get_symbol(s.identifier);
 		assert(p.first);
@@ -213,12 +217,18 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		type t = tList.get(sym.t);
 		std::string tmp_identifier = "_" + s.identifier + "_tmp";
 
-		oss << "\t\t\t" << "{\n";
-		oss << "\t\t\t\t" << t.name << " " << tmp_identifier << " = ";
-		oss << expression_ast_output(s.bounded) << ";\n";
-		oss << "\t\t\t\tboost::shared_lock<boost::shared_mutex> lock(a.mtx);\n";
-		oss << "\t\t\t\ta." << s.identifier << " = " << tmp_identifier << ";\n";
-		oss << "\t\t\t}\n";
+		extract_symbols syms(a);
+		syms.extract(s.bounded);
+
+		oss << indent  << "{\n";
+		oss << next_indent << "expression_" << counter << "::updater_type updater";
+		oss << syms.local_list_variables_updated(next_indent);
+		oss << syms.remote_list_variables(next_indent) << ";\n";
+		oss << next_indent << t.name << " " << tmp_identifier << " = ";
+		oss << "model::sync_evaluate_expression<expression_" << counter++ << ">(updater).compute();\n";
+		oss << next_indent << "boost::shared_lock<boost::shared_mutex> lock(a.mtx);\n";
+		oss << next_indent << "a." << s.identifier << " = " << tmp_identifier << ";\n";
+		oss << indent << "}\n";
 
 		return oss.str();
 	}
@@ -239,6 +249,73 @@ struct dump_recipe_expression {
 		oss << boost::apply_visitor(dump_recipe_visitor(u, a, t), r.expr);
 	}
 };
+
+struct extract_expression_visitor : public boost::static_visitor<void>
+{
+	std::vector<expression_ast>& list;
+
+	extract_expression_visitor(std::vector<expression_ast>& list) : 
+		list(list) {}
+
+	template <typename T> 
+	void operator() (const T&) const {}
+
+	void operator() (const set_decl& s) const
+	{
+		list.push_back(s.bounded);
+	}
+};
+
+struct extract_expression {
+	std::vector<expression_ast>& list;
+
+	extract_expression(std::vector<expression_ast>& list) : list(list) {}
+
+	void operator() (const recipe_expression& r)
+	{
+		boost::apply_visitor(extract_expression_visitor(list), r.expr);
+	}
+};
+
+struct dump_eval_expression {
+	std::ostream& oss;
+	const universe &u;
+	const ability &a;
+	const task& t;
+	size_t counter;
+
+	dump_eval_expression(std::ostream& oss_, const universe& u_,
+						   const ability & a_, const task& t_) : 
+		oss(oss_), u(u_), a(a_), t(t_), counter(0) {}
+
+	void operator() (const expression_ast& e)
+	{
+		std::string indent = "\t\t";
+		std::string next_indent = "\t" + indent;
+		oss << indent << "struct expression_" << counter++ << " {\n";
+
+		/* Compute the necessary arguments */
+		extract_symbols syms(a);
+		syms.extract(e);
+		oss << next_indent << "typedef model::update_variables< ";
+		oss << "hyper::" << a.name() << "::ability, ";
+		oss << syms.local_with_updater.size() << ", ";
+		oss << syms.remote_vector_type_output(u) << " > updater_type;\n";
+
+		/* Compute the return type of the expression */
+		const typeList& tList = u.types();
+		boost::optional<typeId> id = u.typeOf(a, e); // XXX need to pass local_symbol
+		assert(id);
+		type t = tList.get(*id);
+		oss << next_indent << "typedef " << t.name << " return_type;\n\n";
+		oss << next_indent << "return_type operator() (const updater_type& updater) \n";
+		oss << next_indent << "{\n";
+		oss << next_indent << "\treturn " << expression_ast_output(e) << ";\n";
+		oss << next_indent << "}\n";
+		oss << indent << "};" << std::endl;
+	}
+};
+
 
 namespace hyper {
 	namespace compiler {
@@ -315,12 +392,11 @@ namespace hyper {
 						  boost::bind(f2 ,_1, boost::cref(context_a.name()),
 						  boost::ref(deps)));
 			
+			oss << "#include <" << context_a.name() << "/ability.hh>\n"; 
 			oss << "#include <" << context_a.name();
-			oss << "/ability.hh>" << std::endl;
-			oss << "#include <" << context_a.name();
-			oss << "/recipes/" << name << ".hh>" << std::endl;
-
-			oss << "#include <boost/assign/list_of.hpp>" << std::endl;
+			oss << "/recipes/" << name << ".hh>\n"; 
+			oss << "#include <model/evaluate_expression.hh>\n";
+			oss << "#include <boost/assign/list_of.hpp>\n"; 
 
 			std::for_each(deps.fun_depends.begin(), 
 						  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
@@ -337,6 +413,18 @@ namespace hyper {
 			std::string context_name = "hyper::" + context_a.name() + "::" + exported_name();
 			exec_expression_output e_dump(context_a, context_name, oss, "pre_", pre_symbols.remote);
 			std::for_each(pre.begin(), pre.end(), e_dump);
+			} 
+
+			/* Extract expression_ast to execute from the body */
+			std::vector<expression_ast> expression_list;
+			std::for_each(body.begin(), body.end(), extract_expression(expression_list));
+			{ 
+				anonymous_namespaces n(oss);
+				oss << indent << "using namespace hyper;\n";
+				oss << indent << "using namespace hyper::" << context_a.name() << ";\n";
+
+				dump_eval_expression e_dump(oss, u, context_a, context_t);
+				std::for_each(expression_list.begin(), expression_list.end(), e_dump);
 			}
 
 			namespaces n(oss, context_a.name());
