@@ -316,6 +316,32 @@ struct dump_eval_expression {
 	}
 };
 
+std::string symbolList_to_vector(const symbolList& syms, const typeList& tList)
+{
+	if (syms.is_empty())
+		return "";
+
+	std::ostringstream oss;
+	oss << "boost::fusion::vector<";
+	symbolList::const_iterator it = syms.begin();
+	while (it != syms.end()) {
+		type t = tList.get(it->second.t);
+		oss << t.name;
+		++it;
+		if (it != syms.end())
+			oss << ", ";
+	}
+	oss << "> local_vars;";
+
+	return oss.str();
+}
+
+size_t symbolList_index(const symbolList& sym, const std::string& current_sym)
+{
+	symbolList::const_iterator it = sym.find(current_sym);
+	assert(it != sym.end());
+	return std::distance(sym.begin(), it);
+}
 
 namespace hyper {
 	namespace compiler {
@@ -348,6 +374,8 @@ namespace hyper {
 			std::for_each(pre.begin(), pre.end(), 
 						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
 
+			oss << "#include <boost/fusion/container/vector.hpp>\n" << std::endl;
+
 			oss << "#include <model/recipe.hh>" << std::endl;
 			oss << "#include <model/evaluate_conditions.hh>" << std::endl;
 
@@ -364,7 +392,9 @@ namespace hyper {
 				oss << next_indent << "pre_conditions preds;" << std::endl;
 			}
 
-			oss << next_indent << "ability &a; " << std::endl;
+			oss << next_indent << "ability &a;" << std::endl;
+			
+			oss << next_indent << symbolList_to_vector(local_symbol, u.types()) << "\n\n";
 
 			oss << next_indent << exported_name();
 			oss << "(ability& a_);" << std::endl; 

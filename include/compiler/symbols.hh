@@ -86,6 +86,8 @@ namespace hyper {
 				typedef std::map<std::string, symbol>::const_iterator const_iterator;
 				const_iterator begin() const { return symbols.begin(); };
 				const_iterator end() const { return symbols.end(); };
+				const_iterator find(const std::string& sym) const { return symbols.find(sym); };
+				bool is_empty() const { return symbols.empty(); };
 		};
 	}
 }
