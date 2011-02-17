@@ -18,20 +18,17 @@ namespace hyper {
 				ability &a;
 				bool is_running;
 				std::vector<recipe_execution_callback> pending_cb;
-				boost::thread* thr;
 
-				void real_execute();
-				void handle_execute(bool res);
 				void handle_evaluate_preconditions(conditionV error);
 				void end_execute(bool res);
 
 			protected:
-				virtual bool do_execute() = 0;
+				virtual void do_execute(recipe_execution_callback cb) = 0;
 			public:
 				recipe(const std::string& name, ability& a);
 				void execute(recipe_execution_callback cb);
 				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
-				virtual ~recipe();
+				virtual ~recipe() {};
 		};
 	}
 }

@@ -33,10 +33,10 @@ namespace {
 			cb(hyper::model::conditionV());
 		}
 
-		virtual bool do_execute()
+		virtual void do_execute(recipe_execution_callback cb)
 		{
 			pos.z = pos.x + pos.y;
-			return true;
+			cb(true);
 		}
 	};
 
@@ -51,10 +51,10 @@ namespace {
 			cb(hyper::model::conditionV());
 		}
 
-		virtual bool do_execute()
+		virtual void do_execute(recipe_execution_callback cb)
 		{
 			pos.z = pos.x * pos.y;
-			return true;
+			cb(true);
 		}
 	};
 
@@ -71,10 +71,10 @@ namespace {
 			cb(error);
 		}
 
-		virtual bool do_execute()
+		virtual void do_execute(recipe_execution_callback cb)
 		{
 			pos.z = pos.x / pos.y;
-			return true;
+			cb(true);
 		}
 	};
 
