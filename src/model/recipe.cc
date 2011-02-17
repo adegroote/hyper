@@ -17,12 +17,21 @@ namespace {
 }
 
 recipe::recipe(const std::string& name, ability& a):
-	name(name), a(a), is_running(false)
+	name(name), a(a), computation(0), is_running(false) 
 {}
+
+void recipe::handle_execute(const boost::system::error_code& e)
+{
+	end_execute(!e);
+}
 
 void recipe::end_execute(bool res)
 {
 	is_running = false;
+	if (computation != 0) {
+		delete computation;
+		computation = 0;
+	}
 
 	std::for_each(pending_cb.begin(), pending_cb.end(),
 				  callback(a, res));
@@ -47,6 +56,6 @@ void recipe::handle_evaluate_preconditions(conditionV error)
 	if (!error.empty())
 		return end_execute(false);
 
-	do_execute(boost::bind(&recipe::end_execute, this, _1));
+	do_execute(boost::bind(&recipe::handle_execute, this, _1));
 }
 

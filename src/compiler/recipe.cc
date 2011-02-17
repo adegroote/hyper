@@ -210,25 +210,10 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		std::string next_indent = "\t" + indent;
 
 		std::ostringstream oss;
-		std::pair<bool, symbolACL> p = a.get_symbol(s.identifier);
-		assert(p.first);
-		const typeList& tList = u.types();
-		symbol sym = p.second.s;
-		type t = tList.get(sym.t);
-		std::string tmp_identifier = "_" + s.identifier + "_tmp";
-
-		extract_symbols syms(a);
-		syms.extract(s.bounded);
-
-		oss << indent  << "{\n";
-		oss << next_indent << "expression_" << counter << "::updater_type updater";
-		oss << syms.local_list_variables_updated(next_indent);
-		oss << syms.remote_list_variables(next_indent) << ";\n";
-		oss << next_indent << t.name << " " << tmp_identifier << " = ";
-		oss << "model::sync_evaluate_expression<expression_" << counter++ << ">(updater).compute();\n";
-		oss << next_indent << "boost::shared_lock<boost::shared_mutex> lock(a.mtx);\n";
-		oss << next_indent << "a." << s.identifier << " = " << tmp_identifier << ";\n";
-		oss << indent << "}\n";
+		oss << indent << "push_back(new hyper::model::abortable_function(\n";
+		oss << next_indent << "boost::bind(&hyper::model::compute_expression<expression_" << counter << ">::async_eval<\n";
+		oss << next_indent << "hyper::model::abortable_computation::cb_type>,\n";
+		oss << next_indent << "&expression_exec" << counter++ << ", _1, boost::ref(a." << s.identifier << "))));\n";
 
 		return oss.str();
 	}
@@ -401,7 +386,7 @@ namespace hyper {
 			oss << next_indent;
 			oss << "void async_evaluate_preconditions(model::condition_execution_callback cb);";
 			oss << std::endl;
-			oss << next_indent << "bool do_execute();\n"; 
+			oss << next_indent << "void do_execute(model::abortable_computation::cb_type cb);\n"; 
 
 			oss << indent << "};" << std::endl;
 		}
@@ -425,7 +410,8 @@ namespace hyper {
 			oss << "#include <" << context_a.name() << "/ability.hh>\n"; 
 			oss << "#include <" << context_a.name();
 			oss << "/recipes/" << name << ".hh>\n"; 
-			oss << "#include <model/evaluate_expression.hh>\n";
+			oss << "#include <model/abortable_function.hh>\n";
+			oss << "#include <model/compute_expression.hh>\n";
 			oss << "#include <boost/assign/list_of.hpp>\n"; 
 
 			std::for_each(deps.fun_depends.begin(), 
@@ -455,6 +441,30 @@ namespace hyper {
 
 				dump_eval_expression e_dump(oss, u, context_a, context_t);
 				std::for_each(expression_list.begin(), expression_list.end(), e_dump);
+
+				oss << indent << "struct exec_driver : public hyper::model::abortable_computation {\n";
+				oss << indent << "\tability& a;\n";
+				for (size_t i = 0; i < expression_list.size(); ++i) {
+					oss << indent << "\texpression_" << i << "::updater_type updater" << i << ";\n";
+					oss << indent << "\thyper::model::compute_expression<expression_" << i << "> expression_exec" << i << ";\n";
+				}
+				oss << indent << "\texec_driver(ability &a) : a(a)\n";
+				for (size_t i = 0; i < expression_list.size(); ++i) {
+					extract_symbols syms(context_a);
+					syms.extract(expression_list[i]);
+					if (syms.empty()) {
+						oss << ",";
+					} else {
+						oss << syms.local_list_variables_updated(next_indent);
+						oss << syms.remote_list_variables(next_indent) << ",";
+					}
+					oss << indent << "\t\texpression_exec" << i << "(updater" << i << ")\n";
+				}
+				oss << indent << "\t{\n";
+				std::for_each(body.begin(), body.end(), 
+							  dump_recipe_expression(oss, u, context_a, context_t));
+				oss << indent << "\t};\n";
+				oss << indent << "};";
 			}
 
 			namespaces n(oss, context_a.name());
@@ -488,13 +498,12 @@ namespace hyper {
 				oss << next_indent << "preds.async_compute(cb);\n"; 
 			oss << indent << "}" << std::endl;
 
-			oss << indent << "bool " << exported_name();
-			oss << "::do_execute()\n";
+			oss << indent << "void " << exported_name();
+			oss << "::do_execute(hyper::model::abortable_computation::cb_type cb)\n";
 			oss << indent << "{\n";
 			oss << next_indent << "std::cerr << __PRETTY_FUNCTION__ << std::endl;" << std::endl;
-			std::for_each(body.begin(), body.end(), 
-						  dump_recipe_expression(oss, u, context_a, context_t));
-			oss << next_indent << "return true;" << std::endl;
+			oss << next_indent << "computation = new exec_driver(a);\n";
+			oss << next_indent << "computation->compute(cb);\n";
 			oss << indent << "}\n";
 			oss << std::endl;
 		}

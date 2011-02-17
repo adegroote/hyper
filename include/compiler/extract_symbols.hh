@@ -28,6 +28,7 @@ namespace hyper {
 			local_list_variables(const std::string& base_indent) const;
 			std::string
 			local_list_variables_updated(const std::string& base_indent) const;
+			bool empty() const { return local_with_updater.empty() && remote.empty(); }
 							
 		};
 	}

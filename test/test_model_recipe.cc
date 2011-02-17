@@ -33,10 +33,10 @@ namespace {
 			cb(hyper::model::conditionV());
 		}
 
-		virtual void do_execute(recipe_execution_callback cb)
+		virtual void do_execute(abortable_computation::cb_type cb)
 		{
 			pos.z = pos.x + pos.y;
-			cb(true);
+			cb(boost::system::error_code());
 		}
 	};
 
@@ -51,10 +51,10 @@ namespace {
 			cb(hyper::model::conditionV());
 		}
 
-		virtual void do_execute(recipe_execution_callback cb)
+		virtual void do_execute(abortable_computation::cb_type cb)
 		{
 			pos.z = pos.x * pos.y;
-			cb(true);
+			cb(boost::system::error_code());
 		}
 	};
 
@@ -71,10 +71,10 @@ namespace {
 			cb(error);
 		}
 
-		virtual void do_execute(recipe_execution_callback cb)
+		virtual void do_execute(abortable_computation::cb_type cb)
 		{
 			pos.z = pos.x / pos.y;
-			cb(true);
+			cb(boost::system::error_code());
 		}
 	};
 

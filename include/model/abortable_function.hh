@@ -10,6 +10,7 @@
 namespace hyper {
 	namespace model {
 
+		static inline
 		void none_function() {}
 
 		struct abortable_function_base {
@@ -48,11 +49,13 @@ namespace hyper {
 		 */
 
 		class abortable_computation {
+			public:
+				typedef boost::function<void (const boost::system::error_code& e)> cb_type;
+
 			private:
 				typedef boost::shared_ptr<abortable_function_base> abortable_function_ptr;
 				typedef std::vector<abortable_function_ptr> computation_seq;
 
-				typedef boost::function<void (const boost::system::error_code& e)> cb_type;
 
 				computation_seq seq;
 				cb_type cb;
@@ -99,6 +102,7 @@ namespace hyper {
 				}
 
 				void clear() { seq.clear(); }
+				virtual ~abortable_computation() {};
 		};
 	};
 };
