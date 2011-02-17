@@ -17,6 +17,33 @@
 
 using namespace hyper::compiler;
 
+std::string symbolList_to_vector(const symbolList& syms, const typeList& tList)
+{
+	if (syms.is_empty())
+		return "";
+
+	std::ostringstream oss;
+	oss << "boost::fusion::vector<";
+	symbolList::const_iterator it = syms.begin();
+	while (it != syms.end()) {
+		type t = tList.get(it->second.t);
+		oss << t.name;
+		++it;
+		if (it != syms.end())
+			oss << ", ";
+	}
+	oss << "> local_vars;";
+
+	return oss.str();
+}
+
+size_t symbolList_index(const symbolList& sym, const std::string& current_sym)
+{
+	symbolList::const_iterator it = sym.find(current_sym);
+	assert(it != sym.end());
+	return std::distance(sym.begin(), it);
+}
+
 struct validate_expression
 {
 	bool &b;
@@ -196,13 +223,50 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 	const universe& u;
 	const ability &a;
 	const task& t;
+	const symbolList& syms;
 	mutable size_t counter;
+	mutable boost::optional<std::string> target;
 
-	dump_recipe_visitor(const universe & u_, const ability& a_, const task& t_) : 
-		u(u_), a(a_), t(t_), counter(0) {}
+	dump_recipe_visitor(const universe & u_, const ability& a_, const task& t_, 
+					   const symbolList& syms_) : 
+		u(u_), a(a_), t(t_), syms(syms_), counter(0), target(boost::none) {}
 
 	template <typename T> 
 	std::string operator() (const T&) const { return ""; }
+
+	std::string operator() (const let_decl& s) const
+	{
+		target = s.identifier;
+		return boost::apply_visitor(*this, s.bounded.expr);
+	}
+
+	std::string operator() (const expression_ast& e) const
+	{
+		std::string indent = times(3, "\t");
+		std::ostringstream identifier;
+		std::string next_indent = "\t" + indent;
+
+		if (target) {
+			std::pair<bool, symbolACL> p = a.get_symbol(*target);
+			if (p.first) 
+				identifier <<  "a." << *target;
+			else 
+				identifier << "boost::fusion::at_c<" << symbolList_index(syms, *target) << ">(local_vars)";
+		} else {
+			// XXX Deal with no storage
+			return "";
+		}
+
+		std::ostringstream oss;
+		oss << indent << "push_back(new hyper::model::abortable_function(\n";
+		oss << next_indent << "boost::bind(&hyper::model::compute_expression<expression_" << counter << ">::async_eval<\n";
+		oss << next_indent << "hyper::model::abortable_computation::cb_type>,\n";
+		oss << next_indent << "&expression_exec" << counter++ << ", _1, boost::ref(" << identifier.str() << "))));\n";
+
+		target = boost::none;
+
+		return oss.str();
+	}
 
 	std::string operator() (const set_decl& s) const
 	{
@@ -224,14 +288,18 @@ struct dump_recipe_expression {
 	const universe &u;
 	const ability &a;
 	const task& t;
+	const symbolList& syms;
+	dump_recipe_visitor vis;
 
 	dump_recipe_expression(std::ostream& oss_, const universe& u_,
-						   const ability & a_, const task& t_) : 
-		oss(oss_), u(u_), a(a_), t(t_) {}
+						   const ability & a_, const task& t_,
+						   const symbolList& syms_) : 
+		oss(oss_), u(u_), a(a_), t(t_), syms(syms_),
+		vis(u, a, t, syms) {}
 
 	void operator() (const recipe_expression& r)
 	{
-		oss << boost::apply_visitor(dump_recipe_visitor(u, a, t), r.expr);
+		oss << boost::apply_visitor(vis, r.expr);
 	}
 };
 
@@ -244,6 +312,16 @@ struct extract_expression_visitor : public boost::static_visitor<void>
 
 	template <typename T> 
 	void operator() (const T&) const {}
+
+	void operator() (const let_decl& l) const
+	{
+		boost::apply_visitor(extract_expression_visitor(list), l.bounded.expr);
+	}
+
+	void operator() (const expression_ast& e) const 
+	{
+		list.push_back(e);
+	}
 
 	void operator() (const set_decl& s) const
 	{
@@ -301,32 +379,6 @@ struct dump_eval_expression {
 	}
 };
 
-std::string symbolList_to_vector(const symbolList& syms, const typeList& tList)
-{
-	if (syms.is_empty())
-		return "";
-
-	std::ostringstream oss;
-	oss << "boost::fusion::vector<";
-	symbolList::const_iterator it = syms.begin();
-	while (it != syms.end()) {
-		type t = tList.get(it->second.t);
-		oss << t.name;
-		++it;
-		if (it != syms.end())
-			oss << ", ";
-	}
-	oss << "> local_vars;";
-
-	return oss.str();
-}
-
-size_t symbolList_index(const symbolList& sym, const std::string& current_sym)
-{
-	symbolList::const_iterator it = sym.find(current_sym);
-	assert(it != sym.end());
-	return std::distance(sym.begin(), it);
-}
 
 namespace hyper {
 	namespace compiler {
@@ -359,7 +411,6 @@ namespace hyper {
 			std::for_each(pre.begin(), pre.end(), 
 						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
 
-			oss << "#include <boost/fusion/container/vector.hpp>\n" << std::endl;
 
 			oss << "#include <model/recipe.hh>" << std::endl;
 			oss << "#include <model/evaluate_conditions.hh>" << std::endl;
@@ -379,7 +430,6 @@ namespace hyper {
 
 			oss << next_indent << "ability &a;" << std::endl;
 			
-			oss << next_indent << symbolList_to_vector(local_symbol, u.types()) << "\n\n";
 
 			oss << next_indent << exported_name();
 			oss << "(ability& a_);" << std::endl; 
@@ -413,6 +463,7 @@ namespace hyper {
 			oss << "#include <model/abortable_function.hh>\n";
 			oss << "#include <model/compute_expression.hh>\n";
 			oss << "#include <boost/assign/list_of.hpp>\n"; 
+			oss << "#include <boost/fusion/container/vector.hpp>\n" << std::endl;
 
 			std::for_each(deps.fun_depends.begin(), 
 						  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
@@ -444,25 +495,26 @@ namespace hyper {
 
 				oss << indent << "struct exec_driver : public hyper::model::abortable_computation {\n";
 				oss << indent << "\tability& a;\n";
+				oss << indent << "\t" << symbolList_to_vector(local_symbol, u.types()) << "\n";
 				for (size_t i = 0; i < expression_list.size(); ++i) {
 					oss << indent << "\texpression_" << i << "::updater_type updater" << i << ";\n";
 					oss << indent << "\thyper::model::compute_expression<expression_" << i << "> expression_exec" << i << ";\n";
 				}
-				oss << indent << "\texec_driver(ability &a) : a(a)\n";
+				oss << indent << "\texec_driver(ability &a) : a(a)";
 				for (size_t i = 0; i < expression_list.size(); ++i) {
 					extract_symbols syms(context_a);
 					syms.extract(expression_list[i]);
 					if (syms.empty()) {
-						oss << ",";
+						oss << ",\n";
 					} else {
 						oss << syms.local_list_variables_updated(next_indent);
 						oss << syms.remote_list_variables(next_indent) << ",";
 					}
-					oss << indent << "\t\texpression_exec" << i << "(updater" << i << ")\n";
+					oss << indent << "\t\texpression_exec" << i << "(updater" << i << ")";
 				}
-				oss << indent << "\t{\n";
+				oss << "\n" << indent << "\t{\n";
 				std::for_each(body.begin(), body.end(), 
-							  dump_recipe_expression(oss, u, context_a, context_t));
+							  dump_recipe_expression(oss, u, context_a, context_t, local_symbol));
 				oss << indent << "\t};\n";
 				oss << indent << "};";
 			}
