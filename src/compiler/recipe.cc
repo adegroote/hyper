@@ -468,11 +468,15 @@ struct dump_eval_expression {
 	const task& t;
 	std::string local_data;
 	size_t counter;
+	const symbolList& local_symbol;
 
 	dump_eval_expression(std::ostream& oss_, const universe& u_,
 						   const ability & a_, const task& t_, 
-						   const std::string& local_data) : 
-		oss(oss_), u(u_), a(a_), t(t_), local_data(local_data), counter(0) {}
+						   const std::string& local_data,
+						   const symbolList& local_symbol) : 
+		oss(oss_), u(u_), a(a_), t(t_), local_data(local_data), 
+		counter(0), local_symbol(local_symbol) 
+	{}
 
 	void operator() (const expression_ast& e)
 	{
@@ -490,7 +494,7 @@ struct dump_eval_expression {
 
 		/* Compute the return type of the expression */
 		const typeList& tList = u.types();
-		boost::optional<typeId> id = u.typeOf(a, e); // XXX need to pass local_symbol
+		boost::optional<typeId> id = u.typeOf(a, e, local_symbol); 
 		assert(id);
 		type t = tList.get(*id);
 		oss << next_indent << "typedef " << t.name << " return_type;\n\n";
@@ -498,7 +502,7 @@ struct dump_eval_expression {
 		oss << "const hyper::" << a.name() << "::ability& a,\n";
 		oss << next_indent << "\t\t\t\t\t\tconst " << local_data << " & local_vars)\n";
 		oss << next_indent << "{\n";
-		oss << next_indent << "\treturn " << expression_ast_output(e) << ";\n";
+		oss << next_indent << "\treturn " << expression_ast_output(e, syms.remote, local_symbol) << ";\n";
 		oss << next_indent << "}\n";
 		oss << indent << "};" << std::endl;
 	}
@@ -607,7 +611,8 @@ namespace hyper {
 			oss << indent << "using namespace hyper::" << context_a.name() << ";\n";
 
 			std::string context_name = "hyper::" + context_a.name() + "::" + exported_name();
-			exec_expression_output e_dump(context_a, context_name, oss, "pre_", pre_symbols.remote);
+			exec_expression_output e_dump(context_a, context_name, oss, "pre_", 
+										  pre_symbols.remote, symbolList(u.types()));
 			std::for_each(pre.begin(), pre.end(), e_dump);
 			} 
 
@@ -625,7 +630,7 @@ namespace hyper {
 
 				std::string local_data = symbolList_to_vectorType(local_symbol, u.types());
 
-				dump_eval_expression e_dump(oss, u, context_a, context_t, local_data);
+				dump_eval_expression e_dump(oss, u, context_a, context_t, local_data, local_symbol);
 				std::for_each(expression_list.begin(), expression_list.end(), e_dump);
 
 				oss << indent << "struct exec_driver : public hyper::model::abortable_computation {\n";

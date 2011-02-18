@@ -14,9 +14,18 @@ namespace {
 	struct dump_expression_ast : public boost::static_visitor<std::string>
 	{
 		const std::set<std::string>& remote_syms;
+		const symbolList& syms;
+		std::string remote_access;
+		std::string local_access;
 
-		dump_expression_ast(const std::set<std::string>& remote_syms_):
-			remote_syms(remote_syms_)
+		dump_expression_ast(const std::set<std::string>& remote_syms_,
+				const symbolList& syms,
+				const std::string& remote_access,
+				const std::string& local_access):
+			remote_syms(remote_syms_),
+			syms(syms),
+			remote_access(remote_access),
+			local_access(local_access)
 		{}
 
 		std::string operator() (const empty& e) const { (void)e; assert(false); }
@@ -47,16 +56,22 @@ namespace {
 			// local scope variable
 			if (it == remote_syms.end())
 			{
-				std::string real_name;
-				if (!scope::is_scoped_identifier(s))
-					real_name = s;
-				else 
-					real_name = (scope::decompose(s)).second;
-				oss << "a." << real_name;
+				symbolList::const_iterator it = syms.find(s);
+				if (it != syms.end()) {
+					size_t i = std::distance(syms.begin(), it);
+					oss << "boost::fusion::at_c<" << i << ">(" << local_access << ")";
+				} else {
+					std::string real_name;
+					if (!scope::is_scoped_identifier(s))
+						real_name = s;
+					else 
+						real_name = (scope::decompose(s)).second;
+					oss << "a." << real_name;
+				}
 			} else {
 				// remote scope, the value will be available from entry N of the remote_proxy
 				size_t i = std::distance(remote_syms.begin(), it);
-				oss << "*(cond.remote.at_c<" << i << ">())";
+				oss << "*( " << remote_access <<".at_c<" << i << ">())";
 			}
 
 			return oss.str();
@@ -67,7 +82,7 @@ namespace {
 			std::ostringstream oss;
 			oss << f.fName << "::apply(";
 			for (size_t i = 0; i < f.args.size(); ++i) {
-				oss << boost::apply_visitor(dump_expression_ast(remote_syms), f.args[i].expr);
+				oss << boost::apply_visitor(*this, f.args[i].expr);
 				if (i != (f.args.size() - 1)) {
 					oss << ",";
 				}
@@ -80,7 +95,7 @@ namespace {
 		{
 			std::ostringstream oss;
 			oss << "(";
-			oss << boost::apply_visitor(dump_expression_ast(remote_syms), e.expr);
+			oss << boost::apply_visitor(*this, e.expr);
 			oss << ")";
 			return oss.str();
 		}
@@ -91,11 +106,11 @@ namespace {
 			std::ostringstream oss;
 			oss << "( ";
 			oss << "(";
-			oss << boost::apply_visitor(dump_expression_ast(remote_syms), op.left.expr);
+			oss << boost::apply_visitor(*this, op.left.expr);
 			oss << ")";
 			oss << op.op;
 			oss << "(";
-			oss << boost::apply_visitor(dump_expression_ast(remote_syms), op.right.expr); 
+			oss << boost::apply_visitor(*this, op.right.expr); 
 			oss << ")";
 			oss << " )";
 			return oss.str();
@@ -107,7 +122,7 @@ namespace {
 			std::ostringstream oss;
 			oss << "( ";
 			oss << op.op;
-			oss << boost::apply_visitor(dump_expression_ast(remote_syms), op.subject.expr);
+			oss << boost::apply_visitor(*this, op.subject.expr);
 			oss << ")";
 			return oss.str();
 		}
@@ -127,7 +142,7 @@ void exec_expression_output::operator() (const expression_ast& e)
 	oss << base_expr << "conditions& cond, size_t i)" << std::endl;
 	oss << indent << "{" << std::endl;
 
-	dump_expression_ast dump(remote_symbols);
+	dump_expression_ast dump(remote_symbols, local_symbols, "cond.updater", "");
 	std::string compute_expr = boost::apply_visitor(dump, e.expr);
 	oss << indent_next << "res = " << compute_expr << ";" << std::endl;
 	oss << indent_next << "return cond.handle_computation(i);" << std::endl;
@@ -135,7 +150,9 @@ void exec_expression_output::operator() (const expression_ast& e)
 	oss << std::endl;
 }
 
-std::string hyper::compiler::expression_ast_output(const expression_ast& e) 
+std::string hyper::compiler::expression_ast_output(const expression_ast& e,
+												   const std::set<std::string>& remote,
+												   const symbolList& syms)
 {
-	return boost::apply_visitor(dump_expression_ast(std::set<std::string>()), e.expr);
+	return boost::apply_visitor(dump_expression_ast(remote, syms, "updater", "local_vars"), e.expr);
 }

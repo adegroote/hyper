@@ -249,7 +249,8 @@ namespace hyper {
 				oss << indent << "using namespace hyper;\n";
 				oss << indent << "using namespace hyper::" << ability_context.name() << ";\n";
 				exec_expression_output e_dump(ability_context, context_name, oss, 
-											   "pre_", pre_symbols.remote);
+											   "pre_", pre_symbols.remote,
+											   symbolList(u.types()));
 				std::for_each(pre.begin(), pre.end(), e_dump);
 				}
 
@@ -258,7 +259,8 @@ namespace hyper {
 				oss << indent << "using namespace hyper;\n";
 				oss << indent << "using namespace hyper::" << ability_context.name() << ";\n";
 				exec_expression_output e_dump(ability_context, context_name, oss, 
-											  "post_", post_symbols.remote);
+											  "post_", post_symbols.remote,
+											  symbolList(u.types()));
 				std::for_each(post.begin(), post.end(), e_dump);
 				}
 

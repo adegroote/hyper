@@ -13,7 +13,9 @@ namespace hyper {
 		struct task;
 		struct typeList;
 		struct recipe;
+		struct symbolList;
 
+		// XXX represents remote_symbols and local_symbols in the same way
 
 		struct exec_expression_output
 		{
@@ -22,26 +24,31 @@ namespace hyper {
 			std::ostream& oss;
 			size_t counter;
 			const std::string base_expr;
-			const std::set<std::string> remote_symbols;
+			const std::set<std::string>& remote_symbols;
+			const symbolList& local_symbols;
 
 			exec_expression_output(
 					const ability& ability_context_, 
 					const std::string& context_name,
 					std::ostream& oss_,
 					const std::string& base_expr_,
-					const std::set<std::string> remote_symbols):
+					const std::set<std::string>& remote_symbols,
+					const symbolList& local_symbols):
 				ability_context(ability_context_),
 				context_name(context_name),
 				oss(oss_), 
 				counter(0),
 				base_expr(base_expr_),
-				remote_symbols(remote_symbols)
+				remote_symbols(remote_symbols),
+				local_symbols(local_symbols)
 			{}
 
 			void operator() (const expression_ast& e);
 		};
 
-		std::string expression_ast_output(const expression_ast& e);
+		std::string expression_ast_output(const expression_ast& e,
+										  const std::set<std::string>& remote_symbols,
+										  const symbolList& syms);
 	}
 }
 
