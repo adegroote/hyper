@@ -17,11 +17,8 @@
 
 using namespace hyper::compiler;
 
-std::string symbolList_to_vector(const symbolList& syms, const typeList& tList)
+std::string symbolList_to_vectorType(const symbolList& syms, const typeList& tList)
 {
-	if (syms.is_empty())
-		return "";
-
 	std::ostringstream oss;
 	oss << "boost::fusion::vector<";
 	symbolList::const_iterator it = syms.begin();
@@ -32,7 +29,7 @@ std::string symbolList_to_vector(const symbolList& syms, const typeList& tList)
 		if (it != syms.end())
 			oss << ", ";
 	}
-	oss << "> local_vars;";
+	oss << ">";
 
 	return oss.str();
 }
@@ -234,17 +231,9 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 	template <typename T> 
 	std::string operator() (const T&) const { return ""; }
 
-	std::string operator() (const let_decl& s) const
+	std::string compute_target(const expression_ast& e) const
 	{
-		target = s.identifier;
-		return boost::apply_visitor(*this, s.bounded.expr);
-	}
-
-	std::string operator() (const expression_ast& e) const
-	{
-		std::string indent = times(3, "\t");
 		std::ostringstream identifier;
-		std::string next_indent = "\t" + indent;
 
 		if (target) {
 			std::pair<bool, symbolACL> p = a.get_symbol(*target);
@@ -258,11 +247,55 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 			identifier << "boost::fusion::at_key<" << t.name << ">(unused_res)";
 		}
 
+		return identifier.str();
+	}
+
+	std::string abortable_function(const std::string& identifier) const
+	{
 		std::ostringstream oss;
-		oss << indent << "push_back(new hyper::model::abortable_function(\n";
+		std::string indent = times(3, "\t");
+		std::string next_indent = "\t" + indent;
+
+		oss << next_indent << "new hyper::model::abortable_function(\n";
 		oss << next_indent << "boost::bind(&hyper::model::compute_expression<expression_" << counter << ">::async_eval<\n";
-		oss << next_indent << "hyper::model::abortable_computation::cb_type>,\n";
-		oss << next_indent << "&expression_exec" << counter++ << ", _1, boost::ref(" << identifier.str() << "))));\n";
+		oss << next_indent << "hyper::model::abortable_computation::cb_type,\n";
+		oss << next_indent << "hyper::" << a.name() << "::ability,\n";
+		oss << next_indent << symbolList_to_vectorType(syms, u.types()) << " >,\n";
+		oss << next_indent << "&expression_exec" << counter++ << ", _1, boost::cref(a), boost::cref(local_vars),\n";
+		oss << next_indent << "boost::ref(" << identifier << ")))\n";
+
+		return oss.str();
+	}
+
+	std::string operator() (const let_decl& s) const
+	{
+		target = s.identifier;
+		return boost::apply_visitor(*this, s.bounded.expr);
+	}
+
+	std::string operator() (const recipe_op<WAIT>& r) const
+	{
+		std::string indent = times(3, "\t");
+		std::string identifier = compute_target(r.content);
+		std::string next_indent = "\t" + indent;
+
+		std::ostringstream oss;
+		oss << indent << "push_back(new hyper::model::compute_wait_expression(a.io_s, boost::posix_time::milliseconds(20), \n";
+		oss << abortable_function(identifier) << ",";
+		oss << next_indent << identifier << "));\n";
+
+		target = boost::none;
+
+		return oss.str();
+	}
+
+	std::string operator() (const expression_ast& e) const
+	{
+		std::string indent = times(3, "\t");
+		std::string identifier = compute_target(e);
+
+		std::ostringstream oss;
+		oss << indent << "push_back(" << abortable_function(identifier) << indent << ");\n";
 
 		target = boost::none;
 
@@ -272,13 +305,9 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 	std::string operator() (const set_decl& s) const
 	{
 		std::string indent = times(3, "\t");
-		std::string next_indent = "\t" + indent;
 
 		std::ostringstream oss;
-		oss << indent << "push_back(new hyper::model::abortable_function(\n";
-		oss << next_indent << "boost::bind(&hyper::model::compute_expression<expression_" << counter << ">::async_eval<\n";
-		oss << next_indent << "hyper::model::abortable_computation::cb_type>,\n";
-		oss << next_indent << "&expression_exec" << counter++ << ", _1, boost::ref(a." << s.identifier << "))));\n";
+		oss << indent << "push_back(" << abortable_function("a." + s.identifier) << indent << ");\n";
 
 		return oss.str();
 	}
@@ -327,6 +356,11 @@ struct extract_expression_visitor : public boost::static_visitor<void>
 	void operator() (const set_decl& s) const
 	{
 		list.push_back(s.bounded);
+	}
+
+	void operator() (const recipe_op<WAIT>& r) const
+	{
+		list.push_back(r.content);
 	}
 };
 
@@ -432,11 +466,13 @@ struct dump_eval_expression {
 	const universe &u;
 	const ability &a;
 	const task& t;
+	std::string local_data;
 	size_t counter;
 
 	dump_eval_expression(std::ostream& oss_, const universe& u_,
-						   const ability & a_, const task& t_) : 
-		oss(oss_), u(u_), a(a_), t(t_), counter(0) {}
+						   const ability & a_, const task& t_, 
+						   const std::string& local_data) : 
+		oss(oss_), u(u_), a(a_), t(t_), local_data(local_data), counter(0) {}
 
 	void operator() (const expression_ast& e)
 	{
@@ -458,7 +494,9 @@ struct dump_eval_expression {
 		assert(id);
 		type t = tList.get(*id);
 		oss << next_indent << "typedef " << t.name << " return_type;\n\n";
-		oss << next_indent << "return_type operator() (const updater_type& updater) \n";
+		oss << next_indent << "return_type operator() (const updater_type& updater, ";
+		oss << "const hyper::" << a.name() << "::ability& a,\n";
+		oss << next_indent << "\t\t\t\t\t\tconst " << local_data << " & local_vars)\n";
 		oss << next_indent << "{\n";
 		oss << next_indent << "\treturn " << expression_ast_output(e) << ";\n";
 		oss << next_indent << "}\n";
@@ -549,6 +587,7 @@ namespace hyper {
 			oss << "/recipes/" << name << ".hh>\n"; 
 			oss << "#include <model/abortable_function.hh>\n";
 			oss << "#include <model/compute_expression.hh>\n";
+			oss << "#include <model/compute_wait_expression.hh>\n";
 			oss << "#include <boost/assign/list_of.hpp>\n"; 
 			oss << "#include <boost/fusion/container/vector.hpp>\n";
 			oss << "#include <boost/fusion/container/set.hpp>\n";
@@ -584,12 +623,14 @@ namespace hyper {
 				oss << indent << "using namespace hyper;\n";
 				oss << indent << "using namespace hyper::" << context_a.name() << ";\n";
 
-				dump_eval_expression e_dump(oss, u, context_a, context_t);
+				std::string local_data = symbolList_to_vectorType(local_symbol, u.types());
+
+				dump_eval_expression e_dump(oss, u, context_a, context_t, local_data);
 				std::for_each(expression_list.begin(), expression_list.end(), e_dump);
 
 				oss << indent << "struct exec_driver : public hyper::model::abortable_computation {\n";
 				oss << indent << "\tability& a;\n";
-				oss << indent << "\t" << symbolList_to_vector(local_symbol, u.types()) << "\n";
+				oss << indent << "\t" << local_data << " local_vars;\n";
 				oss << indent << "\t" << unused_results(unused_result_set) << "\n";
 				for (size_t i = 0; i < expression_list.size(); ++i) {
 					oss << indent << "\texpression_" << i << "::updater_type updater" << i << ";\n";

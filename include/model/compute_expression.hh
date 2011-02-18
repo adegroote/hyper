@@ -15,8 +15,10 @@ namespace hyper {
 			private:
 				updater_type updater;
 	
-				template <typename Handler>
+				template <typename Handler, typename Ability, typename Local>
 				void handle_update(const boost::system::error_code& e,
+								   const Ability& ability,
+								   const Local& local,
 								   Output& output,
 								   boost::tuple<Handler> handler)
 				{
@@ -25,24 +27,29 @@ namespace hyper {
 						return;
 					}
 	
-					output = Fun()(updater);
+					output = Fun()(updater, ability, local);
 					boost::get<0>(handler)(boost::system::error_code());
 				}
 	
 			public:
 				compute_expression(updater_type updater) : updater(updater) {}
 	
-				template <typename Handler>
-				void async_eval(Handler handler, Output& output)
+				template <typename Handler, typename Ability, typename Local>
+				void async_eval(Handler handler, const Ability& a, const Local& local,
+								Output& output)
 				{
 					void (compute_expression::*f) (
 							const boost::system::error_code&e,
+							const Ability& ,
+							const Local& ,
 							Output&,
 							boost::tuple<Handler>) =
-						&compute_expression::template handle_update<Handler>;
+						&compute_expression::template handle_update<Handler, Ability, Local>;
 	
 					updater.async_update(
 							boost::bind(f, this, boost::asio::placeholders::error,
+												 boost::cref(a), 
+												 boost::cref(local),
 												 boost::ref(output),
 												 boost::make_tuple(handler)));
 				}
