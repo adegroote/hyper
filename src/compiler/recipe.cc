@@ -253,8 +253,9 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 			else 
 				identifier << "boost::fusion::at_c<" << symbolList_index(syms, *target) << ">(local_vars)";
 		} else {
-			// XXX Deal with no storage
-			return "";
+			boost::optional<typeId> tid = u.typeOf(a, e, syms);
+			type t = u.types().get(*tid);
+			identifier << "boost::fusion::at_key<" << t.name << ">(unused_res)";
 		}
 
 		std::ostringstream oss;
@@ -339,6 +340,92 @@ struct extract_expression {
 		boost::apply_visitor(extract_expression_visitor(list), r.expr);
 	}
 };
+
+struct extract_unused_result_visitor : public boost::static_visitor<void>
+{
+	std::set<std::string>& list;
+	const universe& u;
+	const ability& a;
+	const symbolList& syms;
+	mutable bool catched;
+
+	extract_unused_result_visitor(std::set<std::string>& list, const universe& u,
+								 const ability& a, const symbolList& syms) :
+		list(list), u(u), a(a), syms(syms), catched(false)
+	{}
+
+	/* set_decl, abort does not return anything */
+	template <typename T>
+	void operator() (const T&) const {}
+
+	void operator() (const let_decl& l) const
+	{
+		catched = true;
+		boost::apply_visitor(*this, l.bounded.expr);
+	}
+
+	void operator() (const expression_ast& e) const
+	{
+		if (!catched) {
+			boost::optional<typeId> tid = u.typeOf(a, e, syms); 
+			type t = u.types().get(*tid);
+			list.insert(t.name);
+		}
+	}
+
+	void operator() (const recipe_op<WAIT>&) const
+	{
+		if (!catched) 
+			list.insert("bool");
+	}
+
+	void operator() (const recipe_op<MAKE>&) const
+	{
+		if (!catched)
+			list.insert("bool");
+	}
+
+	void operator() (const recipe_op<ENSURE>&) const
+	{
+		if (!catched)
+			list.insert("identifier");
+	}
+};
+
+struct extract_unused_result {
+	std::set<std::string>& list;
+	const universe& u;
+	const ability& a;
+	const symbolList& syms;
+
+	extract_unused_result(std::set<std::string>& list, const universe& u, 
+						  const ability& a, const symbolList& syms) :
+		list(list), u(u), a(a), syms(syms)
+	{}
+
+	void operator() (const recipe_expression& r)
+	{
+		boost::apply_visitor(extract_unused_result_visitor(list, u, a, syms), r.expr);
+	}
+};
+
+std::string unused_results(const std::set<std::string>& s)
+{
+	if (s.empty()) return "";
+
+	std::set<std::string>::const_iterator it = s.begin();
+	std::ostringstream oss;
+	oss << "boost::fusion::set<";
+	while (it != s.end()) {
+		oss << *it;
+		++it;
+		if (it != s.end())
+			oss << ", ";
+	}
+	oss << "> unused_res;";
+
+	return oss.str();
+}
 
 struct dump_eval_expression {
 	std::ostream& oss;
@@ -463,7 +550,10 @@ namespace hyper {
 			oss << "#include <model/abortable_function.hh>\n";
 			oss << "#include <model/compute_expression.hh>\n";
 			oss << "#include <boost/assign/list_of.hpp>\n"; 
-			oss << "#include <boost/fusion/container/vector.hpp>\n" << std::endl;
+			oss << "#include <boost/fusion/container/vector.hpp>\n";
+			oss << "#include <boost/fusion/container/set.hpp>\n";
+			oss << "#include <boost/fusion/include/at_key.hpp>\n" << std::endl;
+
 
 			std::for_each(deps.fun_depends.begin(), 
 						  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
@@ -485,6 +575,10 @@ namespace hyper {
 			/* Extract expression_ast to execute from the body */
 			std::vector<expression_ast> expression_list;
 			std::for_each(body.begin(), body.end(), extract_expression(expression_list));
+
+			/* Get the list of instruction executed but not catched by a set or a let */
+			std::set<std::string> unused_result_set;
+			std::for_each(body.begin(), body.end(), extract_unused_result(unused_result_set, u, context_a, local_symbol));
 			{ 
 				anonymous_namespaces n(oss);
 				oss << indent << "using namespace hyper;\n";
@@ -496,6 +590,7 @@ namespace hyper {
 				oss << indent << "struct exec_driver : public hyper::model::abortable_computation {\n";
 				oss << indent << "\tability& a;\n";
 				oss << indent << "\t" << symbolList_to_vector(local_symbol, u.types()) << "\n";
+				oss << indent << "\t" << unused_results(unused_result_set) << "\n";
 				for (size_t i = 0; i < expression_list.size(); ++i) {
 					oss << indent << "\texpression_" << i << "::updater_type updater" << i << ";\n";
 					oss << indent << "\thyper::model::compute_expression<expression_" << i << "> expression_exec" << i << ";\n";
