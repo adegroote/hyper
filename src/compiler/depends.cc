@@ -4,6 +4,8 @@
 #include <compiler/recipe_expression.hh>
 #include <compiler/types.hh>
 
+#include <boost/bind.hpp>
+
 using namespace hyper::compiler;
 
 struct compute_expression_deps : public boost::static_visitor<void>
@@ -70,10 +72,21 @@ struct compute_recipe_expression_deps : public boost::static_visitor<void>
 		boost::apply_visitor(compute_recipe_expression_deps(d, name), l.bounded.expr);
 	}
 
-	template <recipe_op_kind kind>
-	void operator() (const recipe_op<kind>& op) const 
+	void operator() (const wait_decl& op) const 
 	{
 		add_depends(op.content, name, d);
+	}
+
+	template <recipe_op_kind kind>
+	void operator() (const recipe_op<kind>& op) const
+	{
+		void (*f)(const expression_ast&, const std::string&, depends&) = 
+			&add_depends;
+
+		std::for_each(op.content.begin(), op.content.end(), 
+				boost::bind(f, _1, boost::cref(name), 
+											  boost::ref(d)));
+
 	}
 
 	void operator() (const expression_ast& e) const

@@ -69,6 +69,11 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(expression_ast, bounded)
 )	
 
+BOOST_FUSION_ADAPT_STRUCT(
+	wait_decl,
+	(expression_ast, content)
+)
+
 phoenix::function<error_handler_> const error_handler = error_handler_();
 
 template <typename Iterator>
@@ -170,7 +175,7 @@ struct body_block_grammar :
 	qi::rule<Iterator, abort_decl(), white_space_> abort_decl_;
 	qi::rule<Iterator, recipe_op<MAKE>(), white_space_> make_decl_;
 	qi::rule<Iterator, recipe_op<ENSURE>(), white_space_> ensure_decl_;
-	qi::rule<Iterator, recipe_op<WAIT>(), white_space_> wait_decl_;
+	qi::rule<Iterator, wait_decl(), white_space_> wait_decl_;
 
 	grammar_expression<Iterator> expression;
 	identifier_grammar<Iterator> identifier;

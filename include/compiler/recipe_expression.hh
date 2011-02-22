@@ -20,24 +20,36 @@ namespace hyper {
 		};
 
 		std::ostream& operator<< (std::ostream&, const abort_decl&);
+		
+		struct wait_decl {
+			expression_ast content;
 
-		enum recipe_op_kind { MAKE, ENSURE, WAIT };
+			wait_decl() {}
+			wait_decl(const expression_ast& content) : content(content) {}
+		};
+
+		std::ostream& operator << (std::ostream& os, const wait_decl&);
+
+		enum recipe_op_kind { MAKE, ENSURE };
 
 		std::ostream& operator<< (std::ostream& os, recipe_op_kind kind);
 
 		template <recipe_op_kind kind>
 		struct recipe_op 
 		{
-			expression_ast content;
+			std::vector<expression_ast> content;
 
 			recipe_op() {}
-			recipe_op(const expression_ast& content_) : content(content_) {}
+			recipe_op(const std::vector<expression_ast>& content_) : content(content_) {}
 		};
 
 		template <recipe_op_kind kind>
 		std::ostream& operator<< (std::ostream& os, const recipe_op<kind>& r)
 		{
-			os << kind << " " << r.content;
+			os << kind << " ("; 
+			std::copy(r.content.begin(), r.content.end(), 
+					  std::ostream_iterator<expression_ast>(os, "\n"));
+			os << " )";
 			return os;
 		}
 
@@ -58,9 +70,9 @@ namespace hyper {
 				boost::recursive_wrapper<let_decl>,
 				abort_decl, 
 				set_decl,
+				wait_decl,
 				recipe_op<MAKE>,
 				recipe_op<ENSURE>,
-				recipe_op<WAIT>,
 				expression_ast
 			>
 			type;

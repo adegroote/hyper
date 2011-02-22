@@ -197,7 +197,7 @@ struct recipe_ast_type : public boost::static_visitor<boost::optional<typeId> > 
 	}
 
 	boost::optional<typeId>
-	operator() (const recipe_op<WAIT>&) const {
+	operator() (const wait_decl&) const {
 		return u.types().getId("void").second;
 	}
 };

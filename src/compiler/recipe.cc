@@ -68,9 +68,18 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 
 	bool operator() (empty) const { assert(false); return false; }
 
+	bool operator() (const wait_decl& w) const {
+		return w.content.is_valid_predicate(a, u, local);
+	}
+
 	template <recipe_op_kind kind>
 	bool operator() (const recipe_op<kind>& op) const {
-		return op.content.is_valid_predicate(a, u, local);
+		std::vector<expression_ast>::const_iterator it;
+		bool valid = true;
+		for (it = op.content.begin(); it != op.content.end(); ++it)
+			valid &= it->is_valid_predicate(a, u, local);
+
+		return valid;
 	}
 
 	bool operator() (const expression_ast& e) const {
@@ -273,10 +282,10 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		return boost::apply_visitor(*this, s.bounded.expr);
 	}
 
-	std::string operator() (const recipe_op<WAIT>& r) const
+	std::string operator() (const wait_decl& w) const
 	{
 		std::string indent = times(3, "\t");
-		std::string identifier = compute_target(r.content);
+		std::string identifier = compute_target(w.content);
 		std::string next_indent = "\t" + indent;
 
 		std::ostringstream oss;
@@ -358,9 +367,9 @@ struct extract_expression_visitor : public boost::static_visitor<void>
 		list.push_back(s.bounded);
 	}
 
-	void operator() (const recipe_op<WAIT>& r) const
+	void operator() (const wait_decl& w) const
 	{
-		list.push_back(r.content);
+		list.push_back(w.content);
 	}
 };
 
@@ -407,7 +416,7 @@ struct extract_unused_result_visitor : public boost::static_visitor<void>
 		}
 	}
 
-	void operator() (const recipe_op<WAIT>&) const
+	void operator() (const wait_decl&) const
 	{
 		if (!catched) 
 			list.insert("bool");
