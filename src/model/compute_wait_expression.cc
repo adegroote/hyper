@@ -21,6 +21,8 @@ namespace hyper {
 				cb(make_error_code(boost::system::errc::interrupted));
 				return true;
 			}
+
+			return false;
 		}
 
 		void compute_wait_expression::handle_timeout(
