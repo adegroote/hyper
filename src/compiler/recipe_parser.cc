@@ -119,7 +119,7 @@ struct body_block_grammar :
 
 		make_decl_ = lit("make")
 				  >> lit("(")
-				  >> expression
+				  >> expression_list
 				  >> lit(")")
 				  ;
 
@@ -130,7 +130,7 @@ struct body_block_grammar :
 
 		ensure_decl_ = lit("ensure")
 				  >> lit("(")
-				  >> expression
+				  >> expression_list
 				  >> lit(")")
 				  ;
 
@@ -144,9 +144,12 @@ struct body_block_grammar :
 				  >> lit(")")
 				  ;
 
+		expression_list = expression % lit("=>>");
+
 		start.name("body block");
 		body_decl_list.name("recipe expression list");
 		body_decl.name("recipe expression");
+		expression_list.name("expression list");
 		let_decl_.name("let declaration");
 		set_decl_.name("set declaration");
 		abort_decl_.name("abort declaration");
@@ -158,6 +161,7 @@ struct body_block_grammar :
 		debug(start);
 		debug(body_decl_list);
 		debug(body_decl);
+		debug(expression_list);
 		debug(let_decl_);
 		debug(set_decl_);
 		debug(abort_decl_);
@@ -170,6 +174,7 @@ struct body_block_grammar :
 	qi::rule<Iterator, body_block_decl(), white_space_> start;
 	qi::rule<Iterator, std::vector<recipe_expression>(), white_space_> body_decl_list;
 	qi::rule<Iterator, recipe_expression(), white_space_> body_decl;
+	qi::rule<Iterator, std::vector<expression_ast>(), white_space_> expression_list;
 	qi::rule<Iterator, let_decl(), white_space_> let_decl_;
 	qi::rule<Iterator, set_decl(), white_space_> set_decl_;
 	qi::rule<Iterator, abort_decl(), white_space_> abort_decl_;

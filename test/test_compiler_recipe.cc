@@ -189,4 +189,17 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 										set other::isEmpty  false\
 										};};", false);
 	
+	/* Check the =>> operator, to handle "sequence" of constraint */
+	check_recipe.do_build_test("r23 = recipe { pre = {}; post = {}; \
+											   body = {					  \
+													ensure(				  \
+													first::isOk == true =>> \
+													first::thresold < 2.0 =>> \
+													k != 3					\
+													)						\
+											    };							\
+											  };", true);
+
+
+	
 }
