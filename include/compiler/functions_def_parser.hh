@@ -5,12 +5,15 @@
 #include <string>
 #include <vector>
 
+#include <boost/optional.hpp>
+
 namespace hyper {
 	namespace compiler {
 		struct function_decl {
 			std::string fName;
 			std::string returnName;
 			std::vector < std::string > argsName;
+			boost::optional<std::string> tag;
 		};
 
 		std::ostream& operator << (std::ostream& os, const function_decl& decl);

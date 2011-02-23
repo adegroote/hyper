@@ -42,6 +42,7 @@ BOOST_FUSION_ADAPT_STRUCT(
     (std::string, fName)
 	(std::string, returnName)
 	(std::vector < std::string>, argsName)
+	(boost::optional<std::string>, tag)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -230,7 +231,10 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 
 		f_decl_list =(*f_decl);
 
-		f_decl = scoped_identifier								[at_c<1>(_val) = _1]
+		tag_decl = lit('@') >> identifier;
+
+		f_decl =  -(tag_decl								    [at_c<3>(_val) = _1])
+			   >> scoped_identifier								[at_c<1>(_val) = _1]
 			   >> identifier									[at_c<0>(_val) = _1]
 			   >> lit('(')
 			   > -((
@@ -248,6 +252,7 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				   ;
 
 		type_decl_list_ = (*type_decl_);
+
 
 		/* 
 		 * XXX
@@ -287,6 +292,7 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 		type_decl_list_.name("type declaration list");
 		structure_decl.name("struct declaration");
 		new_type_decl.name("newtype declaration");
+		tag_decl.name("tag declaration");
 
 		qi::on_error<qi::fail> (ability_, error_handler(_4, _3, _2));
 
@@ -307,6 +313,7 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 		debug(type_decl_list_);
 		debug(structure_decl);
 		debug(new_type_decl);
+		debug(tag_decl);
 #endif
 	}
 
@@ -325,6 +332,7 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 	qi::rule<Iterator, std::vector<function_decl>(), white_space_> f_decl_list;
 	qi::rule<Iterator, struct_decl(), qi::locals<symbol_decl>, white_space_> structure_decl;
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
+	qi::rule<Iterator, std::string(), white_space_> tag_decl;
 
 	function<ability_add_adaptator> ability_adder;
 	identifier_grammar<Iterator> identifier;

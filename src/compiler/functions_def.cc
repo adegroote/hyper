@@ -82,7 +82,8 @@ functionDef::output_import(std::ostream& oss, const typeList& tList) const
 functionDefList::add_result
 functionDefList::add(const std::string &name, 
 						  const std::string &return_name,
-						  const std::vector < std::string > & argsName)
+						  const std::vector < std::string > & argsName,
+						  const boost::optional<std::string>& tag)
 {
 	fmap::const_iterator it = functionDefs.find(name);
 	if (it != functionDefs.end())
@@ -105,14 +106,14 @@ functionDefList::add(const std::string &name,
 		v.push_back(p.second);
 	}
 
-	functionDefs[name] = functionDef(name, v, returnTypeId);
+	functionDefs[name] = functionDef(name, v, returnTypeId, tag);
 	return make_tuple(true, noError, 0);
 }
 
 functionDefList::add_result
 functionDefList::add(const function_decl& decl)
 {
-	return add(decl.fName, decl.returnName, decl.argsName);
+	return add(decl.fName, decl.returnName, decl.argsName, decl.tag);
 }
 
 std::vector<functionDefList::add_result>

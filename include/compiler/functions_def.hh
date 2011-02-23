@@ -21,13 +21,23 @@ namespace hyper {
 				std::string name_;
 				std::vector < typeId > argsType_;
 				typeId returnType_;
+				boost::optional<std::string> tag_;
 
 			public:
 				functionDef() {};
 				functionDef(const std::string &name, 
 							const std::vector < typeId > & args,
 							typeId returns):
-					name_(name), argsType_(args), returnType_(returns) 
+					name_(name), argsType_(args), returnType_(returns), 
+					tag_(boost::none)
+				{};
+
+				functionDef(const std::string &name, 
+							const std::vector < typeId > & args,
+							typeId returns,
+							const boost::optional<std::string>& tag):
+					name_(name), argsType_(args), returnType_(returns), 
+					tag_(tag)
 				{};
 
 				const std::string name() const {
@@ -46,6 +56,8 @@ namespace hyper {
 					assert(i < arity());
 					return argsType_[i];
 				};
+
+				const boost::optional<std::string> tag() const { return tag_; }
 
 				void output_proto(std::ostream& os, const typeList& tList) const;
 				void output_impl(std::ostream& os, const typeList& tList) const;
@@ -83,7 +95,8 @@ namespace hyper {
 				 */
 				add_result
 				add(const std::string& name, const std::string& return_name,
-					const std::vector< std::string > & argsName);
+					const std::vector< std::string > & argsName,
+					const boost::optional<std::string>& tag = boost::none);
 
 				add_result add(const function_decl& decl);
 
