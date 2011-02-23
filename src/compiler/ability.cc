@@ -364,6 +364,9 @@ ability::agent_export_declaration(std::ostream& oss, const typeList& tList) cons
 	oss << "\t\t\tvoid enforce(const std::string& ctr) {\n";
 	oss << "\t\t\t\treturn send_constraint(ctr);\n";
 	oss << "\t\t\t}\n";
+	oss << "\t\t\tvoid exit(const std::string& msg) {\n";
+	oss << "\t\t\t\treturn abort(msg);\n";
+	oss << "\t\t\t}\n";
 	oss << "\t\t};" << std::endl;
 }
 

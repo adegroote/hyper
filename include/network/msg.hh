@@ -295,8 +295,24 @@ namespace hyper {
 				}
 		};
 
+		struct terminate
+		{
+			private:
+				friend class boost::serialization::access;
+				template <class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & reason;
+				}
+			public:
+				std::string reason;
 
-		typedef boost::mpl::vector12<
+				terminate() {};
+				terminate(const std::string& src) : reason(src) {}
+		};
+
+		typedef boost::mpl::vector13<
 			request_name,
 			request_name_answer,
 			register_name,
@@ -308,10 +324,11 @@ namespace hyper {
 			request_constraint,
 			request_constraint_ack,
 			request_constraint_answer,
-			log_msg
+			log_msg,
+			terminate
 		> message_types;
 
-#define MESSAGE_TYPE_MAX 12
+#define MESSAGE_TYPE_MAX 13
 
 		typedef boost::make_variant_over<message_types>::type message_variant;
 

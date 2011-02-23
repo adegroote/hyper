@@ -64,6 +64,7 @@ namespace hyper {
 
 			public:
 			void send_constraint(const std::string& constraint);
+			void abort(const std::string& reason);
 		};
 	}
 }

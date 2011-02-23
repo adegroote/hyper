@@ -2,6 +2,8 @@
 
 using namespace hyper::model;
 
+void dont_care(const boost::system::error_code& e)
+{}
 
 void ability_test::handle_send_constraint(const boost::system::error_code& e,
 		network::request_constraint* msg,
@@ -32,4 +34,10 @@ void ability_test::send_constraint(const std::string& constraint)
 				this,
 				boost::asio::placeholders::error,
 				msg, answer));
+}
+
+void ability_test::abort(const std::string& msg)
+{
+	network::terminate term(msg);
+	client_db[target].async_write(term, &dont_care);
 }
