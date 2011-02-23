@@ -47,7 +47,9 @@ void ping_process::handle_connect(const boost::system::error_code& e)
 void ping_process::handle_timeout(const boost::system::error_code& e)
 {
 	if (e) {
-		throw boost::system::system_error(e);
+		// if we call stop, just aborting smoothly :)
+		if (e != boost::asio::error::operation_aborted)
+			throw boost::system::system_error(e);
 	} else {
 		if (!is_connected) {
 			c_.async_connect(destName_, destPort_, 
