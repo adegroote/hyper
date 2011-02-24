@@ -51,6 +51,7 @@ void build_swig(std::ostream& oss, const std::string& name)
 		"%{\n"
 		"	#include <string>\n"
 		"	#include \"@NAME@/export.hh\"\n"
+		"	#include \"@NAME@/types.hh\"\n"
 		"	#include <model/future.hh>\n"
 		"	using namespace hyper::@NAME@;\n"
 		"%}\n"
