@@ -50,8 +50,6 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const task_decl_li
 	return os;
 }
 
-function<error_handler_> const error_handler = error_handler_();
-
 BOOST_FUSION_ADAPT_STRUCT(
 	task_decl,
 	(std::string, name)

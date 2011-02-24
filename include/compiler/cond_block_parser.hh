@@ -27,7 +27,8 @@ namespace hyper {
 				cond_block_grammar::base_type(start)
 			{
 				using qi::lit;
-		
+				using namespace qi::labels;
+
 				start = pre_cond
 						>> post_cond
 						;
@@ -56,6 +57,7 @@ namespace hyper {
 				pre_cond.name("pre_cond");
 				post_cond.name("post_cond");
 				cond.name("cond");
+				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 			}
 		
 			qi::rule<Iterator, cond_block_decl(), white_space_> start;

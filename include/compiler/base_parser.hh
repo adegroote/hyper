@@ -65,6 +65,8 @@ namespace hyper {
 				}
 		};
 
+		static boost::phoenix::function<error_handler_> const error_handler = error_handler_();
+
 		template <typename Iterator>
 		struct white_space : qi::grammar<Iterator>
 		{
@@ -80,6 +82,7 @@ namespace hyper {
 					;
 
 				start.name("ws");
+				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 			}
 
 			qi::rule<Iterator> start;
@@ -94,6 +97,7 @@ namespace hyper {
 				start = (qi::alpha | '_') >> *(qi::alnum | '_');
 
 				start.name("identifier");
+				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 			}
 
 			qi::rule<Iterator, std::string()> start;
@@ -113,6 +117,7 @@ namespace hyper {
 					;
 
 				start.name("scoped_identifier");
+				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 			}
 
 			qi::rule<Iterator, std::string()> start;
@@ -130,6 +135,9 @@ namespace hyper {
 					>> *(qi::lexeme[qi::char_ - '"'] [_val+= _1]) 
 					>> '"'
 					;
+
+				start.name("const_string");
+				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 			}
 
 			qi::rule<Iterator, std::string()> start;
@@ -165,6 +173,7 @@ namespace hyper {
 				cst_double.name("const double");
 				cst_string.name("const string");
 				cst_bool.name("const bool");
+				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 			}
 
 			const_string_grammer<Iterator> constant_string;
@@ -193,6 +202,7 @@ namespace hyper {
 
 				start.name("atom");
 				var_inst.name("var instance");
+				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 			}
 
 			qi::rule<Iterator, expression_ast(), white_space_> start;
@@ -300,6 +310,8 @@ namespace hyper {
 				relational_expr.name("relational expr declaration");
 				equality_expr.name("equality expr declaration");
 				func_call.name("function declaration instance");
+
+				qi::on_error<qi::fail> (expression, error_handler(_4, _3, _2));
 			}
 		
 			qi::rule<Iterator, expression_ast(), white_space_> expression, primary_expr, unary_expr;

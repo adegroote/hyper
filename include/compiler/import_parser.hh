@@ -117,8 +117,10 @@ namespace hyper {
 			import_grammar(hyper::compiler::parser& p) : 
 				import_grammar::base_type(start), import_adder(p)
 			{
+		
+				using namespace qi::labels;
 				start =
-					*(import				[import_adder(qi::labels::_1)])
+					*(import				[import_adder(_1)])
 					;
 
 				import =	qi::lit("import")
@@ -128,6 +130,7 @@ namespace hyper {
 
 				start.name("import list");
 				import.name("import");
+				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 			}
 
 			qi::rule<Iterator, white_space_> start;

@@ -74,8 +74,6 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(expression_ast, content)
 )
 
-phoenix::function<error_handler_> const error_handler = error_handler_();
-
 template <typename Iterator>
 struct body_block_grammar :
 	qi::grammar<Iterator, body_block_decl(), white_space<Iterator> >

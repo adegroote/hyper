@@ -23,8 +23,6 @@ namespace ascii = boost::spirit::ascii;
 namespace fusion = boost::fusion;
 namespace phoenix = boost::phoenix;
 
-function<error_handler_> const error_handler = error_handler_();
-
 BOOST_FUSION_ADAPT_STRUCT(
     symbol_decl,
     (std::string, typeName)
@@ -124,6 +122,8 @@ struct initializer_grammar: qi::grammar<Iterator, expression_ast(), white_space<
 					>> qi::lit('(')
 					>> qi::lit(')')
 			;
+
+		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 	}
 
 	qi::rule<Iterator, expression_ast(), white_space_> start;
