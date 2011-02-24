@@ -63,6 +63,13 @@ struct type_add_scope_visitor : public boost::static_visitor<type_decl>
 						res.vars.l.begin(), sym_scope);
 		return res;
 	}
+
+	type_decl operator()(const opaque_decl& decl)
+	{
+		opaque_decl res;
+		res.name = scope::add_scope(scope_, decl.name);
+		return res;
+	}
 };
 
 struct type_add_scope
@@ -97,6 +104,7 @@ struct functions_def_add_scope {
 
 struct type_diagnostic_visitor : public boost::static_visitor<void>
 {
+	// XXX improve type_diagnostic :)
 	const type_decl &decl;
 
 	type_diagnostic_visitor(const type_decl& decl_) : decl(decl_) {};
@@ -104,7 +112,6 @@ struct type_diagnostic_visitor : public boost::static_visitor<void>
 	void operator() (const typeList::native_decl_error& error) const
 	{
 		(void) error;
-		assert(false);
 	}
 
 	void operator() (const typeList::struct_decl_error& error) const

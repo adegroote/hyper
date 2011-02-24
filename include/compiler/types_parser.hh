@@ -28,7 +28,14 @@ namespace hyper {
 
 		std::ostream& operator << (std::ostream&, const newtype_decl&);
 
-		typedef boost::variant<struct_decl, newtype_decl> type_decl;
+
+		struct opaque_decl {
+			std::string name;
+		};
+		
+		std::ostream& operator << (std::ostream&, const opaque_decl&);
+
+		typedef boost::variant<struct_decl, newtype_decl, opaque_decl> type_decl;
 
 		struct type_decl_name : boost::static_visitor<std::string>
 		{
@@ -40,6 +47,11 @@ namespace hyper {
 			std::string operator()(const newtype_decl& decl) const
 			{
 				return decl.newname;
+			}
+
+			std::string operator()(const opaque_decl& decl) const
+			{
+				return decl.name;
 			}
 		};
 

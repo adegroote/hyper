@@ -26,7 +26,8 @@ namespace hyper {
 			doubleType,
 			stringType,
 			enumType, 
-			structType
+			structType,
+			opaqueType
 		};
 
 		struct Nothing {};

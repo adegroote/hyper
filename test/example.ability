@@ -24,6 +24,7 @@ first = ability
 			/* Here, the private variable */
 			double myPrivatevariable;
 			int i; /* oups duplicate variable */
+			Module xxx;
 		}
 	}
 
@@ -38,13 +39,14 @@ first = ability
 								double y;
 								double z;
 							  };
+			Module = opaquetype;
 		}
 		{
 			/* Here, define your fonction */
 			length distance(position A, position B);
 			double square(double);
 			bool   isToto(test);
-			@genom double genomTagTest(double);
+			@genom double genomTagTest(Module, double);
 		}
 	}
 }

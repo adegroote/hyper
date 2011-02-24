@@ -183,6 +183,26 @@ struct add_type : public boost::static_visitor < typeList::add_result >
 		r.get<2>() = error;
 		return r;
 	}
+
+	typeList::add_result operator() (const opaque_decl& decl)
+	{
+		typeList::native_decl_error error;
+		error.err = typeList::notTested;
+
+		typeList::add_result r = tList.add(decl.name, opaqueType);
+		if (r.get<0>() == false) {
+			error.err = typeList::typeAlreadyExist;
+			r.get<2>() = error;
+			return r;
+		}
+
+		type& t = tList.get(r.get<1>());
+		t.internal = Nothing();
+
+		error.err = typeList::noError;
+		r.get<2>() = error;
+		return r;
+	}
 };
 
 typeList::add_result

@@ -22,19 +22,19 @@ std::ostream& hyper::compiler::operator << (std::ostream& os,
 	return os;
 }
 
+std::ostream& hyper::compiler::operator << (std::ostream& os, const opaque_decl& o)
+{
+	os << "declaring " << o.name << " as an opaque structure " << std::endl;
+	return os;
+}
+
 struct print_visitor : public boost::static_visitor<std::string>
 {
-	std::string operator()(const struct_decl& s) const
+	template <typename T>
+	std::string operator()(const T& s) const
 	{
 		std::ostringstream oss;
 		oss << s;
-		return oss.str();
-	};
-
-	std::string operator()(const newtype_decl& t) const
-	{
-		std::ostringstream oss;
-		oss << t;
 		return oss.str();
 	};
 };
