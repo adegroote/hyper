@@ -17,24 +17,26 @@ functionDef::output_proto(std::ostream& oss, const typeList& tList) const
 {
 	oss << "\t\tstruct " << scope::get_identifier(name()) << " {" << std::endl;;
 	type ret = tList.get(returnType());
-	oss << "\t\t\t" << "typedef " << ret.name << " result_type;" << std::endl;
+	oss << "\t\t\t" << "typedef " << ret.type_name() << " result_type;" << std::endl;
 	oss << "\t\t\t" << "typedef boost::mpl::vector<";
 	for (size_t i = 0; i < arity(); ++i) 
 	{
 		type arg = tList.get(argsType(i));
-		oss << arg.name;
+		oss << arg.type_name();
 		if (i != arity() - 1) 
 			oss << ", ";
 	}
 	oss << "> args_type;" << std::endl;
 
-	oss << "\t\t\tstatic " << ret.name << " apply (";
+	oss << "\t\t\tstatic " << ret.type_name() << " apply (";
 	for (size_t i = 0; i < arity(); ++i) 
 	{
 		type arg = tList.get(argsType(i));
-		oss << arg.name;
-		if (arg.t == stringType || arg.t == structType)
+		oss << arg.type_name();
+		if (arg.t == stringType || arg.t == structType || arg.t == opaqueType)
 			oss << " const &";
+		else
+			oss << " ";
 		if (i != arity() - 1) 
 			oss << ", ";
 	}
@@ -47,13 +49,15 @@ void
 functionDef::output_impl(std::ostream& oss, const typeList& tList) const
 {
 	type ret = tList.get(returnType());
-	oss << "\t\t" << ret.name << " " << scope::get_identifier(name()) << "::apply(";
+	oss << "\t\t" << ret.type_name() << " " << scope::get_identifier(name()) << "::apply(";
 	for (size_t i = 0; i < arity(); ++i) 
 	{
 		type arg = tList.get(argsType(i));
-		oss << arg.name;
-		if (arg.t == stringType || arg.t == structType)
+		oss << arg.type_name();
+		if (arg.t == stringType || arg.t == structType || arg.t == opaqueType)
 			oss << " const & ";
+		else
+			oss << " ";
 		oss << "v" << i;
 		if (i != arity() - 1) 
 			oss << ", ";

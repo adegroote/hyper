@@ -22,7 +22,7 @@ struct dump_struct
 	void operator() (const std::pair<std::string, symbol>& p)
 	{
 		type t = tList.get(p.second.t);
-		oss << "\t\t\t" << t.name << " " << p.first << ";" << std::endl;
+		oss << "\t\t\t" << t.type_name() << " " << p.first << ";" << std::endl;
 	}
 };
 
@@ -52,7 +52,7 @@ struct dump_types_vis : public boost::static_visitor<void>
 	void operator() (const typeId& tId) const
 	{
 		type t = tList.get(tId);
-		oss << "\ttypedef " << t.name << " " << scope::get_identifier(name) << ";";
+		oss << "\ttypedef " << t.type_name() << " " << scope::get_identifier(name) << ";";
 		oss << "\n" << std::endl;
 	}
 
@@ -81,6 +81,17 @@ type::output(std::ostream& oss, const typeList& tList) const
 	boost::apply_visitor(dump_types_vis(oss, tList, name), internal);
 }
 
+/*
+ * XXX Base type must be handled in only one place 
+ */
+std::string type::type_name() const
+{ 
+	if (name == "string")
+		return "std::string";
+	else 
+		return name;
+}
+	
 typeList::add_result
 typeList::add(const std::string& name, typeOfType t)
 {
@@ -247,5 +258,5 @@ type& typeList::get(typeId t)
 	assert(t < types.size());
 	return types[t];
 }
-	
+
 

@@ -48,6 +48,7 @@ namespace hyper {
 			type(const std::string& name_, typeOfType t_): name(name_), t(t_), internal(Nothing()) {};
 
 			void output(std::ostream& oss, const typeList& tList) const;
+			std::string type_name() const;
 		};
 
 		class typeList : public boost::noncopyable {
