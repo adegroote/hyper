@@ -83,7 +83,7 @@ configure_file(
 	${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake
 	)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake share/HyperNode.cmake
 		DESTINATION share/hyper
 )
 

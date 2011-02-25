@@ -65,130 +65,19 @@ void build_swig(std::ostream& oss, const std::string& name)
 
 }
 
-void build_base_cmake(std::ostream& oss, const std::string& name, bool has_func,
-					  bool has_task, bool has_recipe,
+void build_base_cmake(std::ostream& oss, const std::string& name,
 					  const std::set<std::string>& depends)
 {
-	std::string base_cmake1 = 
-		"cmake_minimum_required(VERSION 2.6.4 FATAL_ERROR)\n"
+	std::string base_cmake = 
+		"cmake_minimum_required(VERSION 2.8 FATAL_ERROR)\n"
 		"\n"
-		"project(HYPER_ABILITY_@NAME@ CXX)\n"
-		"enable_language(C)\n"
-		"include(CheckIncludeFile)\n"
+		"find_package(Hyper REQUIRED)\n"
 		"\n"
-		"find_package(Boost 1.42 REQUIRED COMPONENTS system thread serialization filesystem date_time)\n"
-		"set(BOOST_FOUND ${Boost_FOUND})\n"
-		"include_directories(${Boost_INCLUDE_DIRS})\n"
-		"message(STATUS \"boost libraries \"${Boost_LIBRARIES})\n"
-		"\n"
-		"include_directories(${CMAKE_SOURCE_DIR})\n"
-		"\n"
-		;
-	std::string build_function = 
-		"FILE(GLOB funcs @NAME@/funcs/*.cc)\n"
-		"add_library(hyper_@NAME@ SHARED ${funcs} @NAME@/import.cc)\n"
-		"install(TARGETS hyper_@NAME@\n"
-		"		  DESTINATION ${HYPER_ROOT}/lib/hyper/\n"
-		")\n"
-		"install(FILES @NAME@/funcs.hh @NAME@/import.hh\n"
-		"		 DESTINATION ${HYPER_ROOT}/include/hyper/@NAME@/)\n"
+		"hyper_node(@NAME@)\n"
 		"\n"
 		;
 
-	std::string base_src=
-		"set(SRC main.cc)\n";
-
-	std::string recipe_src=
-		"file(GLOB recipes @NAME@/recipes/*cc)\n"
-		"set(SRC ${recipes} ${SRC})\n"
-		;
-
-	std::string task_src=
-		"file(GLOB tasks @NAME@/tasks/*cc)\n"
-		"set(SRC ${tasks} ${SRC})\n"
-		;
-
-	std::string build_ability = 
-		"add_executable(@NAME@ ${SRC})\n"
-		"install(TARGETS @NAME@\n"
-		"		 DESTINATION ${HYPER_ROOT}/bin)\n"
-		"install(FILES @NAME@/types.hh\n"
-		"		 DESTINATION ${HYPER_ROOT}/include/hyper/@NAME@)\n"
-		"install(FILES @NAME@.ability\n"
-		"		 DESTINATION ${HYPER_ROOT}/share/hyper)\n"
-		;
-
-	std::string link_function =
-		"target_link_libraries(@NAME@ hyper_@NAME@)\n"
-		;
-
-	std::string link_depends =
-		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/hyper/libhyper_"
-		;
-
-	std::string additionnal_link = 
-		"target_link_libraries(@NAME@ ${Boost_LIBRARIES})\n"
-
-		"include_directories(${HYPER_ROOT}/include/hyper)\n"
-		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_network.so)\n"
-		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_compiler.so)\n"
-		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_model.so)\n"
-		"target_link_libraries(@NAME@ ${HYPER_ROOT}/lib/libhyper_logic.so)\n"
-		;
-
-	std::string swig_export =
-		"find_package(SWIG)\n"
-		"include(${SWIG_USE_FILE})\n"
-		"find_package(Ruby)\n"
-		"include_directories(${RUBY_INCLUDE_PATH})\n"
-		"add_custom_command(\n"
-		"	OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp\n"
-		"	COMMAND ${SWIG_EXECUTABLE}\n" 
-		"ARGS -c++ -Wall -v -ruby -prefix \"hyper::\" -I${HYPER_ROOT}/include/hyper -I${Boost_INCLUDE_DIRS} -I${RUBY_INCLUDE_DIR}  -o ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp ${CMAKE_CURRENT_SOURCE_DIR}/@NAME@.i\n"
-		"MAIN_DEPENDENCY @NAME@.i\n"
-		"DEPENDS @NAME@/export.hh\n"
-		"WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"
-		")\n"
-	"add_library(@NAME@_ruby_wrap SHARED ${CMAKE_CURRENT_BINARY_DIR}/@NAME@_wrap.cpp @NAME@/export.cc)\n"
-		"target_link_libraries(@NAME@_ruby_wrap stdc++ ${RUBY_LIBRARY})\n"
-		"target_link_libraries(@NAME@_ruby_wrap ${HYPER_ROOT}/lib/libhyper_network.so)\n"
-		"target_link_libraries(@NAME@_ruby_wrap ${HYPER_ROOT}/lib/libhyper_model.so)\n"
-		"target_link_libraries(@NAME@_ruby_wrap ${HYPER_ROOT}/lib/libhyper_logic.so)\n"
-		"set_target_properties(@NAME@_ruby_wrap \n"
-		"						PROPERTIES OUTPUT_NAME @NAME@\n"
-		"						PREFIX \"\")\n"
-		"EXECUTE_PROCESS(COMMAND ${RUBY_EXECUTABLE} -r rbconfig -e \"print Config::CONFIG['sitearch']\"\n"
-		"				OUTPUT_VARIABLE RUBY_SITEARCH)\n"
-		"string(REGEX MATCH \"[0-9]+\\\\.[0-9]+\" RUBY_VERSION \"${RUBY_VERSION}\")\n"
-		"install(TARGETS @NAME@_ruby_wrap\n"
-		"			DESTINATION ${HYPER_ROOT}/lib/ruby/${RUBY_VERSION}/${RUBY_SITEARCH}/hyper)\n"
-		;
-
-
-	oss << hyper::compiler::replace_by(base_cmake1, "@NAME@", name);
-	if (has_func)
-		oss << hyper::compiler::replace_by(build_function, "@NAME@", name);
-
-	oss << base_src;
-	if (has_task)
-		oss << hyper::compiler::replace_by(task_src, "@NAME@", name);
-	if (has_recipe)
-		oss << hyper::compiler::replace_by(recipe_src, "@NAME@", name);
-	oss << hyper::compiler::replace_by(build_ability, "@NAME@", name);
-	if (has_func)
-		oss << hyper::compiler::replace_by(link_function, "@NAME@", name);
-
-	std::set<std::string>::const_iterator it;
-	for (it = depends.begin(); it != depends.end(); ++it) {
-		if (*it != name) {
-			oss << hyper::compiler::replace_by(link_depends, "@NAME@", name);
-			oss << *it << ".so)\n";
-		}
-	}
-
-	oss << hyper::compiler::replace_by(additionnal_link, "@NAME@", name);
-
-	oss << hyper::compiler::replace_by(swig_export, "@NAME@", name);
+	oss << hyper::compiler::replace_by(base_cmake, "@NAME@", name);
 }
 
 /*
@@ -505,10 +394,7 @@ int main(int argc, char** argv)
 		std::string fileName = baseName + "CMakeLists.txt";
 		std::ofstream oss(fileName.c_str());
 		depends d = u.get_function_depends(abilityName);
-		build_base_cmake(oss, abilityName, define_func, 
-						 is_directory_empty(directoryTaskName),
-						 is_directory_empty(directoryRecipeName),
-						 d.fun_depends);
+		build_base_cmake(oss, abilityName,  d.fun_depends);
 	}
 
 	{

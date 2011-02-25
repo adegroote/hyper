@@ -12,4 +12,6 @@ set(HYPER_LIBS hyper_compiler;hyper_logic;hyper_model;hyper_network)
 
 set(HYPER_LIB_DIR @CMAKE_INSTALL_PREFIX@/lib)
 
-set(HYPER_INCLUDE_DIRS @CMAKE_INSTALL_PREFIX@/include)
+set(HYPER_INCLUDE_DIRS @CMAKE_INSTALL_PREFIX@/include/hyper)
+
+include (@CMAKE_INSTALL_PREFIX@/share/hyper/HyperNode.cmake)
