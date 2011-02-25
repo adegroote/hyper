@@ -409,6 +409,26 @@ struct compute_depends
 	}
 };
 
+struct add_include_opaque_type 
+{
+	std::ostream & oss;
+	const typeList& tList;
+	const std::string& name;
+
+	add_include_opaque_type(std::ostream& oss, const typeList& tList,
+						    const std::string& name):
+		oss(oss), tList(tList), name(name)
+	{}
+
+	void operator() (const type& t) const
+	{
+		if (t.t == opaqueType) {
+			std::pair<std::string, std::string> p = scope::decompose(t.name);
+			oss << "#include <" << name << "/opaque_type_"  << p.second;
+			oss << ".hh>\n";
+		}
+	}
+};
 
 size_t
 universe::dump_ability_types(std::ostream& oss, const std::string& name) const
@@ -430,6 +450,11 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 		oss << "#include <boost/serialization/serialization.hpp>\n" << std::endl;
 
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
+
+		std::for_each(types.begin(), types.end(), 
+					  add_include_opaque_type(oss, tList, name));
+
+		oss << "\n\n";
 
 		namespaces n(oss, name);
 		std::for_each(types.begin(), types.end(), 
