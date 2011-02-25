@@ -1,0 +1,15 @@
+# =============================================================================
+# The Hyper Cmake configuration file
+#
+#	* Do not modify !!
+# 
+#	- HYPER_LIBS	: the list of hyper librairies
+#   - HYPER_LIB_DIR : the directory where lib files are
+#   - HYPER_INCLUDE_DIRS : the Hyper include directories
+# =============================================================================
+
+set(HYPER_LIBS hyper_compiler;hyper_logic;hyper_model;hyper_network)
+
+set(HYPER_LIB_DIR @CMAKE_INSTALL_PREFIX@/lib)
+
+set(HYPER_INCLUDE_DIRS @CMAKE_INSTALL_PREFIX@/include)

@@ -78,6 +78,15 @@ install(DIRECTORY include/network include/model include/logic include/compiler
 		DESTINATION ${CMAKE_INSTALL_PREFIX}/include/hyper
 		)
 
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/HyperConfig.cmake.in
+	${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake
+	)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake
+		DESTINATION share/hyper
+)
+
 # hypercc rules
 file(GLOB hyperc_sources ${HYPER_SOURCE_DIR}/src/hyperc/*.cc)
 add_executable(hyperc ${hyperc_sources})
