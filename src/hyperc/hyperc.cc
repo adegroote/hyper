@@ -94,6 +94,18 @@ bool are_file_equals(const path& src, const path& dst)
 	return (src_content == dst_content);
 }
 
+void copy_if_different(const path& file_in, const path& file_out)
+{
+	if (!are_file_equals(file_in, file_out)) {
+		std::cout << "copying " << file_in << " to " << file_out << std::endl;
+		// XXX there is to have a bug when overwriting files, so remove
+		// the file_out before copying the new one
+		if (exists(file_out))
+			remove(file_out);
+		copy_file(file_in, file_out, copy_option::overwrite_if_exists);
+	}
+}
+
 void copy_if_different(const path& base_src, const path& base_dst,
 					   const path& current_path)
 {
@@ -107,15 +119,7 @@ void copy_if_different(const path& base_src, const path& base_dst,
 		if (is_regular_file(itr->path())) {
 			path src_file = src / itr->path().filename();
 			path dst_file = dst / itr->path().filename();
-			if (!are_file_equals(src_file, dst_file)) {
-				std::cout << "copying " << src_file << " to " << dst_file << std::endl;
-				// XXX there is to have a bug when overwriting files, so remove
-				// the dst_file before copying the new one
-				if (exists(dst_file))
-					remove(dst_file);
-				copy_file(src_file, dst_file, copy_option::overwrite_if_exists);
-			}
-
+			copy_if_different(src_file, dst_file);
 		} else if (is_directory(itr->path())) {
 			path current = current_path / itr->path().filename();
 			copy_if_different(base_src, base_dst, current);
@@ -128,6 +132,18 @@ bool is_directory_empty(const path& directory)
 	directory_iterator end_itr;
 	directory_iterator itr(directory);
 	return (itr != end_itr);
+}
+
+void symlink_all(const path& src, const path& dst)
+{
+	directory_iterator end_itr; 
+	for (directory_iterator itr( src ); itr != end_itr; ++itr ) {
+		path src_file = src/itr->path().filename();
+		path dst_file = dst/itr->path().filename();
+		if (!exists(dst_file)) {
+			create_symlink(complete(src_file), complete(dst_file));
+		}
+	}
 }
 
 struct generate_recipe 
@@ -224,16 +240,27 @@ struct generate_task
 	}
 };
 
+static int
+clean_ability(const std::string& abilityName)
+{
+	(void) abilityName;
+	remove_all("src");
+	remove("CMakeLists.txt");
+	remove_all(".hyper");
+}
+
 int main(int argc, char** argv)
 {
 	try {
 	po::options_description desc("Allowed options");
 	desc.add_options()
+		("clean,c", "clean generated files")
 		("help,h", "produce help message")
 		("verbose,v", po::value<int>()->implicit_value(1),
 		 "enable verbosity (optionally specify level)")
 		("include-path,I", po::value< std::vector<std::string> >(), 
 		 "include path")
+		("initial,i", "initial files for user_defined function / type")
 		("input-file", po::value< std::string >(), "input file")
 		;
 
@@ -262,8 +289,16 @@ int main(int argc, char** argv)
 		std::copy(include_dirs.begin(), include_dirs.end(), std::back_inserter(include_dir_path));
 	}
 
+	bool initial = (vm.count("initial") != 0);
+
 	std::string abilityName = vm["input-file"].as < std::string > ();
+
+	if (vm.count("clean")) {
+		return clean_ability(abilityName);
+	}
+
 	std::string baseName = ".hyper/src/";
+	std::string baseUserName = ".hyper/user_defined";
 	std::string directoryName = baseName + abilityName;
 	std::string directoryTaskName = directoryName + "/tasks";
 	std::string directoryRecipeName = directoryName + "/recipes";
@@ -273,7 +308,8 @@ int main(int argc, char** argv)
 	parser P(u, include_dir_path);
 
 	create_directory(".hyper");
-	create_directory(".hyper/src");
+	create_directory(baseName);
+	create_directory(baseUserName);
 	create_directory(directoryName);	
 	create_directory(directoryTaskName);
 	create_directory(directoryRecipeName);
@@ -342,8 +378,6 @@ int main(int argc, char** argv)
 	std::for_each(current_a.task_begin(), current_a.task_end(), 
 			generate_task(u, directoryTaskName));
 
-
-
 	{
 		std::string fileName = directoryName + "/types.hh";
 		std::ofstream oss(fileName.c_str());
@@ -359,11 +393,10 @@ int main(int argc, char** argv)
 			remove(fileName);
 			define_func = false;
 		} else {
-			std::string directoryNameImpl = directoryName + "/funcs/";
+			std::string directoryNameImpl = baseUserName + "/funcs/";
 			create_directories(directoryNameImpl);
 			u.dump_ability_functions_impl(directoryNameImpl, abilityName);
 			define_func = true;
-
 			{
 				std::string fileName = directoryName + "/import.hh";
 				std::ofstream oss(fileName.c_str());
@@ -391,7 +424,7 @@ int main(int argc, char** argv)
 	}
 
 	{
-		std::string fileName = baseName + "CMakeLists.txt";
+		std::string fileName = ".hyper/CMakeLists.txt";
 		std::ofstream oss(fileName.c_str());
 		depends d = u.get_function_depends(abilityName);
 		build_base_cmake(oss, abilityName,  d.fun_depends);
@@ -417,31 +450,23 @@ int main(int argc, char** argv)
 	/* Now for all files in .hyper/src, copy different one into real src */
 	copy_if_different(baseName, "src", "");
 
-	/* copy ability file in src to install it */
-	std::string abilityFileName = abilityName + ".ability";
-	std::string dst_abilityFileName = "src/" + abilityFileName;
+	/* Copy CMakeLists.txt */
+	copy_if_different(".hyper/CMakeLists.txt", "CMakeLists.txt");
 
-	if (exists(dst_abilityFileName))
-		remove(dst_abilityFileName);
-	copy_file(abilityFileName, dst_abilityFileName);
-
-	/* Copy func instanciations */
-	path funcsDirectory = "funcs/";
-	path funcsDirectoryDst = "src/" + abilityName + "/funcs/";
-
+	/* Copy user_defined template */
 	directory_iterator end_itr; 
-	if (define_func && exists(funcsDirectory)) {
-		for (directory_iterator itr( funcsDirectory ); itr != end_itr; ++itr ) {
-			path src_file = funcsDirectory / itr->path().filename();
-			path dst_file = funcsDirectoryDst / itr->path().filename();
-
-			if (exists(dst_file))
-				remove(dst_file);
-			std::cerr << "Copying " << src_file << " to " << dst_file << std::endl;
-			copy_file(src_file, dst_file);
+	if (exists(baseUserName) && initial) {
+		if (exists("user_defined/")) {
+			std::cerr << "Won't copy user_defined template, directory already existing!\n";
+			std::cerr << "You can grab additional definition from .hyper/user_defined\n";
+		} else {
+			copy_if_different(baseUserName, "user_defined", "");
 		}
 	}
 
+	/* Symlink between user_defined files and real impl */
+	if (exists("user_defined"))
+		symlink_all("user_defined/", "src/" + abilityName);
 
 	} catch (std::exception &e) { 
 		std::cerr << e.what() << std::endl;
