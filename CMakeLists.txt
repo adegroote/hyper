@@ -91,6 +91,8 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake share/HyperNode.cmak
 file(GLOB hyperc_sources ${HYPER_SOURCE_DIR}/src/hyperc/*.cc)
 add_executable(hyperc ${hyperc_sources})
 target_link_libraries(hyperc hyper_compiler ${Boost_FILESYSTEM_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+# XXX dl interface is available in libc on BSD
+target_link_libraries(hyperc dl)
 install(TARGETS hyperc DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 # hyperruntime rules

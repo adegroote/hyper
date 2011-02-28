@@ -4,10 +4,12 @@
 #include <fstream>
 #include <set>
 
+#include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include <compiler/depends.hh>
+#include <compiler/extension.hh>
 #include <compiler/parser.hh>
 #include <compiler/universe.hh>
 #include <compiler/utils.hh>
@@ -15,6 +17,8 @@
 #include <compiler/task_parser.hh>
 #include <compiler/recipe.hh>
 #include <compiler/recipe_parser.hh>
+
+#include <dlfcn.h>
 
 using namespace hyper::compiler;
 using namespace boost::filesystem;
@@ -247,7 +251,61 @@ clean_ability(const std::string& abilityName)
 	remove_all("src");
 	remove("CMakeLists.txt");
 	remove_all(".hyper");
+	return 0;
 }
+
+struct close_handle
+{
+	void operator() (const std::pair<std::string, void*>& p) const
+	{
+		dlclose(p.second);
+	}
+};
+
+class extension_manager 
+{
+	typedef std::map<std::string, void*> extension_map;
+	extension_map extension_handle;
+	universe& u;
+
+	public:
+		extension_manager(universe& u) : u(u) {}
+
+		// XXX better handle error
+		void load_extension(const std::string& str)
+		{
+			extension_map::const_iterator it = extension_handle.find(str);
+			if (it != extension_handle.end())
+				return;
+
+			std::string libname = "libhyper_" + str + ".so";
+			void* handle = dlopen(libname.c_str(), RTLD_NOW|RTLD_GLOBAL);
+			char* error;
+			typedef hyper::compiler::extension* (*ptr_ext) ();
+		
+			if (!handle) {
+				std::cerr << "Failed to load " << str << " : " << dlerror();
+				exit(EXIT_FAILURE);
+			}
+		
+			dlerror(); // clear any existing error
+		
+			ptr_ext init = (ptr_ext) dlsym(handle, "init");
+		
+			if ((error = dlerror()) != NULL) {
+				std::cerr << "Failed to load init symbol : " << error;
+				exit(EXIT_FAILURE);
+			}
+		
+			u.add_extension(str, init());
+		}
+
+		~extension_manager() {
+			std::for_each(extension_handle.begin(),
+						  extension_handle.end(),
+						  close_handle());
+		}
+};
 
 int main(int argc, char** argv)
 {
@@ -260,6 +318,8 @@ int main(int argc, char** argv)
 		 "enable verbosity (optionally specify level)")
 		("include-path,I", po::value< std::vector<std::string> >(), 
 		 "include path")
+		("extension,e", po::value <std::vector<std::string> >(),
+		 "extension")
 		("initial,i", "initial files for user_defined function / type")
 		("input-file", po::value< std::string >(), "input file")
 		;
@@ -289,6 +349,7 @@ int main(int argc, char** argv)
 		std::copy(include_dirs.begin(), include_dirs.end(), std::back_inserter(include_dir_path));
 	}
 
+
 	bool initial = (vm.count("initial") != 0);
 
 	std::string abilityName = vm["input-file"].as < std::string > ();
@@ -305,6 +366,14 @@ int main(int argc, char** argv)
 	std::string taskDirectory = abilityName;
 
 	universe u;
+	extension_manager manager(u);
+
+	if (vm.count("extension")) {
+		std::vector<std::string> extensions_to_load = vm["extension"].as < std::vector<std::string> >();
+		std::for_each(extensions_to_load.begin(), extensions_to_load.end(),
+						boost::bind(&extension_manager::load_extension, manager, _1));
+	}
+
 	parser P(u, include_dir_path);
 
 	create_directory(".hyper");
