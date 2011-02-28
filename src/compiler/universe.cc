@@ -7,6 +7,7 @@
 #include <boost/make_shared.hpp>
 
 #include <compiler/ability_parser.hh>
+#include <compiler/extension.hh>
 #include <compiler/output.hh>
 #include <compiler/universe.hh>
 #include <compiler/scope.hh>
@@ -531,6 +532,25 @@ struct compute_fun_depends
 	}
 };
 
+struct output_proto_helper 
+{
+	std::ostream& oss;
+	const universe& u;
+
+	output_proto_helper(std::ostream& oss, const universe& u):
+		oss(oss), u(u)
+	{}
+
+	void operator() (const functionDef& def) const
+	{
+		boost::optional<std::string> tag = def.tag();
+		if (!tag)
+			def.output_proto(oss, u.types());
+		else
+			u.get_extension(*tag).function_proto(oss, def, u.types());
+	}
+};
+
 size_t
 universe::dump_ability_functions_proto(std::ostream& oss, const std::string& name) const
 {
@@ -551,8 +571,7 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 		oss << "#include <boost/mpl/vector.hpp>\n\n"; 
 
 		namespaces n(oss, name);
-		std::for_each(funcs.begin(), funcs.end(), 
-				boost::bind(&functionDef::output_proto, _1, boost::ref(oss), boost::ref(tList)));
+		std::for_each(funcs.begin(), funcs.end(), output_proto_helper(oss, *this));
 	}
 
 	return funcs.size();
@@ -659,5 +678,19 @@ universe::get_ability(const std::string& name) const
 	if (it == abilities.end()) {
 		assert(false);
 	}
+	return *(it->second);
+}
+
+void
+universe::add_extension(const std::string& name, extension* ext)
+{
+	extensions[name] = boost::shared_ptr<extension>(ext);
+}
+
+const extension&
+universe::get_extension(const std::string& name) const
+{
+	extensionMap::const_iterator it = extensions.find(name);
+	assert(it != extensions.end());
 	return *(it->second);
 }

@@ -74,7 +74,7 @@ foreach(lib compiler network logic model)
 endforeach(lib)
 
 # install rules for include
-install(DIRECTORY include/network include/model include/logic include/compiler 
+install(DIRECTORY include/
 		DESTINATION ${CMAKE_INSTALL_PREFIX}/include/hyper
 		)
 

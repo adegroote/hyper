@@ -24,12 +24,16 @@ namespace hyper {
 		struct ability_decl;
 		class ability;
 		struct recipe_expression;
+		struct extension;
 
 		class universe : public boost::noncopyable
 		{
 			private:
 				typedef std::map< std::string, boost::shared_ptr<ability> > abilityMap;
 				abilityMap abilities;
+
+				typedef std::map < std::string, boost::shared_ptr<extension> > extensionMap;
+				extensionMap extensions;
 
 				typeList tList;
 				functionDefList fList;
@@ -83,6 +87,9 @@ namespace hyper {
 
 				ability& get_ability(const std::string& name);
 				const ability& get_ability(const std::string& name) const;
+
+				void add_extension(const std::string&, extension*);
+				const extension& get_extension(const std::string&) const;
 		};
 	}
 }
