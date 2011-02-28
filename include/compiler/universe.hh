@@ -71,6 +71,8 @@ namespace hyper {
 				const functionDefList& funcs() const { return fList; };
 
 				size_t dump_ability_types(std::ostream& os, const std::string& abilityName) const;
+				void dump_ability_opaque_types_def(const std::string& directoryName,
+												   const std::string& name) const;
 				size_t dump_ability_functions_proto(std::ostream& oss, const std::string& name) const;
 				size_t dump_ability_functions_impl(const std::string& directoryName, 
 												   const std::string& name) const;

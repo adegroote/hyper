@@ -385,6 +385,10 @@ int main(int argc, char** argv)
 			remove(fileName);;
 	}
 
+	{
+		u.dump_ability_opaque_types_def(baseUserName, abilityName);
+	}
+
 	bool define_func = false;
 	{
 		std::string fileName = directoryName + "/funcs.hh";

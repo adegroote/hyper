@@ -464,6 +464,40 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 	return types.size();
 }
 
+struct generated_opaque_include_def
+{
+	const std::string& directoryName;
+	const std::string& name;
+
+	generated_opaque_include_def(const std::string& directoryName, const std::string& name) :
+		directoryName(directoryName), name(name) 
+	{}
+
+	void operator() (const type& t) const
+	{
+		if (t.t == opaqueType) {
+			std::pair<std::string, std::string> p = scope::decompose(t.name);
+			std::ofstream oss((directoryName + "/opaque_type_" + p.second + ".hh").c_str());
+
+			guards g(oss, name, "OPAQUE_TYPE_" + p.second + "_HH_");
+			namespaces n(oss, name);
+			oss << "\t\t\tstruct " << p.second << "\n";
+			oss << "\t\t\t{\n";
+			oss << "\t\t\t};\n";
+		}
+	}
+};
+
+void
+universe::dump_ability_opaque_types_def(const std::string& directoryName, 
+										const std::string& name) const
+{
+	// find types prefixed by name::
+	std::vector<type> types = tList.select(select_ability_type(name));
+
+	std::for_each(types.begin(), types.end(), generated_opaque_include_def(directoryName, name));
+}
+
 struct select_ability_funs
 {
 	std::string search_string;
