@@ -39,13 +39,18 @@ macro(HYPER_NODE node)
 	message(STATUS "boost libraries "${Boost_LIBRARIES})
 
 	set(base_directory src/${node})
+
+	if (EXISTS ${CMAKE_SOURCE_DIR}/${base_directory}/CMakeLists.txt)
+		include(${CMAKE_SOURCE_DIR}/${base_directory}/CMakeLists.txt)
+	endif()
 	
 	include_directories(${CMAKE_SOURCE_DIR}/src)
 	include_directories(${HYPER_INCLUDE_DIRS})
 
 	if (EXISTS ${CMAKE_SOURCE_DIR}/${base_directory}/import.cc)
 		file(GLOB funcs ${base_directory}/funcs/*.cc)
-		add_library(hyper_${node} SHARED ${funcs} ${base_directory}/import.cc)
+		add_library(hyper_${node} SHARED ${funcs} ${base_directory}/import.cc ${USER_SRCS})
+		target_link_libraries(hyper_${node} ${USER_LIBS})
 		install(TARGETS hyper_${node} DESTINATION lib/hyper/)
 		install(FILES ${base_directory}/funcs.hh ${base_directory}/import.hh
 				DESTINATION include/hyper/${node})
