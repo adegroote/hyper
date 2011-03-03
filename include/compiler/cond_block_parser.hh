@@ -30,27 +30,27 @@ namespace hyper {
 				using namespace qi::labels;
 
 				start = pre_cond
-						>> post_cond
+						> post_cond
 						;
 		
 				pre_cond = lit("pre")
-						 >> lit("=")
-						 >> cond
+						 > lit("=")
+						 > cond
 						 ;
 		
 				post_cond = lit("post")
-						  >> lit("=")
-						  >> cond
+						  > lit("=")
+						  > cond
 						  ;
 		
 				cond = 
 					 lit('{')
-					 >> *( lit('{')
-						   >> expression
-						   >> lit('}')
+					 > *( lit('{')
+						   > expression
+						   > lit('}')
 						 )
-					 >> lit('}')
-					 >> -lit(';')
+					 > lit('}')
+					 > -lit(';')
 					 ;
 		
 				start.name("block cond");

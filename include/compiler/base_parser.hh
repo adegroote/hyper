@@ -94,7 +94,7 @@ namespace hyper {
 			identifier_grammar() : identifier_grammar::base_type(start)
 			{
 				using namespace qi::labels;
-				start = (qi::alpha | '_') >> *(qi::alnum | '_');
+				start = (qi::alpha | '_') > *(qi::alnum | '_');
 
 				start.name("identifier");
 				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
@@ -110,8 +110,8 @@ namespace hyper {
 			{
 				using namespace qi::labels;
 				start = id		[_val = _1]
-					>> -(*("::"	
-								>> id		[_val = gen(_val, _1)]
+					> -(*("::"	
+								> id		[_val = gen(_val, _1)]
 						  )
 						)
 					;
@@ -132,8 +132,8 @@ namespace hyper {
 			{
 				using namespace qi::labels;
 				start = '"' 
-					>> *(qi::lexeme[qi::char_ - '"'] [_val+= _1]) 
-					>> '"'
+					> *(qi::lexeme[qi::char_ - '"'] [_val+= _1]) 
+					> '"'
 					;
 
 				start.name("const_string");
@@ -193,11 +193,10 @@ namespace hyper {
 			atom_grammar() : atom_grammar::base_type(start)
 			{
 				using namespace qi::labels;
-				start =  (
-						  constant
+				start =   constant
 						| var_inst 			   
-						);
-		
+						;
+
 				var_inst = scoped_identifier;
 
 				start.name("atom");
@@ -235,14 +234,14 @@ namespace hyper {
 		
 				equality_expr =
 					relational_expr								[_val = _1]
-					>> *(	("==" > relational_expr      [bind(&expression_ast::binary<EQ>, _val, _1)])
+					> *(	("==" > relational_expr      [bind(&expression_ast::binary<EQ>, _val, _1)])
 						|   ("!=" > relational_expr     [bind(&expression_ast::binary<NEQ>, _val, _1)])
 						)
 					;
 		
 				relational_expr =
 					logical_expr								[_val = _1]
-					>> *(	("<=" > logical_expr        [bind(&expression_ast::binary<LTE>, _val, _1)])
+					> *(	("<=" > logical_expr        [bind(&expression_ast::binary<LTE>, _val, _1)])
 						|   ('<' > logical_expr         [bind(&expression_ast::binary<LT>, _val, _1)])
 						|   (">=" > logical_expr        [bind(&expression_ast::binary<GTE>, _val, _1)])
 						|   ('>' > logical_expr         [bind(&expression_ast::binary<GT>, _val, _1)])
@@ -251,12 +250,12 @@ namespace hyper {
 		
 				logical_and_expr =
 					additive_expr								[_val = _1]
-					>> *(  "&&" > additive_expr			[bind(&expression_ast::binary<AND>, _val, _1)])
+					> *(  "&&" > additive_expr			[bind(&expression_ast::binary<AND>, _val, _1)])
 					;
 		
 				logical_or_expr =
 					logical_and_expr							[_val = _1]
-					>> *("||" > logical_and_expr			[bind(&expression_ast::binary<OR>, _val, _1)])
+					> *("||" > logical_and_expr			[bind(&expression_ast::binary<OR>, _val, _1)])
 					;
 		
 				logical_expr = logical_or_expr.alias()
@@ -264,14 +263,14 @@ namespace hyper {
 						
 				additive_expr =
 					multiplicative_expr						[_val = _1]
-					>> *(	('+' > multiplicative_expr	[bind(&expression_ast::binary<ADD>, _val, _1)])
+					> *(	('+' > multiplicative_expr	[bind(&expression_ast::binary<ADD>, _val, _1)])
 						|   ('-' > multiplicative_expr  [bind(&expression_ast::binary<SUB>, _val, _1)])
 						)
 					;
 		
 				multiplicative_expr =
 					unary_expr							[_val = _1]
-					>> *(	('*' > unary_expr		[bind(&expression_ast::binary<MUL>, _val, _1)])
+					> *(	('*' > unary_expr		[bind(&expression_ast::binary<MUL>, _val, _1)])
 						|   ('/' > unary_expr       [bind(&expression_ast::binary<DIV>, _val, _1)])
 						)
 					;
@@ -294,12 +293,12 @@ namespace hyper {
 		
 				func_call = scoped_identifier [at_c<0>(_val) = _1]
 						  >> lit('(')
-						  >> -(
+						  > -(
 							   expression		[push_back(at_c<1>(_val), _1)]
-							   >> *( ',' >
+							   > *( ',' >
 								     expression	[push_back(at_c<1>(_val), _1)])
 							  )
-						  >> lit(')')
+						  > lit(')')
 						  ;
 		
 				expression.name("expression declaration");

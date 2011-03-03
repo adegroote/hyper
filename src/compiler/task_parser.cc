@@ -77,12 +77,12 @@ struct  grammar_task : qi::grammar<Iterator, task_decl_list(), white_space<Itera
 		task_list = (*task);
 
 		task = scoped_identifier
-			 >> lit('=')
-			 >> lit("task")
-			 >> lit('{')
-			 >> cond_block
-			 >> lit('}')
-			 >> -lit(';')
+			 > lit('=')
+			 > lit("task")
+			 > lit('{')
+			 > cond_block
+			 > lit('}')
+			 > -lit(';')
 			 ;
 
 		task_decl_.name("task_decl");

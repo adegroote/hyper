@@ -120,7 +120,7 @@ struct initializer_grammar: qi::grammar<Iterator, expression_ast(), white_space<
 
 		task_call = identifier [at_c<0>(_val) = _1]
 					>> qi::lit('(')
-					>> qi::lit(')')
+					> qi::lit(')')
 			;
 
 		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
@@ -160,62 +160,62 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 
 		ability_ = 
 				  identifier
-				  >> lit('=')
-				  >> lit("ability")
-				  >> lit('{')
-				  >> ability_description
-				  >> lit('}')
-				  >> -lit(';')
+				  > lit('=')
+				  > lit("ability")
+				  > lit('{')
+				  > ability_description
+				  > lit('}')
+				  > -lit(';')
 				  ;
 
 		ability_description = 
 				        block_context		[swap(_val, _1)]
-					>> -block_tasks
-				    >> -block_definition	[swap(at_c<3>(_val), _1)]
+					> -block_tasks
+				    > -block_definition	[swap(at_c<3>(_val), _1)]
 					;	
 
 		block_context =
 				  lit("context")
-				  >> lit('=')
-				  >> lit('{')
-				  >> block_variable
-				  >> block_variable
-				  >> block_variable
-				  >> lit('}')
+				  > lit('=')
+				  > lit('{')
+				  > block_variable
+				  > block_variable
+				  > block_variable
+				  > lit('}')
 				  ;
 
 		block_variable =
 				  lit('{')
-				  >> v_decl_list		 [swap(_val, _1)]
-				  >> lit('}')
+				  > v_decl_list		 [swap(_val, _1)]
+				  > lit('}')
 				  ;
 
 		block_tasks = 
 				  lit("tasks")
-				  >> lit('=')
-				  >> lit('{')
-				  >> lit('}')
+				  > lit('=')
+				  > lit('{')
+				  > lit('}')
 				  ;
 
 		block_definition =
 				 lit("export")
-				 >> lit('=')
-				 >> lit('{')
-				 >> block_type_decl
-				 >> block_function_decl
-				 >> lit('}')
+				 > lit('=')
+				 > lit('{')
+				 > block_type_decl
+				 > block_function_decl
+				 > lit('}')
 				 ;
 
 		block_type_decl =
 				lit('{')
-				>> type_decl_list_
-				>> lit('}')
+				> type_decl_list_
+				> lit('}')
 				;
 
 		block_function_decl =
 				lit('{')
-				>> f_decl_list
-				>> lit('}')
+				> f_decl_list
+				> lit('}')
 				;
 
 
@@ -224,27 +224,27 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				   ;
 
 		v_decl   =  scoped_identifier		[at_c<0>(_a) = _1]
-				 >> identifier				[at_c<1>(_a) = _1]
+				 > identifier				[at_c<1>(_a) = _1]
 				 >> -( lit('=') > initializer [at_c<2>(_a) = _1])
-				 >> 
+				 > 
 					   *(lit(',')			[push_back(at_c<0>(_val), _a)]
-						 >> identifier		[at_c<1>(_a) = _1]
-						 >> -(lit('=') > initializer [at_c<2>(_a) = _1])
+						 > identifier		[at_c<1>(_a) = _1]
+						 > -(lit('=') > initializer [at_c<2>(_a) = _1])
 						)
-				 >> lit(';')				[push_back(at_c<0>(_val), _a)]
+				 > lit(';')				[push_back(at_c<0>(_val), _a)]
 		;
 
 		f_decl_list =(*f_decl);
 
-		tag_decl = lit('@') >> identifier;
+		tag_decl = lit('@') > identifier;
 
 		f_decl =  -(tag_decl								    [at_c<3>(_val) = _1])
 			   >> scoped_identifier								[at_c<1>(_val) = _1]
-			   >> identifier									[at_c<0>(_val) = _1]
-			   >> lit('(')
+			   > identifier									[at_c<0>(_val) = _1]
+			   > lit('(')
 			   > -((
 					scoped_identifier							[push_back(at_c<2>(_val),_1)]
-					>> - identifier
+					> - identifier
 				   ) % ','
 				  )
 			   > lit(')')
@@ -268,23 +268,23 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 		structure_decl = identifier
 					  >> lit('=')
 					  >> lit("struct")
-					  >> lit('{')
-					  >> v_decl_list
-					  >> lit('}')
-					  >> -lit(';')
+					  > lit('{')
+					  > v_decl_list
+					  > lit('}')
+					  > -lit(';')
 					  ;
 
 		new_type_decl = identifier			
 					 >> lit('=')
 					 >> lit("newtype")
-					 >> scoped_identifier
-					 >> -lit(';')		
+					 > scoped_identifier
+					 > -lit(';')		
 					 ;
 
 		opaque_decl_ = identifier 
 					 >> lit('=')
 					 >> lit ("opaquetype")
-					 >> -lit(';')
+					 > -lit(';')
 					 ;
 
 

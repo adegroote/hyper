@@ -124,8 +124,8 @@ namespace hyper {
 					;
 
 				import =	qi::lit("import")
-					>> constant_string
-					>> -qi::lit(';')
+					> constant_string
+					> -qi::lit(';')
 					;
 
 				start.name("import list");

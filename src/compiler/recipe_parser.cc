@@ -103,7 +103,7 @@ struct body_block_grammar :
 					|	set_decl_
 					|	expression
 					)
-					>> -lit(';')
+					> -lit(';')
 					;
 
 		/* 
@@ -111,35 +111,35 @@ struct body_block_grammar :
 		 * and expression
 		 */
 		let_decl_ = lit("let")
-				 >> identifier
-				 >> body_decl
+				 > identifier
+				 > body_decl
 				 ;
 
 		make_decl_ = lit("make")
-				  >> lit("(")
-				  >> expression_list
-				  >> lit(")")
+				  > lit("(")
+				  > expression_list
+				  > lit(")")
 				  ;
 
 		set_decl_ = lit("set")
-				 >> scoped_identifier
-				 >> expression
+				 > scoped_identifier
+				 > expression
 				 ;
 
 		ensure_decl_ = lit("ensure")
-				  >> lit("(")
-				  >> expression_list
-				  >> lit(")")
+				  > lit("(")
+				  > expression_list
+				  > lit(")")
 				  ;
 
 		abort_decl_ = lit("abort")
-				   >> identifier
+				   > identifier
 				   ;
 
 		wait_decl_ = lit("wait")
-				  >> lit("(")
-				  >> expression
-				  >> lit(")")
+				  > lit("(")
+				  > expression
+				  > lit(")")
 				  ;
 
 		expression_list = expression % lit("=>>");
@@ -198,18 +198,18 @@ struct  grammar_recipe :
 	    using qi::lit;
         using namespace qi::labels;
 
-		start = import_list >> recipe_list;
+		start = import_list > recipe_list;
 
 		recipe_list = (*recipe);
 
 		recipe = scoped_identifier
-			 >> lit('=')
-			 >> lit("recipe")
-			 >> lit("{")
-			 >> cond_block
-			 >> body_block
-			 >> lit('}')
-			 >> -lit(';')
+			 > lit('=')
+			 > lit("recipe")
+			 > lit("{")
+			 > cond_block
+			 > body_block
+			 > lit('}')
+			 > -lit(';')
 			 ;
 
 		start.name("recipe list");
