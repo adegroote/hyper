@@ -9,6 +9,7 @@
 
 namespace {
 	typedef boost::mpl::vector<hyper::network::log_msg,
+							   hyper::network::inform_new_agent,
 							   hyper::network::inform_death_agent> input_msg;
 	typedef boost::mpl::vector<boost::mpl::void_> output_msg;
 
@@ -30,6 +31,26 @@ namespace {
 		output_variant operator() (const hyper::network::inform_death_agent& msg) const
 		{
 			// don't care but avoids some warning message
+			std::ostringstream oss;
+			oss << "Following agent(s) die : ";
+			std::copy(msg.dead_agents.begin(), msg.dead_agents.end(),
+					  std::ostream_iterator<std::string>(oss, ", "));
+			hyper::network::log_msg log("runtime", oss.str());
+			log_msgs_.push_back(log);
+
+			return boost::mpl::void_();
+		}
+
+		output_variant operator() (const hyper::network::inform_new_agent& msg) const
+		{
+			std::cout << "new agent msg" << std::endl;
+			std::ostringstream oss;
+			oss << "New agent(s) in the system : ";
+			std::copy(msg.new_agents.begin(), msg.new_agents.end(),
+					  std::ostream_iterator<std::string>(oss, ", "));
+			hyper::network::log_msg log("runtime", oss.str());
+			log_msgs_.push_back(log);
+
 			return boost::mpl::void_();
 		}
 	};

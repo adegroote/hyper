@@ -19,6 +19,8 @@ namespace {
 							   network::request_constraint,
 							   network::variable_value,
 							   network::request_constraint_answer,
+							   network::inform_new_agent,
+							   network::list_agents,
 							   network::inform_death_agent,
 							   network::terminate> input_msg;
 	typedef boost::mpl::vector<network::variable_value,
@@ -136,6 +138,16 @@ namespace {
 		{
 			a.logger(INFORMATION) << "Exiting by terminaison request : " << t.reason << std::endl;
 			a.stop();
+			return boost::mpl::void_();
+		}
+
+		output_variant operator() (const network::inform_new_agent& a) const
+		{
+			return boost::mpl::void_();
+		}
+
+		output_variant operator() (const network::list_agents& a) const
+		{
 			return boost::mpl::void_();
 		}
 	};

@@ -7,10 +7,12 @@ using namespace hyper;
 namespace details {
 	typedef boost::mpl::vector<network::request_name,
 							   network::register_name,
+							   network::request_list_agents,
 							   network::ping
 							   > input_msg;
 	typedef boost::mpl::vector<network::request_name_answer,
 								network::register_name_answer,
+								network::list_agents,
 								boost::mpl::void_ 
 							    > output_msg;
 
@@ -56,14 +58,47 @@ namespace details {
 
 	typedef hyper::network::actor_client_database<runtime_actor> client_db;
 
+	void handle_new_agent_write(const boost::system::error_code& e,
+							    boost::shared_ptr<network::inform_new_agent> ptr)
+	{
+		// let the system release the last reference on ptr
+	}
+
+	struct broadcast_inform  {
+		boost::shared_ptr<network::inform_new_agent> ptr;
+		client_db &db;
+
+		broadcast_inform (boost::shared_ptr<network::inform_new_agent> ptr_,
+						 client_db& db) :
+			ptr(ptr_), db(db) {}
+
+		void operator() (const std::pair<std::string, ability_context>& p) const
+		{
+			std::vector<std::string>::const_iterator it;
+			it = std::find(ptr->new_agents.begin(), ptr->new_agents.end(),
+						   p.first);
+			/* Don't send a message to new agent, they know their own existence */
+			if (it != ptr->new_agents.end())
+				return; 
+
+			db[p.first].async_write(*ptr, 
+					boost::bind(&handle_new_agent_write,
+						boost::asio::placeholders::error,
+						ptr));
+		}
+	};
+
+
 	struct runtime_visitor : public boost::static_visitor<output_variant>
 	{
 		runtime_map &map;
 		network::tcp::ns_port_generator& gen;
+		client_db &db;
 
 		runtime_visitor(runtime_map& map_, 
-						network::tcp::ns_port_generator& gen_) :
-			map(map_), gen(gen_) 
+						network::tcp::ns_port_generator& gen_,
+						client_db &db) :
+			map(map_), gen(gen_), db(db)
 		{}
 
 		output_variant operator() (const network::request_name& r) const
@@ -103,6 +138,12 @@ namespace details {
 			res_msg.success = !already_here;
 
 			std::cerr << "answering to name register request : " << res_msg << std::endl;
+
+			boost::shared_ptr<network::inform_new_agent> ptr_msg;
+			ptr_msg = boost::make_shared<network::inform_new_agent>();
+			ptr_msg->new_agents.push_back(r.name);
+			std::for_each(map.begin(), map.end(), broadcast_inform(ptr_msg, db));
+
 			return res_msg;
 		}
 
@@ -113,6 +154,23 @@ namespace details {
 				it->second.timeout_occurence = 0;
 
 			return boost::mpl::void_();
+		}
+
+		struct agent_name
+		{
+			std::string operator() (const std::pair<std::string, ability_context>& p) const
+			{
+				return p.first;
+			}
+		};
+
+		output_variant operator() (const network::request_list_agents& p) const
+		{
+			network::list_agents agents;
+			std::transform(map.begin(), map.end(), std::back_inserter(agents.all_agents),
+						   agent_name());
+
+			return agents;
 		}
 	};
 
@@ -210,7 +268,7 @@ int main()
 	details::client_db db(actor);
 
 	network::tcp::ns_port_generator gen("5000");
-	details::runtime_visitor runtime_vis(map, gen);
+	details::runtime_visitor runtime_vis(map, gen, db);
 
 	typedef network::tcp::server<details::input_msg, 
 								  details::output_msg, 
