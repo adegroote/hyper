@@ -66,11 +66,11 @@ macro(HYPER_NODE node)
 	add_executable(${node} ${SRC})
 	set_property(TARGET ${node} PROPERTY OUTPUT_NAME hyper_${node})
 	install(TARGETS ${node}
-			 DESTINATION ${HYPER_ROOT}/bin)
+			 DESTINATION bin)
 	install(FILES ${base_directory}/types.hh
-			 DESTINATION ${HYPER_ROOT}/include/hyper/${node})
+			 DESTINATION include/hyper/${node})
 	install(FILES ${node}.ability
-			 DESTINATION ${HYPER_ROOT}/share/hyper)
+			 DESTINATION share/hyper)
 	if (EXISTS ${CMAKE_SOURCE_DIR}/${base_directory}/import.cc)
 		target_link_libraries(${node} hyper_${node})
 	endif()
