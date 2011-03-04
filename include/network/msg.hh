@@ -174,6 +174,46 @@ namespace hyper {
 				identifier value;
 		};
 
+		struct request_list_agents
+		{
+			private:
+				friend class boost::serialization::access;
+				template<class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+				}
+			public:
+		};
+
+		struct list_agents 
+		{
+			private:
+				friend class boost::serialization::access;
+				template<class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & all_agents;
+				}
+			public:
+				std::vector<std::string> all_agents;
+		};
+
+		struct inform_new_agent 
+		{
+			private:
+				friend class boost::serialization::access;
+				template<class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & new_agents;
+				}
+			public:
+				std::vector<std::string> new_agents;
+		};
+
 		struct inform_death_agent
 		{
 			private:
@@ -312,12 +352,15 @@ namespace hyper {
 				terminate(const std::string& src) : reason(src) {}
 		};
 
-		typedef boost::mpl::vector13<
+		typedef boost::mpl::vector16<
 			request_name,
 			request_name_answer,
 			register_name,
 			register_name_answer,
 			ping,
+			request_list_agents,
+			list_agents,
+			inform_new_agent,
 			inform_death_agent,
 			request_variable_value,
 			variable_value,
@@ -328,7 +371,7 @@ namespace hyper {
 			terminate
 		> message_types;
 
-#define MESSAGE_TYPE_MAX 13
+#define MESSAGE_TYPE_MAX 16
 
 		typedef boost::make_variant_over<message_types>::type message_variant;
 
