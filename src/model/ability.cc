@@ -109,13 +109,13 @@ namespace {
 
 		output_variant operator() (const network::variable_value& v) const
 		{
-			a.logger(INFORMATION) << "[" << v.src << "," << v.id << "] Answer " << std::endl;
+			a.logger(INFORMATION) << "[" << v.src << ", " << v.id << "] Answer " << std::endl;
 			return actor_vis(v);
 		}
 
 		output_variant operator() (const network::request_constraint_answer& v) const
 		{
-			a.logger(INFORMATION) << "[" << v.src << "," << v.id << "] Answer " << std::endl;
+			a.logger(INFORMATION) << "[" << v.src << ", " << v.id << "] Answer " << std::endl;
 			return actor_vis(v);
 		}
 
