@@ -10,6 +10,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+#include <compiler/utils.hh>
 #include <network/socket_tcp_serialized.hh>
 
 namespace hyper {
@@ -235,6 +236,23 @@ namespace hyper {
 					{
 						init(endpoint);
 					}
+
+					server(const Answer& ans, boost::asio::io_service& io_s) :
+						io_service_(io_s),
+						acceptor_(io_service_),
+						connection_manager_(),
+						new_connection_(
+							new connection<InputM, OutputM, Answer> (
+									io_service_, 
+									connection_manager_,
+									ans)),
+						answer_(ans)
+					{
+						boost::asio::ip::tcp::endpoint endpoint(
+								boost::asio::ip::address_v4::any(),
+								0);
+						init(endpoint);
+					}
 									
 				  /* stop the server */
 				  void stop()
@@ -244,6 +262,32 @@ namespace hyper {
 					   * is safe to call from any thread. 
 					   * */
 					  io_service_.post(boost::bind(&server::handle_stop, this));
+				  }
+
+				  struct is_v4 {
+					  typedef boost::asio::ip::tcp::endpoint argument_type;
+					  typedef bool result_type;
+
+					  bool operator() (const boost::asio::ip::tcp::endpoint& end) const
+					  {
+						  return end.address().is_v4();
+					  }
+				  };
+
+				  std::vector<boost::asio::ip::tcp::endpoint>
+				  local_endpoints() { 
+					  using namespace boost::asio;
+					  ip::tcp::endpoint endpoint = acceptor_.local_endpoint();
+					  ip::tcp::resolver resolver(io_service_);
+					  std::ostringstream oss;
+					  oss << endpoint.port();
+					  ip::tcp::resolver::query query(ip::host_name(), oss.str());
+					  ip::tcp::resolver::iterator it = resolver.resolve(query);
+					  ip::tcp::resolver::iterator end;
+
+					  std::vector<ip::tcp::endpoint> res;
+					  hyper::compiler::copy_if(it, end, std::back_inserter(res), is_v4());
+					  return res;
 				  }
 
 				private:
