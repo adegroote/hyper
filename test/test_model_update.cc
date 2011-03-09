@@ -49,6 +49,7 @@ namespace {
 		void handle_second_test(const boost::system::error_code& e)
 		{
 			BOOST_CHECK(!e);
+			std::cout << "handle_second_test " << e << std::endl;
 			BOOST_CHECK(pos.x == 42.0);
 			BOOST_CHECK(pos.y == 3);
 			BOOST_CHECK(pos.z == 42);

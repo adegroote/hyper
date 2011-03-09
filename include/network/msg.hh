@@ -21,6 +21,39 @@
 
 #include <boost/variant.hpp>
 
+namespace boost {
+	namespace serialization {
+		template<class Archive>
+		void save(Archive& ar, const boost::asio::ip::tcp::endpoint& e, const unsigned int version)
+		{
+			(void) version;
+			std::string addr = e.address().to_string();
+			unsigned short port = e.port();
+			ar & addr & port;
+		}
+
+		template<class Archive>
+		void load(Archive& ar, boost::asio::ip::tcp::endpoint& e, const unsigned int version)
+		{
+			(void) version;
+			std::string addr;
+			boost::asio::ip::address address;
+			unsigned short port;
+
+			ar & addr & port;
+
+			address = boost::asio::ip::address::from_string(addr);
+			e = boost::asio::ip::tcp::endpoint(address, port);
+		}
+
+		template<class Archive>
+		void serialize(Archive & ar, boost::asio::ip::tcp::endpoint& e, const unsigned int version)
+		{
+			split_free(ar, e, version); 
+		}
+	}
+}
+
 namespace hyper {
 	namespace network {
 
@@ -52,47 +85,16 @@ namespace hyper {
 			private:
 				friend class boost::serialization::access;
 				template<class Archive>
-				void save(Archive & ar, const unsigned int version) const
+				void serialize(Archive & ar, const unsigned int version)
 				{
 					(void) version;
-					unsigned short port;
-					std::string addr;
-					ar & name;
-					ar & success;
-					if (success) {
-						addr = endpoint.address().to_string();
-						port =  endpoint.port();
-
-						ar & addr;
-						ar & port;
-					}
+					ar & name & success & endpoints;
 				}
-
-				template <class Archive>
-				void load(Archive & ar, const unsigned int version)
-				{
-					(void) version;
-					ar & name;
-					ar & success;
-					if (success) {
-						std::string addr;
-						boost::asio::ip::address address;
-						unsigned short port;
-
-						ar & addr;
-						ar & port;
-
-						address = boost::asio::ip::address::from_string(addr);
-						endpoint = boost::asio::ip::tcp::endpoint(address, port);
-					}
-				}
-
-				BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 			public:
 				std::string name;
 				bool success;
-				boost::asio::ip::tcp::endpoint endpoint;
+				std::vector<boost::asio::ip::tcp::endpoint> endpoints;
 		};
 
 		struct register_name
@@ -100,14 +102,15 @@ namespace hyper {
 			private:
 				friend class boost::serialization::access;
 				template<class Archive>
-				void serialize(Archive & ar, const unsigned int version)
+				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & name;
+					ar & name & endpoints;
 				}
 
 			public:
 				std::string name;
+				std::vector<boost::asio::ip::tcp::endpoint> endpoints;
 		};
 
 		struct register_name_answer
@@ -115,48 +118,15 @@ namespace hyper {
 			private:
 				friend class boost::serialization::access;
 				template<class Archive>
-				void save(Archive & ar, const unsigned int version) const
+				void serialize(Archive & ar, const unsigned int version) 
 				{
 					(void) version;
-					std::string addr;
-					unsigned short port;
-					ar & name;
-					ar & success;
-
-					if (success) {
-						addr = endpoint.address().to_string();
-						port = endpoint.port();
-
-						ar & addr;
-						ar & port;
-					}
+					ar & name & success;
 				}
 
-				template<class Archive>
-				void load(Archive & ar, const unsigned int version)
-				{
-					(void) version;
-					ar & name;
-					ar & success;
-
-					if (success) {
-						std::string addr;
-						boost::asio::ip::address address;
-						unsigned short port;
-
-						ar & addr;
-						ar & port;
-
-						address = boost::asio::ip::address::from_string(addr);
-						endpoint = boost::asio::ip::tcp::endpoint(address, port);
-					}
-				}
-
-				BOOST_SERIALIZATION_SPLIT_MEMBER()
 			public:
 				std::string name;
 				bool success;
-				boost::asio::ip::tcp::endpoint endpoint;
 		};
 
 		struct ping
@@ -182,8 +152,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
+					ar & id & src;
 				}
 			public:
+				mutable identifier id;
+				mutable std::string src;
 		};
 
 		struct list_agents 
@@ -194,9 +167,11 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & all_agents;
+					ar & id & src & all_agents;
 				}
 			public:
+				mutable identifier id;
+				mutable std::string src;
 				std::vector<std::string> all_agents;
 		};
 

@@ -40,22 +40,25 @@ BOOST_AUTO_TEST_CASE ( network_msg_test )
 	struct request_name_answer request_name_answer1, request_name_answer2;
 	request_name_answer1.success = true;
 	request_name_answer1.name = "myAbility";
-	request_name_answer1.endpoint = boost::asio::ip::tcp::endpoint(
-										boost::asio::ip::address::from_string("127.0.0.1"), 4242);
+	request_name_answer1.endpoints.push_back(boost::asio::ip::tcp::endpoint(
+										boost::asio::ip::address::from_string("127.0.0.1"), 4242));
 
 	try_archive_interface(request_name_answer1, request_name_answer2);
 
 	BOOST_CHECK(request_name_answer1.name == request_name_answer2.name);
 	BOOST_CHECK(request_name_answer1.success == request_name_answer2.success);
-	BOOST_CHECK(request_name_answer1.endpoint == request_name_answer2.endpoint);
+	BOOST_CHECK(request_name_answer1.endpoints == request_name_answer2.endpoints);
 
 
 	struct register_name register_name1, register_name2;
 	register_name1.name = "myAbility";
+	register_name1.endpoints.push_back(boost::asio::ip::tcp::endpoint(
+							  boost::asio::ip::address::from_string("227.0.52.1"), 4242));
 
 	try_archive_interface(register_name1, register_name2);
 
 	BOOST_CHECK(register_name1.name == register_name2.name);
+	BOOST_CHECK(register_name1.endpoints == register_name2.endpoints);
 
 	struct register_name_answer register_name_answer1, register_name_answer2;
 	register_name_answer1.name = "otherAbility";
@@ -67,13 +70,10 @@ BOOST_AUTO_TEST_CASE ( network_msg_test )
 	BOOST_CHECK(register_name_answer1.success == register_name_answer2.success);
 
 	register_name_answer1.success = true;
-	register_name_answer1.endpoint = boost::asio::ip::tcp::endpoint(
-							  boost::asio::ip::address::from_string("227.0.52.1"), 4242);
 
 	try_archive_interface(register_name_answer1, register_name_answer2);
 
 	BOOST_CHECK(register_name_answer1.name == register_name_answer2.name);
 	BOOST_CHECK(register_name_answer1.success == register_name_answer2.success);
-	BOOST_CHECK(register_name_answer1.endpoint == register_name_answer2.endpoint);
 }
 	

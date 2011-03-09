@@ -240,7 +240,7 @@ namespace hyper {
 								boost::tuple<Handler>) =
 							&actor_client::template handle_connect<Input, Handler>;
 
-						c_.async_connect(solver.endpoint(), 
+						c_.async_connect(solver.endpoints(), 
 							boost::bind(f, this, 
 										boost::asio::placeholders::error, 
 										boost::cref(input),

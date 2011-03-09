@@ -44,7 +44,7 @@ void are_equal<request_name_answer> (const request_name_answer& a,
 {
 	BOOST_CHECK(a.name == b.name);
 	BOOST_CHECK(a.success == b.success);
-	BOOST_CHECK(a.endpoint == b.endpoint);
+	BOOST_CHECK(a.endpoints == b.endpoints);
 }
 
 template <>
@@ -52,6 +52,7 @@ void are_equal<register_name> (const register_name& a,
 							   const register_name& b)
 {
 	BOOST_CHECK(a.name == b.name);
+	BOOST_CHECK(a.endpoints == b.endpoints);
 }
 
 template <>
@@ -60,9 +61,6 @@ void are_equal<register_name_answer> (const register_name_answer&a,
 {
 	BOOST_CHECK(a.name == b.name);
 	BOOST_CHECK(a.success == b.success);
-	if (a.success) {
-		BOOST_CHECK(a.endpoint == b.endpoint);
-	}
 }
 
 template <typename OutputM>
@@ -193,14 +191,16 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 	struct request_name_answer request_name_answer1, request_name_answer2;
 	request_name_answer1.success = true;
 	request_name_answer1.name = "myAbility";
-	request_name_answer1.endpoint = boost::asio::ip::tcp::endpoint(
-										boost::asio::ip::address::from_string("127.0.0.1"), 4242);
+	request_name_answer1.endpoints.push_back(boost::asio::ip::tcp::endpoint(
+										boost::asio::ip::address::from_string("127.0.0.1"), 4242));
 
 	c.request(request_name_answer1, request_name_answer2);
 	are_equal(request_name_answer1, request_name_answer2);
 
 	struct register_name register_name1, register_name2;
 	register_name1.name = "myAbility";
+	register_name1.endpoints.push_back(boost::asio::ip::tcp::endpoint(
+							  boost::asio::ip::address::from_string("227.0.52.1"), 4242));
 
 	c.request(register_name1, register_name2);
 	are_equal(register_name1, register_name2);
@@ -214,8 +214,6 @@ BOOST_AUTO_TEST_CASE ( network_tcp_async_test )
 	are_equal(register_name_answer1, register_name_answer2);
 
 	register_name_answer1.success = true;
-	register_name_answer1.endpoint = boost::asio::ip::tcp::endpoint(
-							  boost::asio::ip::address::from_string("227.0.52.1"), 4242);
 
 	c.request(register_name_answer1, register_name_answer2);
 	are_equal(register_name_answer1, register_name_answer2);

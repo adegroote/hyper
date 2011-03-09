@@ -139,15 +139,14 @@ int main()
 	std::vector<hyper::network::log_msg> msgs;
 
 	hyper::network::name_client name_client_(io_s, "localhost", "4242");
-	std::pair<bool, boost::asio::ip::tcp::endpoint> p;
-	p = name_client_.register_name("logger");
-	if (p.first == false) {
-		std::cerr << "Failed to register an addr, exiting ... " << std::endl;
+	logger_visitor vis(msgs);
+	logger_server serv(vis, io_s);
+	bool res = name_client_.register_name("logger", serv.local_endpoints());
+	if (res == false) {
+		std::cerr << "Failed to register logger, exiting ... " << std::endl;
 		return -1;
 	}
 
-	logger_visitor vis(msgs);
-	logger_server serv(p.second, vis, io_s);
 	periodic_check check(io_s, boost::posix_time::milliseconds(100), msgs);
 	hyper::network::ping_process ping(io_s, boost::posix_time::milliseconds(100),
 									  "logger", "localhost", "4242");

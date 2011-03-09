@@ -86,6 +86,27 @@ namespace hyper {
 					{
 						socket_.socket().async_connect(endpoint, handler);
 					}
+
+					template <typename Handler>
+					void async_connect(const std::vector<boost::asio::ip::tcp::endpoint>& endpoints,
+									   Handler handler)
+					{
+						assert(!endpoints.empty());
+						void (client::*f)(
+								const boost::system::error_code& e,
+								std::vector<boost::asio::ip::tcp::endpoint>::const_iterator,
+								std::vector<boost::asio::ip::tcp::endpoint>::const_iterator,
+								boost::tuple<Handler>)
+							= &client::template handle_connect<Handler>;
+
+						boost::asio::ip::tcp::endpoint endpoint = *endpoints.begin();
+
+						socket_.socket().async_connect(endpoint,
+								boost::bind(f, this,
+									boost::asio::placeholders::error,
+									endpoints.begin()++, endpoints.end(),
+									boost::make_tuple(handler)));
+					}
 							
 					void close()
 					{
@@ -254,6 +275,42 @@ namespace hyper {
 						{
 							boost::get<0>(handler)(err);
 						}
+					}
+
+					template <typename Handler>
+					void handle_connect(const boost::system::error_code& err,
+										std::vector<boost::asio::ip::tcp::endpoint>::const_iterator it,
+										std::vector<boost::asio::ip::tcp::endpoint>::const_iterator end,
+										boost::tuple<Handler> handler)
+					{
+						if (!err)
+						{
+							boost::get<0>(handler)(err);
+						}
+						else if (it != end)
+						{
+							// The connection failed. Try the next endpoint in the list.
+							socket_.close();
+							boost::asio::ip::tcp::endpoint endpoint = *it;
+
+							void (client::*f)(
+									const boost::system::error_code& e,
+									std::vector<boost::asio::ip::tcp::endpoint>::const_iterator,
+									std::vector<boost::asio::ip::tcp::endpoint>::const_iterator,
+									boost::tuple<Handler>)
+								= &client::template handle_connect<Handler>;
+
+							socket_.socket().async_connect(endpoint,
+									boost::bind(f, this,
+										boost::asio::placeholders::error,
+									   	++it, end,
+										handler));
+						}
+						else
+						{
+							boost::get<0>(handler)(err);
+						}
+
 					}
 
 					template <typename Output, typename Handler>

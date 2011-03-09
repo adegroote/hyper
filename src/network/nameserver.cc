@@ -82,7 +82,7 @@ namespace hyper {
 				request_name_answer res_msg;
 				res_msg.name = r.name;
 				res_msg.success = res.first;
-				res_msg.endpoint = res.second.tcp_endpoint;
+				res_msg.endpoints = res.second.tcp_endpoints;
 
 				output_ << "answering to name request : " << res_msg << std::endl;
 				return res_msg;
@@ -94,12 +94,11 @@ namespace hyper {
 
 				output_ << "receiving name register request : " << r << std::endl;
 				ns::addr_storage addr;
-				addr.tcp_endpoint = ip::tcp::endpoint(ip::address_v4::any(), gen_.get());
+				addr.tcp_endpoints = r.endpoints;
 				bool res = map_.add(r.name, addr);
 
 				register_name_answer res_msg;
 				res_msg.name = r.name;
-				res_msg.endpoint = addr.tcp_endpoint;
 				res_msg.success = res;
 
 				output_ << "answering to name register request : " << res_msg << std::endl;
@@ -131,22 +130,22 @@ namespace hyper {
 			client.connect(addr, port);
 		}
 
-		std::pair<bool, boost::asio::ip::tcp::endpoint>
-		name_client::register_name(const std::string& ability)
+		bool
+		name_client::register_name(const std::string& ability,
+								  const std::vector<boost::asio::ip::tcp::endpoint>& v)
 		{
 			network::register_name re;
 			register_name_answer rea;
 
 			re.name = ability;
+			std::copy(v.begin(), v.end(), std::back_inserter(re.endpoints));
 
 			client.request(re, rea);
 
-			if (rea.success) 
-				return std::make_pair(true, rea.endpoint);
-			return std::make_pair(false, boost::asio::ip::tcp::endpoint());
+			return rea.success;
 		}
 
-		std::pair<bool, boost::asio::ip::tcp::endpoint>
+		std::pair<bool, std::vector<boost::asio::ip::tcp::endpoint> >
 		name_client::sync_resolve(const std::string& ability)
 		{
 			network::request_name rn;
@@ -156,8 +155,8 @@ namespace hyper {
 			client.request(rn, rna);
 
 			if (rna.success) 
-				return std::make_pair(true, rna.endpoint);
-			return std::make_pair(false, boost::asio::ip::tcp::endpoint());
+				return std::make_pair(true, rna.endpoints);
+			return std::make_pair(false, std::vector<boost::asio::ip::tcp::endpoint>() );
 		}
 	}
 }

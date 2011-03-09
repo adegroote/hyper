@@ -32,7 +32,7 @@ namespace hyper {
 
 			// for moment, only deal with tcp
 			struct addr_storage {
-				boost::asio::ip::tcp::endpoint tcp_endpoint;
+				std::vector<boost::asio::ip::tcp::endpoint> tcp_endpoints;
 			};
 
 			class map_addr : private boost::noncopyable
@@ -97,7 +97,8 @@ namespace hyper {
 			name_resolve() {};
 			const std::string& name() { return rna.name; };
 			void name(const std::string& name) { rna.name = name; } // a bit hackish
-			const boost::asio::ip::tcp::endpoint& endpoint() { return rna.endpoint; }
+			const std::vector<boost::asio::ip::tcp::endpoint>& 
+			endpoints() { return rna.endpoints; }
 			bool success() { return rna.success; };
 		};
 
@@ -170,8 +171,8 @@ namespace hyper {
 			name_client(boost::asio::io_service&, 
 							 const std::string&, const std::string&);
 
-			std::pair<bool, boost::asio::ip::tcp::endpoint> register_name(const std::string&);
-			std::pair<bool, boost::asio::ip::tcp::endpoint> sync_resolve(const std::string&);
+			bool register_name(const std::string&, const std::vector<boost::asio::ip::tcp::endpoint>&);
+			std::pair<bool, std::vector<boost::asio::ip::tcp::endpoint> > sync_resolve(const std::string&);
 
 			template <typename Handler>
 			void async_resolve(name_resolve & solv, Handler handler)

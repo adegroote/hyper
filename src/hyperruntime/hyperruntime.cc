@@ -38,7 +38,7 @@ namespace details {
 			runtime_map::const_iterator it = map.find(solv.name());
 			solv.rna.success = (it != map.end());
 			if (it != map.end()) 
-				solv.rna.endpoint = it->second.addr.tcp_endpoint;
+				solv.rna.endpoints = it->second.addr.tcp_endpoints;
 			handler(boost::system::error_code());
 		}
 	};
@@ -50,7 +50,7 @@ namespace details {
 		network::logger<trivial_name_client> logger;
 
 		runtime_actor(const runtime_map& map) : 
-					name("runtime"), 
+					name("root"), 
 				    name_client(map),
 					logger(io_s, name, "logger", name_client, NOTHING)
 		{}
@@ -111,7 +111,7 @@ namespace details {
 			res_msg.name = r.name;
 			res_msg.success = (it != map.end());
 			if (it != map.end()) 
-				res_msg.endpoint = it->second.addr.tcp_endpoint;
+				res_msg.endpoints = it->second.addr.tcp_endpoints;
 
 			std::cerr << "answering to name request : " << res_msg << std::endl;
 			return res_msg;
@@ -123,7 +123,7 @@ namespace details {
 
 			std::cerr << "receiving name register request : " << r << std::endl;
 			ability_context ctx;
-			ctx.addr.tcp_endpoint = ip::tcp::endpoint(ip::address_v4::any(), gen.get());
+			ctx.addr.tcp_endpoints = r.endpoints;
 			ctx.timeout_occurence = 0;
 
 			runtime_map::iterator it = map.find(r.name);
@@ -134,7 +134,6 @@ namespace details {
 
 			network::register_name_answer res_msg;
 			res_msg.name = r.name;
-			res_msg.endpoint = ctx.addr.tcp_endpoint;
 			res_msg.success = !already_here;
 
 			std::cerr << "answering to name register request : " << res_msg << std::endl;

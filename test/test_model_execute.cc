@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE ( model_execute_test )
 	f.add("square_int", 1);
 
 	boost::asio::io_service io_nameserv_s;
-	name_server s("127.0.0.1", "4242", io_nameserv_s, false);
+	name_server s("127.0.0.1", "4242", io_nameserv_s, true);
 	boost::thread thr( boost::bind(& boost::asio::io_service::run, &io_nameserv_s));
 
 	pos_ability pos_;
@@ -195,7 +195,9 @@ BOOST_AUTO_TEST_CASE ( model_execute_test )
 	deadline_.async_wait(do_nothing());
 	res_distance = evaluate_expression<double>(io_s, r.e, pos_);
 	BOOST_CHECK(res_distance);
-	BOOST_CHECK(std::abs(*res_distance - 42.0) < 1e-6);
+	if (res_distance) {
+		BOOST_CHECK(std::abs(*res_distance - 42.0) < 1e-6);
+	}
 
 	goal_.stop();
 	thr3.join();

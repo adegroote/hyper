@@ -187,7 +187,7 @@ namespace hyper {
 				proxy_async_client(boost::asio::io_service& io_s) : c_(io_s) {}
 
 				template <typename Handler>
-				void async_connect(const boost::asio::ip::tcp::endpoint& endpoint,
+				void async_connect(const std::vector<boost::asio::ip::tcp::endpoint>& endpoint,
 										Handler handler)
 				{
 					return c_.async_connect(endpoint, handler);
@@ -294,7 +294,7 @@ namespace hyper {
 								boost::tuple<Handler>) =
 							&remote_proxy::template handle_connect<Handler>;
 
-						c.async_connect(solver.endpoint(), 
+						c.async_connect(solver.endpoints(), 
 							boost::bind(f, this,
 										boost::asio::placeholders::error, handler));
 					}

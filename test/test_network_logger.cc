@@ -35,8 +35,9 @@ namespace {
 		template <typename Handler>
 		void async_resolve(hyper::network::name_resolve & solv, Handler handler)
 		{
-			solv.rna.endpoint = boost::asio::ip::tcp::endpoint(
-					  boost::asio::ip::address::from_string("127.0.0.1"), 4242);
+			solv.rna.endpoints.clear();
+			solv.rna.endpoints.push_back(boost::asio::ip::tcp::endpoint(
+					  boost::asio::ip::address::from_string("127.0.0.1"), 4242));
 			handler(boost::system::error_code());
 		}
 	};

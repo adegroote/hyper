@@ -45,7 +45,7 @@ void are_equal<request_name_answer> (const request_name_answer& a,
 {
 	BOOST_CHECK(a.name == b.name);
 	BOOST_CHECK(a.success == b.success);
-	BOOST_CHECK(a.endpoint == b.endpoint);
+	BOOST_CHECK(a.endpoints == b.endpoints);
 }
 
 template <>
@@ -53,6 +53,7 @@ void are_equal<register_name> (const register_name& a,
 							   const register_name& b)
 {
 	BOOST_CHECK(a.name == b.name);
+	BOOST_CHECK(a.endpoints == b.endpoints);
 }
 
 template <>
@@ -61,9 +62,6 @@ void are_equal<register_name_answer> (const register_name_answer&a,
 {
 	BOOST_CHECK(a.name == b.name);
 	BOOST_CHECK(a.success == b.success);
-	if (a.success) {
-		BOOST_CHECK(a.endpoint == b.endpoint);
-	}
 }
 
 struct false_resolv
@@ -73,8 +71,9 @@ struct false_resolv
 	template <typename Handler>
 	void async_resolve(name_resolve & solv, Handler handler)
 	{
-		solv.rna.endpoint = boost::asio::ip::tcp::endpoint(
-				boost::asio::ip::address::from_string("127.0.0.1"), 4242);
+		solv.rna.endpoints.clear();
+		solv.rna.endpoints.push_back(boost::asio::ip::tcp::endpoint(
+				boost::asio::ip::address::from_string("127.0.0.1"), 4242));
 		handler(boost::system::error_code());
 	}
 };
@@ -167,8 +166,6 @@ BOOST_AUTO_TEST_CASE ( network_rpc_test )
 	rpc_register_name_answer(io2_s, "test", resolv);
 	register_name_answer rna1;
 	rna1.success = true;
-	rna1.endpoint = boost::asio::ip::tcp::endpoint(
-							  boost::asio::ip::address::from_string("227.0.52.1"), 4242);
 	const boost::optional<register_name_answer>& res3 = rpc_register_name_answer.compute(rna1, 
 												boost::posix_time::milliseconds(100));
 	BOOST_CHECK(res3);

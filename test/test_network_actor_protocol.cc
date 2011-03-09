@@ -24,11 +24,13 @@ namespace {
 		void async_resolve(name_resolve & solv, Handler handler)
 		{
 			if (solv.name() == "client") {
-			solv.rna.endpoint = boost::asio::ip::tcp::endpoint(
-					  boost::asio::ip::address::from_string("127.0.0.1"), 5000);
+				solv.rna.endpoints.clear();	
+				solv.rna.endpoints.push_back(boost::asio::ip::tcp::endpoint(
+							boost::asio::ip::address::from_string("127.0.0.1"), 5000));
 			} else {
-			solv.rna.endpoint = boost::asio::ip::tcp::endpoint(
-					  boost::asio::ip::address::from_string("127.0.0.1"), 5001);
+				solv.rna.endpoints.clear();	
+				solv.rna.endpoints.push_back(boost::asio::ip::tcp::endpoint(
+					  boost::asio::ip::address::from_string("127.0.0.1"), 5001));
 			}
 			handler(boost::system::error_code());
 		}

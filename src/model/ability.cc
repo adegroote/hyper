@@ -167,7 +167,7 @@ namespace hyper {
 			/* Logger for the system */
 			network::logger<network::name_client> logger;
 
-			boost::scoped_ptr<tcp_ability_impl> serv;
+			tcp_ability_impl serv;
 			network::ping_process ping;
 			model::logic_layer logic;
 
@@ -175,9 +175,11 @@ namespace hyper {
 				a(a_), 
 				logger(a.io_s, a.name, "logger", a.name_client, level),
 				vis(a_),
+				serv(vis, a.io_s),
 				ping(a.io_s, boost::posix_time::milliseconds(100), a.name, "localhost", "4242"),
 				logic(a_)
-			{}
+			{
+			}
 		};
 
 		ability::ability(const std::string& name_, int level) : 
@@ -188,14 +190,15 @@ namespace hyper {
 			name(name_),
 			impl(new ability_impl(*this, level))
 		{
-			std::pair<bool, boost::asio::ip::tcp::endpoint> p;
-			p = name_client.register_name(name);
-			if (p.first == true) {
-				std::cout << "Succesfully get an addr " << p.second << std::endl;
-				impl->serv.reset(new ability_impl::tcp_ability_impl(p.second, impl->vis, io_s));
+			const std::vector<boost::asio::ip::tcp::endpoint>& addrs = impl->serv.local_endpoints();
+			bool res = name_client.register_name(name, addrs);
+			if (res) {
+				std::cout << "Succesfully registring " << name_ << " on " ;
+				std::copy(addrs.begin(), addrs.end(), 
+						std::ostream_iterator<boost::asio::ip::tcp::endpoint>(std::cout, " "));
 			}
 			else
-				std::cout << "failed to get an addr" << std::endl;
+				std::cout << "failed to register " << name_ << std::endl;
 		};
 	
 		void ability::test_run()
@@ -212,7 +215,7 @@ namespace hyper {
 		void ability::stop()
 		{
 			impl->ping.stop();
-			impl->serv->stop();
+			impl->serv.stop();
 		}
 
 		std::ostream& ability::logger(int level)

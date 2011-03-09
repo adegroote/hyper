@@ -67,7 +67,7 @@ namespace hyper {
 					if (e) {
 						// XXX what to do : log to another logger :D	
 					} else {
-						c.async_connect(solver.endpoint(), 
+						c.async_connect(solver.endpoints(), 
 							boost::bind(&async_logger::handle_connect, this, 
 										boost::asio::placeholders::error));
 					}

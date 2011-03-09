@@ -82,7 +82,7 @@ namespace hyper {
 								boost::tuple<Handler>) =
 							&async_rpc::template handle_connect<Handler>;
 
-						c.async_connect(solver.endpoint(), 
+						c.async_connect(solver.endpoints(), 
 							boost::bind(f, this, boost::cref(input), 
 										boost::asio::placeholders::error, handler));
 					}
