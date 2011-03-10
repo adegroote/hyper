@@ -38,6 +38,7 @@ include_directories(${HYPER_SOURCE_DIR}/include)
 
 set(model_test_ADDITIONAL_LIBS "hyper_network;hyper_logic;hyper_compiler")
 
+set(compiler_LIBS "${Boost_FILESYSTEM_LIBRARY}")
 set(network_LIBS "${Boost_SYSTEM_LIBRARY};${Boost_DATE_TIME_LIBRARY};${Boost_THREAD_LIBRARY};${Boost_SERIALIZATION_LIBRARY}")
 set(model_LIBS "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 
