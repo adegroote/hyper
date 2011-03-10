@@ -44,9 +44,12 @@ set(model_LIBS "${Boost_PROGRAM_OPTIONS_LIBRARY}")
 # Workaround against the huge object file generated from this file in default mode
 set_source_files_properties(src/compiler/expression_ast.cc COMPILE_FLAGS -Os)
 
+set (HYPER_LIBS "")
+
 foreach(lib compiler network logic model)
   string(TOUPPER "${lib}_sources" THIS_LIB_SOURCES)
   string(TOLOWER "hyper_${lib}" HyperLibrary)
+  list(APPEND HYPER_LIBS ${HyperLibrary})
   if(EXISTS ${HYPER_SOURCE_DIR}/src/${lib})
     file(GLOB ${THIS_LIB_SOURCES} ${HYPER_SOURCE_DIR}/src/${lib}/*.cc)
     add_library (${HyperLibrary} SHARED ${${THIS_LIB_SOURCES}}) 
@@ -104,5 +107,5 @@ install(TARGETS hyperruntime DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 # hyperlog rules
 file(GLOB hyperlog_sources ${HYPER_SOURCE_DIR}/src/hyperlog/*.cc)
 add_executable(hyperlog ${hyperlog_sources})
-target_link_libraries(hyperlog hyper_network)
+target_link_libraries(hyperlog ${HYPER_LIBS} ${Boost_LIBRARIES})
 install(TARGETS hyperlog DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

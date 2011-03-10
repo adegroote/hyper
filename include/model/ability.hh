@@ -6,6 +6,7 @@
 #include <network/proxy.hh>
 #include <network/nameserver.hh>
 
+#include <model/discover_root.hh>
 #include <model/execute.hh>
 #include <model/update.hh>
 
@@ -34,6 +35,7 @@ namespace hyper {
 			/* Lock for the ability context */
 			boost::shared_mutex mtx;
 
+			model::discover_root discover;
 			network::name_client name_client;
 
 			/* db to store expected callback */

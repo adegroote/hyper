@@ -6,6 +6,8 @@
 #include <network/nameserver.hh>
 #include <network/server_tcp_impl.hh>
 
+#include <model/discover_root.hh>
+
 
 namespace {
 	typedef boost::mpl::vector<hyper::network::log_msg,
@@ -138,7 +140,8 @@ int main()
 	boost::asio::io_service io_s;
 	std::vector<hyper::network::log_msg> msgs;
 
-	hyper::network::name_client name_client_(io_s, "localhost", "4242");
+	hyper::model::discover_root discover;
+	hyper::network::name_client name_client_(io_s, discover.root_addr(), discover.root_port());
 	logger_visitor vis(msgs);
 	logger_server serv(vis, io_s);
 	bool res = name_client_.register_name("logger", serv.local_endpoints());
@@ -149,7 +152,7 @@ int main()
 
 	periodic_check check(io_s, boost::posix_time::milliseconds(100), msgs);
 	hyper::network::ping_process ping(io_s, boost::posix_time::milliseconds(100),
-									  "logger", "localhost", "4242");
+									  "logger", discover.root_addr(), discover.root_port());
 
 	ping.run();
 	check.run();

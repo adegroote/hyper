@@ -1,4 +1,3 @@
-
 #include <model/ability.hh>
 #include <model/logic_layer.hh>
 
@@ -176,14 +175,17 @@ namespace hyper {
 				logger(a.io_s, a.name, "logger", a.name_client, level),
 				vis(a_),
 				serv(vis, a.io_s),
-				ping(a.io_s, boost::posix_time::milliseconds(100), a.name, "localhost", "4242"),
+				ping(a.io_s, boost::posix_time::milliseconds(100), a.name, 
+					 a.discover.root_addr(), a.discover.root_port()),
 				logic(a_)
 			{
+				std::cout << "discover " << a.discover.root_addr() << " " << a.discover.root_port() << std::endl;
 			}
 		};
 
 		ability::ability(const std::string& name_, int level) : 
-			name_client(io_s, "localhost", "4242"),
+			discover(),
+			name_client(io_s, discover.root_addr(), discover.root_port()),
 			client_db(*this),
 			base_id(0),
 			updater(*this),
