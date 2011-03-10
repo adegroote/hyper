@@ -73,7 +73,7 @@ void build_base_cmake(std::ostream& oss, const std::string& name,
 					  const std::set<std::string>& depends)
 {
 	std::string base_cmake = 
-		"cmake_minimum_required(VERSION 2.8 FATAL_ERROR)\n"
+		"cmake_minimum_required(VERSION 2.6 FATAL_ERROR)\n"
 		"\n"
 		"find_package(Hyper REQUIRED)\n"
 		"\n"

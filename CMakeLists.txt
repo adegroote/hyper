@@ -89,9 +89,10 @@ configure_file(
 	${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake
 	)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake share/HyperNode.cmake
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake share/HyperNode.cmake config/FindBoost.cmake
 		DESTINATION share/hyper
 )
+
 
 # hypercc rules
 file(GLOB hyperc_sources ${HYPER_SOURCE_DIR}/src/hyperc/*.cc)

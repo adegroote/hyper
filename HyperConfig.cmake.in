@@ -14,4 +14,7 @@ set(HYPER_LIB_DIR @CMAKE_INSTALL_PREFIX@/lib)
 
 set(HYPER_INCLUDE_DIRS @CMAKE_INSTALL_PREFIX@/include/hyper)
 
+list(APPEND CMAKE_MODULE_PATH @CMAKE_INSTALL_PREFIX@/share/hyper)
+
 include (@CMAKE_INSTALL_PREFIX@/share/hyper/HyperNode.cmake)
+
