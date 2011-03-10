@@ -237,6 +237,24 @@ namespace hyper {
 						init(endpoint);
 					}
 
+					server(int port, 
+						   const Answer& ans, boost::asio::io_service& io_s) :
+						io_service_(io_s),
+						acceptor_(io_service_),
+						connection_manager_(),
+						new_connection_(
+							new connection<InputM, OutputM, Answer> (
+									io_service_, 
+									connection_manager_,
+									ans)),
+						answer_(ans)
+					{
+						boost::asio::ip::tcp::endpoint endpoint(
+								boost::asio::ip::address_v4::any(),
+								port);
+						init(endpoint);
+					}
+
 					server(const Answer& ans, boost::asio::io_service& io_s) :
 						io_service_(io_s),
 						acceptor_(io_service_),

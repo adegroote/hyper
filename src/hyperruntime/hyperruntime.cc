@@ -92,13 +92,11 @@ namespace details {
 	struct runtime_visitor : public boost::static_visitor<output_variant>
 	{
 		runtime_map &map;
-		network::tcp::ns_port_generator& gen;
 		client_db &db;
 
 		runtime_visitor(runtime_map& map_, 
-						network::tcp::ns_port_generator& gen_,
 						client_db &db) :
-			map(map_), gen(gen_), db(db)
+			map(map_), db(db)
 		{}
 
 		output_variant operator() (const network::request_name& r) const
@@ -266,14 +264,13 @@ int main()
 	details::runtime_actor actor(map);
 	details::client_db db(actor);
 
-	network::tcp::ns_port_generator gen("5000");
-	details::runtime_visitor runtime_vis(map, gen, db);
+	details::runtime_visitor runtime_vis(map, db);
 
 	typedef network::tcp::server<details::input_msg, 
 								  details::output_msg, 
 								  details::runtime_visitor
 								> tcp_runtime_impl;
-	tcp_runtime_impl runtime("localhost", "4242", runtime_vis, actor.io_s);
+	tcp_runtime_impl runtime(4242, runtime_vis, actor.io_s);
 
 	details::periodic_check check( actor.io_s, 
 								   boost::posix_time::milliseconds(100), 
