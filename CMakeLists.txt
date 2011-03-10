@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 2.6.4 FATAL_ERROR)
 
 project(HYPER CXX)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/config/)
+
 #set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Byuilding type, choose either Debug or Release")
 #set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE LIST)
 
