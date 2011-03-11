@@ -38,6 +38,11 @@ namespace {
 			return oss.str();
 		}
 
+		std::string operator() (const Constant<std::string>& c) const
+		{
+			return quoted_string(c.value);
+		}
+
 		std::string operator() (const Constant<bool>& c) const
 		{
 			std::ostringstream oss;
