@@ -608,6 +608,64 @@ universe::dump_ability_functions_impl(const std::string& directoryName, const st
 	return funcs.size();
 }
 
+
+struct truth { bool operator() (const functionDef& fun) { return true; }};
+
+struct extract_tags {
+	std::set<std::string>& tag_list;
+
+	extract_tags(std::set<std::string>& tag_list) : tag_list(tag_list) {}
+
+	void operator() (const functionDef& fun)
+	{
+		if (fun.tag()) 
+			tag_list.insert(*fun.tag());
+	}
+};
+
+struct match_tag {
+	std::string tag;
+
+	match_tag(const std::string& tag) : tag(tag) {}
+
+	bool operator() (const functionDef& fun)
+	{
+		return (fun.tag() && (*(fun.tag()) == tag));
+	}
+};
+
+size_t 
+universe::dump_ability_tagged_functions_proto(const std::string& directoryName, const std::string& name) const
+{
+	std::vector<functionDef> all_funcs = fList.select(truth());
+	std::set<std::string> tag_list;
+	std::for_each(all_funcs.begin(), all_funcs.end(), extract_tags(tag_list));
+
+	size_t size = 0;
+	std::set<std::string>::const_iterator it;
+	for (it = tag_list.begin(); it != tag_list.end(); ++it) {
+
+		const std::string& tag = *it;
+		std::string pathName = directoryName + "/" + tag + "_funcs.hh";
+		std::ofstream oss(pathName.c_str());
+		guards g(oss, name,  "_" + upper(tag) + "_FUNC_ABILITY_HH_");
+
+		std::vector<functionDef> funcs = fList.select(match_tag(tag));
+		size+= funcs.size();
+
+		// compute dependances
+		std::set<std::string> depends;
+		compute_fun_depends deps(depends, tList);
+		std::for_each(funcs.begin(), funcs.end(), deps);
+
+		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
+
+		namespaces n(oss, name);
+		std::for_each(funcs.begin(), funcs.end(), output_proto_helper(oss, *this));
+	}
+	return size;
+}
+
 void
 universe::dump_ability_import_module_def(std::ostream& oss, const std::string& name) const
 {

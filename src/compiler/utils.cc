@@ -6,6 +6,8 @@
 
 #include <compiler/utils.hh>
 
+#include <ctype.h>
+
 std::string 
 hyper::compiler::read_from_file(const std::string& filename)
 {
@@ -38,5 +40,13 @@ hyper::compiler::replace_by(const std::string& src, const std::string& pattern,
 		previous_loc = loc + size_new_pattern;
 	}
 
+	return res;
+}
+
+std::string
+hyper::compiler::upper(const std::string& src)
+{
+	std::string res(src.size(), 'a');
+	std::transform(src.begin(), src.end(), res.begin(), toupper);
 	return res;
 }

@@ -462,7 +462,9 @@ int main(int argc, char** argv)
 	{
 		std::string fileName = directoryName + "/funcs.hh";
 		std::ofstream oss(fileName.c_str());
-		if ( u.dump_ability_functions_proto(oss, abilityName) == 0) {
+		size_t basic_funcs = u.dump_ability_functions_proto(oss, abilityName);
+		size_t tagged_funcs = u.dump_ability_tagged_functions_proto(baseUserName, abilityName);
+		if ((basic_funcs + tagged_funcs)  == 0) {
 			remove(fileName);
 			define_func = false;
 		} else {

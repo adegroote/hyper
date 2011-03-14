@@ -78,6 +78,8 @@ namespace hyper {
 				void dump_ability_opaque_types_def(const std::string& directoryName,
 												   const std::string& name) const;
 				size_t dump_ability_functions_proto(std::ostream& oss, const std::string& name) const;
+				size_t dump_ability_tagged_functions_proto(const std::string& directoryName, 
+														   const std::string& name) const;
 				size_t dump_ability_functions_impl(const std::string& directoryName, 
 												   const std::string& name) const;
 				void dump_ability_import_module_def(std::ostream& oss, const std::string& name) const;

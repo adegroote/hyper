@@ -30,6 +30,9 @@ namespace hyper {
 		 */
 		std::string replace_by(const std::string& , const std::string& pattern,	
 													const std::string& replace);
+
+		
+		std::string upper(const std::string& str);
 	}
 }
 
