@@ -507,7 +507,7 @@ struct select_ability_funs
 
 	bool operator () (const functionDef& f) const
 	{
-		return (f.name().find(search_string, 0) == 0);
+		return (f.name().find(search_string, 0) == 0 && !f.tag());
 	}
 };
 
