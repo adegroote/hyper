@@ -7,6 +7,7 @@
 #include <compiler/output.hh>
 #include <compiler/scope.hh>
 #include <compiler/types.hh>
+#include <compiler/universe.hh>
 
 #include <boost/bind.hpp>
 
@@ -106,19 +107,22 @@ struct compute_fun_depends
 {
 	depends& d;
 	const std::string& name;
+	const universe& u;
 
-	compute_fun_depends(depends& d_, const std::string& n) :
-		d(d_), name(n) {};
+	compute_fun_depends(depends& d_, const std::string& n, const universe& u) :
+		d(d_), name(n), u(u) {};
 
 	void operator() (const task& t) const
 	{
-		void (*f)(const expression_ast&, const std::string&, depends&)
+		void (*f)(const expression_ast&, const std::string&, const universe&,  depends&)
 			= &add_depends;
 		std::for_each(t.pre_begin(), t.pre_end(), 
 				boost::bind(f, _1, boost::cref(name),
+								   boost::cref(u),
 								   boost::ref(d)));
 		std::for_each(t.post_begin(), t.post_end(), 
 				boost::bind(f, _1, boost::cref(name),
+								   boost::cref(u),
 								   boost::ref(d)));
 	}
 };
@@ -235,10 +239,10 @@ struct add_import_funcs
 
 
 depends 
-ability::get_function_depends() const
+ability::get_function_depends(const universe& u) const
 {
 	depends d;
-	compute_fun_depends fun_deps(d, name_);
+	compute_fun_depends fun_deps(d, name_, u);
 	std::for_each(tasks.begin(), tasks.end(), fun_deps);
 	return d;
 }
@@ -275,15 +279,15 @@ struct add_task_declaration
 };
 
 void
-ability::dump(std::ostream& oss, const typeList& tList) const
+ability::dump(std::ostream& oss, const universe& u) const
 {
 	std::set<std::string> type_depends;
-	compute_type_depends type_deps(type_depends, tList);
+	compute_type_depends type_deps(type_depends, u.types());
 	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
 	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
 	std::for_each(private_list.begin(), private_list.end(), type_deps);
 
-	depends deps = get_function_depends();
+	depends deps = get_function_depends(u);
 
 	guards g(oss, name_, "_ABILITY_HH_");
 
@@ -297,7 +301,7 @@ ability::dump(std::ostream& oss, const typeList& tList) const
 
 	namespaces n(oss, name_);
 
-	print_symbol print(oss, tList, name_);
+	print_symbol print(oss, u.types(), name_);
 	oss << "\t\t\tstruct ability : public model::ability {" << std::endl;
 
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);

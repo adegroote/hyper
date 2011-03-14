@@ -586,14 +586,16 @@ namespace hyper {
 			const std::string next_next_indent = next_indent + "\t";
 
 			depends deps;
-			void (*f1)(const expression_ast&, const std::string&, depends&) = &add_depends;
-			void (*f2)(const recipe_expression&, const std::string&, depends&) = &add_depends;
+			void (*f1)(const expression_ast&, const std::string&, const universe&, depends&) = &add_depends;
+			void (*f2)(const recipe_expression&, const std::string&, const universe&, depends&) = &add_depends;
 			std::for_each(pre.begin(), pre.end(),
 						  boost::bind(f1 ,_1, boost::cref(context_a.name()),
-											 boost::ref(deps)));
+											  boost::cref(u),
+											  boost::ref(deps)));
 			std::for_each(body.begin(), body.end(),
 						  boost::bind(f2 ,_1, boost::cref(context_a.name()),
-						  boost::ref(deps)));
+											  boost::cref(u),
+											  boost::ref(deps)));
 			
 			oss << "#include <" << context_a.name() << "/ability.hh>\n"; 
 			oss << "#include <" << context_a.name();

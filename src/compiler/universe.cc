@@ -704,7 +704,7 @@ universe::dump_ability(std::ostream& oss, const std::string& name) const
 		return;
 	}
 
-	it->second->dump(oss, tList);
+	it->second->dump(oss, *this);
 }
 
 depends
@@ -716,7 +716,7 @@ universe::get_function_depends(const std::string& name) const
 		return depends();
 	}
 
-	return it->second->get_function_depends();
+	return it->second->get_function_depends(*this);
 }
 
 ability&
