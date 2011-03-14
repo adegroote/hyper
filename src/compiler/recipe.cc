@@ -517,6 +517,19 @@ struct dump_eval_expression {
 	}
 };
 
+struct dump_tag_depends
+{
+	std::ostream& oss;
+	std::string name;
+
+	dump_tag_depends(std::ostream& oss,
+					 const std::string& name) : 
+		oss(oss), name(name) {}
+
+	void operator() (const std::string& tag) {
+		oss << "#include <" << name << "/" << tag << "_funcs.hh>\n";
+	}
+};
 
 namespace hyper {
 	namespace compiler {
@@ -611,7 +624,11 @@ namespace hyper {
 
 			std::for_each(deps.fun_depends.begin(), 
 						  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
-			oss << std::endl;
+			oss << "\n";
+
+			std::for_each(deps.tag_depends.begin(),
+						  deps.tag_depends.end(), dump_tag_depends(oss, context_a.name()));
+			oss << "\n\n";
 
 			extract_symbols pre_symbols(context_a);
 			std::for_each(pre.begin(), pre.end(), 
