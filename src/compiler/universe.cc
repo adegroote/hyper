@@ -590,7 +590,11 @@ struct output_function_def_impl {
 	{
 		std::string path = directoryName + "/" + scope::get_identifier(def.name()) + ".cc";
 		std::ofstream oss(path.c_str());
-		oss << "#include <" << name << "/funcs.hh>\n\n";
+		const boost::optional<std::string>& tag = def.tag();
+		if (tag)
+			oss << "#include <" << name << "/" << *tag << "_funcs.hh>\n\n";
+		else
+			oss << "#include <" << name << "/funcs.hh>\n\n";
 		namespaces n(oss, name);
 		def.output_impl(oss, tList);
 	}
