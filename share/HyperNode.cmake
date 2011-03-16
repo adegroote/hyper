@@ -46,10 +46,16 @@ macro(HYPER_NODE node)
 	
 	include_directories(${CMAKE_SOURCE_DIR}/src)
 	include_directories(${HYPER_INCLUDE_DIRS})
+	include_directories(${base_directory})
+
+	set(USER_SRCS_FULL_PATH "")
+	foreach(src ${USER_SRCS})
+		set(USER_SRCS_FULL_PATH ${USER_SRCS_FULL_PATH} ${base_directory}/${src})
+	endforeach(src)
 
 	if (EXISTS ${CMAKE_SOURCE_DIR}/${base_directory}/import.cc)
 		file(GLOB funcs ${base_directory}/funcs/*.cc)
-		add_library(hyper_${node} SHARED ${funcs} ${base_directory}/import.cc ${USER_SRCS})
+		add_library(hyper_${node} SHARED ${funcs} ${base_directory}/import.cc ${USER_SRCS_FULL_PATH})
 		target_link_libraries(hyper_${node} ${USER_LIBS})
 		install(TARGETS hyper_${node} DESTINATION lib/hyper/)
 		install(FILES ${base_directory}/funcs.hh ${base_directory}/import.hh
