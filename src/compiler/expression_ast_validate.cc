@@ -134,10 +134,12 @@ struct ast_valid : public boost::static_visitor<bool>
 	const ability& ab;
 	const universe& u;
 	const boost::optional<symbolList>& context;
+	bool first; /* check if a function call with a tag is called, and where */
 
 	ast_valid(const ability& ab_, const universe& u_,
-			  const boost::optional<symbolList>& context_):
-		ab(ab_), u(u_), context(context_)
+			  const boost::optional<symbolList>& context_,
+			  bool first):
+		ab(ab_), u(u_), context(context_), first(first)
 	{}
 
 	bool operator() (const empty& e) const
@@ -170,6 +172,13 @@ struct ast_valid : public boost::static_visitor<bool>
 			return false;
 		}
 
+		const boost::optional<std::string>& tag = p.second.tag();
+		if (tag && !first) {
+			std::cerr << "Tagged function are only supported as the first element of an expression";
+			std::cerr << std::endl;
+			return false;
+		}
+
 		bool res = true;
 		if (f.args.size() != p.second.arity()) {
 			std::cerr << "Expected " << p.second.arity() << " arguments";
@@ -179,7 +188,7 @@ struct ast_valid : public boost::static_visitor<bool>
 		}
 
 		for (size_t i = 0; i < f.args.size(); ++i)
-			res = boost::apply_visitor(ast_valid(ab, u, context), f.args[i].expr) && res;
+			res = boost::apply_visitor(ast_valid(ab, u, context, false), f.args[i].expr) && res;
 
 		// check type
 		for (size_t i = 0; i < f.args.size(); ++i) {
@@ -205,15 +214,15 @@ struct ast_valid : public boost::static_visitor<bool>
 
 	bool operator() (const expression_ast& e) const
 	{
-		return boost::apply_visitor(ast_valid(ab, u, context), e.expr);
+		return boost::apply_visitor(ast_valid(ab, u, context, false), e.expr);
 	}
 
 	template<binary_op_kind T>
 	bool operator() (const binary_op<T>& b) const
 	{
 		bool left_valid, right_valid;
-		left_valid = boost::apply_visitor(ast_valid(ab, u, context), b.left.expr);
-		right_valid = boost::apply_visitor(ast_valid(ab, u, context), b.right.expr);
+		left_valid = boost::apply_visitor(ast_valid(ab, u, context, false), b.left.expr);
+		right_valid = boost::apply_visitor(ast_valid(ab, u, context, false), b.right.expr);
 		return left_valid && right_valid && ast_binary_valid<T>(u) ( 
 													u.typeOf(ab, b.left.expr, context),
 													u.typeOf(ab, b.right.expr, context));
@@ -222,7 +231,7 @@ struct ast_valid : public boost::static_visitor<bool>
 	template<unary_op_kind T>
 	bool operator() (const unary_op<T>& op) const
 	{
-		bool is_valid = boost::apply_visitor(ast_valid(ab, u, context), op.subject.expr);
+		bool is_valid = boost::apply_visitor(ast_valid(ab, u, context, false), op.subject.expr);
 		return is_valid && ast_unary_valid<T>(u) (u.typeOf(ab, op.subject.expr, context)) ;
 	}
 };
@@ -232,7 +241,7 @@ namespace hyper {
 		bool expression_ast::is_valid(const ability& context, const universe& u,
 									  const boost::optional<symbolList>& local_context) const
 		{
-			ast_valid is_valid(context, u, local_context);
+			ast_valid is_valid(context, u, local_context, true);
 			return boost::apply_visitor(is_valid, this->expr);
 		}
 

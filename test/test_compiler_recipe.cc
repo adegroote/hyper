@@ -200,6 +200,21 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 											    };							\
 											  };", true);
 
+	/* tagged function can only be used at the first element of an expression */
+	check_recipe.do_build_test("r24 = recipe { pre = {}; post = {};			\
+											   body = {						\
+												genomTagTest(xxx, 22.3);	\
+												};							\
+											};", true);			
+
+	check_recipe.do_build_test("r25 = recipe { pre = {}; post = {};			\
+											   body = {						\
+												square(						\
+													genomTagTest(xxx, 22.3)	\
+													);						\
+												};							\
+											};", false);			
+
 
 	
 }
