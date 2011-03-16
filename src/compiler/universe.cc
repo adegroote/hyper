@@ -692,6 +692,24 @@ universe::dump_ability_import_module_def(std::ostream& oss, const std::string& n
 	oss << "\t\t\tvoid import_funcs(model::ability &a); " << std::endl;
 }
 
+struct output_import_helper {
+	std::ostream& oss;
+	const universe& u;
+
+	output_import_helper(std::ostream& oss, const universe& u) :
+		oss(oss), u(u)
+	{}
+
+	void operator() (const functionDef& def) {
+		const boost::optional<std::string>& tag = def.tag();
+			u.get_extension(*tag).output_import(oss, def, u.types());
+		if (tag) {
+		} else {
+			def.output_import(oss, u.types());
+		}
+	}
+};
+
 void
 universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const
 {
@@ -703,9 +721,7 @@ universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& 
 
 	namespaces n(oss, name);
 	oss << "\t\t\tvoid import_funcs(model::ability &a) {" << std::endl;
-	std::for_each(funcs.begin(), funcs.end(),
-		  boost::bind(&functionDef::output_import, _1, boost::ref(oss),
-													   boost::cref(tList)));
+	std::for_each(funcs.begin(), funcs.end(), output_import_helper(oss, *this));
 
 	oss << "\t\t\t}" << std::endl;
 }

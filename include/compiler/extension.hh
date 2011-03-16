@@ -20,6 +20,9 @@ namespace hyper {
 			virtual void function_impl(std::ostream& oss, const functionDef& f,
 												   const typeList& tList) const = 0;
 
+			virtual void output_import(std::ostream& oss, const functionDef& f,
+														  const typeList& tList) const = 0;
+
 			virtual void dump_eval_expression(std::ostream& oss, 
 											  const universe& u,
 											  const ability& a,
