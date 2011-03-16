@@ -507,7 +507,7 @@ struct select_ability_funs
 
 	bool operator () (const functionDef& f) const
 	{
-		return (f.name().find(search_string, 0) == 0 && !f.tag());
+		return (f.name().find(search_string, 0) == 0);
 	}
 };
 
@@ -551,11 +551,19 @@ struct output_proto_helper
 	}
 };
 
+struct has_tag {
+	bool operator() (const functionDef& def)
+	{
+		return def.tag();
+	}
+};
+
 size_t
 universe::dump_ability_functions_proto(std::ostream& oss, const std::string& name) const
 {
 	//find functions prefixed by name::
 	std::vector<functionDef>  funcs = fList.select(select_ability_funs(name));
+	funcs.erase(std::remove_if(funcs.begin(), funcs.end(), has_tag()), funcs.end());
 
 	// compute dependances
 	std::set<std::string> depends;
@@ -580,11 +588,11 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 struct output_function_def_impl {
 	std::string directoryName;
 	std::string name;
-	const typeList& tList;
+	const universe& u;
 
 	output_function_def_impl(const std::string& directoryName, const std::string& name,
-							 const typeList& tList) : 
-		directoryName(directoryName), name(name), tList(tList) {}
+							 const universe& u) : 
+		directoryName(directoryName), name(name), u(u) {}
 
 	void operator() (const functionDef& def)
 	{
@@ -596,7 +604,10 @@ struct output_function_def_impl {
 		else
 			oss << "#include <" << name << "/funcs.hh>\n\n";
 		namespaces n(oss, name);
-		def.output_impl(oss, tList);
+		if (!tag) 
+			def.output_impl(oss, u.types());
+		else
+			u.get_extension(*tag).function_impl(oss, def, u.types());
 	}
 };
 
@@ -607,7 +618,7 @@ universe::dump_ability_functions_impl(const std::string& directoryName, const st
 	std::vector<functionDef>  funcs = fList.select(select_ability_funs(name));
 
 	std::for_each(funcs.begin(), funcs.end(), 
-			output_function_def_impl(directoryName, name, tList));
+			output_function_def_impl(directoryName, name, *this));
 
 	return funcs.size();
 }
