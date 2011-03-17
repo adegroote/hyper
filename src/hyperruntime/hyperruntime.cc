@@ -136,10 +136,12 @@ namespace details {
 
 			std::cerr << "answering to name register request : " << res_msg << std::endl;
 
-			boost::shared_ptr<network::inform_new_agent> ptr_msg;
-			ptr_msg = boost::make_shared<network::inform_new_agent>();
-			ptr_msg->new_agents.push_back(r.name);
-			std::for_each(map.begin(), map.end(), broadcast_inform(ptr_msg, db));
+			if (!already_here) {
+				boost::shared_ptr<network::inform_new_agent> ptr_msg;
+				ptr_msg = boost::make_shared<network::inform_new_agent>();
+				ptr_msg->new_agents.push_back(r.name);
+				std::for_each(map.begin(), map.end(), broadcast_inform(ptr_msg, db));
+			}
 
 			return res_msg;
 		}
