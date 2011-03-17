@@ -257,7 +257,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		} else {
 			boost::optional<typeId> tid = u.typeOf(a, e, syms);
 			type t = u.types().get(*tid);
-			identifier << "boost::fusion::at_key<" << t.name << ">(unused_res)";
+			identifier << "boost::fusion::at_key<" << t.type_name() << ">(unused_res)";
 		}
 
 		return identifier.str();
@@ -474,7 +474,11 @@ std::string unused_results(const std::set<std::string>& s)
 	std::ostringstream oss;
 	oss << "boost::fusion::set<";
 	while (it != s.end()) {
-		oss << *it;
+		// void storage is a bit special in C++, use a mpl::void_ type
+		if (*it == "void") 
+			oss << "boost::mpl::void_";
+		else
+			oss << *it;
 		++it;
 		if (it != s.end())
 			oss << ", ";

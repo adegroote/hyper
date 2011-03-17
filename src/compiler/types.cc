@@ -88,7 +88,9 @@ std::string type::type_name() const
 { 
 	if (name == "string")
 		return "std::string";
-	else 
+	else if (name == "void")
+		return "boost::mpl::void_";
+	else
 		return name;
 }
 	
