@@ -18,6 +18,9 @@
 
 using namespace hyper::compiler;
 
+std::pair<bool, std::string> 
+is_tagged_func_call(const expression_ast& e, const std::string& name, const universe &u);
+
 std::string symbolList_to_vectorType(const symbolList& syms, const typeList& tList)
 {
 	std::ostringstream oss;
@@ -260,8 +263,14 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		return identifier.str();
 	}
 
-	std::string abortable_function(const std::string& identifier) const
+	std::string abortable_function(const std::string& identifier, const expression_ast& e) const
 	{
+		std::pair<bool, std::string> p = is_tagged_func_call(e, a.name(), u);
+
+		if (p.first) 
+			return u.get_extension(p.second).generate_abortable_function(
+					u, a, t, symbolList_to_vectorType(syms, u.types()), counter++, identifier);
+
 		std::ostringstream oss;
 		std::string indent = times(3, "\t");
 		std::string next_indent = "\t" + indent;
@@ -291,7 +300,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 		std::ostringstream oss;
 		oss << indent << "push_back(new hyper::model::compute_wait_expression(a.io_s, boost::posix_time::milliseconds(20), \n";
-		oss << abortable_function(identifier) << ",";
+		oss << abortable_function(identifier, w.content) << ",";
 		oss << next_indent << identifier << "));\n";
 
 		target = boost::none;
@@ -305,7 +314,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		std::string identifier = compute_target(e);
 
 		std::ostringstream oss;
-		oss << indent << "push_back(" << abortable_function(identifier) << indent << ");\n";
+		oss << indent << "push_back(" << abortable_function(identifier, e) << indent << ");\n";
 
 		target = boost::none;
 
@@ -316,8 +325,12 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 	{
 		std::string indent = times(3, "\t");
 
+		target = s.identifier;
+		std::string identifier = compute_target(s.bounded.expr);
+
 		std::ostringstream oss;
-		oss << indent << "push_back(" << abortable_function("a." + s.identifier) << indent << ");\n";
+		oss << indent << "push_back(" << abortable_function(identifier, s.bounded.expr) << indent << ");\n";
+		target = boost::none;
 
 		return oss.str();
 	}
@@ -564,14 +577,17 @@ struct dump_eval_expression {
 struct dump_tag_depends
 {
 	std::ostream& oss;
+	const universe& u;
 	std::string name;
 
 	dump_tag_depends(std::ostream& oss,
+					 const universe& u,
 					 const std::string& name) : 
-		oss(oss), name(name) {}
+		oss(oss), u(u), name(name) {}
 
 	void operator() (const std::string& tag) {
 		oss << "#include <" << name << "/" << tag << "_funcs.hh>\n";
+		u.get_extension(tag).recipe_additional_includes(oss, name);
 	}
 };
 
@@ -671,7 +687,7 @@ namespace hyper {
 			oss << "\n";
 
 			std::for_each(deps.tag_depends.begin(),
-						  deps.tag_depends.end(), dump_tag_depends(oss, context_a.name()));
+						  deps.tag_depends.end(), dump_tag_depends(oss, u, context_a.name()));
 			oss << "\n\n";
 
 			extract_symbols pre_symbols(context_a);
@@ -710,8 +726,15 @@ namespace hyper {
 				oss << indent << "\t" << local_data << " local_vars;\n";
 				oss << indent << "\t" << unused_results(unused_result_set) << "\n";
 				for (size_t i = 0; i < expression_list.size(); ++i) {
-					oss << indent << "\texpression_" << i << "::updater_type updater" << i << ";\n";
-					oss << indent << "\thyper::model::compute_expression<expression_" << i << "> expression_exec" << i << ";\n";
+					std::pair<bool, std::string> p;
+					p = is_tagged_func_call(expression_list[i], context_a.name(), u);
+					if (!p.first) {
+						oss << indent << "\texpression_" << i << "::updater_type updater" << i << ";\n";
+						oss << indent << "\thyper::model::compute_expression<expression_" << i ;
+						oss << "> expression_exec" << i << ";\n";
+					} else {
+						u.get_extension(p.second).generate_expression_caller(oss, i);
+					}
 				}
 				oss << indent << "\texec_driver(ability &a) : a(a)";
 				for (size_t i = 0; i < expression_list.size(); ++i) {
