@@ -595,6 +595,24 @@ struct dump_tag_depends
 	}
 };
 
+struct dump_required_agents
+{
+	std::ostream& oss;
+	std::string name;
+
+	dump_required_agents(std::ostream& oss, const std::string& name) : 
+		oss(oss), name(name) {}
+
+	void operator() (const std::string& agent) 
+	{
+		/* Don't requiere ourself, we are already here ! */
+		if (agent == name)
+			return;
+		oss << times(3, "\t") << "required_agents.insert(";
+		oss << quoted_string(agent) << ");\n";
+	}
+};
+
 namespace hyper {
 	namespace compiler {
 		recipe::recipe(const recipe_decl& r_parser, const ability& a, 
@@ -778,6 +796,8 @@ namespace hyper {
 			oss << indent << ")" << std::endl;
 			}
 			oss << indent << "{" << std::endl;
+			std::for_each(deps.var_depends.begin(), deps.var_depends.end(),
+						  dump_required_agents(oss, context_a.name()));
 			oss << indent << "}\n\n";
 
 			oss << indent << "void " << exported_name();

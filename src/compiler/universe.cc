@@ -702,8 +702,8 @@ struct output_import_helper {
 
 	void operator() (const functionDef& def) {
 		const boost::optional<std::string>& tag = def.tag();
-			u.get_extension(*tag).output_import(oss, def, u.types());
 		if (tag) {
+			u.get_extension(*tag).output_import(oss, def, u.types());
 		} else {
 			def.output_import(oss, u.types());
 		}
