@@ -21,7 +21,8 @@ namespace hyper {
 
 		namespace details {
 			typedef boost::mpl::vector<network::variable_value,
-									   network::request_constraint_answer> input_cb;
+									   network::request_constraint_answer,
+									   network::list_agents> input_cb;
 		}
 
 		struct ability : public boost::noncopyable {
@@ -48,6 +49,9 @@ namespace hyper {
 			network::local_proxy proxy;
 			std::string name;
 			model::functions_map f_map;
+
+			/* our knoweldge about alive agents */
+			std::set<std::string> alive_agents;
 
 			ability_impl* impl;
 
@@ -83,6 +87,10 @@ namespace hyper {
 				serializer.register_variable(name, value);
 				proxy.register_variable(name, value);
 			}
+
+			typedef std::pair<network::request_list_agents, network::list_agents> get_list_agents;
+			void handle_list_agents(const boost::system::error_code& e,
+									boost::shared_ptr<get_list_agents> ptr);
 		};
 	}
 }

@@ -38,6 +38,7 @@ namespace {
 		void operator() (const std::string& agent) 
 		{
 			a.client_db[agent].close();
+			a.alive_agents.erase(agent);
 		}
 	};
 
@@ -140,14 +141,15 @@ namespace {
 			return boost::mpl::void_();
 		}
 
-		output_variant operator() (const network::inform_new_agent& a) const
+		output_variant operator() (const network::inform_new_agent& l) const
 		{
+			a.alive_agents.insert(l.new_agents.begin(), l.new_agents.end());
 			return boost::mpl::void_();
 		}
 
-		output_variant operator() (const network::list_agents& a) const
+		output_variant operator() (const network::list_agents& l) const
 		{
-			return boost::mpl::void_();
+			return actor_vis(l);
 		}
 	};
 }
@@ -198,10 +200,26 @@ namespace hyper {
 				std::cout << "Succesfully registring " << name_ << " on " ;
 				std::copy(addrs.begin(), addrs.end(), 
 						std::ostream_iterator<boost::asio::ip::tcp::endpoint>(std::cout, " "));
+				std::cout << std::endl;
 			}
 			else
 				std::cout << "failed to register " << name_ << std::endl;
+
+			boost::shared_ptr<get_list_agents> ptr = boost::make_shared<get_list_agents>();
+			client_db["root"].async_request(ptr->first, ptr->second,
+					boost::bind(&ability::handle_list_agents, this, boost::asio::placeholders::error,  ptr));
+
 		};
+
+		void ability::handle_list_agents(const boost::system::error_code& e, 
+										 boost::shared_ptr<get_list_agents> ptr) 
+		{
+			if (e) 
+				return;
+
+			alive_agents.clear();
+			alive_agents.insert(ptr->second.all_agents.begin(), ptr->second.all_agents.end());
+		}
 	
 		void ability::test_run()
 		{
