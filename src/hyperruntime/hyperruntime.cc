@@ -4,6 +4,8 @@
 
 using namespace hyper;
 
+#define HYPERRUNTIME_NAME "root"
+
 namespace details {
 	typedef boost::mpl::vector<network::request_name,
 							   network::register_name,
@@ -49,8 +51,8 @@ namespace details {
 		trivial_name_client name_client;
 		network::logger<trivial_name_client> logger;
 
-		runtime_actor(const runtime_map& map) : 
-					name("root"), 
+		runtime_actor(const runtime_map& map) :
+					name(HYPERRUNTIME_NAME), 
 				    name_client(map),
 					logger(io_s, name, "logger", name_client, NOTHING)
 		{}
@@ -60,6 +62,12 @@ namespace details {
 
 	void handle_new_agent_write(const boost::system::error_code& e,
 							    boost::shared_ptr<network::inform_new_agent> ptr)
+	{
+		// let the system release the last reference on ptr
+	}
+
+	void handle_list_agents(const boost::system::error_code& e,
+							boost::shared_ptr<network::list_agents> ptr)
 	{
 		// let the system release the last reference on ptr
 	}
@@ -93,23 +101,32 @@ namespace details {
 	{
 		runtime_map &map;
 		client_db &db;
+		const std::vector<boost::asio::ip::tcp::endpoint>& root_endpoint;
 
 		runtime_visitor(runtime_map& map_, 
-						client_db &db) :
-			map(map_), db(db)
+						client_db &db,
+						const std::vector<boost::asio::ip::tcp::endpoint>& root_endpoint
+						) :
+			map(map_), db(db), root_endpoint(root_endpoint)
 		{}
 
 		output_variant operator() (const network::request_name& r) const
 		{
 			std::cerr << "receiving name request : " << r << std::endl;
 
-			runtime_map::iterator it = map.find(r.name);
-
 			network::request_name_answer res_msg;
 			res_msg.name = r.name;
-			res_msg.success = (it != map.end());
-			if (it != map.end()) 
-				res_msg.endpoints = it->second.addr.tcp_endpoints;
+
+			if (r.name == HYPERRUNTIME_NAME) {
+				res_msg.success = true;
+				res_msg.endpoints = root_endpoint;
+			} else {
+				runtime_map::iterator it = map.find(r.name);
+
+				res_msg.success = (it != map.end());
+				if (it != map.end()) 
+					res_msg.endpoints = it->second.addr.tcp_endpoints;
+			}
 
 			std::cerr << "answering to name request : " << res_msg << std::endl;
 			return res_msg;
@@ -165,11 +182,18 @@ namespace details {
 
 		output_variant operator() (const network::request_list_agents& p) const
 		{
-			network::list_agents agents;
-			std::transform(map.begin(), map.end(), std::back_inserter(agents.all_agents),
+			boost::shared_ptr<network::list_agents> agents = boost::make_shared<network::list_agents>();
+			/* copy the request key in the answer */
+			agents->id = p.id;
+			agents->src = p.src;
+
+
+			std::transform(map.begin(), map.end(), std::back_inserter(agents->all_agents),
 						   agent_name());
 
-			return agents;
+			db[p.src].async_write(*agents,
+					boost::bind(&handle_list_agents, boost::asio::placeholders::error, agents));
+			return boost::mpl::void_();
 		}
 	};
 
@@ -262,17 +286,19 @@ namespace details {
 
 int main()
 {
+	std::vector<boost::asio::ip::tcp::endpoint> root_endpoints;
 	details::runtime_map map;
 	details::runtime_actor actor(map);
 	details::client_db db(actor);
 
-	details::runtime_visitor runtime_vis(map, db);
+	details::runtime_visitor runtime_vis(map, db, root_endpoints);
 
 	typedef network::tcp::server<details::input_msg, 
 								  details::output_msg, 
 								  details::runtime_visitor
 								> tcp_runtime_impl;
 	tcp_runtime_impl runtime(4242, runtime_vis, actor.io_s);
+	root_endpoints = runtime.local_endpoints();
 
 	details::periodic_check check( actor.io_s, 
 								   boost::posix_time::milliseconds(100), 
