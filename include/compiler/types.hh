@@ -49,6 +49,8 @@ namespace hyper {
 
 			void output(std::ostream& oss, const typeList& tList) const;
 			std::string type_name() const;
+
+			bool operator< (const type& t) const { return (this->name < t.name); }
 		};
 
 		class typeList : public boost::noncopyable {

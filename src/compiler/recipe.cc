@@ -28,7 +28,7 @@ std::string symbolList_to_vectorType(const symbolList& syms, const typeList& tLi
 	symbolList::const_iterator it = syms.begin();
 	while (it != syms.end()) {
 		type t = tList.get(it->second.t);
-		oss << t.name;
+		oss << t.type_name();
 		++it;
 		if (it != syms.end())
 			oss << ", ";
@@ -567,7 +567,7 @@ struct dump_eval_expression {
 		boost::optional<typeId> id = u.typeOf(a, e, local_symbol); 
 		assert(id);
 		type t = tList.get(*id);
-		oss << next_indent << "typedef " << t.name << " return_type;\n\n";
+		oss << next_indent << "typedef " << t.type_name() << " return_type;\n\n";
 		oss << next_indent << "return_type operator() (const updater_type& updater, ";
 		oss << "const hyper::" << a.name() << "::ability& a,\n";
 		oss << next_indent << "\t\t\t\t\t\tconst " << local_data << " & local_vars)\n";

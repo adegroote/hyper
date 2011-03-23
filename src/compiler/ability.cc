@@ -148,6 +148,13 @@ struct print_initializer_helpers : boost::static_visitor<std::string>
 		oss << ", " << var_name << "(" << c.value << ")";
 		return oss.str();
 	}
+
+	std::string operator () (const Constant<std::string>& c) const
+	{
+		std::ostringstream oss;
+		oss << ", " << var_name << "(" << quoted_string(c.value) << ")";
+		return oss.str();
+	}
 };
 
 std::string print_initializer(const expression_ast& init, const std::string& name)
@@ -167,7 +174,7 @@ struct print_symbol
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
 		type t = tList.get(p.second.t);
-		oss << "\t\t\t\t" << scope::get_context_identifier(t.name, name);
+		oss << "\t\t\t\t" << t.type_name(); //scope::get_context_identifier(t.name, name);
 		oss << " " << p.second.name << ";" << std::endl;
 	}
 };
@@ -335,7 +342,7 @@ struct agent_export_symbol
 	{
 		type t = tList.get(p.second.t);
 		oss << "\t\t\thyper::model::future_value<";
-		oss << scope::get_context_identifier(t.name, name);
+		oss << t.type_name();
 		oss << "> " << p.second.name << "();" << std::endl;
 	}
 };
@@ -386,11 +393,11 @@ struct agent_export_impl
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
 		type t = tList.get(p.second.t);
-		oss << "hyper::model::future_value<" << scope::get_context_identifier(t.name, name);
+		oss << "hyper::model::future_value<" << t.type_name();
 		oss << "> ability_test::"  << p.second.name << "()" << std::endl;
 		oss << "{" << std::endl;
 		oss << "\treturn get_value<";
-		oss << scope::get_context_identifier(t.name, name);
+		oss << t.type_name();
 		oss << ">(" << quoted_string(p.second.name) << ");";
 		oss << std::endl;
 		oss << "}" << std::endl;
@@ -418,36 +425,36 @@ struct dump_swig {
 
 	dump_swig(std::ostream& oss) : oss(oss) {}
 
-	void operator() (const std::string& s) const {
+	void operator() (const type& t) const {
 		std::string type_name;
-		if (scope::is_scoped_identifier(s)) {
+		if (scope::is_scoped_identifier(t.name)) {
 			std::pair<std::string, std::string> p;
-			p = scope::decompose(s);
+			p = scope::decompose(t.name);
 			type_name = p.second;
 		} else {
-			type_name = s;
+			type_name = t.name;
 		}
 		oss << "%template(Future_" << type_name << ") ";
 		oss << "hyper::model::future_value<";
-		if (scope::is_basic_identifier(s)) 
-			oss << s;
+		if (scope::is_basic_identifier(t.name)) 
+			oss << t.type_name();
 		else 
-			oss << "hyper::" << s;
+			oss << "hyper::" << t.type_name();
 		oss << ">;\n";
 	}
 };
 
 struct extract_types
 {
-	std::set<std::string> &s;
+	std::set<type> &s;
 	const typeList& tList;
 
-	extract_types(std::set<std::string>& s_, const typeList& tlist_) :
+	extract_types(std::set<type>& s_, const typeList& tlist_) :
 		s(s_), tList(tlist_) {};
 
 	void operator() (const std::pair<std::string, symbol>& p) const
 	{
-		s.insert(tList.get(p.second.t).name);
+		s.insert(tList.get(p.second.t));
 	}
 };
 
@@ -466,7 +473,7 @@ ability::dump_swig_ability_types(std::ostream& oss, const typeList& tList) const
 
 	{
 		// search the list of type used in the variable 
-		std::set<std::string> types;
+		std::set<type> types;
 		extract_types type_deps(types, tList);
 		std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
 		std::for_each(readable_list.begin(), readable_list.end(), type_deps);

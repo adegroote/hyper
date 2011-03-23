@@ -90,7 +90,7 @@ namespace {
 		{
 			if (mpl_vector != "") 
 				mpl_vector+= ",";
-			mpl_vector+= tList.get(t).name;
+			mpl_vector+= tList.get(t).type_name();
 		}
 	};
 
