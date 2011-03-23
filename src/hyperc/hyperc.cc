@@ -450,8 +450,7 @@ int main(int argc, char** argv)
 	{
 		std::string fileName = directoryName + "/types.hh";
 		std::ofstream oss(fileName.c_str());
-		if (u.dump_ability_types(oss, abilityName) == 0)
-			remove(fileName);;
+		u.dump_ability_types(oss, abilityName);
 	}
 
 	{
