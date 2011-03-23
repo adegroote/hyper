@@ -30,7 +30,6 @@ namespace hyper {
 				return end_execute(res); // XXX Add the error scope
 
 			// check the post-conditions to be sure that everything is ok
-
 			return async_evaluate_postconditions(boost::bind(
 						&task::handle_final_postcondition_handle,
 						this, _1));
@@ -43,18 +42,25 @@ namespace hyper {
 			recipe_states[i].nb_preconds = 0; // XXX<
 
 			if (i != (recipes.size() - 1)) {
-				return recipes[i+1]->async_evaluate_preconditions(
-						boost::bind(&task::async_evaluate_recipe_preconditions,
-									this, _1, i+1));
-			} else {
-				// time to select a recipe and execute it :)
-				std::sort(recipe_states.begin(), recipe_states.end());
-				if (! recipe_states[0].failed.empty())
-					return end_execute(false);
+				boost::optional<size_t> electable;
+				for (size_t j = i+1; j < recipes.size() && !electable; ++j)
+					if (recipe_states[j].missing_agents.empty())
+						electable = j;
 
-				return recipes[recipe_states[0].index]->execute(
-						boost::bind(&task::handle_execute, this, _1));
-			}
+				if (electable)
+					return recipes[i+1]->async_evaluate_preconditions(
+							boost::bind(&task::async_evaluate_recipe_preconditions,
+								this, _1, i+1));
+			} 
+
+			// time to select a recipe and execute it :)
+			std::sort(recipe_states.begin(), recipe_states.end());
+			if (! recipe_states[0].failed.empty() &&
+				! recipe_states[0].missing_agents.empty() )
+				return end_execute(false);
+
+			return recipes[recipe_states[0].index]->execute(
+					boost::bind(&task::handle_execute, this, _1));
 		}
 
 		void task::handle_precondition_handle(conditionV failed)
@@ -68,8 +74,25 @@ namespace hyper {
 			if (recipes.empty())
 				return end_execute(false);
 
+			boost::optional<size_t> first_electable;
+			/* Evaluate the computable recipes, depending on the availables agent */
+			for (size_t i = 0; i < recipes.size(); ++i) {
+				recipe_states[i].index = i;
+				std::set_difference(recipes[i]->begin(), recipes[i]->end(), 
+									a.alive_agents.begin(), a.alive_agents.end(),
+									std::inserter(recipe_states[i].missing_agents, 
+												  recipe_states[i].missing_agents.end()));
+
+				if (recipe_states[i].missing_agents.empty() && !first_electable) 
+					first_electable = i;
+				
+			}
+
+			if (!first_electable) // no computable recipe
+				return end_execute(false);
+
 			/* compute precondition for all recipe */
-			recipes[0]->async_evaluate_preconditions(
+			recipes[*first_electable]->async_evaluate_preconditions(
 					boost::bind(&task::async_evaluate_recipe_preconditions,
 								this, _1, 0));
 		}

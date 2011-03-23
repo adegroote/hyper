@@ -31,10 +31,13 @@ namespace hyper {
 				struct state {
 					size_t index; // index in vect_recipes
 					size_t nb_preconds; // nb of preconditions
+					std::set<std::string> missing_agents; // missing agent to execute the recipe
 					conditionV failed; // failed precondition
 
 					bool operator< (const state& s) const
 					{
+						if (missing_agents.size() != s.missing_agents.size())
+							return (missing_agents.size() < s.missing_agents.size());
 						if (failed.size() != s.failed.size())
 							return (failed.size() < s.failed.size());
 						return nb_preconds > s.nb_preconds;
