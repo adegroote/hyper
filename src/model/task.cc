@@ -21,11 +21,20 @@ namespace hyper {
 		
 		void task::handle_final_postcondition_handle(conditionV failed)
 		{
+			if (!failed.empty()) {
+				a.logger(DEBUG) << "[Task " << name << "] Still have some failed postcondition : \n";
+				std::copy(failed.begin(), failed.end(),
+						  std::ostream_iterator<std::string>(a.logger(DEBUG), "\n"));
+				a.logger(DEBUG) << std::endl;
+			}
+
 			end_execute(failed.empty());
 		}
 
 		void task::handle_execute(bool res)
 		{
+			a.logger(DEBUG) << "[Task " << name << "] Recipe execution finish ";
+			a.logger(DEBUG) << (res ? "with success" : "with failure") << std::endl;
 			if (!res)
 				return end_execute(res); // XXX Add the error scope
 
@@ -53,12 +62,18 @@ namespace hyper {
 								this, _1, i+1));
 			} 
 
+			a.logger(DEBUG) << "[Task " << name << "] Finish to evaluate recipe preconditions" << std::endl;
+
 			// time to select a recipe and execute it :)
 			std::sort(recipe_states.begin(), recipe_states.end());
 			if (! recipe_states[0].failed.empty() &&
-				! recipe_states[0].missing_agents.empty() )
+				! recipe_states[0].missing_agents.empty() ) {
+				a.logger(DEBUG) << "[Task " << name << "] No recipe candidate found" << std::endl;
 				return end_execute(false);
+			}
 
+			a.logger(DEBUG) << "[Task " << name << "] Choose to execute ";
+			a.logger(DEBUG) << recipes[recipe_states[0].index]->r_name() << std::endl;
 			return recipes[recipe_states[0].index]->execute(
 					boost::bind(&task::handle_execute, this, _1));
 		}
@@ -67,13 +82,26 @@ namespace hyper {
 		{
 			/* If some pre-conditions are not ok, something is wrong, just
 			 * returns false */
+			a.logger(DEBUG) << "[Task " << name << "] Pre-condition evaluated" << std::endl;
 
-			if (!failed.empty())
+			if (!failed.empty()) {
+				a.logger(DEBUG) << "[Task " << name << "] Failure of some pre-conditions ";
+				std::copy(failed.begin(), failed.end(),
+						  std::ostream_iterator<std::string>(a.logger(DEBUG), ", "));
+				a.logger(DEBUG) << std::endl;
 				return end_execute(false);
+			}
 
-			if (recipes.empty())
+			if (recipes.empty()) {
+				a.logger(DEBUG) << "[Task " << name << "] No recipe to handle it" << std::endl;
 				return end_execute(false);
+			}
 
+			a.logger(DEBUG) << "Current known alive agents ";
+			std::copy(a.alive_agents.begin(), a.alive_agents.end(), 
+					 std::ostream_iterator<std::string>(a.logger(DEBUG), ", "));
+			a.logger(DEBUG) << std::endl;
+			
 			boost::optional<size_t> first_electable;
 			/* Evaluate the computable recipes, depending on the availables agent */
 			for (size_t i = 0; i < recipes.size(); ++i) {
@@ -84,14 +112,26 @@ namespace hyper {
 									std::inserter(recipe_states[i].missing_agents, 
 												  recipe_states[i].missing_agents.end()));
 
+				if (!recipe_states[i].missing_agents.empty()) {
+					a.logger(DEBUG) << "[Task " << name << "] Won't evaluate " << recipes[i]->r_name();
+					a.logger(DEBUG) << " because the following required agents are not available : ";
+					std::copy(recipe_states[i].missing_agents.begin(),
+							  recipe_states[i].missing_agents.end(),
+							  std::ostream_iterator<std::string>(a.logger(DEBUG), ", "));
+					a.logger(DEBUG) << std::endl;
+				}
+
 				if (recipe_states[i].missing_agents.empty() && !first_electable) 
 					first_electable = i;
 				
 			}
 
-			if (!first_electable) // no computable recipe
+			if (!first_electable) {// no computable recipe
+				a.logger(DEBUG) << "[Task " << name << "] No computable recipe" << std::endl;
 				return end_execute(false);
+			}
 
+			a.logger(DEBUG) << "[Task " << name << "] Starting to evaluate recipe preconditions" << std::endl;
 			/* compute precondition for all recipe */
 			recipes[*first_electable]->async_evaluate_preconditions(
 					boost::bind(&task::async_evaluate_recipe_preconditions,
@@ -102,9 +142,12 @@ namespace hyper {
 		{
 			/* If all post-conditions are ok, no need to execute the task
 			 * anymore */
-			if (failed.empty())
+			if (failed.empty()) {
+				a.logger(DEBUG) << "[Task " << name << "] All post-conditions already OK " << std::endl;
 				return end_execute(true);
+			}
 
+			a.logger(DEBUG) << "[Task " << name << "] Evaluation pre-condition" << std::endl;
 			return async_evaluate_preconditions(boost::bind(
 						&task::handle_precondition_handle, 
 						this, _1));
@@ -117,7 +160,7 @@ namespace hyper {
 				return;
 
 			is_running = true;
-
+			a.logger(DEBUG) << "[Task " << name <<"] Start execution " << std::endl;
 
 			/* Handle correctly the special case where we don't have
 			 * postcondition.  It means that they can't be called using the
@@ -138,6 +181,9 @@ namespace hyper {
 		void task::end_execute(bool res)
 		{
 			is_running = false;
+
+			a.logger(DEBUG) << " [Task " << name << "] Finish execution ";
+			a.logger(DEBUG) << (res ? " with success" : " with failure") << std::endl;
 
 			std::for_each(pending_cb.begin(), pending_cb.end(),
 					callback(a, res));

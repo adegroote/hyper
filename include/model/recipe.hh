@@ -44,6 +44,8 @@ namespace hyper {
 				agent_const_iterator begin() const { return required_agents.begin(); }
 				agent_const_iterator end() const { return required_agents.end(); }
 
+				const std::string& r_name() const { return name; }
+
 				virtual ~recipe() {};
 		};
 	}
