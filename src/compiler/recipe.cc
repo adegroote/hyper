@@ -765,8 +765,9 @@ namespace hyper {
 					if (syms.empty()) {
 						oss << ",\n";
 					} else {
-						oss << syms.local_list_variables_updated(next_indent);
-						oss << syms.remote_list_variables(next_indent) << ",";
+						oss << ",\n" << indent << "\t\tupdater" << i << "(a\n";
+						oss << "\t" << syms.local_list_variables_updated(next_indent);
+						oss << "\t" << syms.remote_list_variables(next_indent) << indent << "\t\t),\n";
 					}
 					oss << indent << "\t\texpression_exec" << i << "(updater" << i << ")";
 				}

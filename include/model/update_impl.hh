@@ -126,7 +126,7 @@ namespace hyper {
 
 			public:
 				update_variables(A& a, const typename remote_values::remote_vars_conf& vars):
-					proxy(a), remote_values(vars)
+					proxy(a), remote(vars)
 				{}
 
 				template <typename Handler>

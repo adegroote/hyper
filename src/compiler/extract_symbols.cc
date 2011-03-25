@@ -175,7 +175,7 @@ namespace hyper {
 		std::string extract_symbols::remote_list_variables(const std::string& base_indent) const
 		{
 			std::ostringstream oss;
-			std::string next_indent = base_indent + "\t";
+			std::string next_indent = base_indent + "\t\t\t";
 			if (remote.empty()) 
 				return "";
 
