@@ -78,6 +78,7 @@ namespace hyper {
 			/* Evaluate the computable recipes, depending on the availables agent */
 			for (size_t i = 0; i < recipes.size(); ++i) {
 				recipe_states[i].index = i;
+				recipe_states[i].missing_agents.clear();
 				std::set_difference(recipes[i]->begin(), recipes[i]->end(), 
 									a.alive_agents.begin(), a.alive_agents.end(),
 									std::inserter(recipe_states[i].missing_agents, 
