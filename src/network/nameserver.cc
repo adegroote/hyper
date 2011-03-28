@@ -111,7 +111,12 @@ namespace hyper {
 			oss(0), map_(), gen_(port), 
 			tcp_ns_(addr, port, 
 					tcp::ns_visitor(map_, gen_, 
-						verbose ? std::cout : oss), io_service) {}
+						verbose ? std::cout : oss), io_service) 
+		{
+			ns::addr_storage storage;
+			storage.tcp_endpoints = tcp_ns_.local_endpoints();
+			map_.add("root", storage);
+		}
 
 		void name_server::stop()
 		{
