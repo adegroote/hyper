@@ -823,7 +823,7 @@ namespace hyper {
 
 				bool is_terminated()
 				{
-					bool res;
+					bool res = true;
 					details::remote_values_is_terminated<tupleT> is_terminated_(values, res);
 					boost::mpl::for_each<range> (is_terminated_);
 					return res;
@@ -873,10 +873,10 @@ namespace hyper {
 					{
 						value.terminated = true;
 
-						if (e || value.ans.success == false ) 
+						if (e || value.ans.success == false) 
 							value.value = boost::none;
-						else
-							value.value = deserialize_value<T>(ans.value);
+						else 
+							value.value = deserialize_value<T>(value.ans.value);
 
 						boost::get<0>(handler)(e);
 					}
