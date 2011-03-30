@@ -24,7 +24,7 @@ namespace hyper {
 					future_value<T> future)
 			{
 				delete proxy;
-				if (e) {
+				if (e || !future.get_raw()) {
 					std::cerr << "Failed to get the value of " << future.name() << std::endl;
 				} else {
 					std::cerr << "Successful get the value of " << future.name() << std::endl;
