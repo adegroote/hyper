@@ -280,6 +280,7 @@ namespace hyper {
 				template <typename Input, typename Handler>
 				void async_write(const Input& input, Handler handler)
 				{
+					actor.logger(DEBUG_PROTOCOL) << " Writing " << input << " to " << actor_dst << std::endl;
 					return async_write_(input, true, boost::make_tuple(handler));
 				}
 
@@ -318,7 +319,6 @@ namespace hyper {
 				}
 
 				void close() {
-					std::cout << __FUNCTION__ << std::endl;
 					connected = false;
 					c_.close();
 				}
