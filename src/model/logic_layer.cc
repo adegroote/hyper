@@ -91,6 +91,32 @@ namespace {
 
 namespace hyper {
 	namespace model {
+		const char* logic_layer_category_impl::name() const {
+			return "logic_layer";
+		}
+
+		std::string logic_layer_category_impl::message(int ev) const
+		{
+			switch(ev) {
+				case logic_layer_error::ok :
+					return "ok";
+				case logic_layer_error::parse_error :
+					return "parse_error";
+				case logic_layer_error::evaluation_error :
+					return "evaluation_error";
+				case logic_layer_error::recipe_execution_error :
+					return "recipe_execution_error";
+				default:
+					return "unknow_error";
+			}
+		}
+
+		const boost::system::error_category& logic_layer_category()
+		{
+			static logic_layer_category_impl instance;
+			return instance;
+		}
+
 		logic_layer::logic_layer(ability &a) :
 			engine(),
 			a_(a)

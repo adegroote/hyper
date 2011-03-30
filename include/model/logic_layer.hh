@@ -4,6 +4,7 @@
 #include <list>
 
 #include <boost/bind.hpp>
+#include <boost/system/error_code.hpp>
 #include <boost/thread/thread.hpp>
 
 #include <logic/engine.hh>
@@ -49,6 +50,30 @@ namespace hyper {
 				ctr(ctr_), logic_tree(logic, *this) {}
 		};
 
+		namespace logic_layer_error {
+			enum logic_layer_error_t {
+				ok,
+				parse_error,
+				evaluation_error,
+				recipe_execution_error
+			};
+		}
+
+		class logic_layer_category_impl
+			  : public boost::system::error_category
+		{
+			public:
+			  virtual const char* name() const;
+			  virtual std::string message(int ev) const;
+		};
+
+		const boost::system::error_category& logic_layer_category();
+
+		inline
+		boost::system::error_code make_error_code(logic_layer_error::logic_layer_error_t e)
+		{
+			return boost::system::error_code(static_cast<int>(e), logic_layer_category());
+		}
 
 		struct logic_layer {
 			logic::engine engine;
@@ -85,5 +110,12 @@ namespace hyper {
 		};
 	}
 }
+
+namespace boost { namespace system {
+	template <>
+		struct is_error_code_enum<hyper::model::logic_layer_error::logic_layer_error_t>
+		: public true_type {};
+}}
+
 
 #endif /* HYPER_MODEL_LOGIC_LAYER_HH */
