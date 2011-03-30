@@ -163,10 +163,12 @@ namespace hyper {
 			add_symetry_rule(engine, "divides");
 		}
 
-		void logic_layer::async_exec(const logic_constraint& ctr)
+		void logic_layer::async_exec(const logic_constraint& ctr, logic_layer_cb cb)
+									 
 		{
 			logic_ctx_ptr ctx = boost::shared_ptr<logic_context>(
 					new logic_context(ctr, *this));
+			ctx->cb = cb;
 
 			std::string to_execute = prepare_execution_rqst(ctx->ctr.constraint);
 			logic::generate_return ret_exec =
@@ -174,8 +176,7 @@ namespace hyper {
 
 			if (ret_exec.res == false) {
 				a_.logger(WARNING) << ctr << " Fail to parse" << std::endl;
-				// XXX
-				return;
+				return ctx->cb(make_error_code(logic_layer_error::parse_error));
 			}
 
 			ctx->call_exec = ret_exec.e;
@@ -191,14 +192,10 @@ namespace hyper {
 		void logic_layer::handle_exec_task_tree(bool success, logic_ctx_ptr ctx)
 		{
 			a_.logger(DEBUG) <<  ctx->ctr << " End execution " << success << std::endl;
-			if (ctx->cb) {
-				if (success) {
-					(*ctx->cb)(boost::system::error_code());
-				} else {
-					// XXX need to use real error
-					(*ctx->cb)(boost::asio::error::invalid_argument);
-				}
-			}
+			if (success) 
+				ctx->cb(boost::system::error_code());
+			else 
+				ctx->cb(make_error_code(logic_layer_error::recipe_execution_error));
 		}
 
 		void logic_layer::handle_eval_task_tree(bool success, logic_ctx_ptr ctx) 
@@ -233,13 +230,12 @@ namespace hyper {
 
 			if (e  || !ctx->exec_res) {
 				a_.logger(DEBUG) << ctx->ctr << " Failed to evaluate" << std::endl;
-				// XXX send a back message to caller
-				return;
+				return ctx->cb(make_error_code(logic_layer_error::evaluation_error));
 			}
 
 			if (ctx->exec_res && *(ctx->exec_res)) {
 				a_.logger(INFORMATION) << ctx->ctr << " Already enforced" << std::endl;
-				return;
+				return ctx->cb(boost::system::error_code());
 			}
 
 			std::string to_logic = prepare_logic_rqst(ctx->ctr.constraint);
@@ -247,6 +243,7 @@ namespace hyper {
 					boost::bind(&logic_layer::handle_eval_task_tree, this,
 							   _1, ctx));
 		}
+
 
 		logic_layer::~logic_layer() 
 		{

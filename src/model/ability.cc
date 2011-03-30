@@ -92,6 +92,27 @@ namespace {
 			return boost::mpl::void_();
 		}
 
+		void handle_constraint_answer(const boost::system::error_code&, 
+				network::request_constraint_answer* ans) const
+		{
+			a.logger(DEBUG) << " Answer send " << std::endl;
+			delete ans;
+		}
+
+		void handle_async_exec_completion(const boost::system::error_code& e,
+				model::logic_constraint ctr) const
+		{
+			network::request_constraint_answer* ans = new network::request_constraint_answer();
+			ans->id = ctr.id;
+			ans->src = ctr.src;
+			ans->success = !e; // conversion to bool \o/
+
+			a.logger(DEBUG) << ctr << " Getting answer " << std::endl;
+			a.client_db[ctr.src].async_write(*ans,
+					boost::bind(&ability_visitor::handle_constraint_answer, this, 
+								 boost::asio::placeholders::error,  ans));
+		}
+
 		output_variant operator() (const network::request_constraint& r) const
 		{
 			model::logic_constraint ctr;
@@ -102,7 +123,9 @@ namespace {
 			a.logger(INFORMATION) << ctr << " Handling ";
 			a.logger(INFORMATION) << r.constraint << std::endl;
 
-			a.logic().async_exec(ctr);
+			a.logic().async_exec(ctr, 
+					boost::bind(&ability_visitor::handle_async_exec_completion, this,
+								boost::asio::placeholders::error, ctr));
 
 			return boost::mpl::void_();
 		}
