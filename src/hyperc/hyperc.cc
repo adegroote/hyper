@@ -63,6 +63,7 @@ void build_swig(std::ostream& oss, const std::string& name)
 		"%include \"@NAME@/types.hh\"\n"
 		"%include <model/future.hh>\n"
 		"%include \"@NAME@/export.hh\"\n"
+		"%template(Future_bool) hyper::model::future_value<bool>;\n"
 		;
 
 	oss << hyper::compiler::replace_by(swig, "@NAME@", name);

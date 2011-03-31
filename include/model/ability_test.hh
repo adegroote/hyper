@@ -37,6 +37,7 @@ namespace hyper {
 								  const std::string& value);
 
 			void handle_send_constraint(const boost::system::error_code& e,
+										future_value<bool>, 
 									    network::request_constraint* msg,
 										network::request_constraint_answer* ans);
 
@@ -63,7 +64,7 @@ namespace hyper {
 			}
 
 			public:
-			void send_constraint(const std::string& constraint);
+			future_value<bool> send_constraint(const std::string& constraint);
 			void abort(const std::string& reason);
 		};
 	}
