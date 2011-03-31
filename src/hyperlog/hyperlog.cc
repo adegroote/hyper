@@ -37,7 +37,7 @@ namespace {
 			oss << "Following agent(s) die : ";
 			std::copy(msg.dead_agents.begin(), msg.dead_agents.end(),
 					  std::ostream_iterator<std::string>(oss, ", "));
-			hyper::network::log_msg log("runtime", oss.str());
+			hyper::network::log_msg log("root", oss.str());
 			log_msgs_.push_back(log);
 
 			return boost::mpl::void_();
@@ -50,7 +50,7 @@ namespace {
 			oss << "New agent(s) in the system : ";
 			std::copy(msg.new_agents.begin(), msg.new_agents.end(),
 					  std::ostream_iterator<std::string>(oss, ", "));
-			hyper::network::log_msg log("runtime", oss.str());
+			hyper::network::log_msg log("root", oss.str());
 			log_msgs_.push_back(log);
 
 			return boost::mpl::void_();
