@@ -54,7 +54,7 @@ namespace details {
 		runtime_actor(const runtime_map& map) :
 					name(HYPERRUNTIME_NAME), 
 				    name_client(map),
-					logger(io_s, name, "logger", name_client, NOTHING)
+					logger(io_s, name, "logger", name_client, DEBUG_ALL)
 		{}
 	};
 
@@ -187,7 +187,6 @@ namespace details {
 			agents->id = p.id;
 			agents->src = p.src;
 
-
 			std::transform(map.begin(), map.end(), std::back_inserter(agents->all_agents),
 						   agent_name());
 
@@ -248,6 +247,7 @@ namespace details {
 				{
 					if (it->second.timeout_occurence > 2) {
 						dead_agents.push_back(it->first);
+						db_[it->first].close();
 						map_.erase(it++);
 					} else {
 						it->second.timeout_occurence++;
