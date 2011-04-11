@@ -46,8 +46,9 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 	recipe_test check_recipe(u, P, u.get_ability("first"));
 	check_recipe.do_build_test("r0 = recipe { pre = {}; post = {}; body = {}; };", true);
 
+	/* make and ensure expect that a remote name appears in the expression */
 	check_recipe.do_build_test("r1 = recipe { pre = {}; post = {}; body = {  make (2 == 1); }; };",
-								true);
+								false);
 
 	check_recipe.do_build_test("r2 = recipe { pre = {}; \
 											   post = {};  \
@@ -118,7 +119,7 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 								false);
 
 	check_recipe.do_build_test("r12 = recipe { pre = {}; post = {};  \
-										body = {  make ( square(2.0) < 2.0 ); }; };",
+										body = {  make ( square(other::thresold) < 2.0 ); }; };",
 								true);
 
 	/* wait takes a boolean expression in input */
@@ -142,7 +143,7 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 								false);
 
 	check_recipe.do_build_test("r17 = recipe { pre = {}; post = {};  \
-										body = { ensure ( square(2.0) < 2.0 ); }; };",
+										body = { ensure ( square(other::thresold) < 2.0 ); }; };",
 								true);
 
 	/* A more complex beast */
@@ -151,7 +152,7 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 											let pi 3.1415;			 \
 											let heuristic (square(thresold) * pi); \
 											make ( first::myPrivatevariable < heuristic) \
-											let X ensure ( square(2.0) < 2.0 ); \
+											let X ensure ( square(other::thresold) < 2.0 ); \
 											square(pi);				\
 											/* more computation */	\
 											square(pi);				\
@@ -194,8 +195,7 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 											   body = {					  \
 													ensure(				  \
 													first::isOk == true =>> \
-													first::thresold < 2.0 =>> \
-													k != 3					\
+													first::thresold < 2.0  \
 													)						\
 											    };							\
 											  };", true);

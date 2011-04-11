@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 
+#include <boost/optional.hpp>
 #include <boost/variant.hpp>
 #include <compiler/expression_ast.hh>
 
@@ -34,13 +35,26 @@ namespace hyper {
 
 		std::ostream& operator<< (std::ostream& os, recipe_op_kind kind);
 
+		struct remote_constraint {
+			boost::optional<std::string> dst;
+			expression_ast ast;
+
+			remote_constraint() {}
+			remote_constraint(const expression_ast& ast);
+		};
+
+		std::ostream& operator<< (std::ostream& os, const remote_constraint&);
+
 		template <recipe_op_kind kind>
 		struct recipe_op 
 		{
-			std::vector<expression_ast> content;
+			std::vector<remote_constraint> content;
 
 			recipe_op() {}
-			recipe_op(const std::vector<expression_ast>& content_) : content(content_) {}
+			recipe_op(const std::vector<expression_ast>& content_) {
+				std::copy(content_.begin(), content_.end(),
+						  std::back_inserter(content));
+			}
 		};
 
 		template <recipe_op_kind kind>

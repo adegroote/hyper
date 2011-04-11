@@ -67,6 +67,23 @@ struct compute_expression_deps : public boost::static_visitor<void>
 	}
 };
 
+struct compute_recipe_op_deps 
+{
+	std::string name;
+	const universe& u;
+	depends &d;
+
+	compute_recipe_op_deps(const std::string& name,
+						   const universe& u, depends& d) :
+		name(name), u(u), d(d)
+	{}
+
+	void operator() (const remote_constraint& constraint) const
+	{
+		add_depends(constraint.ast, name, u, d);
+	}
+};
+
 struct compute_recipe_expression_deps : public boost::static_visitor<void>
 {
 	depends& d;	
@@ -93,14 +110,8 @@ struct compute_recipe_expression_deps : public boost::static_visitor<void>
 	template <recipe_op_kind kind>
 	void operator() (const recipe_op<kind>& op) const
 	{
-		void (*f)(const expression_ast&, const std::string&, const universe& u, depends&) = 
-			&add_depends;
-
 		std::for_each(op.content.begin(), op.content.end(), 
-				boost::bind(f, _1, boost::cref(name), 
-								   boost::cref(u),
-											  boost::ref(d)));
-
+					  compute_recipe_op_deps(name, u, d));
 	}
 
 	void operator() (const expression_ast& e) const

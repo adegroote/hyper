@@ -78,10 +78,10 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 
 	template <recipe_op_kind kind>
 	bool operator() (const recipe_op<kind>& op) const {
-		std::vector<expression_ast>::const_iterator it;
+		std::vector<remote_constraint>::const_iterator it;
 		bool valid = true;
-		for (it = op.content.begin(); it != op.content.end(); ++it)
-			valid &= it->is_valid_predicate(a, u, local);
+		for (it = op.content.begin(); it != op.content.end(); ++it) 
+			valid &= (it->dst && it->ast.is_valid_predicate(a, u, local));
 
 		return valid;
 	}
