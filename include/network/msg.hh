@@ -327,7 +327,24 @@ namespace hyper {
 				terminate(const std::string& src) : reason(src) {}
 		};
 
-		typedef boost::mpl::vector16<
+		struct abort 
+		{
+			private:
+				friend class boost::serialization::access;
+				template <class Archive>
+				void serialize(Archive& ar, const unsigned int version)
+				{
+					(void) version;
+					ar & id;
+				}
+			public:
+				identifier id;
+
+				abort() {};
+				abort(identifier id) : id(id) {}
+		};
+
+		typedef boost::mpl::vector17<
 			request_name,
 			request_name_answer,
 			register_name,
@@ -343,10 +360,11 @@ namespace hyper {
 			request_constraint_ack,
 			request_constraint_answer,
 			log_msg,
-			terminate
+			terminate,
+			abort
 		> message_types;
 
-#define MESSAGE_TYPE_MAX 16
+#define MESSAGE_TYPE_MAX 17
 
 		typedef boost::make_variant_over<message_types>::type message_variant;
 
