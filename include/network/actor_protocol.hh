@@ -285,7 +285,7 @@ namespace hyper {
 				}
 
 				template <typename Input, typename Output, typename Handler>
-				void async_request(const Input& input, 
+				identifier async_request(const Input& input, 
 								   Output& output, Handler handler)
 				{
 					input.id = actor.gen_identifier();
@@ -316,6 +316,8 @@ namespace hyper {
 												 this, 
 												 boost::asio::placeholders::error,
 												 input.id, boost::make_tuple(handler)));
+
+					return input.id;
 				}
 
 				void close() {
