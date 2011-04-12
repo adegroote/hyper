@@ -790,7 +790,7 @@ namespace hyper {
 			oss << indent << "preds(a_, \n";
 			oss << next_indent << "boost::assign::list_of<hyper::" << context_a.name(); 
 			oss << "::" << exported_name() << "::pre_conditions::condition>\n";
-			generate_condition e_cond(oss, "pre");
+			generate_condition e_cond(oss, "pre", context_a);
 			std::for_each(pre.begin(), pre.end(), e_cond);
 			oss << pre_symbols.local_list_variables_updated(next_next_indent);
 			oss << pre_symbols.remote_list_variables(next_next_indent);

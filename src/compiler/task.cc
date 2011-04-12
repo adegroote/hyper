@@ -24,16 +24,17 @@ namespace {
 	
 	struct generate_logic_fact {
 		std::string name;
+		const ability &a;
 		std::ostream &oss;
 
-		generate_logic_fact(const std::string& name_, std::ostream& oss_):
-			name(name_), oss(oss_)
+		generate_logic_fact(const std::string& name, const ability& a, std::ostream& oss_):
+			name(name), a(a), oss(oss_)
 		{}
 
 		void operator() (const expression_ast& e) const
 		{
 			oss << "\t\t\ta_.logic().engine.add_fact(";
-			oss << quoted_string(generate_logic_expression(e));
+			oss << quoted_string(generate_logic_expression(e, a));
 			oss << ", " << quoted_string(name) <<  ");" << std::endl;
 		}
 	};
@@ -278,7 +279,7 @@ namespace hyper {
 				oss << indent << "preds(a_, \n";
 				oss << next_indent << "boost::assign::list_of<hyper::" << ability_context.name(); 
 				oss << "::" << exported_name() << "::pre_conditions::condition>\n";
-				generate_condition e_cond(oss, "pre");
+				generate_condition e_cond(oss, "pre", ability_context);
 				std::for_each(pre.begin(), pre.end(), e_cond);
 				oss << pre_symbols.local_list_variables_updated(next_next_indent);
 				oss << pre_symbols.remote_list_variables(next_next_indent);
@@ -290,7 +291,7 @@ namespace hyper {
 				oss << indent << "posts(a_, \n";
 				oss << next_indent << "boost::assign::list_of<hyper::" << ability_context.name();
 				oss << "::" << exported_name() << "::post_conditions::condition>\n";
-				generate_condition e_cond(oss, "post");
+				generate_condition e_cond(oss, "post", ability_context);
 				std::for_each(post.begin(), post.end(), e_cond);
 				oss << post_symbols.local_list_variables_updated(next_next_indent);
 				oss << post_symbols.remote_list_variables(next_next_indent);
@@ -299,7 +300,7 @@ namespace hyper {
 				oss << indent << "{" << std::endl;
 
 				std::for_each(recipes.begin(), recipes.end(), generate_recipe(oss));
-				generate_logic_fact e_fact(name, oss);
+				generate_logic_fact e_fact(name, ability_context, oss);
 				std::for_each(post.begin(), post.end(), e_fact);
 
 				oss << indent << "}\n\n";

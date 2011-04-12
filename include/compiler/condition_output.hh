@@ -3,17 +3,26 @@
 
 #include <iostream>
 
+#include <boost/optional.hpp>
+
 namespace hyper {
 	namespace compiler {
 		struct expression_ast; 
+		class ability;
+		class universe;
 
 		struct generate_condition {
 			std::ostream& oss;
 			std::string base;
+			const ability& a;
+			boost::optional<const universe&> u;
 			mutable size_t counter;
 
-			generate_condition(std::ostream& oss_, const std::string& base_) : 
-				oss(oss_), base(base_), counter(0) {}
+
+			generate_condition(std::ostream& oss_, const std::string& base_,
+							   const ability& a, 
+							   boost::optional<const universe&> u = boost::none) : 
+				oss(oss_), base(base_), counter(0), a(a), u(u) {}
 
 			void operator() (const expression_ast& e) const;
 		};

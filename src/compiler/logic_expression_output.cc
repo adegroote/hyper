@@ -1,6 +1,8 @@
 #include <compiler/logic_expression_output.hh>
 #include <compiler/expression_ast.hh>
 #include <compiler/output.hh>
+#include <compiler/scope.hh>
+#include <compiler/universe.hh>
 
 using namespace hyper::compiler;
 
@@ -24,6 +26,13 @@ namespace {
 	
 	struct dump_logic_expression_ast  : public boost::static_visitor<std::string>
 	{
+		const ability& a;
+		boost::optional<const universe&> u;
+
+		dump_logic_expression_ast(const ability& a, boost::optional<const universe&> u) : 
+			a(a), u(u)
+		{}
+
 		std::string operator() (const empty& e) const { (void)e; assert(false); }
 
 		template <typename T>
@@ -52,10 +61,12 @@ namespace {
 		std::string operator() (const function_call& f) const
 		{
 			std::ostringstream oss;
-			(void) f;
-			oss << f.fName << "(";
+			if (scope::is_basic_identifier(f.fName) || scope::is_scoped_identifier(f.fName))
+				oss << f.fName << "(";
+			else 
+				oss << a.name() << "::" << f.fName << "(";
 			for (size_t i = 0; i < f.args.size(); ++i) {
-				oss << boost::apply_visitor(dump_logic_expression_ast(), f.args[i].expr);
+				oss << boost::apply_visitor(dump_logic_expression_ast(a, u), f.args[i].expr);
 				if (i != (f.args.size() - 1)) {
 					oss << ",";
 				}
@@ -68,7 +79,7 @@ namespace {
 		{
 			std::ostringstream oss;
 			oss << "(";
-			oss << boost::apply_visitor(dump_logic_expression_ast(), e.expr);
+			oss << boost::apply_visitor(dump_logic_expression_ast(a, u), e.expr);
 			oss << ")";
 			return oss.str();
 		}
@@ -78,10 +89,17 @@ namespace {
 		{
 			std::ostringstream oss;
 			oss << logic_function<T>::name();
+			if (u) {
+				boost::optional<typeId> tid = (*u).typeOf(a, op.left.expr);
+				if (tid) {
+					type t = (*u).types().get(*tid);
+					oss << "%_" << t.type_name() << "%";
+				}
+			}
 			oss << "(";
-			oss << boost::apply_visitor(dump_logic_expression_ast(), op.left.expr);
+			oss << boost::apply_visitor(dump_logic_expression_ast(a, u), op.left.expr);
 			oss << ",";
-			oss << boost::apply_visitor(dump_logic_expression_ast(), op.right.expr); 
+			oss << boost::apply_visitor(dump_logic_expression_ast(a, u), op.right.expr); 
 			oss << ")";
 			return oss.str();
 		}
@@ -91,17 +109,19 @@ namespace {
 		{
 			std::ostringstream oss;
 			oss << "(";
-			oss << boost::apply_visitor(dump_logic_expression_ast(), op.subject.expr);
+			oss << boost::apply_visitor(dump_logic_expression_ast(a, u), op.subject.expr);
 			oss << ")";
 			return oss.str();
 		}
 	};
 }
+
 namespace hyper {
 	namespace compiler {
-		std::string generate_logic_expression(const expression_ast& e)
+		std::string generate_logic_expression(const expression_ast& e, const ability& a, 
+				boost::optional<const universe&> u)
 		{
-			return boost::apply_visitor(dump_logic_expression_ast(), e.expr);
+			return boost::apply_visitor(dump_logic_expression_ast(a, u), e.expr);
 		}
 	}
 }
