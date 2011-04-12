@@ -263,6 +263,17 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		return identifier.str();
 	}
 
+	std::string compute_target() const
+	{
+		std::ostringstream identifier;
+		if (target) {
+			identifier << "boost::fusion::at_c<" << symbolList_index(syms, *target) << ">(local_vars)";
+		} else {
+			identifier << "boost::fusion::at_key<bool>(unused_res)";
+		}
+		return identifier.str();
+	}
+
 	std::string abortable_function(const std::string& identifier, const expression_ast& e) const
 	{
 		std::pair<bool, std::string> p = is_tagged_func_call(e, a.name(), u);
@@ -333,6 +344,22 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		target = boost::none;
 
 		return oss.str();
+	}
+
+	std::string operator() (const recipe_op<MAKE>& r) const
+	{
+		std::string indent = times(3, "\t");
+		std::string identifier = compute_target();
+		std::ostringstream oss;
+
+		oss << indent << "push_back(new hyper::model::compute_make_expression(a, ";
+		oss << quoted_string(*(r.content[0].dst)) << ", ";
+		oss << quoted_string(generate_logic_expression(r.content[0].ast, a, u));
+		oss << ", " << identifier << "));\n";
+		target = boost::none;
+
+		return oss.str();
+
 	}
 };
 
@@ -697,6 +724,7 @@ namespace hyper {
 			oss << "/recipes/" << name << ".hh>\n"; 
 			oss << "#include <model/abortable_function.hh>\n";
 			oss << "#include <model/compute_expression.hh>\n";
+			oss << "#include <model/compute_make_expression.hh>\n";
 			oss << "#include <model/compute_wait_expression.hh>\n";
 			oss << "#include <boost/assign/list_of.hpp>\n"; 
 			oss << "#include <boost/fusion/container/vector.hpp>\n";
