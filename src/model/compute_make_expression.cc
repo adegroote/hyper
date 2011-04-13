@@ -15,7 +15,11 @@ namespace hyper {
 				cb(e);
 
 			res = ans.success;
-			cb(boost::system::error_code());
+			if (res) {
+				cb(boost::system::error_code());
+			} else {
+				cb(make_error_code(exec_layer_error::execution_ko));
+			}
 		}
 
 		void compute_make_expression::compute(cb_type cb) 

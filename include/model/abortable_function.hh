@@ -20,6 +20,32 @@ namespace hyper {
 			virtual ~abortable_function_base() {};
 		};
 
+		namespace exec_layer_error {
+			enum exec_layer_error_t {
+				ok,
+				interrupted,          // aborted 
+				execution_failed,	  // fail to compute remote value, agent dies, ...
+				execution_ko		  // compute succesfully, but unexpected error
+			};
+		}
+
+		class exec_layer_category_impl
+			  : public boost::system::error_category
+		{
+			public:
+			  virtual const char* name() const;
+			  virtual std::string message(int ev) const;
+		};
+
+		const boost::system::error_category& exec_layer_category();
+
+		inline
+		boost::system::error_code make_error_code(exec_layer_error::exec_layer_error_t e)
+		{
+			return boost::system::error_code(static_cast<int>(e), exec_layer_category());
+		}
+
+
 		struct abortable_function : public abortable_function_base {
 			typedef boost::function<void (cb_type)> exec_type;
 			typedef boost::function<void (void)> abort_type;
@@ -68,7 +94,7 @@ namespace hyper {
 						cb(e);
 					else {
 						if (user_ask_abort) 
-							return cb(make_error_code(boost::system::errc::interrupted));
+							return cb(make_error_code(exec_layer_error::interrupted));
 						if (index+1 == seq.size())
 							cb(boost::system::error_code());
 						else {
@@ -106,5 +132,11 @@ namespace hyper {
 		};
 	};
 };
+
+namespace boost { namespace system {
+	template <>
+		struct is_error_code_enum<hyper::model::exec_layer_error::exec_layer_error_t>
+		: public true_type {};
+}}
 
 #endif /* HYPER_MODEL_ABORTABLE_FUNCTION_HH_ */
