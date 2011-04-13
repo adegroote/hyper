@@ -1,6 +1,8 @@
 #include <logic/expression.hh>
 #include <logic/eval.hh>
 
+#include <compiler/utils.hh>
+
 #include <model/ability.hh>
 #include <model/compute_task_tree.hh>
 #include <model/execute_impl.hh>
@@ -39,7 +41,7 @@ namespace {
 	 * % will be used to denote the type of the expression, and so is useless
 	 * in the logic world
 	 */
-	std::string prepare_logic_rqst(const std::string& s)
+	std::string prepare_logic_rqst(const std::string& s, const std::string& ctx)
 	{
 		std::string res = s;
 		std::string::size_type loc, previous_loc;
@@ -57,7 +59,9 @@ namespace {
 			res.erase(previous_loc, pattern_size+1);
 		}
 
-		return res;
+		std::string ctxspace = ctx + "::";
+
+		return hyper::compiler::replace_by(res, ctxspace, "");
 	}
 
 	void add_transitivy_rule(hyper::logic::engine& e, const std::string& s)
@@ -241,7 +245,7 @@ namespace hyper {
 				return ctx->cb(boost::system::error_code());
 			}
 
-			std::string to_logic = prepare_logic_rqst(ctx->ctr.constraint);
+			std::string to_logic = prepare_logic_rqst(ctx->ctr.constraint, a_.name);
 			ctx->logic_tree.async_eval_cond(to_logic, 
 					boost::bind(&logic_layer::handle_eval_task_tree, this,
 							   _1, ctx));
