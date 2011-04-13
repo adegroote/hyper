@@ -205,6 +205,9 @@ namespace hyper {
 				a_.logger(DEBUG) <<  ctx->ctr << " Start execution " << std::endl;
 				ctx->logic_tree.async_execute(
 						boost::bind(&logic_layer::handle_exec_task_tree, this, _1, ctx));
+			} else {
+				a_.logger(DEBUG) << ctx->ctr << " No solution found ! " << std::endl;
+				ctx->cb(make_error_code(logic_layer_error::no_solution_found));
 			}
 		}
 

@@ -55,7 +55,8 @@ namespace hyper {
 				ok,
 				parse_error,
 				evaluation_error,
-				recipe_execution_error
+				recipe_execution_error,
+				no_solution_found
 			};
 		}
 
