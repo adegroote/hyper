@@ -137,8 +137,7 @@ struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 
 	boost::optional<typeId> operator() (const unary_op<NEG>& op) const
 	{
-		(void) op;
-		return u.types().getId("bool").second;
+		return boost::apply_visitor(ast_type(ab, u, local_context), op.subject.expr);
 	}
 };
 
