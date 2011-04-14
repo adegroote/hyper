@@ -85,6 +85,15 @@ namespace hyper {
 					updater(a, update_status_)
 				{}
 
+
+				evaluate_conditions(A& a_, 
+									boost::array<condition, N> condition_calls_,
+									const typename remote_values::remote_vars_conf& vars):
+					a(a_), is_computing(false), 
+					condition_calls(condition_calls_), 
+					updater(a, vars)
+				{}
+
 				evaluate_conditions(A& a_, 
 									boost::array<condition, N> condition_calls_,
 									boost::array<std::string, M> update_status_,

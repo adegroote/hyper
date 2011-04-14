@@ -281,8 +281,22 @@ namespace hyper {
 				oss << "::" << exported_name() << "::pre_conditions::condition>\n";
 				generate_condition e_cond(oss, "pre", ability_context);
 				std::for_each(pre.begin(), pre.end(), e_cond);
-				oss << pre_symbols.local_list_variables_updated(next_next_indent);
-				oss << pre_symbols.remote_list_variables(next_next_indent);
+
+				if (!pre_symbols.local_with_updater.empty()) {
+					oss << next_indent << ", boost::array<std::string, ";
+					oss << pre_symbols.local_with_updater.size() << " >(\n";
+					oss << pre_symbols.local_list_variables_updated(next_next_indent);
+					oss << next_indent << ")\n";
+				}
+
+				std::string base_type = "hyper::" + ability_context.name() + "::";
+				base_type += exported_name() + "::pre_conditions::remote_values::remote_vars_conf";
+				if (!pre_symbols.remote.empty()) {
+					oss << next_indent << ", " << base_type << "(\n";
+					oss << pre_symbols.remote_list_variables(next_next_indent);
+					oss << next_indent << ")\n";
+				}
+
 				oss << indent << ")";
 				}
 				if (!post.empty()) 
@@ -293,8 +307,21 @@ namespace hyper {
 				oss << "::" << exported_name() << "::post_conditions::condition>\n";
 				generate_condition e_cond(oss, "post", ability_context);
 				std::for_each(post.begin(), post.end(), e_cond);
-				oss << post_symbols.local_list_variables_updated(next_next_indent);
-				oss << post_symbols.remote_list_variables(next_next_indent);
+				if (!post_symbols.local_with_updater.empty()) {
+					oss << next_indent << ", boost::array<std::string, ";
+					oss << post_symbols.local_with_updater.size() << " >(\n";
+					oss << post_symbols.local_list_variables_updated(next_next_indent);
+					oss << next_indent << ")\n";
+				}
+
+				std::string base_type = "hyper::" + ability_context.name() + "::";
+				base_type += exported_name() + "::post_conditions::remote_values::remote_vars_conf";
+				if (!post_symbols.remote.empty()) {
+					oss << next_indent << ", " << base_type << "(\n";
+					oss << post_symbols.remote_list_variables(next_next_indent);
+					oss << next_indent << ")\n";
+				}
+
 				oss << indent << ")" << std::endl;
 				}
 				oss << indent << "{" << std::endl;

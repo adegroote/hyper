@@ -130,7 +130,7 @@ namespace {
 		std::ostringstream oss;
 		std::string next_indent = base_indent + "\t";
 
-		oss << base_indent << ",boost::assign::list_of<std::string>\n";
+		oss << base_indent << "boost::assign::list_of<std::string>\n";
 		std::for_each(begin, end, add_local_variable(oss, next_indent));
 		return oss.str();
 	}
@@ -179,7 +179,7 @@ namespace hyper {
 			if (remote.empty()) 
 				return "";
 
-			oss << base_indent << ",boost::assign::list_of<std::pair<std::string, std::string> >\n";
+			oss << base_indent << "boost::assign::list_of<std::pair<std::string, std::string> >\n";
 			std::for_each(remote.begin(), remote.end(), add_variable(oss, next_indent));
 			return oss.str();
 		}

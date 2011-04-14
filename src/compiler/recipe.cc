@@ -794,8 +794,10 @@ namespace hyper {
 						oss << ",\n";
 					} else {
 						oss << ",\n" << indent << "\t\tupdater" << i << "(a\n";
-						oss << "\t" << syms.local_list_variables_updated(next_indent);
-						oss << "\t" << syms.remote_list_variables(next_indent) << indent << "\t\t),\n";
+						if (!syms.local_with_updater.empty())
+							oss << "\t," << syms.local_list_variables_updated(next_indent);
+						if (!syms.remote.empty())
+							oss << "\t," << syms.remote_list_variables(next_indent) << indent << "\t\t),\n";
 					}
 					oss << indent << "\t\texpression_exec" << i << "(updater" << i << ")";
 				}
@@ -820,8 +822,10 @@ namespace hyper {
 			oss << "::" << exported_name() << "::pre_conditions::condition>\n";
 			generate_condition e_cond(oss, "pre", context_a);
 			std::for_each(pre.begin(), pre.end(), e_cond);
-			oss << pre_symbols.local_list_variables_updated(next_next_indent);
-			oss << pre_symbols.remote_list_variables(next_next_indent);
+			if (!pre_symbols.local_with_updater.empty())
+				oss << ", " << pre_symbols.local_list_variables_updated(next_next_indent);
+			if (!pre_symbols.remote.empty())
+				oss << ", " << pre_symbols.remote_list_variables(next_next_indent);
 			oss << indent << ")" << std::endl;
 			}
 			oss << indent << "{" << std::endl;
