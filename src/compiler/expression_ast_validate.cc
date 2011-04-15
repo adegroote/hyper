@@ -159,6 +159,8 @@ struct ast_valid : public boost::static_visitor<bool>
 	{
 		std::pair<bool, symbolACL> p;
 		p = u.get_symbol(s, ab, context);
+		if (!p.first) 
+			std::cerr << "Can't find symbol " << s << " in the current context " << std::endl;
 		return p.first;
 	}
 
