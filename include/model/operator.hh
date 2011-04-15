@@ -123,6 +123,14 @@ namespace hyper {
 				}
 			};
 
+			struct logic_nequal {
+				template <typename T>
+				static bool apply(const T& t1, const T& t2)
+				{
+					return t1 != t2;
+				}
+			};
+
 			struct logic_less {
 				template <typename T>
 					static bool apply(const T& t1, const T& t2)

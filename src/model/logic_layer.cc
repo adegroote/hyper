@@ -89,6 +89,19 @@ namespace {
 
 		e.add_rule(rule_name, cond, action);
 	}
+	
+	/* if First(A, B) then Second(A, B) */
+	void add_induction_rule(hyper::logic::engine& e, const std::string& first, const std::string& second)
+	{
+		std::string rule_name = first + "_induction_" + second;
+		std::vector<std::string> cond;
+		std::vector<std::string> action;
+
+		cond.push_back(first + "(A,B)");
+		action.push_back(second + "(A,B)");
+
+		e.add_rule(rule_name, cond, action);
+	}
 }
 
 namespace hyper {
@@ -138,6 +151,8 @@ namespace hyper {
 			add_numeric_type<double>("double");
 
 			/* Add logic func */
+			engine.add_predicate("not_equal", 2, new logic::eval<
+											details::logic_eval<details::logic_nequal>, 2>());
 			engine.add_predicate("less", 2, new logic::eval<
 											details::logic_eval<details::logic_less>, 2>());
 			engine.add_predicate("less_equal", 2, new logic::eval<
@@ -163,6 +178,9 @@ namespace hyper {
 			add_symetry_rule(engine, "minus");
 			add_symetry_rule(engine, "times");
 			add_symetry_rule(engine, "divides");
+
+			add_induction_rule(engine, "less", "less_equal");
+			add_induction_rule(engine, "greater", "greater_equal");
 		}
 
 		void logic_layer::async_exec(const logic_constraint& ctr, logic_layer_cb cb)
@@ -177,7 +195,7 @@ namespace hyper {
 						logic::generate(to_execute, execFuncs);
 
 			if (ret_exec.res == false) {
-				a_.logger(WARNING) << ctr << " Fail to parse" << std::endl;
+				a_.logger(WARNING) << ctr << " Fail to parse " << to_execute << std::endl;
 				return ctx->cb(make_error_code(logic_layer_error::parse_error));
 			}
 
