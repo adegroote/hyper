@@ -59,9 +59,7 @@ namespace {
 			res.erase(previous_loc, pattern_size+1);
 		}
 
-		std::string ctxspace = ctx + "::";
-
-		return hyper::compiler::replace_by(res, ctxspace, "");
+		return res;
 	}
 
 	void add_transitivy_rule(hyper::logic::engine& e, const std::string& s)

@@ -55,7 +55,10 @@ namespace {
 
 		std::string operator() (const std::string& s) const
 		{
-			return s;
+			if (!scope::is_scoped_identifier(s))
+				return a.name() + "::" + s;
+			else
+				return s;
 		}
 
 		std::string operator() (const function_call& f) const
