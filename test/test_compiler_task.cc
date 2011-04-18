@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE ( compiler_task_test )
 	check_task.do_build_test("x16 = task { pre = {{ - (i < j) }};"
 													      " post = {}; };", false);
 
-	check_task.do_build_test("x17 = task { pre = {{ - square(42.0) }};"
+	check_task.do_build_test("x17 = task { pre = {{ - square(42.0) == 8.0 }};"
 													      " post = {}; };", true);
 
 
