@@ -169,7 +169,7 @@ namespace hyper {
 					if (e)
 					{
 						actor.logger(DEBUG_PROTOCOL) << "[" << actor.name << ", " << id;
-						actor.logger(DEBUG_PROTOCOL) << "] Writing failed" << std::endl;
+						actor.logger(DEBUG_PROTOCOL) << "] Writing failed " << e << std::endl;
 						actor.db.remove(id);
 						boost::get<0>(handler) (e);
 					}
