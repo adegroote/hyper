@@ -49,11 +49,11 @@ set_source_files_properties(src/compiler/expression_ast.cc COMPILE_FLAGS -Os)
 
 set (HYPER_LIBS "")
 
-foreach(lib compiler network logic model)
+foreach(lib compiler network logic model utils)
   string(TOUPPER "${lib}_sources" THIS_LIB_SOURCES)
   string(TOLOWER "hyper_${lib}" HyperLibrary)
-  list(APPEND HYPER_LIBS ${HyperLibrary})
   if(EXISTS ${HYPER_SOURCE_DIR}/src/${lib})
+	list(APPEND HYPER_LIBS ${HyperLibrary})
     file(GLOB ${THIS_LIB_SOURCES} ${HYPER_SOURCE_DIR}/src/${lib}/*.cc)
     add_library (${HyperLibrary} SHARED ${${THIS_LIB_SOURCES}}) 
 	target_link_libraries(${HyperLibrary}  ${${lib}_LIBS})
