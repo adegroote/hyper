@@ -10,8 +10,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
-#include <compiler/utils.hh>
 #include <network/socket_tcp_serialized.hh>
+#include <utils/algorithm.hh>
 
 namespace hyper {
 	namespace network {
@@ -304,7 +304,7 @@ namespace hyper {
 					  ip::tcp::resolver::iterator end;
 
 					  std::vector<ip::tcp::endpoint> res;
-					  hyper::compiler::copy_if(it, end, std::back_inserter(res), is_v4());
+					  hyper::utils::copy_if(it, end, std::back_inserter(res), is_v4());
 					  return res;
 				  }
 

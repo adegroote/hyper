@@ -19,6 +19,7 @@ BOOST_AUTO_TEST_CASE( utils_algorithm_test )
 	std::vector<int> v1, v2;
 	v1+= 2, 4, 6, 8, 10;
 
+	
 	BOOST_CHECK(hyper::utils::any(v1.begin(), v1.end(), 
 								  std::bind2nd(std::equal_to<int>(), 2)));
 	BOOST_CHECK(!hyper::utils::any(v1.begin(), v1.end(), 
@@ -34,4 +35,23 @@ BOOST_AUTO_TEST_CASE( utils_algorithm_test )
 
 	/* On an empty object, the all property is always true */
 	BOOST_CHECK(hyper::utils::all(v2.begin(), v2.end(), always_false()));
+
+	std::vector<int> v, res, res2;
+	v+= -2, -1, 0, 1, 2;
+
+	hyper::utils::copy_if(v.begin(), v.end(), std::back_inserter(res), 
+							 std::bind2nd(std::less<int>(), 0));
+
+	BOOST_CHECK(res.size() == 2);
+	BOOST_CHECK(res[0] == -2);
+	BOOST_CHECK(res[1] == -1);
+
+	hyper::utils::copy_if(v.begin(), v.end(), std::back_inserter(res2),
+							 std::bind2nd(std::not_equal_to<int>(), 1));
+
+	BOOST_CHECK(res2.size() == 4);
+	BOOST_CHECK(res2[0] == -2);
+	BOOST_CHECK(res2[1] == -1);
+	BOOST_CHECK(res2[2] == 0);
+	BOOST_CHECK(res2[3] == 2);
 }

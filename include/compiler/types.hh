@@ -14,6 +14,7 @@
 #include <compiler/utils.hh>
 #include <compiler/types_fwd.hh>
 #include <compiler/types_parser.hh>
+#include <utils/algorithm.hh>
 
 namespace hyper {
 	namespace compiler {
@@ -123,7 +124,7 @@ namespace hyper {
 				std::vector<type> select(Pred pred) const
 				{
 					std::vector<type> res;
-					hyper::compiler::copy_if(types.begin(), types.end(), std::back_inserter(res), pred);
+					hyper::utils::copy_if(types.begin(), types.end(), std::back_inserter(res), pred);
 					return res;
 				}
 		};

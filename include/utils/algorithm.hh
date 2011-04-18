@@ -27,6 +27,28 @@ namespace hyper {
 
 			return true;
 		}
+
+		/*
+		 * copy_if copies elements from the range [first, last] to a
+		 * range beginning at res, if that elements fullfil the pred
+		 * The return value is the end of the resulting range. This operation
+		 * is stable, meaning that the relative order of the elements that are
+		 * copied is the same as in the range [first, last].
+		 *
+		 * Predicate must be an adaptable functor
+		 */
+		template <typename InputIterator, typename OutputIterator, typename Predicate>
+		OutputIterator 
+		copy_if(InputIterator begin, InputIterator last, OutputIterator res, Predicate pred)
+		{
+			while (begin != last) {
+				if (pred(*begin))
+					*res++ = *begin;
+				*begin++;
+			}
+
+			return res;
+		}
 	}
 }
 
