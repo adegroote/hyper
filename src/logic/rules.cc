@@ -64,6 +64,18 @@ namespace {
 		}
 
 	};
+
+	struct list_keys 
+	{
+		std::vector<std::string>& v;
+
+		list_keys(typename std::vector<std::string>& v) : v(v) {}
+
+		void operator() (const typename std::pair<std::string, std::set<functionId> >& p) 
+		{
+			v.push_back(p.first);
+		}
+	};
 }
 namespace hyper {
 	namespace logic {
@@ -100,8 +112,10 @@ namespace hyper {
 			}
 			r.identifier = identifier;
 
-			std::for_each(r.condition.begin(), r.condition.end(), symbol_adder(r.symbols));
-			std::for_each(r.action.begin(), r.action.end(), symbol_adder(r.symbols));
+			std::for_each(r.condition.begin(), r.condition.end(), symbol_adder(r.symbol_to_fun));
+			std::for_each(r.action.begin(), r.action.end(), symbol_adder(r.symbol_to_fun));
+
+			std::for_each(r.symbol_to_fun.begin(), r.symbol_to_fun.end(), list_keys(r.symbols));
 
 			r_.push_back(r);
 			return true;

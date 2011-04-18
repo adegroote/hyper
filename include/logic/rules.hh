@@ -17,9 +17,22 @@ namespace hyper {
 			std::vector<function_call> action;
 
 			typedef std::map<std::string, std::set<functionId> > map_symbol;
+			typedef std::vector<std::string> list_symbols;
 
-			/* List of symbols involved in the rule */
-			map_symbol symbols;
+			/* 
+			 * A list of sorted symbols which appears in the rules. 
+			 * No duplicate symbol in the list.
+			 */
+			list_symbols symbols;
+
+			/*
+			 * Associate to each symbol the set of function it appears in.
+			 * Will be used to compute the possible value of this symbol, 
+			 * considering the intersection of values of this different functions.
+			 *
+			 * S_{value} = Intersection_{i} S_{functionId_{i} } 
+			 */
+			map_symbol symbol_to_fun;
 		};
 
 		std::ostream& operator << (std::ostream&, const rule&);
@@ -42,7 +55,7 @@ namespace hyper {
 				const_iterator begin() const { return r_.begin(); }
 				const_iterator end() const { return r_.end(); }
 
-				size_t size() { return r_.size(); }
+				size_t size() const { return r_.size(); }
 
 				friend std::ostream& operator << (std::ostream&, const rules&);
 		};

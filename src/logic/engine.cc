@@ -221,8 +221,8 @@ namespace {
 
 		void operator() (const std::string& s)
 		{
-			rule::map_symbol::const_iterator it = r.symbols.find(s);
-			assert(it != r.symbols.end());
+			rule::map_symbol::const_iterator it = r.symbol_to_fun.find(s);
+			assert(it != r.symbol_to_fun.end());
 			const std::set<functionId> & f_id = it->second;
 			assert(f_id.size() >= 1);
 
@@ -384,11 +384,6 @@ namespace {
 
 			typedef std::set<std::string> set_symbols;
 			typedef std::vector<set_symbols> vector_set_symbols;
-			set_symbols rules_symbols;
-
-			/* transform r.symbols into a std::set<std::string> */
-			std::for_each(r.symbols.begin(), r.symbols.end(), 
-						  list_keys<std::string>(rules_symbols));
 
 			/* for each bound map, list each bounded key */
 			vector_set_symbols bounded_symbols(unify_vect.size());
@@ -399,7 +394,7 @@ namespace {
 			/* for each bound map, compute all the unbounded key */
 			vector_set_symbols unbounded_symbols(unify_vect.size());
 			for (size_t i = 0; i < unify_vect.size(); ++i) 
-				std::set_difference(rules_symbols.begin(), rules_symbols.end(),
+				std::set_difference(r.symbols.begin(), r.symbols.end(),
 									bounded_symbols[i].begin(), bounded_symbols[i].end(),
 									std::inserter(unbounded_symbols[i], unbounded_symbols[i].begin()));
 
