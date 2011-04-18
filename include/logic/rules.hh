@@ -12,7 +12,9 @@ namespace hyper {
 	namespace logic {
 
 		struct rule {
-			std::string identifier;
+			typedef std::string identifier_type;
+
+			identifier_type identifier;
 			std::vector<function_call> condition;
 			std::vector<function_call> action;
 
@@ -33,6 +35,7 @@ namespace hyper {
 			 * S_{value} = Intersection_{i} S_{functionId_{i} } 
 			 */
 			map_symbol symbol_to_fun;
+
 		};
 
 		std::ostream& operator << (std::ostream&, const rule&);

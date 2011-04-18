@@ -151,9 +151,9 @@ namespace {
 	 */
 	struct apply_rule 
 	{
-		facts& facts_;
+		facts_ctx& facts_;
 
-		apply_rule(facts& facts) : facts_(facts) {};
+		apply_rule(facts_ctx& facts) : facts_(facts) {};
 
 		bool operator() (const rule& r)
 		{
@@ -161,14 +161,14 @@ namespace {
 			std::vector<unifyM> unify_vect(1);
 
 			std::for_each(r.condition.begin(), r.condition.end(), 
-						  apply_unification(facts_, unify_vect));
+						  apply_unification(facts_.f, unify_vect));
 
 			// generating new fact
-			size_t facts_size = facts_.size();
+			size_t facts_size = facts_.f.size();
 			std::for_each(r.action.begin(), r.action.end(),
-						  add_facts(facts_, unify_vect));
+						  add_facts(facts_.f, unify_vect));
 
-			size_t new_facts_size = facts_.size();
+			size_t new_facts_size = facts_.f.size();
 
 			return (new_facts_size != facts_size);
 		}
@@ -206,18 +206,15 @@ namespace {
 		}
 	};
 
-	typedef std::set<expression> expressionS;
-	typedef std::map<std::string, expressionS> expressionM;
-	typedef std::vector<expressionM> vec_expressionM;
 
 	struct compute_possible_expression
 	{
-		facts& facts_;
 		const rule& r;
-		expressionM& m;
+		facts_ctx& ctx;
 
-		compute_possible_expression(facts& facts__, const rule& r_, expressionM& m_) :
-			facts_(facts__), r(r_), m(m_) {}
+		compute_possible_expression(const rule& r, facts_ctx& ctx) : 
+			r(r), ctx(ctx) 
+		{}
 
 		void operator() (const std::string& s)
 		{
@@ -228,13 +225,12 @@ namespace {
 
 			std::set<functionId>::const_iterator it_id = f_id.begin();
 
-
 			/* 
 			 * initialize the expressionS with the sub_expression from the
 			 * first fct category
 			 */
-			expressionS res;
-			res.insert(facts_.sub_begin(*it_id), facts_.sub_end(*it_id));
+			facts_ctx::expressionS res;
+			res.insert(ctx.f.sub_begin(*it_id), ctx.f.sub_end(*it_id));
 			++it_id;
 
 			/*
@@ -242,16 +238,28 @@ namespace {
 			 */
 			while (it_id != f_id.end())
 			{
-				expressionS tmp;
+				facts_ctx::expressionS tmp;
 				std::set_intersection(res.begin(), res.end(),
-									  facts_.sub_begin(*it_id),
-									  facts_.sub_end(*it_id),
+									  ctx.f.sub_begin(*it_id),
+									  ctx.f.sub_end(*it_id),
 									  std::inserter(tmp, tmp.begin()));
 				std::swap(res, tmp);
 				++it_id;
 			}
 
-			m[s] = res;
+			ctx.symbol_to_possible_expression[r.identifier][s] = res;
+		}
+	};
+
+	struct compute_possible_expression_helper 
+	{
+		facts_ctx& ctx;
+
+		compute_possible_expression_helper(facts_ctx& ctx) : ctx(ctx) {}
+
+		void operator() (const rule &r) 
+		{
+			std::for_each(r.symbols.begin(), r.symbols.end(), compute_possible_expression(r, ctx));
 		}
 	};
 
@@ -260,13 +268,13 @@ namespace {
 	struct unifyM_candidate 
 	{
 		const std::set<std::string>& unbounded;
-		const expressionM& possible_symbol;
+		const facts_ctx::expressionM& possible_symbol;
 		std::vector<std::string> v_symbol;
 
 		struct iter {
-			expressionS::const_iterator begin;
-			expressionS::const_iterator end;
-			expressionS::const_iterator current;
+			facts_ctx::expressionS::const_iterator begin;
+			facts_ctx::expressionS::const_iterator end;
+			facts_ctx::expressionS::const_iterator current;
 		};
 
 		std::vector<iter> v;
@@ -276,12 +284,12 @@ namespace {
 		 * succesful result
 		 */
 		unifyM_candidate(const std::set<std::string>& unbounded_,
-						 const expressionM& possible_symbol_):
+						 const facts_ctx::expressionM& possible_symbol_):
 			unbounded(unbounded_), possible_symbol(possible_symbol_)
 		{
 			std::copy(unbounded.begin(), unbounded.end(), std::back_inserter(v_symbol));
 			for (size_t i = 0; i < v_symbol.size(); ++i) {
-				expressionM::const_iterator it = possible_symbol.find(v_symbol[i]);
+				facts_ctx::expressionM::const_iterator it = possible_symbol.find(v_symbol[i]);
 				assert(it != possible_symbol.end());
 				iter current;
 				current.begin = it->second.begin();
@@ -333,13 +341,12 @@ namespace {
 		}
 	};
 
-	bool try_to_infer(facts& facts_, const rule& r, const unifyM& m_,
-					  const std::set<std::string>& unbounded,
-					  const expressionM& possible_symbol)
+	bool try_to_infer(facts_ctx& facts_, const rule& r, const unifyM& m_,
+					  const std::set<std::string>& unbounded)
 	{
 		unifyM m(m_);
 		try {
-			unifyM_candidate candidates(unbounded, possible_symbol);
+			unifyM_candidate candidates(unbounded, facts_.symbol_to_possible_expression[r.identifier]);
 			bool has_next = true;
 			while (has_next)
 			{
@@ -353,7 +360,7 @@ namespace {
 				it = v_f.begin();
 				bool has_matched = true;
 				while (has_matched && it != v_f.end()) {
-					has_matched = facts_.matches(*it);
+					has_matched = facts_.f.matches(*it);
 					++it;
 				}
 
@@ -367,10 +374,10 @@ namespace {
 
 	struct infer_from_rule
 	{
-		facts& facts_;
+		facts_ctx& facts_;
 		const function_call& f;
 
-		infer_from_rule(facts& facts, const function_call& f_) : facts_(facts), f(f_) {}
+		infer_from_rule(facts_ctx& facts, const function_call& f_) : facts_(facts), f(f_) {}
 
 		bool operator() (const rule& r)
 		{
@@ -398,16 +405,6 @@ namespace {
 									bounded_symbols[i].begin(), bounded_symbols[i].end(),
 									std::inserter(unbounded_symbols[i], unbounded_symbols[i].begin()));
 
-			/* 
-			 * For each bound map, for each unbounded key, compute the set of
-			 * possible expression (intersection of all possible expression for
-			 * each category
-			 */
-			vec_expressionM possible_expression(unify_vect.size());
-			for (size_t i = 0; i < unify_vect.size(); ++i) 
-				std::for_each(unbounded_symbols[i].begin(),
-							  unbounded_symbols[i].end(),
-							  compute_possible_expression(facts_, r, possible_expression[i]));
 
 			/* 
 			 * Now, for each bound map, for each unbounded key, try to fill it
@@ -415,7 +412,7 @@ namespace {
 			 * If we find such a combinaison, goal can be inferred.
 			 */
 			for (size_t i = 0; i < unify_vect.size(); ++i)
-				if (try_to_infer(facts_, r, unify_vect[i], unbounded_symbols[i], possible_expression[i]))
+				if (try_to_infer(facts_, r, unify_vect[i], unbounded_symbols[i]))
 					return true;
 
 			return false;
@@ -582,24 +579,23 @@ namespace hyper {
 			return true; // XXX
 		}
 
-		facts& engine::get_facts(const std::string& identifier)
+		facts_ctx & engine::get_facts(const std::string& identifier)
 		{
 			factsMap::iterator it = facts_.find(identifier);
 			if (it == facts_.end()) {
 				std::pair<factsMap::iterator, bool> p;
-				p = facts_.insert(std::make_pair(identifier, facts(funcs_)));
+				p = facts_.insert(std::make_pair(identifier, facts_ctx(funcs_)));
 				assert(p.second);
 				return p.first->second;
 			}
 			return it->second;
 		}
-				
 
 		bool engine::add_fact(const std::string& expr,
 							  const std::string& identifier)
 		{
 
-			facts& current_facts = get_facts(identifier);
+			facts_ctx& current_facts = get_facts(identifier);
 			current_facts.add(expr);
 			apply_rules(current_facts);
 			return true;
@@ -609,8 +605,8 @@ namespace hyper {
 							  const std::string& identifier)
 		{
 			// help the compiler to choose right overload
-			bool (facts::*f) (const std::string& s) = &facts::add;
-			facts& current_facts = get_facts(identifier);
+			bool (facts_ctx::*f) (const std::string& s) = &facts_ctx::add;
+			facts_ctx& current_facts = get_facts(identifier);
 				std::for_each(exprs.begin(), exprs.end(), 
 						  boost::bind(f, boost::ref(current_facts), _1));
 			apply_rules(current_facts);
@@ -624,13 +620,14 @@ namespace hyper {
 			bool res = rules_.add(identifier, cond, action);
 
 			// XXX rewrite it using boost::phoenix::bind
-			for (factsMap::iterator it = facts_.begin(); it != facts_.end(); ++it)
+			for (factsMap::iterator it = facts_.begin(); it != facts_.end(); ++it) 
 				apply_rules(it->second);
 			return res;
 		}
 
-		void engine::apply_rules(facts& current_facts)
+		void engine::apply_rules(facts_ctx& current_facts)
 		{
+			current_facts.new_rule();
 			rules::const_iterator it = rules_.begin();
 
 			while (it != rules_.end())
@@ -650,14 +647,16 @@ namespace hyper {
 			assert(r.res);
 			const function_call& f = r.e;
 
-			facts& current_facts = get_facts(identifier);
+			facts_ctx& current_facts = get_facts(identifier);
 
-			boost::logic::tribool b = current_facts.matches(f);
+			boost::logic::tribool b = current_facts.f.matches(f);
 			if (!boost::logic::indeterminate(b))
 				return b;
 
 			rules::const_iterator it = rules_.begin();
 			bool has_concluded = false;
+
+			current_facts.compute_possible_expression(rules_);
 
 			while (it != rules_.end())
 			{
@@ -670,16 +669,31 @@ namespace hyper {
 			return boost::logic::indeterminate;
 		}
 
+		std::ostream& operator << (std::ostream& oss, const facts_ctx& f)
+		{
+			oss << f.f;
+			return oss;
+		}
+
 		std::ostream& operator << (std::ostream& os, const engine& e)
 		{
 			os << "FACTS : " << std::endl;
-			std::map<std::string, facts>::const_iterator it;
+			std::map<std::string, facts_ctx>::const_iterator it;
 			for (it = e.facts_.begin(); it != e.facts_.end(); ++it)
 				os << "\n\t" << it->first << it->second << std::endl;
 			os << "\n ====================================== \n";
 			os << "RULES : " << std::endl;
 			os << e.rules_;
 			return os;
+		}
+
+		void facts_ctx::compute_possible_expression(const rules& rs) 
+		{
+			if (ctx_rules_update)
+				return;
+
+			std::for_each(rs.begin(), rs.end(), compute_possible_expression_helper(*this));
+			ctx_rules_update = true;
 		}
 	}
 }
