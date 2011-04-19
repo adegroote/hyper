@@ -21,6 +21,8 @@ namespace hyper {
 			typedef std::map<std::string, std::set<functionId> > map_symbol;
 			typedef std::vector<std::string> list_symbols;
 
+			bool inconsistency() const { return action.empty(); }
+
 			/* 
 			 * A list of sorted symbols which appears in the rules. 
 			 * No duplicate symbol in the list.
@@ -59,6 +61,7 @@ namespace hyper {
 				const_iterator end() const { return r_.end(); }
 
 				size_t size() const { return r_.size(); }
+
 
 				friend std::ostream& operator << (std::ostream&, const rules&);
 		};
