@@ -66,6 +66,8 @@ namespace hyper {
 				void apply_rules(facts_ctx &);
 
 				facts_ctx& get_facts(const std::string& identifier);
+				void set_facts(const std::string& identifier, 
+							   const facts_ctx&);
 
 			public:
 				engine();

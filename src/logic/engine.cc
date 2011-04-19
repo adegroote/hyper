@@ -4,10 +4,17 @@
 
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
+#include <boost/spirit/include/phoenix_core.hpp>
+#include <boost/spirit/include/phoenix_operator.hpp>
+#include <boost/spirit/include/phoenix_bind.hpp>
+#include <boost/logic/tribool_io.hpp>
 
 #include <set>
 #include <sstream>
 
+#include <utils/algorithm.hh>
+
+namespace phx = boost::phoenix;
 
 namespace {
 	using namespace hyper::logic;
@@ -19,11 +26,11 @@ namespace {
 	 */
 	struct apply_unification_ 
 	{
-		facts& facts_;
+		const facts& facts_;
 		std::vector<unifyM>& unify_vect;
 		const function_call &f;
 
-		apply_unification_(facts& facts__, std::vector<unifyM>& unify_vect__,
+		apply_unification_(const facts& facts__, std::vector<unifyM>& unify_vect__,
 						   const function_call &f_):
 			facts_(facts__), unify_vect(unify_vect__), f(f_)
 		{}
@@ -45,10 +52,10 @@ namespace {
 	 */
 	struct apply_unification 
 	{
-		facts& facts_;
+		const facts& facts_;
 		std::vector<unifyM>& unify_vect;
 
-		apply_unification(facts& facts__, std::vector<unifyM>& unify_vect__):
+		apply_unification(const facts& facts__, std::vector<unifyM>& unify_vect__):
 			facts_(facts__), unify_vect(unify_vect__)
 		{}
 
@@ -140,6 +147,55 @@ namespace {
 		}
 	};
 
+	std::vector<unifyM> 
+	compute_rule_unification(const rule& r, const facts_ctx& facts)
+	{
+		// generate an empty ctx for starting the algorithm
+		std::vector<unifyM> unify_vect(1);
+
+		/* 
+		 * apply_unification will try to find some unification between facts
+		 * and one condition, refining unifyM context at each condition. 
+		 */
+		std::for_each(r.condition.begin(), r.condition.end(), 
+					  apply_unification(facts.f, unify_vect));
+
+		return unify_vect;
+	}
+
+	struct lead_to_inconsistency {
+		const facts_ctx& facts;
+
+		lead_to_inconsistency(const facts_ctx& facts) : facts(facts) {}
+
+		bool operator() (const rule& r)
+		{
+			std::vector<unifyM> vec = compute_rule_unification(r, facts);
+			return !vec.empty();
+		}
+	};
+
+	bool
+	is_world_consistent(const rules& rs, const facts_ctx& facts, const funcDefList& func)
+	{
+		std::vector<rule> rules;
+		hyper::utils::copy_if(rs.begin(), rs.end(), std::back_inserter(rules),
+					 phx::bind(&rule::inconsistency, phx::arg_names::arg1));
+
+		std::copy(rules.begin(), rules.end(), std::ostream_iterator<rule>(std::cerr, "\n"));
+
+		std::vector<boost::logic::tribool> matches;
+		for (size_t i = 0; i < func.size(); ++i)
+			std::transform(facts.f.begin(i), facts.f.end(i), std::back_inserter(matches),
+					phx::bind(&facts::matches, &facts.f, phx::arg_names::arg1));
+
+		bool res = ! hyper::utils::any(rules.begin(), rules.end(), 
+								 lead_to_inconsistency(facts));
+		res = res and hyper::utils::all(matches.begin(), matches.end(),
+									   std::bind2nd(std::equal_to<bool>(), true));
+		return res;
+	}
+
 	/*
 	 * Try to apply a rule to a set of facts
 	 *
@@ -151,24 +207,21 @@ namespace {
 	 */
 	struct apply_rule 
 	{
-		facts_ctx& facts_;
+		facts_ctx& facts;
 
-		apply_rule(facts_ctx& facts) : facts_(facts) {};
+		apply_rule(facts_ctx& facts) : facts(facts) {};
 
 		bool operator() (const rule& r)
 		{
-			// generate an empty ctx for starting the algorithm
-			std::vector<unifyM> unify_vect(1);
 
-			std::for_each(r.condition.begin(), r.condition.end(), 
-						  apply_unification(facts_.f, unify_vect));
+			std::vector<unifyM> unify_vect = compute_rule_unification(r, facts);
 
 			// generating new fact
-			size_t facts_size = facts_.f.size();
+			size_t facts_size = facts.f.size();
 			std::for_each(r.action.begin(), r.action.end(),
-						  add_facts(facts_.f, unify_vect));
+						  add_facts(facts.f, unify_vect));
 
-			size_t new_facts_size = facts_.f.size();
+			size_t new_facts_size = facts.f.size();
 
 			return (new_facts_size != facts_size);
 		}
@@ -591,14 +644,30 @@ namespace hyper {
 			return it->second;
 		}
 
+		void engine::set_facts(const std::string& identifier, const facts_ctx& ctx)
+		{
+			factsMap::iterator it = facts_.find(identifier);
+			if (it != facts_.end()) 
+				facts_.erase(it);
+			facts_.insert(std::make_pair(identifier, ctx));
+		}
+
 		bool engine::add_fact(const std::string& expr,
 							  const std::string& identifier)
 		{
 
-			facts_ctx& current_facts = get_facts(identifier);
+			facts_ctx current_facts = get_facts(identifier);
 			current_facts.add(expr);
 			apply_rules(current_facts);
-			return true;
+
+			/* If the new fact does not lead to any inconstency, really commit
+			 * it */
+			if (is_world_consistent(rules_, current_facts, funcs_)) {
+				set_facts(identifier, current_facts);
+				return true;
+			} else 
+				return false;
+			
 		}
 
 		bool engine::add_fact(const std::vector<std::string>& exprs, 
@@ -606,13 +675,23 @@ namespace hyper {
 		{
 			// help the compiler to choose right overload
 			bool (facts_ctx::*f) (const std::string& s) = &facts_ctx::add;
-			facts_ctx& current_facts = get_facts(identifier);
+			facts_ctx current_facts = get_facts(identifier);
 				std::for_each(exprs.begin(), exprs.end(), 
 						  boost::bind(f, boost::ref(current_facts), _1));
 			apply_rules(current_facts);
-			return true;
+
+			if (is_world_consistent(rules_, current_facts, funcs_)) {
+				set_facts(identifier, current_facts);
+				return true;
+			} else 
+				return false;
+			
 		}
 
+		/*
+		 * People who add rule are smart enough to don't add rules which lead
+		 * to inconsistency in the logic, isn't it ?
+		 */
 		bool engine::add_rule(const std::string& identifier,
 							  const std::vector<std::string>& cond,
 							  const std::vector<std::string>& action)

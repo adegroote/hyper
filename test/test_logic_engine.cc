@@ -48,12 +48,29 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 						   boost::assign::list_of<std::string>("distance(A,B)"),
 						   boost::assign::list_of<std::string>("equal(distance(A,B), distance(B,A))")));
 
+	BOOST_CHECK(e.add_rule("less_false",
+						   boost::assign::list_of<std::string>("less(A, A)"),
+						   std::vector<std::string>()));
+
 	BOOST_CHECK(e.add_fact("equal(x, y)"));
 	BOOST_CHECK(e.add_fact("equal(x, 7)"));
 	BOOST_CHECK(e.add_fact("less(y, 9)"));
 	BOOST_CHECK(e.add_fact("less(z, y)"));
 	BOOST_CHECK(e.add_fact("less(distance(center, object), 0.5)"));
 	BOOST_CHECK(e.add_fact("equal(object, balloon)"));
+
+	// direct inconsistency with rules "less_false"
+	BOOST_CHECK(!e.add_fact("less(h, h)"));
+
+	BOOST_CHECK(e.add_fact("equal(a, 9)"));
+
+	// inconsistent by deduction
+	BOOST_CHECK(!e.add_fact("less(a, x)"));
+
+	BOOST_CHECK(e.add_fact("equal(b, 10)"));
+
+	// inconsistent by deduction / execution
+	BOOST_CHECK(!e.add_fact("less(b, x)"));
 
 
 	boost::logic::tribool r;
@@ -98,6 +115,7 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 	r = e.infer("less(distance(object, x), 0.7)");
 	BOOST_CHECK(boost::logic::indeterminate(r));
+
 
 	/* Add some fact for task1 */
 	BOOST_CHECK(e.add_fact("equal(x, y)", "task1"));
