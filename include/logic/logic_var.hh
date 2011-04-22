@@ -66,7 +66,11 @@ namespace hyper {
 
 			public:
 				/* Rewrite input fact, replacing symbol by an associated logic_var*/
-				adapt_res adapt(const function_call& f);
+				function_call adapt(const function_call& f);
+
+				/* the same than previous, + realize the unification of
+				 * logic_variable if needed */
+				adapt_res adapt_and_unify(const function_call& f);
 				const logic_var& get(const logic_var::identifier_type& id) const;
 
 				friend std::ostream& operator<<(std::ostream& os, const logic_var_db& db);

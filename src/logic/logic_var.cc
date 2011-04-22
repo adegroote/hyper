@@ -79,6 +79,11 @@ namespace {
 		expression operator() (const T& t) const { return t; }
 
 		expression operator() (const std::string& sym) const {
+			/* Check it is not already a logic variable */
+			logic_var_db::bm_type::left_iterator it1 = bm.left.find(sym);
+			if (it1 != bm.left.end())
+				return sym;
+
 			logic_var_db::bm_type::right_iterator it = bm.right.find(sym);
 			if (it == bm.right.end()) {
 				logic_var::identifier_type new_id = new_identifier();
@@ -130,7 +135,7 @@ namespace {
 		expression e(e_);
 		adapt_res::permutationSeq::const_iterator p;
 		for (p = perms.begin(); p != perms.end(); ++p)
-			e = replace_logic_var(e, p->first, p->second);
+			e = replace_logic_var(e, p->second, p->first);
 		return e;
 	}
 
@@ -321,8 +326,15 @@ std::ostream& operator<<(std::ostream& os, const logic_var_db& db)
 	return os;
 }
 
-adapt_res 
+function_call
 logic_var_db::adapt(const function_call& f)
+{
+	std::vector<logic_var::identifier_type> v;
+	return adapt_function_call(bm, m_logic_var, v, f);
+}
+
+adapt_res 
+logic_var_db::adapt_and_unify(const function_call& f)
 {
 	// track newly introduced logic variable
 	std::vector<logic_var::identifier_type> v;

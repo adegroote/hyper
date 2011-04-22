@@ -77,7 +77,7 @@ adapt_res do_test(const std::string& s, const funcDefList& funcs, logic_var_db& 
 	std::cerr << "logic_var::do_test " << s << std::endl;
 	generate_return r = generate(s, funcs);
 	BOOST_CHECK(r.res);
-	adapt_res res = db.adapt(r.e);
+	adapt_res res = db.adapt_and_unify(r.e);
 	BOOST_CHECK(expected_answer<T>(res));
 	return res;
 }
