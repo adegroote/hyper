@@ -348,9 +348,9 @@ logic_var_db::adapt_and_unify(const function_call& f)
 			return adapt_res::conflicting_facts();
 		else {
 			if (hyper::utils::all(perms.begin(), perms.end(), are_newly_introduced(v)))
-				return adapt_res::ok();
+				return adapt_res::ok(f_res.args[0], f_res.args[1]);
 			else
-				return perms;
+				return adapt_res::require_permutation(perms, f_res.args[0], f_res.args[1]);
 		 }
 	}
 

@@ -200,7 +200,13 @@ namespace hyper {
 
 			handle_adapt_res(facts& facts_) : facts_(facts_) {}
 
-			bool operator() (const adapt_res::ok& ) const { return true; }
+			bool operator() (const adapt_res::ok& ok) const {
+				// XXX 0 == "equal" but it is still wrong
+				facts_.sub_list[0].insert(ok.syms.first);
+				facts_.sub_list[0].insert(ok.syms.second);
+
+				return true; 
+			}
 
 			bool operator() (const adapt_res::conflicting_facts& ) const { return false; }
 
@@ -208,13 +214,20 @@ namespace hyper {
 				return facts_.add_new_facts(f);
 			}
 
-			bool operator() (const adapt_res::permutationSeq& seq) const {
-				return facts_.apply_permutations(seq);
+			bool operator() (const adapt_res::require_permutation& perm) const {
+				// XXX 0 == "equal" but it is still wrong
+				facts_.sub_list[0].insert(perm.syms.first);
+				facts_.sub_list[0].insert(perm.syms.second);
+
+				return facts_.apply_permutations(perm.seq);
 			}
 		};
 
 		bool facts::add(const function_call& f)
 		{
+			if (f.id >= sub_list.size())
+				sub_list.resize(funcs.size());
+
 			adapt_res res = db.adapt_and_unify(f);
 			return  boost::apply_visitor(handle_adapt_res(*this), res.res);
 		}
@@ -283,8 +296,9 @@ namespace hyper {
 			boost::logic::tribool res;
 			res = eval_f(f, funcs, db);
 
-			if (!boost::logic::indeterminate(res))
+			if (!boost::logic::indeterminate(res)) 
 				return res;
+			
 
 			// we don't have conclusion from evaluation, check in the know fact
 			function_call adapted(db.adapt(f));

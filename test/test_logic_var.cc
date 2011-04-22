@@ -97,15 +97,15 @@ BOOST_AUTO_TEST_CASE ( logic_logic_var_test )
 	do_test<function_call>("less(z, 9)", funcs, db);
 
 	// unify logic reprensation of x and y
-	do_test<adapt_res::permutationSeq>("equal(x, y)", funcs, db);
+	do_test<adapt_res::require_permutation>("equal(x, y)", funcs, db);
 	do_test<function_call>("less(distance(pt1, pt2), 3.0)", funcs, db);
 	do_test<function_call>("less(distance(pt3, pt4), 5.0)", funcs, db);
 
 	// unify logic representation of pt3 and pt1
-	do_test<adapt_res::permutationSeq>("equal(pt3, pt1)", funcs, db);
+	do_test<adapt_res::require_permutation>("equal(pt3, pt1)", funcs, db);
 
 	// unify logic representation of pt4 and pt2 and distance(pt1, pt3)
-	do_test<adapt_res::permutationSeq>("equal(pt4, pt2)", funcs, db);
+	do_test<adapt_res::require_permutation>("equal(pt4, pt2)", funcs, db);
 
 	// x unified with y, but x is already bounded to 7
 	do_test<adapt_res::conflicting_facts>("equal(y, 8)", funcs, db);

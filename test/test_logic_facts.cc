@@ -80,31 +80,49 @@ BOOST_AUTO_TEST_CASE ( logic_facts_test )
 
 	generate_return r = generate("equal(x, 7)", funcs);
 	BOOST_CHECK(r.res);
+	boost::logic::tribool b;
+	BOOST_CHECK(r.res);
 
 	/* Whoot so crazy inference here */
-	BOOST_CHECK(our_facts.matches(r.e));
+	b = our_facts.matches(r.e);
+	BOOST_CHECK(!boost::logic::indeterminate(b));
+	BOOST_CHECK(b == true);
 
 	r = generate("equal(7, 9)", funcs);
 	BOOST_CHECK(r.res);
-	BOOST_CHECK(our_facts.matches(r.e) == false);
+	b = our_facts.matches(r.e);
+	BOOST_CHECK(!boost::logic::indeterminate(b));
+	BOOST_CHECK(b == false);
 
 	r = generate("equal(7, 7)", funcs);
 	BOOST_CHECK(r.res);
-	BOOST_CHECK(our_facts.matches(r.e) == true);
+	b = our_facts.matches(r.e);
+	BOOST_CHECK(!boost::logic::indeterminate(b));
+	BOOST_CHECK(b == true);
 
 	r = generate("less(7, 9)", funcs);
 	BOOST_CHECK(r.res);
-	BOOST_CHECK(our_facts.matches(r.e) == true);
+	b = our_facts.matches(r.e);
+	BOOST_CHECK(!boost::logic::indeterminate(b));
+	BOOST_CHECK(b == true);
+
+	r = generate("less(9, 1)", funcs);
+	BOOST_CHECK(r.res);
+	b = our_facts.matches(r.e);
+	BOOST_CHECK(!boost::logic::indeterminate(b));
+	BOOST_CHECK(b == false);
 
 	r = generate("less(7, 7)", funcs);
 	BOOST_CHECK(r.res);
-	BOOST_CHECK(our_facts.matches(r.e) == false);
+	b = our_facts.matches(r.e);
+	BOOST_CHECK(!boost::logic::indeterminate(b));
+	BOOST_CHECK(b == false);
 
 	r = generate("less(z, 7)", funcs);
 	BOOST_CHECK(r.res);
-	BOOST_CHECK(our_facts.matches(r.e) == true);
-	/* More difficult, equal is symetric */
-	//BOOST_CHECK(our_facts.matches(r.e));
+	b = our_facts.matches(r.e);
+	BOOST_CHECK(!boost::logic::indeterminate(b));
+	BOOST_CHECK(b == true);
 
 	r = generate("equal(v, w)", funcs);
 	BOOST_CHECK(r.res);
