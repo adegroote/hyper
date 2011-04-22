@@ -2,6 +2,7 @@
 #define _LOGIC_FACTS_HH_
 
 #include <logic/expression.hh>
+#include <logic/logic_var.hh>
 
 #include <boost/logic/tribool.hpp>
 
@@ -11,6 +12,7 @@
 
 namespace hyper {
 	namespace logic {
+		struct handle_adapt_res;
 		class facts {
 			public:
 				typedef std::set<function_call> expressionS;
@@ -22,11 +24,22 @@ namespace hyper {
 				typedef std::vector<sub_expressionS> sub_expressionV;
 				typedef sub_expressionS::const_iterator sub_const_iterator;
 
+				/* 
+				 * Let handle_adapt_res visitor access to add_new_facts, and
+				 * apply_permutations, but let them private as they are no part
+				 * of the exported interface of the object, but an impl detail
+				 */
+				friend struct handle_adapt_res;
 			private:
 				const funcDefList& funcs;
 				mutable factsV list;
 				mutable sub_expressionV sub_list;
+				logic_var_db db;
+
 				size_t size__;
+
+				bool add_new_facts(const function_call& f);
+				bool apply_permutations(const adapt_res::permutationSeq& seq);
 
 			public:	
 				facts(const funcDefList& funcs_): funcs(funcs_), size__(0) {}
@@ -34,7 +47,9 @@ namespace hyper {
 				bool add(const std::string& s);
 				bool add(const function_call& f);
 
-				boost::logic::tribool matches(const function_call & e) const;
+				boost::logic::tribool matches(const function_call & e);
+
+				function_call generate(const std::string& s);
 
 				const_iterator begin(functionId id) const { 
 					if (id >= list.size())

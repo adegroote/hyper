@@ -5,6 +5,7 @@
 #include <map>
 
 #include <logic/facts.hh>
+#include <logic/logic_var.hh>
 #include <logic/rules.hh>
 
 #include <boost/logic/tribool.hpp>

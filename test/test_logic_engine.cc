@@ -135,12 +135,12 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 	res.clear();
 
-	e.infer("less(distance(object, center), 1.0)", std::back_inserter(res));
+	e.infer("less(distance(center, object), 1.0)", std::back_inserter(res));
 	BOOST_CHECK(res.size() == 1);
 	BOOST_CHECK(res[0] == "default");
 
 	res.clear();
-	e.infer("less(distance(object, center), 0.1)", std::back_inserter(res));
+	e.infer("less(distance(center, object), 0.1)", std::back_inserter(res));
 	BOOST_CHECK(res.size() == 0);
 }
 

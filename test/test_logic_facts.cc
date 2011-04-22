@@ -67,15 +67,16 @@ BOOST_AUTO_TEST_CASE ( logic_facts_test )
 
 	BOOST_CHECK(our_facts.size() == 0);
 	our_facts.add("equal(x, 7)");
-	BOOST_CHECK(our_facts.size() == 1);
+	// not a fact, only unification process
+	BOOST_CHECK(our_facts.size() == 0);
+	// not a fact, only unification process
 	our_facts.add("equal(x, y)");
-	BOOST_CHECK(our_facts.size() == 2);
+	BOOST_CHECK(our_facts.size() == 0);
 	our_facts.add("less(z, 7)");
-	BOOST_CHECK(our_facts.size() == 3);
-	our_facts.add("equal(x, y)");
+	BOOST_CHECK(our_facts.size() == 1);
+	our_facts.add("less(z, 7)");
 	// inserting a fact already present doesn't give you a lot more information
-	BOOST_CHECK(our_facts.size() == 3);
-
+	BOOST_CHECK(our_facts.size() == 1);
 
 	generate_return r = generate("equal(x, 7)", funcs);
 	BOOST_CHECK(r.res);

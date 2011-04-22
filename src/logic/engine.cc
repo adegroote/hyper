@@ -176,13 +176,11 @@ namespace {
 	};
 
 	bool
-	is_world_consistent(const rules& rs, const facts_ctx& facts, const funcDefList& func)
+	is_world_consistent(const rules& rs, facts_ctx& facts, const funcDefList& func)
 	{
 		std::vector<rule> rules;
 		hyper::utils::copy_if(rs.begin(), rs.end(), std::back_inserter(rules),
 					 phx::bind(&rule::inconsistency, phx::arg_names::arg1));
-
-		std::copy(rules.begin(), rules.end(), std::ostream_iterator<rule>(std::cerr, "\n"));
 
 		std::vector<boost::logic::tribool> matches;
 		for (size_t i = 0; i < func.size(); ++i)
@@ -656,6 +654,7 @@ namespace hyper {
 							  const std::string& identifier)
 		{
 
+			/* yes copy it, until we check the coherency */
 			facts_ctx current_facts = get_facts(identifier);
 			current_facts.add(expr);
 			apply_rules(current_facts);
@@ -722,11 +721,8 @@ namespace hyper {
 		boost::logic::tribool engine::infer(const std::string& goal,
 											const std::string& identifier)
 		{
-			generate_return r = generate(goal, funcs_);
-			assert(r.res);
-			const function_call& f = r.e;
-
 			facts_ctx& current_facts = get_facts(identifier);
+			function_call f = current_facts.f.generate(goal);
 
 			boost::logic::tribool b = current_facts.f.matches(f);
 			if (!boost::logic::indeterminate(b))
