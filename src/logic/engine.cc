@@ -1,6 +1,7 @@
 #include <logic/engine.hh>
 #include <logic/unify.hh>
 #include <logic/eval.hh>
+#include <logic/backward_chaining.hh>
 
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
@@ -87,8 +88,10 @@ namespace {
 		expression operator() (const std::string& s) const
 		{
 			unifyM::const_iterator it = m.find(s);
-			if (it == m.end()) 
+			if (it == m.end()) {
+				assert(false);
 				return s; // maybe assert(false) here
+			}
 			return it->second;
 		}
 
@@ -211,7 +214,6 @@ namespace {
 
 		bool operator() (const rule& r)
 		{
-
 			std::vector<unifyM> unify_vect = compute_rule_unification(r, facts);
 
 			// generating new fact
@@ -219,44 +221,9 @@ namespace {
 			std::for_each(r.action.begin(), r.action.end(),
 						  add_facts(facts.f, unify_vect));
 
-			size_t new_facts_size = facts.f.size();
-
-			return (new_facts_size != facts_size);
+			return (facts.f.size() != facts_size);
 		}
 	};
-
-	struct apply_goal_unification 
-	{
-		const function_call &f;
-		std::vector<unifyM>& unify_vect;
-
-		apply_goal_unification(const function_call& f_, std::vector<unifyM>& unify_vect_):
-			f(f_), unify_vect(unify_vect_)
-		{}
-
-		void operator() (const function_call& f_rule)
-		{
-			unifyM m;
-			unify_res r = unify(f_rule, f, m);
-			if (r.first)
-				unify_vect.push_back(r.second);
-		}
-	};
-
-	template <typename T>
-	struct list_keys 
-	{
-		typename std::set<T>& s;
-
-		list_keys(typename std::set<T>& s_) : s(s_) {}
-
-		template <typename U>
-		void operator() (const typename std::pair<const T, U>& p) 
-		{
-			s.insert(p.first);
-		}
-	};
-
 
 	struct compute_possible_expression
 	{
@@ -314,161 +281,6 @@ namespace {
 		}
 	};
 
-	struct no_candidate {};
-
-	struct unifyM_candidate 
-	{
-		const std::set<std::string>& unbounded;
-		const facts_ctx::expressionM& possible_symbol;
-		std::vector<std::string> v_symbol;
-
-		struct iter {
-			facts_ctx::expressionS::const_iterator begin;
-			facts_ctx::expressionS::const_iterator end;
-			facts_ctx::expressionS::const_iterator current;
-		};
-
-		std::vector<iter> v;
-
-		/* Throw a no_candidate exception if we don't have any candidate for
-		 * one symbol. It means that the unification can't lead to any
-		 * succesful result
-		 */
-		unifyM_candidate(const std::set<std::string>& unbounded_,
-						 const facts_ctx::expressionM& possible_symbol_):
-			unbounded(unbounded_), possible_symbol(possible_symbol_)
-		{
-			std::copy(unbounded.begin(), unbounded.end(), std::back_inserter(v_symbol));
-			for (size_t i = 0; i < v_symbol.size(); ++i) {
-				facts_ctx::expressionM::const_iterator it = possible_symbol.find(v_symbol[i]);
-				assert(it != possible_symbol.end());
-				iter current;
-				current.begin = it->second.begin();
-				current.end = it->second.end();
-				if (current.begin == current.end)
-					throw no_candidate();
-				current.current = current.begin;
-				v.push_back(current);
-			}
-		}
-
-		bool next(unifyM &m)
-		{
-			// generate the current solution
-			for (size_t i = 0; i < v_symbol.size(); ++i)
-				m[v_symbol[i]] = *v[i].current;
-
-			// next one
-			size_t i = 0;
-			bool add = true;
-
-			while (add && i < v_symbol.size()) {
-				++v[i].current;
-				if (v[i].current == v[i].end) {
-					v[i].current = v[i].begin;
-					++i;
-					add = true;
-				} else {
-					add = false;
-				}
-			}
-
-			return !add;
-		}
-	};
-
-	struct generate_inferred_fact{
-		const unifyM& m;
-
-		generate_inferred_fact(const unifyM& m_) : m(m_) {}
-
-		function_call operator() (const function_call& f) 
-		{
-			function_call res = f;
-			std::vector<expression>::iterator it;
-			for (it = res.args.begin(); it != res.args.end(); ++it)
-				*it = boost::apply_visitor(do_unification(m), it->expr);
-			return res;
-		}
-	};
-
-	bool try_to_infer(facts_ctx& facts_, const rule& r, const unifyM& m_,
-					  const std::set<std::string>& unbounded)
-	{
-		unifyM m(m_);
-		try {
-			unifyM_candidate candidates(unbounded, facts_.symbol_to_possible_expression[r.identifier]);
-			bool has_next = true;
-			while (has_next)
-			{
-				has_next = candidates.next(m);
-				std::vector<function_call> v_f;
-				std::transform(r.condition.begin(), r.condition.end(),
-						std::back_inserter(v_f),
-						generate_inferred_fact(m));
-
-				std::vector<function_call>::const_iterator it;
-				it = v_f.begin();
-				bool has_matched = true;
-				while (has_matched && it != v_f.end()) {
-					has_matched = facts_.f.matches(*it);
-					++it;
-				}
-
-				if (has_matched)
-					return true;
-			}
-		} catch (no_candidate&) {}
-
-		return false;
-	}
-
-	struct infer_from_rule
-	{
-		facts_ctx& facts_;
-		const function_call& f;
-
-		infer_from_rule(facts_ctx& facts, const function_call& f_) : facts_(facts), f(f_) {}
-
-		bool operator() (const rule& r)
-		{
-			std::vector<unifyM> unify_vect;
-
-			std::for_each(r.action.begin(), r.action.end(),
-						  apply_goal_unification(f, unify_vect));
-
-			if (unify_vect.empty())
-				return false;
-
-			typedef std::set<std::string> set_symbols;
-			typedef std::vector<set_symbols> vector_set_symbols;
-
-			/* for each bound map, list each bounded key */
-			vector_set_symbols bounded_symbols(unify_vect.size());
-			for (size_t i = 0; i < unify_vect.size(); ++i) 
-				std::for_each(unify_vect[i].begin(), unify_vect[i].end(),
-							  list_keys<std::string>(bounded_symbols[i]));
-
-			/* for each bound map, compute all the unbounded key */
-			vector_set_symbols unbounded_symbols(unify_vect.size());
-			for (size_t i = 0; i < unify_vect.size(); ++i) 
-				std::set_difference(r.symbols.begin(), r.symbols.end(),
-									bounded_symbols[i].begin(), bounded_symbols[i].end(),
-									std::inserter(unbounded_symbols[i], unbounded_symbols[i].begin()));
-
-
-			/* 
-			 * Now, for each bound map, for each unbounded key, try to fill it
-			 * with a valid expression and check if it defines some valid facts
-			 * If we find such a combinaison, goal can be inferred.
-			 */
-			for (size_t i = 0; i < unify_vect.size(); ++i)
-				if (try_to_infer(facts_, r, unify_vect[i], unbounded_symbols[i]))
-					return true;
-
-			return false;
-		}
-	};
 
 	struct are_equal : public boost::static_visitor<tribool>
 	{
@@ -666,7 +478,6 @@ namespace hyper {
 				return true;
 			} else 
 				return false;
-			
 		}
 
 		bool engine::add_fact(const std::vector<std::string>& exprs, 
@@ -684,7 +495,6 @@ namespace hyper {
 				return true;
 			} else 
 				return false;
-			
 		}
 
 		/*
@@ -728,18 +538,15 @@ namespace hyper {
 			if (!boost::logic::indeterminate(b))
 				return b;
 
-			rules::const_iterator it = rules_.begin();
 			bool has_concluded = false;
 
 			current_facts.compute_possible_expression(rules_);
 
-			while (it != rules_.end())
-			{
-				has_concluded = infer_from_rule(current_facts, f)(*it);
-				if (has_concluded) 
-					return true;
-				++it;
-			}
+			backward_chaining chaining(rules_, current_facts);
+			has_concluded = chaining.infer(f);
+			
+			if (has_concluded)
+				return true;
 
 			return boost::logic::indeterminate;
 		}
