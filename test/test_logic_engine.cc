@@ -56,7 +56,8 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	BOOST_CHECK(e.add_fact("equal(x, 7)"));
 	BOOST_CHECK(e.add_fact("less(y, 9)"));
 	BOOST_CHECK(e.add_fact("less(z, y)"));
-	BOOST_CHECK(e.add_fact("less(distance(center, object), 0.5)"));
+	
+	BOOST_CHECK(e.add_fact("less(distance(center, object), 3)"));
 	BOOST_CHECK(e.add_fact("equal(object, balloon)"));
 
 	// direct inconsistency with rules "less_false"
@@ -98,22 +99,23 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
-	r = e.infer("less(distance(center, object), 1.0)");
+	std::cerr << e << std::endl;
+	r = e.infer("less(distance(center, object), 5)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
-	r = e.infer("less(distance(center, balloon), 1.0)");
+	r = e.infer("less(distance(center, balloon), 5)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
-	r = e.infer("less(distance(object, center), 1.0)");
+	r = e.infer("less(distance(object, center), 8)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
-	r = e.infer("less(distance(object, center), 0.1)");
+	r = e.infer("less(distance(object, center), 1)");
 	BOOST_CHECK(boost::logic::indeterminate(r));
 
-	r = e.infer("less(distance(object, x), 0.7)");
+	r = e.infer("less(distance(object, x), 2)");
 	BOOST_CHECK(boost::logic::indeterminate(r));
 
 
@@ -135,12 +137,12 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 	res.clear();
 
-	e.infer("less(distance(center, object), 1.0)", std::back_inserter(res));
+	e.infer("less(distance(center, object), 5)", std::back_inserter(res));
 	BOOST_CHECK(res.size() == 1);
 	BOOST_CHECK(res[0] == "default");
 
 	res.clear();
-	e.infer("less(distance(center, object), 0.1)", std::back_inserter(res));
+	e.infer("less(distance(center, object), 1)", std::back_inserter(res));
 	BOOST_CHECK(res.size() == 0);
 }
 
