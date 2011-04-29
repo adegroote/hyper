@@ -107,6 +107,7 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	r = e.infer("less(distance(center, balloon), 5)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
+	std::cout << e << std::endl;
 
 	r = e.infer("less(distance(object, center), 8)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
@@ -129,7 +130,6 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	std::vector<std::string> res;
 	e.infer("equal(y, 7)", std::back_inserter(res));
 
-	std::cout << e << std::endl;
 
 	BOOST_CHECK(res.size() == 2);
 	BOOST_CHECK(res[0] == "default");

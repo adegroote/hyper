@@ -10,15 +10,12 @@ namespace phx = boost::phoenix;
 namespace {
 	using namespace hyper::logic;
 
-	void insert_unified(facts::sub_expressionV& lists_, facts::sub_expressionS& set_,
-					    const logic_var_db& db, const logic_var& v);
-
 	struct set_inserter : public boost::static_visitor<void>
 	{
 		facts::sub_expressionV& list;
 		facts::sub_expressionS& set;
 
-		set_inserter(facts::sub_expressionV& list_, facts::sub_expressionS& set_):
+		set_inserter(facts::sub_expressionV& list_, facts::sub_expressionS& set_) :
 			list(list_), set(set_) {}
 
 		template <typename T>
@@ -37,14 +34,39 @@ namespace {
 		}
 	};
 
-	struct inner_function_call : public boost::static_visitor<void>
+	struct inner_unified_function_call : public boost::static_visitor<void>
 	{
 		std::vector<function_call> & v;
 
-		inner_function_call(std::vector<function_call>& v_) : v(v_) {}
+		inner_unified_function_call(std::vector<function_call>& v) : v(v) {}
 
 		template <typename T>
 		void operator() (const T& t) const { (void) t; }
+
+		void operator() (const function_call& f) const 
+		{
+			v.push_back(f);
+		}
+	};
+
+	struct inner_function_call : public boost::static_visitor<void>
+	{
+		const logic_var_db& db;
+		std::vector<function_call> & v;
+
+		inner_function_call(const logic_var_db& db, std::vector<function_call>& v_) : 
+			db(db), v(v_) {}
+
+		template <typename T>
+		void operator() (const T& t) const { (void) t; }
+
+		void operator() (const std::string& sym) const
+		{
+			const logic_var& var = db.get(sym);
+			std::vector<expression>::const_iterator it;
+			for (it = var.unified.begin(); it != var.unified.end(); ++it)
+				boost::apply_visitor(inner_unified_function_call(v), it->expr);
+		}
 
 		void operator() (const function_call& f) const 
 		{
@@ -202,8 +224,8 @@ namespace hyper {
 
 			bool operator() (const adapt_res::ok& ok) const {
 				// XXX 0 == "equal" but it is still wrong
-				facts_.sub_list[0].insert(ok.syms.first);
-				facts_.sub_list[0].insert(ok.syms.second);
+				set_inserter inserter(facts_.sub_list, facts_.sub_list[0]);
+				boost::apply_visitor(inserter, ok.sym.expr);
 
 				return true; 
 			}
@@ -216,8 +238,8 @@ namespace hyper {
 
 			bool operator() (const adapt_res::require_permutation& perm) const {
 				// XXX 0 == "equal" but it is still wrong
-				facts_.sub_list[0].insert(perm.syms.first);
-				facts_.sub_list[0].insert(perm.syms.second);
+				set_inserter inserter(facts_.sub_list, facts_.sub_list[0]);
+				boost::apply_visitor(inserter, perm.sym.expr);
 
 				return facts_.apply_permutations(perm.seq);
 			}
@@ -250,7 +272,7 @@ namespace hyper {
 				/* Insert sub_fact */
 				std::vector<function_call> s;
 				for (it = f.args.begin(); it != f.args.end(); ++it)
-					boost::apply_visitor(inner_function_call(s), it->expr);
+					boost::apply_visitor(inner_function_call(db, s), it->expr);
 
 				bool (facts::*f)(const function_call&) = &facts::add;
 				std::for_each(s.begin(), s.end(), phx::bind(f, this, phx::arg_names::arg1));
@@ -299,7 +321,6 @@ namespace hyper {
 			if (!boost::logic::indeterminate(res)) 
 				return res;
 			
-
 			// we don't have conclusion from evaluation, check in the know fact
 			function_call adapted(db.adapt(f));
 
@@ -343,10 +364,23 @@ namespace hyper {
 			}
 		};
 
+		struct dump_sublist_facts {
+			std::ostream& os;
+
+			dump_sublist_facts(std::ostream& os) : os(os) {}
+
+			void operator() (const facts::sub_expressionS& s) const
+			{
+				std::copy(s.begin(), s.end(), std::ostream_iterator<expression> (os, ", "));
+				os << "\n";
+			}
+		};
+
 		std::ostream& operator << (std::ostream& os, const facts& f)
 		{
 			os << f.db << "\n";
 			std::for_each(f.list.begin(), f.list.end(), dump_facts(os));
+			std::for_each(f.sub_list.begin(), f.sub_list.end(), dump_sublist_facts(os));
 			return os;
 		}
 	}

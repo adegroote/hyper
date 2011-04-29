@@ -241,6 +241,9 @@ namespace {
 			it2 = m.find(s2);
 			assert (it1 != m.end() && it2 != m.end() );
 
+			if (it1 == it2)
+				return true;
+
 			logic_var var(it1->second);
 			// they both have values, check that they are the same
 			if (var.value && it2->second.value) {
@@ -351,10 +354,10 @@ logic_var_db::adapt_and_unify(const function_call& f)
 		if (!res)
 			return adapt_res::conflicting_facts();
 		else {
-			if (hyper::utils::all(perms.begin(), perms.end(), are_newly_introduced(v)))
-				return adapt_res::ok(f_res.args[0], f_res.args[1]);
-			else
-				return adapt_res::require_permutation(perms, f_res.args[0], f_res.args[1]);
+			if (hyper::utils::all(perms.begin(), perms.end(), are_newly_introduced(v))) 
+				return adapt_res::ok(f_res.args[0]);
+			 else 
+				return adapt_res::require_permutation(perms, f_res.args[0]);
 		 }
 	}
 

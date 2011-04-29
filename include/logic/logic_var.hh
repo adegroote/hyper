@@ -29,13 +29,12 @@ namespace hyper {
 
 		struct adapt_res {
 			struct ok { 
-				std::pair<expression, expression> syms; 
+				expression sym;
 
 				ok() {}
-				ok(const expression& e1, const expression& e2) :
-					syms(std::make_pair(e1, e2))
-				{}
+				ok(const expression& e1) : sym(e1) {}
 			};
+
 			struct conflicting_facts {};
 
 			typedef std::pair<logic_var::identifier_type, logic_var::identifier_type> permutation; 
@@ -43,12 +42,11 @@ namespace hyper {
 
 			struct require_permutation {
 				permutationSeq seq;
-				std::pair<expression, expression> syms;
+				expression sym;
 
 				require_permutation() {};
-				require_permutation(const permutationSeq& seq, 
-							   const expression& e1, const expression& e2):
-					seq(seq), syms(std::make_pair(e1, e2))
+				require_permutation(const permutationSeq& seq, const expression& e1) :
+					seq(seq), sym(e1)
 				{}
 			};
 

@@ -98,6 +98,8 @@ BOOST_AUTO_TEST_CASE ( logic_logic_var_test )
 
 	// unify logic reprensation of x and y
 	do_test<adapt_res::require_permutation>("equal(x, y)", funcs, db);
+	// nothing new
+	do_test<adapt_res::ok>("equal(x, z)", funcs, db);
 	do_test<function_call>("less(distance(pt1, pt2), 3.0)", funcs, db);
 	do_test<function_call>("less(distance(pt3, pt4), 5.0)", funcs, db);
 
