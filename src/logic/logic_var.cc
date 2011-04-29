@@ -259,12 +259,16 @@ namespace {
 			seq.push_back(std::make_pair(s2, s1));
 			apply_permutations(seq);
 
-			logic_var_db::bm_type::left_iterator it;
-			for (it = bm.left.begin(); it != bm.left.end(); ++it) {
+			logic_var_db::bm_type::left_iterator it = bm.left.begin();
+			while (it != bm.left.end()) {
 				adapt_res::permutationSeq::const_iterator it2;
 				it2 = std::find_if(seq.begin(), seq.end(), find_predicate(it->first));
-				if (it2 != seq.end())
+				if (it2 != seq.end()) {
 					bm.left.replace_key(it, it2->second);
+					it = bm.left.begin();
+				} else {
+					++it;
+				}
 			}
 
 			// update facts stored in logic_var with the permutations
