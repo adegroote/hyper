@@ -247,23 +247,19 @@ namespace hyper {
 
 		bool facts::add(const function_call& f)
 		{
-			if (f.id >= sub_list.size())
-				sub_list.resize(funcs.size());
-
+			resize(f.id, sub_list);
 			adapt_res res = db.adapt_and_unify(f);
 			return  boost::apply_visitor(handle_adapt_res(*this), res.res);
 		}
 
 		bool facts::add_new_facts(const function_call& f) 
 		{
-			if (f.id >= list.size())
-				list.resize(funcs.size());
+			resize(f.id, list);
 			std::pair< expressionS::iterator, bool> p;
 			p = list[f.id].insert(f);
 			if (p.second) {
 				size__++;
-				if (f.id >= sub_list.size())
-					sub_list.resize(funcs.size());
+				resize(f.id, sub_list);
 				set_inserter inserter(sub_list, sub_list[f.id]);
 				std::vector<expression>::const_iterator it;
 				for (it = f.args.begin(); it != f.args.end(); ++it)

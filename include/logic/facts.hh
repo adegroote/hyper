@@ -41,6 +41,15 @@ namespace hyper {
 				bool add_new_facts(const function_call& f);
 				bool apply_permutations(const adapt_res::permutationSeq& seq);
 
+				template <typename T>
+				void resize(functionId id, T& list_) const 
+				{
+					if (id >= list.size()) {
+						assert(id < funcs.size());
+						list_.resize(funcs.size());
+					}
+				}
+
 			public:	
 				facts(const funcDefList& funcs_): funcs(funcs_), size__(0) {}
 
@@ -52,26 +61,22 @@ namespace hyper {
 				function_call generate(const std::string& s);
 
 				const_iterator begin(functionId id) const { 
-					if (id >= list.size())
-						list.resize(funcs.size());
+					resize(id, list);
 					return list[id].begin();
 				}
 
 				const_iterator end(functionId id) const { 
-					if (id >= list.size())
-						list.resize(funcs.size());
+					resize(id, list);
 					return list[id].end();
 				}
 
 				sub_const_iterator sub_begin(functionId id) const {
-					if (id >= sub_list.size())
-						sub_list.resize(funcs.size());
+					resize(id, sub_list);
 					return sub_list[id].begin();
 				}
 
 				sub_const_iterator sub_end(functionId id) const {
-					if (id >= sub_list.size())
-						sub_list.resize(funcs.size());
+					resize(id, sub_list);
 					return sub_list[id].end();
 				}
 
@@ -82,6 +87,8 @@ namespace hyper {
 				}
 
 				size_t size() const { return size__; }
+
+				size_t max_id() const { return list.size(); }
 
 				friend std::ostream& operator << (std::ostream& os, const facts&);
 		};

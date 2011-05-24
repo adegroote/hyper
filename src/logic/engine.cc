@@ -178,24 +178,6 @@ namespace {
 		}
 	};
 
-	bool
-	is_world_consistent(const rules& rs, facts_ctx& facts, const funcDefList& func)
-	{
-		std::vector<rule> rules;
-		hyper::utils::copy_if(rs.begin(), rs.end(), std::back_inserter(rules),
-					 phx::bind(&rule::inconsistency, phx::arg_names::arg1));
-
-		std::vector<boost::logic::tribool> matches;
-		for (size_t i = 0; i < func.size(); ++i)
-			std::transform(facts.f.begin(i), facts.f.end(i), std::back_inserter(matches),
-					phx::bind(&facts::matches, &facts.f, phx::arg_names::arg1));
-
-		bool res = ! hyper::utils::any(rules.begin(), rules.end(), 
-								 lead_to_inconsistency(facts));
-		res = res and hyper::utils::all(matches.begin(), matches.end(),
-									   std::bind2nd(std::equal_to<bool>(), true));
-		return res;
-	}
 
 	/*
 	 * Try to apply a rule to a set of facts
@@ -473,7 +455,7 @@ namespace hyper {
 
 			/* If the new fact does not lead to any inconstency, really commit
 			 * it */
-			if (is_world_consistent(rules_, current_facts, funcs_)) {
+			if (is_world_consistent(rules_, current_facts)) {
 				set_facts(identifier, current_facts);
 				return true;
 			} else 
@@ -490,7 +472,7 @@ namespace hyper {
 						  boost::bind(f, boost::ref(current_facts), _1));
 			apply_rules(current_facts);
 
-			if (is_world_consistent(rules_, current_facts, funcs_)) {
+			if (is_world_consistent(rules_, current_facts)) {
 				set_facts(identifier, current_facts);
 				return true;
 			} else 
@@ -549,6 +531,25 @@ namespace hyper {
 				return true;
 
 			return boost::logic::indeterminate;
+		}
+
+		bool
+		is_world_consistent(const rules& rs, facts_ctx& facts)
+		{
+			std::vector<rule> rules;
+			hyper::utils::copy_if(rs.begin(), rs.end(), std::back_inserter(rules),
+						 phx::bind(&rule::inconsistency, phx::arg_names::arg1));
+
+			std::vector<boost::logic::tribool> matches;
+			for (size_t i = 0; i < facts.f.max_id(); ++i)
+				std::transform(facts.f.begin(i), facts.f.end(i), std::back_inserter(matches),
+						phx::bind(&facts::matches, &facts.f, phx::arg_names::arg1));
+
+			bool res = ! hyper::utils::any(rules.begin(), rules.end(), 
+									 lead_to_inconsistency(facts));
+			res = res and hyper::utils::all(matches.begin(), matches.end(),
+										   std::bind2nd(std::equal_to<bool>(), true));
+			return res;
 		}
 
 		std::ostream& operator << (std::ostream& oss, const facts_ctx& f)

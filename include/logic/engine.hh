@@ -109,6 +109,9 @@ namespace hyper {
 		};
 
 		std::ostream& operator << (std::ostream&, const engine&);
+
+	
+		bool is_world_consistent(const rules& rs, facts_ctx& facts);
 	}
 }
 
