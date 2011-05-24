@@ -258,8 +258,16 @@ namespace hyper { namespace logic {
 
 					bm_hyp_type::right_iterator it3 = bm_hyp.project_right(it);
 					bm_hyp.right.replace_key(it3, hyp);
-				} else
+				} else {
+					facts_ctx current_facts = ctx;
+					current_facts.add(hyp.f);
+					if (!is_world_consistent(rs, current_facts)) {
+						n.state = proven_false;
+						hyp.state = proven_false;
+					}
+					
 					all_true = false;
+				}
 			}
 
 			if (hyp.state == not_proven_explored)
@@ -461,7 +469,7 @@ namespace hyper { namespace logic {
 		add_hypothesis_to_node(n, f);
 		try_solve_node(n);
 
-		//print_node(n, 0);
+//		print_node(n, 0);
 
 		switch(n.state) {
 			case proven_true:

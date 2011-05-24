@@ -41,6 +41,12 @@ namespace hyper {
 					return res;
 				}
 
+				bool add(const function_call& fact) { 
+					bool res = f.add(fact);
+					ctx_rules_update = false;
+					return res;
+				}
+
 				void new_rule() { ctx_rules_update = false; }
 
 				void compute_possible_expression(const rules& rs);

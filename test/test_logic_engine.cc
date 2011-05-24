@@ -52,6 +52,10 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 						   boost::assign::list_of<std::string>("less(A, A)"),
 						   std::vector<std::string>()));
 
+	BOOST_CHECK(e.add_rule("less_antisymetry",
+						   boost::assign::list_of<std::string>("less(A, B)")("less(B,A)"),
+						   std::vector<std::string>()));
+
 	BOOST_CHECK(e.add_fact("equal(x, y)"));
 	BOOST_CHECK(e.add_fact("equal(x, 7)"));
 	BOOST_CHECK(e.add_fact("less(y, 9)"));
