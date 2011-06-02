@@ -69,9 +69,9 @@ namespace {
 	{
 		std::vector<std::string>& v;
 
-		list_keys(typename std::vector<std::string>& v) : v(v) {}
+		list_keys(std::vector<std::string>& v) : v(v) {}
 
-		void operator() (const typename std::pair<std::string, std::set<functionId> >& p) 
+		void operator() (const std::pair<std::string, std::set<functionId> >& p) 
 		{
 			v.push_back(p.first);
 		}
