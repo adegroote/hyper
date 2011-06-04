@@ -22,17 +22,18 @@ namespace hyper {
 			std::for_each(list_eval.begin(), list_eval.end(), Delete());
 		}
 
-		functionId funcDefList::add(const std::string& name, size_t arity, eval_predicate* eval)
+		functionId funcDefList::add(const std::string& name, size_t arity, eval_predicate* eval, 
+									bool unify_predicate)
 		{
 			funcM::const_iterator it = m.find(name);
 			if (it == m.end()) 
 			{
 				if (eval == 0) 
-					list.push_back(function_def(name, arity, list_eval[0]));
+					list.push_back(function_def(name, arity, list_eval[0], unify_predicate));
 				else {
 					// get ownership
 					list_eval.push_back(eval);
-					list.push_back(function_def(name, arity, eval));
+					list.push_back(function_def(name, arity, eval, unify_predicate));
 				}
 				m[name] = list.size() - 1;
 				return list.size() -1;

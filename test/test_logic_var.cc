@@ -86,9 +86,9 @@ adapt_res do_test(const std::string& s, const funcDefList& funcs, logic_var_db& 
 BOOST_AUTO_TEST_CASE ( logic_logic_var_test )
 {
 	funcDefList funcs;
-	logic_var_db db;
+	logic_var_db db(funcs);
 
-	funcs.add("equal", 2, new eval<equal, 2>());
+	funcs.add("equal", 2, new eval<equal, 2>(), true);
 	funcs.add("less", 2, new eval<less, 2>());
 	funcs.add("distance", 2);
 

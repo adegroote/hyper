@@ -346,10 +346,10 @@ logic_var_db::adapt_and_unify(const function_call& f)
 	// track newly introduced logic variable
 	std::vector<logic_var::identifier_type> v;
 	function_call f_res = adapt_function_call(bm, m_logic_var, v, f);
+	const function_def& def = funcs.get(f_res.id);
 
 	adapt_res::permutationSeq perms;
-	/* XXX Wrong test, we need to handle the unification function in a better way */
-	if (f_res.name == "equal") {
+	if (def.unify_predicate) {
 		bool res = unify(bm, m_logic_var, f_res.args[0], f_res.args[1], perms);
 		if (!res)
 			return adapt_res::conflicting_facts();

@@ -51,7 +51,7 @@ namespace hyper {
 				}
 
 			public:	
-				facts(const funcDefList& funcs_): funcs(funcs_), size__(0) {}
+				facts(const funcDefList& funcs_): funcs(funcs_), size__(0), db(funcs) {}
 
 				bool add(const std::string& s);
 				bool add(const function_call& f);

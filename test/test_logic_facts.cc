@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE ( logic_facts_test )
 	funcDefList funcs;
 	facts our_facts(funcs);
 
-	funcs.add("equal", 2, new eval<equal, 2>());
+	funcs.add("equal", 2, new eval<equal, 2>(), true);
 	funcs.add("less", 2, new eval<less, 2>());
 
 	BOOST_CHECK(our_facts.size() == 0);

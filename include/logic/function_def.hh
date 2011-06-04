@@ -24,11 +24,13 @@ namespace hyper {
 			std::string name;
 			size_t arity;
 			eval_predicate* eval_pred;
+			bool unify_predicate;
 
 			function_def() {};
 			function_def(const std::string& name_, const size_t arity_, 
-						 eval_predicate* eval_ = 0):
-				name(name_), arity(arity_), eval_pred(eval_) {}
+						 eval_predicate* eval_ = 0, bool unify_predicate = false):
+				name(name_), arity(arity_), eval_pred(eval_),
+				unify_predicate(unify_predicate) {}
 		};
 
 		/*
@@ -56,7 +58,8 @@ namespace hyper {
 				funcDefList();
 				~funcDefList();
 
-				functionId add(const std::string& name, size_t arity, eval_predicate* eval = 0);
+				functionId add(const std::string& name, size_t arity, eval_predicate* eval = 0,
+							   bool unify_predicate = false);
 
 				const function_def& get(functionId id) const
 				{

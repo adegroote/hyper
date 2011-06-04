@@ -293,7 +293,7 @@ namespace hyper {
 	namespace logic {
 		engine::engine() : rules_(funcs_) 
 		{
-			funcs_.add("equal", 2, new eval<equal, 2>());
+			funcs_.add("equal", 2, new eval<equal, 2>(), true);
 
 			add_rule("equal_reflexivity", 
 					 boost::assign::list_of<std::string>("equal(X, Y)"),

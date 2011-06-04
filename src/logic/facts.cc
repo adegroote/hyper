@@ -219,12 +219,13 @@ namespace hyper {
 		struct handle_adapt_res : boost::static_visitor<bool> {
 
 			facts& facts_;
+			const function_call& f;
 
-			handle_adapt_res(facts& facts_) : facts_(facts_) {}
+			handle_adapt_res(facts& facts_, const function_call& f) : 
+				facts_(facts_), f(f) {}
 
 			bool operator() (const adapt_res::ok& ok) const {
-				// XXX 0 == "equal" but it is still wrong
-				set_inserter inserter(facts_.sub_list, facts_.sub_list[0]);
+				set_inserter inserter(facts_.sub_list, facts_.sub_list[f.id]);
 				boost::apply_visitor(inserter, ok.sym.expr);
 
 				return true; 
@@ -237,8 +238,7 @@ namespace hyper {
 			}
 
 			bool operator() (const adapt_res::require_permutation& perm) const {
-				// XXX 0 == "equal" but it is still wrong
-				set_inserter inserter(facts_.sub_list, facts_.sub_list[0]);
+				set_inserter inserter(facts_.sub_list, facts_.sub_list[f.id]);
 				boost::apply_visitor(inserter, perm.sym.expr);
 
 				return facts_.apply_permutations(perm.seq);
@@ -249,7 +249,7 @@ namespace hyper {
 		{
 			resize(f.id, sub_list);
 			adapt_res res = db.adapt_and_unify(f);
-			return  boost::apply_visitor(handle_adapt_res(*this), res.res);
+			return  boost::apply_visitor(handle_adapt_res(*this, f), res.res);
 		}
 
 		bool facts::add_new_facts(const function_call& f) 
@@ -319,9 +319,9 @@ namespace hyper {
 			
 			// we don't have conclusion from evaluation, check in the know fact
 			function_call adapted(db.adapt(f));
+			const function_def& def = funcs.get(adapted.id);
 
-			// XXX still not the good test
-			if (adapted.name == "equal")
+			if (def.unify_predicate)
 				return boost::apply_visitor(unified_helper(db), adapted.args[0].expr,
 																adapted.args[1].expr);
 			

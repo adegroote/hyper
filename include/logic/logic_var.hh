@@ -79,8 +79,11 @@ namespace hyper {
 			private:
 				bm_type bm;
 				map_type m_logic_var;
+				const funcDefList& funcs;
 
 			public:
+				logic_var_db(const funcDefList& funcs) : funcs(funcs) {}
+
 				/* Rewrite input fact, replacing symbol by an associated logic_var*/
 				function_call adapt(const function_call& f);
 
