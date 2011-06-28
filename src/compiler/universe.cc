@@ -713,8 +713,9 @@ struct output_import_helper {
 void
 universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const
 {
-	oss << "#include <" << name << "/import.hh>" << std::endl << std::endl;
-	oss << "#include <model/logic_layer_impl.hh>" << std::endl << std::endl;
+	oss << "#include <" << name << "/import.hh>\n\n";
+	oss << "#include <model/logic_layer_impl.hh>\n\n";
+	oss << "#include <boost/assign/list_of.hpp>\n\n";
 
 	//find functions prefixed by name::
 	std::vector<functionDef>  funcs = fList.select(select_ability_funs(name));

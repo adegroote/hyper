@@ -5,6 +5,7 @@
 #include <boost/bind.hpp>
 
 #include <compiler/functions_def.hh>
+#include <compiler/output.hh>
 #include <compiler/scope.hh>
 #include <compiler/types.hh>
 
@@ -79,8 +80,17 @@ functionDef::output_import(std::ostream& oss, const typeList& tList) const
 		oss << "add_predicate<";
 	else
 		oss << "add_func<" ;
-	oss << name() << ">(\"" << name() << "\");";
-	oss << std::endl;
+	oss << name() << ">(" << quoted_string(name()) << ",\n";
+	oss << "\tboost::assign::list_of";
+	for (size_t i = 0; i < arity(); ++i) {
+		type arg = tList.get(argsType(i));
+		oss << "(" << quoted_string(arg.type_name()) << ")";
+	}
+	if (!is_predicate) {
+		type ret = tList.get(returnType());
+		oss << "(" << quoted_string(ret.type_name()) << ")";
+	}
+	oss << ");\n";
 }
 
 functionDefList::add_result
