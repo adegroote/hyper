@@ -8,62 +8,6 @@
 #include <model/execute_impl.hh>
 #include <model/logic_layer_impl.hh>
 
-namespace {
-
-	/* 
-	 * Remove % if we found some pattern between % % 
-	 * % will be used to denote the type of the expression
-	 */
-	std::string prepare_execution_rqst(const std::string& s)
-	{
-		std::string res = s;
-		std::string::size_type loc, previous_loc;
-		previous_loc = 0;
-
-		while ( (loc = res.find("%", previous_loc)) != std::string::npos)
-		{
-			previous_loc = loc;
-			loc = res.find("%", previous_loc+1);
-			if (loc == std::string::npos) 
-				break;
-
-			/* We found a pattern between two % */
-			res.erase(loc,1);
-			res.erase(previous_loc,1);
-			previous_loc = loc - 2;
-		}
-
-		return res;
-	}
-
-	/* 
-	 * If we found a pattern between % %, remove it
-	 * % will be used to denote the type of the expression, and so is useless
-	 * in the logic world
-	 */
-	std::string prepare_logic_rqst(const std::string& s, const std::string& ctx)
-	{
-		std::string res = s;
-		std::string::size_type loc, previous_loc;
-		previous_loc = 0;
-
-		while ( (loc = res.find("%", previous_loc)) != std::string::npos)
-		{
-			previous_loc = loc;
-			loc = res.find("%", previous_loc+1);
-			if (loc == std::string::npos) 
-				break;
-
-			/* We found a pattern between two % */
-			std::string::size_type pattern_size = loc - previous_loc;
-			res.erase(previous_loc, pattern_size+1);
-		}
-
-		return res;
-	}
-
-}
-
 namespace hyper {
 	namespace model {
 		const char* logic_layer_category_impl::name() const {
@@ -118,12 +62,11 @@ namespace hyper {
 					new logic_context(ctr, *this));
 			ctx->cb = cb;
 
-			std::string to_execute = prepare_execution_rqst(ctx->ctr.constraint);
 			logic::generate_return ret_exec =
-						logic::generate(to_execute, execFuncs);
+						logic::generate(ctx->ctr.constraint, execFuncs);
 
 			if (ret_exec.res == false) {
-				a_.logger(WARNING) << ctr << " Fail to parse " << to_execute << std::endl;
+				a_.logger(WARNING) << ctr << " Fail to parse " << ctx->ctr.constraint << std::endl;
 				return ctx->cb(make_error_code(logic_layer_error::parse_error));
 			}
 
@@ -189,8 +132,7 @@ namespace hyper {
 				return ctx->cb(boost::system::error_code());
 			}
 
-			std::string to_logic = prepare_logic_rqst(ctx->ctr.constraint, a_.name);
-			ctx->logic_tree.async_eval_cond(to_logic, 
+			ctx->logic_tree.async_eval_cond(ctx->ctr.constraint,
 					boost::bind(&logic_layer::handle_eval_task_tree, this,
 							   _1, ctx));
 		}
