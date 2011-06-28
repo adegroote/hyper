@@ -26,15 +26,17 @@ namespace {
 		std::string name;
 		const ability &a;
 		std::ostream &oss;
+		const universe& u;
 
-		generate_logic_fact(const std::string& name, const ability& a, std::ostream& oss_):
-			name(name), a(a), oss(oss_)
+		generate_logic_fact(const std::string& name, const ability& a, std::ostream& oss_,
+						    const universe& u):
+			name(name), a(a), oss(oss_), u(u)
 		{}
 
 		void operator() (const expression_ast& e) const
 		{
 			oss << "\t\t\ta_.logic().engine.add_fact(";
-			oss << quoted_string(generate_logic_expression(e, a));
+			oss << quoted_string(generate_logic_expression(e, a, u));
 			oss << ", " << quoted_string(name) <<  ");" << std::endl;
 		}
 	};
@@ -279,7 +281,7 @@ namespace hyper {
 				oss << indent << "preds(a_, \n";
 				oss << next_indent << "boost::assign::list_of<hyper::" << ability_context.name(); 
 				oss << "::" << exported_name() << "::pre_conditions::condition>\n";
-				generate_condition e_cond(oss, "pre", ability_context);
+				generate_condition e_cond(oss, "pre", ability_context, u);
 				std::for_each(pre.begin(), pre.end(), e_cond);
 
 				if (!pre_symbols.local_with_updater.empty()) {
@@ -305,7 +307,7 @@ namespace hyper {
 				oss << indent << "posts(a_, \n";
 				oss << next_indent << "boost::assign::list_of<hyper::" << ability_context.name();
 				oss << "::" << exported_name() << "::post_conditions::condition>\n";
-				generate_condition e_cond(oss, "post", ability_context);
+				generate_condition e_cond(oss, "post", ability_context, u);
 				std::for_each(post.begin(), post.end(), e_cond);
 				if (!post_symbols.local_with_updater.empty()) {
 					oss << next_indent << ", boost::array<std::string, ";
@@ -327,7 +329,7 @@ namespace hyper {
 				oss << indent << "{" << std::endl;
 
 				std::for_each(recipes.begin(), recipes.end(), generate_recipe(oss));
-				generate_logic_fact e_fact(name, ability_context, oss);
+				generate_logic_fact e_fact(name, ability_context, oss, u);
 				std::for_each(post.begin(), post.end(), e_fact);
 
 				oss << indent << "}\n\n";
