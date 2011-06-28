@@ -62,46 +62,6 @@ namespace {
 		return res;
 	}
 
-	void add_transitivy_rule(hyper::logic::engine& e, const std::string& s)
-	{
-		std::string rule_name = s + "_transitivity";
-		std::vector<std::string> cond;
-		std::vector<std::string> action;
-		
-		cond.push_back(s + "(A,B)");
-		cond.push_back(s + "(B,C)");
-		action.push_back(s + "(A,C)");
-
-		e.add_rule(rule_name, cond, action);
-	}
-
-	void add_symetry_rule(hyper::logic::engine& e, const std::string& s)
-	{
-		std::string rule_name = s + "_symetry";
-		std::vector<std::string> cond;
-		std::vector<std::string> action;
-		
-		cond.push_back(s + "(A,B)");
-
-		std::ostringstream oss;
-		oss << "equal(" << s << "(A,B), " << s << "(B, A))";
-		action.push_back(oss.str());
-
-		e.add_rule(rule_name, cond, action);
-	}
-	
-	/* if First(A, B) then Second(A, B) */
-	void add_induction_rule(hyper::logic::engine& e, const std::string& first, const std::string& second)
-	{
-		std::string rule_name = first + "_induction_" + second;
-		std::vector<std::string> cond;
-		std::vector<std::string> action;
-
-		cond.push_back(first + "(A,B)");
-		action.push_back(second + "(A,B)");
-
-		e.add_rule(rule_name, cond, action);
-	}
 }
 
 namespace hyper {
@@ -149,38 +109,6 @@ namespace hyper {
 
 			add_numeric_type<int>("int");
 			add_numeric_type<double>("double");
-
-			/* Add logic func */
-			engine.add_predicate("not_equal", 2, new logic::eval<
-											details::logic_eval<details::logic_nequal>, 2>());
-			engine.add_predicate("less", 2, new logic::eval<
-											details::logic_eval<details::logic_less>, 2>());
-			engine.add_predicate("less_equal", 2, new logic::eval<
-											details::logic_eval<details::logic_less_equal>, 2>());
-			engine.add_predicate("greater", 2, new logic::eval<
-											details::logic_eval<details::logic_greater>, 2>());
-			engine.add_predicate("greater_equal", 2, new logic::eval<
-											details::logic_eval<details::logic_greater_equal>, 2>());
-
-			engine.add_func("add", 2);
-			engine.add_func("minus", 2);
-			engine.add_func("times", 2);
-			engine.add_func("divides", 2);
-			engine.add_func("negate", 1);
-
-			/* Add logic rules */
-			add_transitivy_rule(engine, "less");
-			add_transitivy_rule(engine, "less_equal");
-			add_transitivy_rule(engine, "greater");
-			add_transitivy_rule(engine, "greater_equal");
-
-			add_symetry_rule(engine, "add");
-			add_symetry_rule(engine, "minus");
-			add_symetry_rule(engine, "times");
-			add_symetry_rule(engine, "divides");
-
-			add_induction_rule(engine, "less", "less_equal");
-			add_induction_rule(engine, "greater", "greater_equal");
 		}
 
 		void logic_layer::async_exec(const logic_constraint& ctr, logic_layer_cb cb)

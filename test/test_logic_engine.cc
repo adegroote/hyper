@@ -37,102 +37,120 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 {
 	engine e;
 
-	BOOST_CHECK(e.add_predicate("less", 2, new eval<less, 2>()));
-	BOOST_CHECK(e.add_func("distance", 2));
+	BOOST_CHECK(e.add_type("int"));
+	BOOST_CHECK(e.add_type("double"));
+	BOOST_CHECK(e.add_type("point"));
 
-	BOOST_CHECK(e.add_rule("less_transitiviy", 
-						   boost::assign::list_of<std::string>("less(X, Y)")("less(Y,Z)"),
-						   boost::assign::list_of<std::string>("less(X, Z)")));
+	BOOST_CHECK(e.add_predicate("less_int", 2, boost::assign::list_of("int")("int"), new eval<less, 2>()));
+	BOOST_CHECK(e.add_predicate("less_double", 2, boost::assign::list_of("double")("double"), new eval<less, 2>()));
+
+	BOOST_CHECK(e.add_func("distance", 2, boost::assign::list_of("point")("point")("double")));
+
+	BOOST_CHECK(e.add_rule("less_int_transitiviy", 
+						   boost::assign::list_of<std::string>("less_int(X, Y)")("less_int(Y,Z)"),
+						   boost::assign::list_of<std::string>("less_int(X, Z)")));
+
+	BOOST_CHECK(e.add_rule("less_double_transitiviy", 
+						   boost::assign::list_of<std::string>("less_double(X, Y)")("less_double(Y,Z)"),
+						   boost::assign::list_of<std::string>("less_double(X, Z)")));
 
 	BOOST_CHECK(e.add_rule("distance_symmetry",
 						   boost::assign::list_of<std::string>("distance(A,B)"),
-						   boost::assign::list_of<std::string>("equal(distance(A,B), distance(B,A))")));
+						   boost::assign::list_of<std::string>("equal_double(distance(A,B), distance(B,A))")));
 
-	BOOST_CHECK(e.add_rule("less_false",
-						   boost::assign::list_of<std::string>("less(A, A)"),
+	BOOST_CHECK(e.add_rule("less_int_false",
+						   boost::assign::list_of<std::string>("less_int(A, A)"),
 						   std::vector<std::string>()));
 
-	BOOST_CHECK(e.add_rule("less_antisymetry",
-						   boost::assign::list_of<std::string>("less(A, B)")("less(B,A)"),
+	BOOST_CHECK(e.add_rule("less_double_false",
+						   boost::assign::list_of<std::string>("less_double(A, A)"),
 						   std::vector<std::string>()));
 
-	BOOST_CHECK(e.add_fact("equal(x, y)"));
-	BOOST_CHECK(e.add_fact("equal(x, 7)"));
-	BOOST_CHECK(e.add_fact("less(y, 9)"));
-	BOOST_CHECK(e.add_fact("less(z, y)"));
+	BOOST_CHECK(e.add_rule("less_int_antisymetry",
+						   boost::assign::list_of<std::string>("less_int(A, B)")("less_int(B,A)"),
+						   std::vector<std::string>()));
+
+	BOOST_CHECK(e.add_rule("less_double_antisymetry",
+						   boost::assign::list_of<std::string>("less_double(A, B)")("less_double(B,A)"),
+						   std::vector<std::string>()));
+
+	BOOST_CHECK(e.add_fact("equal_int(x, y)"));
+	BOOST_CHECK(e.add_fact("equal_int(x, 7)"));
+	BOOST_CHECK(e.add_fact("less_int(y, 9)"));
+	BOOST_CHECK(e.add_fact("less_int(z, y)"));
 	
-	BOOST_CHECK(e.add_fact("less(distance(center, object), 3)"));
-	BOOST_CHECK(e.add_fact("equal(object, balloon)"));
+	BOOST_CHECK(e.add_fact("less_double(distance(center, object), 3.0)"));
+	BOOST_CHECK(e.add_fact("equal_point(object, balloon)"));
 
 	// direct inconsistency with rules "less_false"
-	BOOST_CHECK(!e.add_fact("less(h, h)"));
+	BOOST_CHECK(!e.add_fact("less_int(h, h)"));
 
-	BOOST_CHECK(e.add_fact("equal(a, 9)"));
+	BOOST_CHECK(e.add_fact("equal_int(a, 9)"));
 
 	// inconsistent by deduction
-	BOOST_CHECK(!e.add_fact("less(a, x)"));
+	BOOST_CHECK(!e.add_fact("less_int(a, x)"));
 
-	BOOST_CHECK(e.add_fact("equal(b, 10)"));
+	BOOST_CHECK(e.add_fact("equal_int(b, 10)"));
 
 	// inconsistent by deduction / execution
-	BOOST_CHECK(!e.add_fact("less(b, x)"));
+	BOOST_CHECK(!e.add_fact("less_int(b, x)"));
 
 
 	boost::logic::tribool r;
-	r = e.infer("equal(x, 7)");
+	r = e.infer("equal_int(x, 7)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
 	// reflexivity
-	r = e.infer("equal(7, x)");
+	r = e.infer("equal_int(7, x)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
 	// reflexivity + transitivity
-	r = e.infer("equal(7, y)");
+	r = e.infer("equal_int(7, y)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
 	// forward chaining less(z, 12) true if less(z,9) and less(9, 12)
-	r = e.infer("less(z, 12)");
+	r = e.infer("less_int(z, 12)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
 	// y < 9 and x = y
-	r = e.infer("less(x, 12)");
+	r = e.infer("less_int(x, 12)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
 	std::cerr << e << std::endl;
-	r = e.infer("less(distance(center, object), 5)");
+	r = e.infer("less_double(distance(center, object), 5.0)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
-	r = e.infer("less(distance(center, balloon), 5)");
+	r = e.infer("less_double(distance(center, balloon), 5.0)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 	std::cout << e << std::endl;
 
-	r = e.infer("less(distance(object, center), 8)");
+	r = e.infer("less_double(distance(object, center), 8.0)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
-	r = e.infer("less(distance(object, center), 1)");
+	r = e.infer("less_double(distance(object, center), 1.0)");
 	BOOST_CHECK(boost::logic::indeterminate(r));
 
-	r = e.infer("less(distance(object, x), 2)");
+	r = e.infer("less_double(distance(object, x), 2.0)");
 	BOOST_CHECK(boost::logic::indeterminate(r));
 
 
 	/* Add some fact for task1 */
-	BOOST_CHECK(e.add_fact("equal(x, y)", "task1"));
-	BOOST_CHECK(e.add_fact("equal(x, 7)", "task1"));
+	BOOST_CHECK(e.add_fact("equal_int(x, y)", "task1"));
+	BOOST_CHECK(e.add_fact("equal_int(x, 7)", "task1"));
 
 	/* Add some fact for task2 */
-	BOOST_CHECK(e.add_fact("equal(x, 7)", "task2"));
+	BOOST_CHECK(e.add_fact("equal_int(x, 7)", "task2"));
 
 	std::vector<std::string> res;
-	e.infer("equal(y, 7)", std::back_inserter(res));
+	e.infer("equal_int(y, 7)", std::back_inserter(res));
 
 
 	BOOST_CHECK(res.size() == 2);
@@ -141,12 +159,12 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 	res.clear();
 
-	e.infer("less(distance(center, object), 5)", std::back_inserter(res));
+	e.infer("less_double(distance(center, object), 5.0)", std::back_inserter(res));
 	BOOST_CHECK(res.size() == 1);
 	BOOST_CHECK(res[0] == "default");
 
 	res.clear();
-	e.infer("less(distance(center, object), 1)", std::back_inserter(res));
+	e.infer("less_double(distance(center, object), 1.0)", std::back_inserter(res));
 	BOOST_CHECK(res.size() == 0);
 }
 

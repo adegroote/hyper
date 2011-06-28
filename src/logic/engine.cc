@@ -292,19 +292,25 @@ namespace {
 namespace hyper {
 	namespace logic {
 		engine::engine() : rules_(funcs_) 
+		{}
+
+		bool engine::add_type(const std::string& name)
 		{
-			funcs_.add("equal", 2, new eval<equal, 2>(), true);
+			funcs_.add("equal_" + name, 2, new eval<equal, 2>(), true);
 
-			add_rule("equal_reflexivity", 
-					 boost::assign::list_of<std::string>("equal(X, Y)"),
-					 boost::assign::list_of<std::string>("equal(Y, X)"));
+			add_rule("equal_" + name + "_reflexivity", 
+					 boost::assign::list_of<std::string>("equal_" + name + "(X, Y)"),
+					 boost::assign::list_of<std::string>("equal_" + name + "(Y, X)"));
 
-			add_rule("equal_transitiviy", 
-					  boost::assign::list_of<std::string>("equal(X, Y)")("equal(Y,Z)"),
-					  boost::assign::list_of<std::string>("equal(X, Z)"));
+			add_rule("equal_" + name + "_transitiviy", 
+					  boost::assign::list_of<std::string>("equal_" + name + "(X, Y)")("equal_" + name +"(Y,Z)"),
+					  boost::assign::list_of<std::string>("equal_" + name + "(X, Z)"));
+
+			return true;
 		}
 
 		bool engine::add_predicate(const std::string& name, size_t arity,
+							  const std::vector<std::string>& args_type,
 							  eval_predicate* eval)
 		{
 			funcs_.add(name, arity, eval);
@@ -327,7 +333,7 @@ namespace hyper {
 				s.push_back(oss.str());
 
 				oss.str("");
-				oss << "equal(X" << i << ",Y" << i << ")";
+				oss << "equal_" << args_type[i] << "(X" << i << ",Y" << i << ")";
 				s.push_back(oss.str());
 				conds.push_back(s);
 			}
@@ -360,7 +366,8 @@ namespace hyper {
 			return true; // XXX
 		}
 
-		bool engine::add_func(const std::string& name, size_t arity)
+		bool engine::add_func(const std::string& name, size_t arity,
+							  const std::vector<std::string>& args_type)
 		{
 			funcs_.add(name, arity, 0);
 			/*
@@ -383,7 +390,7 @@ namespace hyper {
 				s.push_back(oss.str());
 
 				oss.str("");
-				oss << "equal(X" << i << ",Y" << i << ")";
+				oss << "equal_" << args_type[i] << "(X" << i << ",Y" << i << ")";
 				s.push_back(oss.str());
 				conds.push_back(s);
 			}
@@ -392,7 +399,7 @@ namespace hyper {
 			for (size_t i = 0; i < arity; ++i) {
 				statement s;
 				std::ostringstream oss;
-				oss << "equal(";
+				oss << "equal_" << args_type[arity] << "(";
 				oss << name << "(";
 				for (size_t j = 0; j < arity; ++j) {
 						oss << "X" << j;

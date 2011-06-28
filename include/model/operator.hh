@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include <logic/eval.hh>
 #include <logic/expression.hh>
 #include <logic/function_def.hh>
 #include <model/execute_impl.hh>
@@ -189,6 +190,50 @@ namespace hyper {
 					return boost::apply_visitor(logic_eval_<Op>(), e1.expr, e2.expr);
 				}
 			};
+
+			inline
+			void add_transitivy_rule(hyper::logic::engine& e, const std::string& s)
+			{
+				std::string rule_name = s + "_transitivity";
+				std::vector<std::string> cond;
+				std::vector<std::string> action;
+
+				cond.push_back(s + "(A,B)");
+				cond.push_back(s + "(B,C)");
+				action.push_back(s + "(A,C)");
+
+				e.add_rule(rule_name, cond, action);
+			}
+
+			inline
+			void add_symetry_rule(hyper::logic::engine& e, const std::string& s, const std::string& type)
+			{
+				std::string rule_name = s + "_symetry";
+				std::vector<std::string> cond;
+				std::vector<std::string> action;
+
+				cond.push_back(s + "(A,B)");
+
+				std::ostringstream oss;
+				oss << "equal_" << type << "(" << s << "(A,B), " << s << "(B, A))";
+				action.push_back(oss.str());
+
+				e.add_rule(rule_name, cond, action);
+			}
+
+			/* if First(A, B) then Second(A, B) */
+			inline
+			void add_induction_rule(hyper::logic::engine& e, const std::string& first, const std::string& second)
+			{
+				std::string rule_name = first + "_induction_" + second;
+				std::vector<std::string> cond;
+				std::vector<std::string> action;
+
+				cond.push_back(first + "(A,B)");
+				action.push_back(second + "(A,B)");
+
+				e.add_rule(rule_name, cond, action);
+			}
 		}
 
 
@@ -200,6 +245,15 @@ namespace hyper {
 			fList.add("equal_" + typeName, 2);
 			fMap.add("not_equal_" + typeName, new function_execution<details::nequal<T> > ());
 			fList.add("not_equal_" + typeName, 2);
+		}
+
+		inline
+		void add_logic_equalable_type(logic::engine& e, std::string typeName)
+		{
+			e.add_type(typeName);
+			std::vector<std::string> v(2, typeName);
+			e.add_predicate("not_equal_" + typeName, 2, v, new logic::eval<
+									details::logic_eval<details::logic_nequal>, 2>());
 		}
 
 		template <typename T>
@@ -218,6 +272,23 @@ namespace hyper {
 			fList.add("negate_" + typeName, 1);
 		}
 
+		inline
+		void add_logic_numeric_type(logic::engine& e, std::string typeName)
+		{
+			std::vector<std::string> v(3, typeName);
+			e.add_func("add_" + typeName, 2, v);
+			e.add_func("minus_" + typeName, 2, v);
+			e.add_func("times_" + typeName, 2, v);
+			e.add_func("divides_" + typeName, 2, v);
+			v.pop_back();
+			e.add_func("negate_" + typeName, 1, v);
+
+			details::add_symetry_rule(e, "add_" + typeName, typeName);
+			details::add_symetry_rule(e, "minus_" + typeName, typeName);
+			details::add_symetry_rule(e, "times_" + typeName, typeName);
+			details::add_symetry_rule(e, "divides_" + typeName, typeName);
+		}
+
 		template <typename T>
 		void add_comparable_type(model::functions_map& fMap, logic::funcDefList& fList, 
 								 std::string typeName)
@@ -230,6 +301,28 @@ namespace hyper {
 			fList.add("greater_" + typeName, 2);
 			fMap.add("greater_equal" + typeName, new function_execution<details::greater_equal<T> >());
 			fList.add("greater_equal_" + typeName, 2);
+		}
+
+		inline
+		void add_logic_comparable_type(logic::engine& e, std::string typeName)
+		{
+			std::vector<std::string> v(2, typeName);
+			e.add_predicate("less_" + typeName, 2, v, new logic::eval<
+											details::logic_eval<details::logic_less>, 2>());
+			e.add_predicate("less_equal_" + typeName, 2, v, new logic::eval<
+											details::logic_eval<details::logic_less_equal>, 2>());
+			e.add_predicate("greater_" + typeName , 2, v, new logic::eval<
+											details::logic_eval<details::logic_greater>, 2>());
+			e.add_predicate("greater_equal_" + typeName , 2, v, new logic::eval<
+											details::logic_eval<details::logic_greater_equal>, 2>());
+
+			details::add_transitivy_rule(e, "less_" + typeName);
+			details::add_transitivy_rule(e, "less_equal_" + typeName);
+			details::add_transitivy_rule(e, "greater_" + typeName);
+			details::add_transitivy_rule(e, "greater_equal_" + typeName);
+
+			details::add_induction_rule(e, "less_" + typeName, "less_equal_" + typeName);
+			details::add_induction_rule(e, "greater_" + typeName, "greater_equal_" + typeName);
 		}
 	}
 }
