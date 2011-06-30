@@ -90,7 +90,12 @@ namespace hyper {
 				/* the same than previous, + realize the unification of
 				 * logic_variable if needed */
 				adapt_res adapt_and_unify(const function_call& f);
+
 				const logic_var& get(const logic_var::identifier_type& id) const;
+
+				/* Do the inverse operation of adapt, meaning, replace all
+				 * logic_var by one of their value 1 -> n*/
+				std::vector<function_call> deadapt(const function_call& f) const;
 
 				friend std::ostream& operator<<(std::ostream& os, const logic_var_db& db);
 		};

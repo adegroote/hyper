@@ -1,5 +1,6 @@
 #include <sstream>
 #include <iostream>
+#include <set>
 
 #include <logic/logic_var.hh>
 #include <utils/algorithm.hh>
@@ -19,6 +20,13 @@ namespace {
 		std::ostringstream oss;
 		oss << "__L" << generator++;
 		return oss.str();
+	}
+
+	bool is_logic_var(const std::string& s)
+	{
+		return (s.size() > 3 && s[0] == '_' 
+							 && s[1] == '_'
+							 && s[2] == 'L');
 	}
 
 	struct replace_logic_var_helper : public boost::static_visitor<expression>
@@ -301,6 +309,163 @@ namespace {
 			return (it != v.end());
 		}
 	};
+
+
+	void extract_logic_var(const function_call& f, std::set<std::string>& s);
+
+	struct extract_logic_var_helper : boost::static_visitor<void>
+	{
+		std::set<std::string>& s;
+
+		extract_logic_var_helper(std::set<std::string>& s) : s(s) {}
+
+		template <typename T>
+		void operator() (const T& ) const {}
+
+		void operator() (const std::string& sym) const { 
+			if (is_logic_var(sym)) s.insert(sym);
+		}
+
+		void operator() (const function_call& f) const { extract_logic_var(f, s); }
+	};
+
+
+	void extract_logic_var(const function_call& f, std::set<std::string>& s)
+	{
+		for (size_t i = 0; i < f.args.size(); ++i)
+			boost::apply_visitor(extract_logic_var_helper(s), f.args[i].expr);
+	}
+		
+	typedef std::map<std::string, std::vector<expression> > logic_var_to_exprM;
+	typedef std::map<std::string, expression> logic_mappingM;
+
+	struct generate_funcall
+	{
+		std::vector<std::string> v_sym;
+		const logic_var_to_exprM& map;
+
+		struct iter {
+			std::vector<expression>::const_iterator begin;
+			std::vector<expression>::const_iterator end;
+			std::vector<expression>::const_iterator current;
+		};
+
+		std::vector<iter> v;
+
+		generate_funcall(const std::set<std::string>& sym,
+						 const logic_var_to_exprM& map) : v_sym(sym.begin(), sym.end()), map(map) 
+		{
+			for (size_t i = 0; i < v_sym.size(); ++i) {
+				logic_var_to_exprM::const_iterator it = map.find(v_sym[i]);
+				assert(it != map.end());
+				iter current;
+				current.begin = it->second.begin();
+				current.end = it->second.end();
+				current.current = current.begin;
+				v.push_back(current);
+			}
+		}
+
+		/* 
+		 * Compute the next possible combinaison, returns false if it is the
+		 * last one */
+		bool next(logic_mappingM &m)
+		{
+			// generate the current solution
+			for (size_t i = 0; i < v_sym.size(); ++i)
+				m[v_sym[i]] = *v[i].current;
+
+			// next one
+			size_t i = 0;
+			bool add = true;
+
+			while (add && i < v_sym.size()) {
+				++v[i].current;
+				if (v[i].current == v[i].end) {
+					v[i].current = v[i].begin;
+					++i;
+					add = true;
+				} else {
+					add = false;
+				}
+			}
+
+			return !add;
+		}
+	};
+
+	function_call replace(const function_call& f, const logic_mappingM& m);
+
+	struct replace_helper : public boost::static_visitor<expression>
+	{
+		const logic_mappingM& m;
+
+		replace_helper(const logic_mappingM& m) : m(m) {}
+
+		template <typename T>
+	    expression operator() (const T& t) const { return t; }
+
+		expression operator() (const std::string& sym) const {
+			logic_mappingM::const_iterator it = m.find(sym);
+			assert(it != m.end());
+			return it->second;
+		}
+
+		expression operator() (const function_call& f) const {
+			return replace(f, m);
+		}
+	};
+
+	function_call replace(const function_call& f, const logic_mappingM& m)
+	{
+		function_call f_res(f);
+		for (size_t i = 0; i < f_res.args.size(); ++i)
+			f_res.args[i] = boost::apply_visitor(replace_helper(m), f.args[i].expr);
+		return f_res;
+	}
+
+	expression replace(const expression& e, const logic_mappingM& m)
+	{
+		return boost::apply_visitor(replace_helper(m), e.expr);
+	}
+
+	struct generate_mapping {
+		const logic_var_db& db;
+		logic_var_to_exprM& m;
+
+		generate_mapping(const logic_var_db& db,
+						 logic_var_to_exprM& m):
+			db(db), m(m) 
+		{}
+
+		void operator() (const std::string& sym) {
+			// we already generate the mapping for this symbol
+			if (m.find(sym) != m.end()) 
+				return;
+
+			const logic_var& var = db.get(sym);
+			std::vector<expression> v;
+			for (size_t i = 0; i < var.unified.size(); ++i) {
+				std::set<std::string> s;
+				boost::apply_visitor(extract_logic_var_helper(s), var.unified[i].expr);
+				if (s.empty()) 
+					v.push_back(var.unified[i]);
+				else {
+					// if we have loop, we have a problem !!! :D
+					std::for_each(s.begin(), s.end(), generate_mapping(db, m));
+					logic_mappingM local_mapping;
+					generate_funcall gen(s, m);
+					bool has_next = true;
+					while (has_next) {
+						has_next = gen.next(local_mapping);
+						v.push_back(replace(var.unified[i], local_mapping));
+					}
+				}
+			}
+
+			m[sym] = v;
+		}
+	};
 }
 
 namespace hyper { namespace logic {
@@ -371,6 +536,28 @@ logic_var_db::get(const logic_var::identifier_type& id) const
 	it = m_logic_var.find(id);
 	assert(it != m_logic_var.end());
 	return it->second;
+}
+
+std::vector<function_call> 
+logic_var_db::deadapt(const function_call& f) const
+{
+	std::vector<function_call> res;
+	std::set<std::string> logic_vars;
+
+	extract_logic_var(f, logic_vars);
+
+	logic_var_to_exprM m;
+	std::for_each(logic_vars.begin(), logic_vars.end(), generate_mapping(*this, m));
+
+	logic_mappingM local_mapping;
+	generate_funcall gen(logic_vars, m);
+	bool has_next = true;
+	while (has_next) {
+		has_next = gen.next(local_mapping);
+		res.push_back(replace(f, local_mapping));
+	}
+
+	return res;
 }
 
 } }

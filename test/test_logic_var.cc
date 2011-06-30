@@ -92,9 +92,19 @@ BOOST_AUTO_TEST_CASE ( logic_logic_var_test )
 	funcs.add("less", 2, new eval<less, 2>());
 	funcs.add("distance", 2);
 
+	adapt_res res;
+
 	do_test<adapt_res::ok>("equal(x, 7)", funcs, db);
 	do_test<adapt_res::ok>("equal(y, z)", funcs, db);
-	do_test<function_call>("less(z, 9)", funcs, db);
+	res = do_test<function_call>("less(z, 9)", funcs, db);
+	function_call f = boost::get<function_call>(res.res);
+
+	std::vector<function_call> v_f = db.deadapt(f);
+	generate_return r1 = generate("less(y, 9)", funcs);
+	generate_return r2 = generate("less(z, 9)", funcs);
+	BOOST_CHECK(v_f.size() == 2);
+	BOOST_CHECK(std::find(v_f.begin(), v_f.end(), r1.e) != v_f.end());
+	BOOST_CHECK(std::find(v_f.begin(), v_f.end(), r2.e) != v_f.end());
 
 	// unify logic reprensation of x and y
 	do_test<adapt_res::require_permutation>("equal(x, y)", funcs, db);
@@ -109,6 +119,20 @@ BOOST_AUTO_TEST_CASE ( logic_logic_var_test )
 	// unify logic representation of pt4 and pt2 and distance(pt1, pt3)
 	do_test<adapt_res::require_permutation>("equal(pt4, pt2)", funcs, db);
 
+	// check deadapt with recursive case
+	res = do_test<function_call>("less(distance(pt3, pt4), 5.0)", funcs, db);
+	f = boost::get<function_call>(res.res);
+	v_f = db.deadapt(f);
+	r1 = generate("less(distance(pt3, pt4), 5.0)", funcs);
+	r2 = generate("less(distance(pt3, pt2), 5.0)", funcs);
+	generate_return r3 = generate("less(distance(pt1, pt4), 5.0)", funcs);
+	generate_return r4 = generate("less(distance(pt1, pt2), 5.0)", funcs);
+	BOOST_CHECK(v_f.size() == 4);
+	BOOST_CHECK(std::find(v_f.begin(), v_f.end(), r1.e) != v_f.end());
+	BOOST_CHECK(std::find(v_f.begin(), v_f.end(), r2.e) != v_f.end());
+	BOOST_CHECK(std::find(v_f.begin(), v_f.end(), r3.e) != v_f.end());
+	BOOST_CHECK(std::find(v_f.begin(), v_f.end(), r4.e) != v_f.end());
+
 	// x unified with y, but x is already bounded to 7
 	do_test<adapt_res::conflicting_facts>("equal(y, 8)", funcs, db);
 
@@ -116,4 +140,6 @@ BOOST_AUTO_TEST_CASE ( logic_logic_var_test )
 
 	// can't unify i with z, as they have different values
 	do_test<adapt_res::conflicting_facts>("equal(i, z)", funcs, db);
+
+
 }
