@@ -55,6 +55,10 @@ namespace hyper {
 			add_numeric_type<double>("double");
 		}
 
+		void logic_layer::add_logic_type(const std::string& type) {
+			engine.add_type(type);
+		}
+
 		void logic_layer::async_exec(const logic_constraint& ctr, logic_layer_cb cb)
 									 
 		{
@@ -116,6 +120,7 @@ namespace hyper {
 					boost::bind(&logic_layer::handle_eval_task_tree, this,
 							   _1, ctx));
 		}
+
 
 		void logic_layer::handle_exec_computation(const boost::system::error_code& e,
 									 logic_ctx_ptr ctx)
