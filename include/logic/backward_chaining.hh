@@ -95,6 +95,7 @@ namespace hyper {
 					void try_solve_node(node & n);
 					void explore_hypothesis(hypothesis_id);
 
+
 					friend struct generate_node;
 					friend struct explore_node;
 
@@ -104,6 +105,9 @@ namespace hyper {
 					{}
 
 					boost::logic::tribool compute(const function_call& f);
+
+					void fill_hypothesis(const hypothesis&, std::vector<function_call>& hyps) const;
+					void fill_hypothesis(const function_call& f, std::vector<function_call>& hyps) const;
 
 					const node& get_node(node_id) const;
 					const hypothesis& get_hypothesis(hypothesis_id) const;
@@ -126,7 +130,18 @@ namespace hyper {
 				rs(rs), ctx(ctx)
 			{}
 
+			/* Check if f is directly inferable from the facts and the rules */
 			bool infer(const function_call& f);
+
+			/* Check if f is inferable from the facts and the rules. If it is
+			 * not the case, hyps contains a list of hypothesis. If ANY of this
+			 * hypothesis is true (but it is outside the scope of the current
+			 * facts / rules), then f can be proved.
+			 *
+			 * It is quite a simplistic interface, as in the proof tree, we can
+			 * have some proof under n hypothesis
+			 */
+			bool infer(const function_call& f, std::vector<function_call>& hyps);
 		};
 	}
 }

@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include <logic/facts.hh>
 #include <logic/eval.hh>
 
@@ -378,6 +380,20 @@ namespace hyper {
 			std::for_each(f.list.begin(), f.list.end(), dump_facts(os));
 			std::for_each(f.sub_list.begin(), f.sub_list.end(), dump_sublist_facts(os));
 			return os;
+		}
+
+		struct function_call_to_string {
+			std::string operator() (const function_call& f)
+			{
+				std::ostringstream oss;
+				oss << f;
+				return oss.str();
+			}
+		};
+
+		std::vector<function_call> facts::generate(const function_call& f) const
+		{
+			return  db.deadapt(f);
 		}
 	}
 }

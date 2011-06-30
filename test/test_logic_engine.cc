@@ -97,6 +97,7 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 
 	boost::logic::tribool r;
+
 	r = e.infer("equal_int(x, 7)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
@@ -121,7 +122,6 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
 
-	std::cerr << e << std::endl;
 	r = e.infer("less_double(distance(center, object), 5.0)");
 	BOOST_CHECK(! boost::logic::indeterminate(r));
 	BOOST_CHECK(r);
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 	BOOST_CHECK(e.add_fact("equal_int(x, 7)", "task2"));
 
 	std::vector<std::string> res;
-	e.infer("equal_int(y, 7)", std::back_inserter(res));
+	e.infer_all("equal_int(y, 7)", std::back_inserter(res));
 
 
 	BOOST_CHECK(res.size() == 2);
@@ -159,12 +159,28 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 	res.clear();
 
-	e.infer("less_double(distance(center, object), 5.0)", std::back_inserter(res));
+	e.infer_all("less_double(distance(center, object), 5.0)", std::back_inserter(res));
 	BOOST_CHECK(res.size() == 1);
 	BOOST_CHECK(res[0] == "default");
 
 	res.clear();
-	e.infer("less_double(distance(center, object), 1.0)", std::back_inserter(res));
+	e.infer_all("less_double(distance(center, object), 1.0)", std::back_inserter(res));
 	BOOST_CHECK(res.size() == 0);
+
+	/* Testing infer with suggestion, creating new context */
+	BOOST_CHECK(e.add_fact("less_double(distance(center, object), 3.0)", "task3"));
+	std::vector<function_call> hyps;
+	r = e.infer("less_double(distance(center, object), treshold)", hyps, std::string("task3"));
+	BOOST_CHECK(boost::logic::indeterminate(r));
+	BOOST_CHECK(hyps.size() == 1);
+	generate_return r1 = generate("less_double(3.0, treshold)", e.funcs());
+	BOOST_CHECK(hyps[0] == r1.e);
+
+	BOOST_CHECK(e.add_fact("equal_int(x, 4)", "task3"));
+	r = e.infer("equal_int(4, y)", hyps, std::string("task3"));
+
+	BOOST_CHECK(hyps.size() > 1);
+	r1 = generate("equal_int(x,y)", e.funcs());
+	BOOST_CHECK(std::find(hyps.begin(), hyps.end(), r1.e) != hyps.end());
 }
 

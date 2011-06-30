@@ -540,6 +540,43 @@ namespace hyper {
 			return boost::logic::indeterminate;
 		}
 
+		boost::logic::tribool engine::infer(const std::string& goal,
+										    std::vector<function_call>& hyps,
+											const std::string& identifier)
+		{
+			facts_ctx& current_facts = get_facts(identifier);
+			function_call f = current_facts.f.generate(goal);
+
+			boost::logic::tribool b = current_facts.f.matches(f);
+			if (!boost::logic::indeterminate(b))
+				return b;
+
+			bool has_concluded = false;
+
+			current_facts.compute_possible_expression(rules_);
+
+			backward_chaining chaining(rules_, current_facts);
+			std::vector<function_call> hyps_;
+			has_concluded = chaining.infer(f, hyps_);
+
+			if (has_concluded)
+				return true;
+
+			hyps.clear();
+			for (size_t i = 0; i < hyps_.size(); ++i)
+			{
+				std::vector<function_call> v = current_facts.f.generate(hyps_[i]);
+				hyps.insert(hyps.end(), v.begin(), v.end());
+			}
+
+			// remove any duplicate hypothesis
+			std::sort(hyps.begin(), hyps.end());
+			hyps.erase(std::unique(hyps.begin(), hyps.end()), hyps.end());
+			
+
+			return boost::logic::indeterminate;
+		}
+
 		bool
 		is_world_consistent(const rules& rs, facts_ctx& facts)
 		{

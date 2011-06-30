@@ -90,7 +90,18 @@ namespace hyper {
 							  const std::vector<std::string>& cond,
 							  const std::vector<std::string>& action);
 
+				/* Check if goal is directly inferable in the current engine context */
 				boost::logic::tribool infer(const std::string& goal, 
+											const std::string& identifier = "default");
+
+				/* Check if goal is directly inferable in the current engine context.
+				 * If it is not the case, hyps may contains hypothesis. If ANY of this 
+				 * hypothesis can be prooved, we can infer goal from the current context
+				 * or in other work,
+				 *    goal is true in the current context IF ANY of hyps is true
+				 */
+				boost::logic::tribool infer(const std::string& goal,
+											std::vector<logic::function_call>& hyps,
 											const std::string& identifier = "default");
 
 				/*
@@ -98,7 +109,7 @@ namespace hyper {
 				 * matches the goal
 				 */
 				template <typename OutputIterator>
-				OutputIterator infer(const std::string& goal, OutputIterator out)
+				OutputIterator infer_all(const std::string& goal, OutputIterator out)
 				{
 					for (factsMap::const_iterator it = facts_.begin();
 												  it != facts_.end(); ++it)
@@ -110,6 +121,28 @@ namespace hyper {
 
 					return out;
 				}
+
+				struct plausible_hypothesis {
+					std::string name;
+					std::vector<function_call> hyps;
+				};
+
+				template <typename OutputIterator1, typename OutputIterator2>
+				void infer_all(const std::string& goal, OutputIterator1 out1, OutputIterator2 out2)
+				{
+					for (factsMap::const_iterator it = facts_.begin();
+												  it != facts_.end(); ++it)
+					{
+						plausible_hypothesis h;
+						h.name = it->first;
+						boost::logic::tribool b = infer(goal, h.hyps, it->first);
+						if (!boost::logic::indeterminate(b) && b)
+							*out1++ = it->first;
+						else if (boost::logic::indeterminate(b) && !h.hyps.empty())
+							*out2++ = h;
+					}
+				}
+
 
 				friend std::ostream& operator << (std::ostream&, const engine&);
 

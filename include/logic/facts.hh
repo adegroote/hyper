@@ -60,6 +60,8 @@ namespace hyper {
 
 				function_call generate(const std::string& s);
 
+				std::vector<function_call> generate(const function_call& f) const;
+
 				const_iterator begin(functionId id) const { 
 					resize(id, list);
 					return list[id].begin();

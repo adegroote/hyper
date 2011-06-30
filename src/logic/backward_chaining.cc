@@ -523,6 +523,52 @@ namespace hyper { namespace logic {
 		for (it = bm_hyp.left.begin(); it != bm_hyp.left.end(); ++it) 
 			std::cerr << it->second << "\n";
 	}
+	struct fill_hypothesis_helper {
+		const proof_tree& tree;
+		std::vector<function_call>& hyps;
+
+		fill_hypothesis_helper(const proof_tree& tree, std::vector<function_call>& hyps) : 
+			tree(tree), hyps(hyps) {}
+
+		void operator() (node_id id) 
+		{
+			const node& n = tree.get_node(id);
+			if (n.state != not_proven_explored)
+				return;
+
+			hypothesis not_explored;
+			size_t not_explored_nb = 0;
+
+			for (size_t i = 0; i < n.hypos.size(); ++i) {
+				const hypothesis& h = tree.get_hypothesis(n.hypos[i]);
+				if (h.state == not_proven_explored) {
+					not_explored_nb++;
+					if (not_explored_nb > 1)
+						break;
+					not_explored = h;
+				}
+			}
+
+			if (not_explored_nb == 1) {
+				hyps.push_back(not_explored.f);
+				tree.fill_hypothesis(not_explored, hyps);
+			}
+		}
+	};
+
+	void proof_tree::fill_hypothesis(const hypothesis& hyp, std::vector<function_call>& hyps) const
+	{
+		std::for_each(hyp.nodes.begin(), hyp.nodes.end(), fill_hypothesis_helper(*this, hyps));
+	}
+
+	void proof_tree::fill_hypothesis(const function_call& f, std::vector<function_call>& hyps) const
+	{
+		bm_hyp_type::right_const_iterator it= bm_hyp.right.find(hypothesis(f));
+		if (it == bm_hyp.right.end())
+			return;
+		else 
+			fill_hypothesis(it->first, hyps);
+	}
 
 	}
 
@@ -530,6 +576,17 @@ namespace hyper { namespace logic {
 	{
 		details::proof_tree tree(ctx, rs);
 		boost::logic::tribool b = tree.compute(f);
+		return b;
+	}
+
+	bool backward_chaining::infer(const function_call& f, std::vector<function_call>& hyp)
+	{
+		hyp.clear();
+		details::proof_tree tree(ctx, rs);
+		boost::logic::tribool b = tree.compute(f);
+		if (boost::logic::indeterminate(b)) 
+			tree.fill_hypothesis(f, hyp);
+
 		return b;
 	}
 }}
