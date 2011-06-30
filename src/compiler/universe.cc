@@ -710,6 +710,16 @@ struct output_import_helper {
 	}
 };
 
+struct output_logic_type {
+	std::ostream& oss;
+
+	output_logic_type(std::ostream& oss) : oss(oss) {}
+
+	void operator() (const type& t) {
+		oss << "\t\t\t\ta.logic().add_logic_type(" << quoted_string(t.type_name()) << ");\n";
+	}
+};
+
 void
 universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const
 {
@@ -722,6 +732,9 @@ universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& 
 
 	namespaces n(oss, name);
 	oss << "\t\t\tvoid import_funcs(model::ability &a) {" << std::endl;
+	std::vector<type> types = tList.select(boost::bind(&type::is_user_defined, _1));
+
+	std::for_each(types.begin(), types.end(), output_logic_type(oss));
 	std::for_each(funcs.begin(), funcs.end(), output_import_helper(oss, *this));
 
 	oss << "\t\t\t}" << std::endl;

@@ -81,7 +81,7 @@ functionDef::output_import(std::ostream& oss, const typeList& tList) const
 	else
 		oss << "add_func<" ;
 	oss << name() << ">(" << quoted_string(name()) << ",\n";
-	oss << "\tboost::assign::list_of";
+	oss << "\t\t\t\t\tboost::assign::list_of";
 	for (size_t i = 0; i < arity(); ++i) {
 		type arg = tList.get(argsType(i));
 		oss << "(" << quoted_string(arg.type_name()) << ")";

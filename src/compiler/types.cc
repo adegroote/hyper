@@ -93,6 +93,19 @@ std::string type::type_name() const
 	else
 		return name;
 }
+
+struct user_defined_visitor : public boost::static_visitor<bool>
+{
+	template <typename T>
+	bool operator() (const T& ) const { return true; }
+
+	bool operator() (Nothing ) const { return false; }
+};
+
+bool type::is_user_defined() const
+{
+	return boost::apply_visitor(user_defined_visitor(), internal);
+}
 	
 typeList::add_result
 typeList::add(const std::string& name, typeOfType t)

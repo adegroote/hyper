@@ -96,7 +96,7 @@ namespace {
 				boost::optional<typeId> tid = (*u).typeOf(a, op.left.expr);
 				if (tid) {
 					type t = (*u).types().get(*tid);
-					oss << "_" << t.type_name();
+					oss << "_" << t.name;
 				}
 			}
 			oss << "(";
