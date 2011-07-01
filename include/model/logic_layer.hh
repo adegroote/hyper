@@ -80,8 +80,6 @@ namespace hyper {
 			logic::engine engine;
 			ability& a_;
 			std::map<std::string, task_ptr> tasks;
-			
-			logic::funcDefList execFuncs;
 
 			logic_layer(ability &a);
 			~logic_layer();

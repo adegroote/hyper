@@ -67,7 +67,7 @@ namespace hyper {
 			ctx->cb = cb;
 
 			logic::generate_return ret_exec =
-						logic::generate(ctx->ctr.constraint, execFuncs);
+						logic::generate(ctx->ctr.constraint, engine.funcs());
 
 			if (ret_exec.res == false) {
 				a_.logger(WARNING) << ctr << " Fail to parse " << ctx->ctr.constraint << std::endl;
