@@ -4,6 +4,7 @@
 #include <model/ability.hh>
 #include <model/compute_task_tree.hh>
 #include <model/logic_layer.hh>
+#include <model/execute_impl.hh>
 #include <model/task.hh>
 
 namespace {
@@ -164,6 +165,66 @@ namespace hyper {
 			}
 		};
 
+		void compute_task_tree::handle_evaluate_hypothesis(size_t i, size_t j, cond_logic_evaluation& cond,
+																			   compute_task_tree::cb_type handler)
+		{
+			size_t next_i, next_j;
+			bool no_more = false;
+
+			boost::optional<bool> b = hyp_eval[i].res_exec;
+			if (b && *b) {
+				hyp_eval[i].any_true = true;
+				if (i + 1 == hyp_eval.size())
+					no_more = true;
+				else {
+					next_i = i + 1;
+					next_j = 0;
+				}
+			}
+
+			if (j + 1 == hyp_eval[i].hyps.hyps.size()) {
+				if (i + 1 == hyp_eval.size()) {
+					no_more = true;
+				} else {
+					next_i = i + 1;
+					next_j = 0;
+				}
+			} else {
+				next_i = i;
+				next_j = j + 1;
+			}
+
+
+			if (no_more) {
+				std::vector<std::string> res;
+				for (size_t k = 0; k < hyp_eval.size(); ++k)
+					if (hyp_eval[k].any_true)
+						res.push_back(hyp_eval[k].hyps.name);
+
+				if (res.empty())
+					return handler(false);
+				else {
+					std::transform(res.begin(), res.end(), std::back_inserter(cond.tasks),
+							generate_task_eval());
+
+					std::for_each(cond.tasks.begin(), cond.tasks.end(),
+							async_eval_all_preconditions(*this, handler, cond));
+				}
+			} else
+				async_evaluate_hypothesis(next_i, next_j, cond, handler);
+		}
+
+		void 
+		compute_task_tree::async_evaluate_hypothesis(size_t i, size_t j, cond_logic_evaluation& cond, 
+																		 compute_task_tree::cb_type handler)
+		{
+			layer.a_.logger(DEBUG) << ctx.ctr << " Evaluating hypothesis " << hyp_eval[i].hyps.hyps[j] << std::endl;
+			return async_eval_expression(layer.a_.io_s, hyp_eval[i].hyps.hyps[j],
+										  layer.a_, hyp_eval[i].res_exec,
+										  boost::bind(&compute_task_tree::handle_evaluate_hypothesis, this, i, j, 
+													   boost::ref(cond), handler));
+		}
+
 		void 
 		compute_task_tree::async_eval_constraint(cond_logic_evaluation& cond, 
 												 compute_task_tree::cb_type handler)
@@ -171,16 +232,24 @@ namespace hyper {
 			layer.a_.logger(DEBUG) << ctx.ctr << " Searching to solve ";
 			layer.a_.logger(DEBUG) << cond.condition << std::endl;
 			std::vector<std::string> res;
-			layer.engine.infer(cond.condition, std::back_inserter(res));
+			std::vector<logic::engine::plausible_hypothesis> hyps;
+			layer.engine.infer_all(cond.condition, std::back_inserter(res), std::back_inserter(hyps));
 
-			if (res.size() == 0)
-				handler(false);
+			if (res.empty() && hyps.empty())
+				return handler(false);
 
-			std::transform(res.begin(), res.end(), std::back_inserter(cond.tasks),
-					generate_task_eval());
+			if (!res.empty()) {
+				std::transform(res.begin(), res.end(), std::back_inserter(cond.tasks),
+						generate_task_eval());
 
-			std::for_each(cond.tasks.begin(), cond.tasks.end(),
-					async_eval_all_preconditions(*this, handler, cond));
+				std::for_each(cond.tasks.begin(), cond.tasks.end(),
+						async_eval_all_preconditions(*this, handler, cond));
+			} else {
+				hyp_eval.clear();
+				std::copy(hyps.begin(), hyps.end(), std::back_inserter(hyp_eval));
+
+				async_evaluate_hypothesis(0, 0, cond, handler);
+			}
 		}
 
 		void 

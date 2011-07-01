@@ -7,6 +7,8 @@
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <logic/engine.hh>
+
 #include <model/logic_layer_fwd.hh>
 #include <model/task_fwd.hh>
 
@@ -47,6 +49,17 @@ namespace hyper {
 			bool all_conds_succesfully_executed() const;
 		};
 
+		struct hypothesis_evaluation
+		{
+			bool any_true;
+			logic::engine::plausible_hypothesis hyps;
+			boost::optional<bool> res_exec;
+
+			hypothesis_evaluation(const logic::engine::plausible_hypothesis& h) :
+				any_true(false), hyps(h), res_exec(boost::none)
+			{}
+		};
+
 		/*
 		 * Asynchronously evaluate a task tree
 		 *
@@ -71,6 +84,7 @@ namespace hyper {
 				logic_layer& layer;
 				logic_context& ctx;
 				cond_logic_evaluation cond_root;
+				std::vector<hypothesis_evaluation> hyp_eval;
 
 			friend struct async_eval_all_preconditions;
 			friend struct async_exec_all_tasks;
@@ -105,9 +119,9 @@ namespace hyper {
 				void handle_execute_task(cond_logic_evaluation& cond,
 										 task_logic_evaluation& task,
 										 bool res, cb_type handler);
-													
-													
-												   
+
+				void async_evaluate_hypothesis(size_t i, size_t j, cond_logic_evaluation&, cb_type);
+				void handle_evaluate_hypothesis(size_t, size_t, cond_logic_evaluation&, cb_type);
 		};
 	}
 }
