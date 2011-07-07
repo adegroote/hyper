@@ -26,6 +26,7 @@ namespace hyper {
 		{
 			id = boost::none;
 			rqst.constraint =  constraint;
+			rqst.repeat = false;
 
 			id = a.client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_make_expression::handle_end_computation,

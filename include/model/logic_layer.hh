@@ -19,9 +19,11 @@ namespace hyper {
 
 		struct logic_constraint
 		{
-			std::string constraint;
 			size_t id;
 			std::string src;
+
+			std::string constraint;
+			bool repeat;
 		};
 
 		inline
@@ -44,10 +46,11 @@ namespace hyper {
 			/* Logic layer evaluation */
 			compute_task_tree logic_tree;
 
+			boost::asio::deadline_timer deadline_;
+
 			/* More to come */
-			logic_context(logic_layer& logic) : logic_tree(logic, *this) {}
-			logic_context(const logic_constraint& ctr_, logic_layer& logic) : 
-				ctr(ctr_), logic_tree(logic, *this) {}
+			logic_context(logic_layer& logic); 
+			logic_context(const logic_constraint& ctr_, logic_layer& logic);  
 		};
 
 		namespace logic_layer_error {
@@ -108,6 +111,8 @@ namespace hyper {
 										 logic_ctx_ptr logic_ctx);
 			void handle_eval_task_tree(bool success, logic_ctx_ptr ptr);
 			void handle_exec_task_tree(bool success, logic_ctx_ptr ptr);
+			void handle_success(logic_ctx_ptr ptr);
+			void handle_timeout(const boost::system::error_code&, logic_ctx_ptr);
 		};
 	}
 }

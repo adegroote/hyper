@@ -119,6 +119,7 @@ namespace {
 			ctr.constraint = r.constraint;
 			ctr.id = r.id;
 			ctr.src = r.src;
+			ctr.repeat = r.repeat;
 
 			a.logger(INFORMATION) << ctr << " Handling ";
 			a.logger(INFORMATION) << r.constraint << std::endl;

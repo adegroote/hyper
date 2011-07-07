@@ -36,6 +36,16 @@ namespace hyper {
 			return instance;
 		}
 
+		logic_context::logic_context(logic_layer& logic) : 
+			logic_tree(logic, *this),
+			deadline_(logic.a_.io_s)
+		{}
+
+		logic_context::logic_context(const logic_constraint& ctr_, logic_layer& logic) : 
+				ctr(ctr_), logic_tree(logic, *this),
+				deadline_(logic.a_.io_s)
+		{}
+
 		logic_layer::logic_layer(ability &a) :
 			engine(),
 			a_(a)
@@ -60,7 +70,6 @@ namespace hyper {
 		}
 
 		void logic_layer::async_exec(const logic_constraint& ctr, logic_layer_cb cb)
-									 
 		{
 			logic_ctx_ptr ctx = boost::shared_ptr<logic_context>(
 					new logic_context(ctr, *this));
@@ -88,7 +97,7 @@ namespace hyper {
 		{
 			a_.logger(DEBUG) <<  ctx->ctr << " End execution " << success << std::endl;
 			if (success) 
-				ctx->cb(boost::system::error_code());
+				handle_success(ctx);
 			else 
 				ctx->cb(make_error_code(logic_layer_error::recipe_execution_error));
 		}
@@ -114,6 +123,7 @@ namespace hyper {
 					new logic_context(*this));
 			ctx->ctr.id = id;
 			ctx->ctr.src = src;
+			ctx->ctr.repeat = false;
 			ctx->cb = cb;
 
 			ctx->logic_tree.async_eval_task(task, 
@@ -134,7 +144,7 @@ namespace hyper {
 
 			if (ctx->exec_res && *(ctx->exec_res)) {
 				a_.logger(INFORMATION) << ctx->ctr << " Already enforced" << std::endl;
-				return ctx->cb(boost::system::error_code());
+				return handle_success(ctx);
 			}
 
 			ctx->logic_tree.async_eval_cond(ctx->ctr.constraint,
@@ -142,6 +152,28 @@ namespace hyper {
 							   _1, ctx));
 		}
 
+		void logic_layer::handle_success(logic_ctx_ptr ctx) 
+		{
+			if (ctx->ctr.repeat) {
+				ctx->deadline_.expires_from_now(boost::posix_time::milliseconds(50));
+				a_.logger(DEBUG) << ctx->ctr << " Sleeping before verifying again the ctr " << std::endl;
+				ctx->deadline_.async_wait(boost::bind(&logic_layer::handle_timeout, this,
+													  boost::asio::placeholders::error,
+													  ctx));
+			}
+			else
+				return ctx->cb(boost::system::error_code());
+		}
+
+		void logic_layer::handle_timeout(const boost::system::error_code& e, logic_ctx_ptr ctx)
+		{
+			a_.logger(DEBUG) << ctx->ctr << " Computation of the state " << std::endl;
+			return async_eval_expression(a_.io_s, ctx->call_exec,
+										  a_, ctx->exec_res,
+				boost::bind(&logic_layer::handle_exec_computation, this,
+							boost::asio::placeholders::error,
+							ctx));
+		}
 
 		logic_layer::~logic_layer() 
 		{

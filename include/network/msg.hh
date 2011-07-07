@@ -245,12 +245,13 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id & src & constraint;
+					ar & id & src & constraint & repeat;
 				}
 			public:
 				mutable identifier id;
 				mutable std::string src;
 				std::string constraint;
+				bool repeat;
 		};
 
 		struct request_constraint_ack
