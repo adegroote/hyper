@@ -90,6 +90,7 @@ namespace hyper {
 
 			typedef std::pair<network::request_list_agents, network::list_agents> get_list_agents;
 			void handle_list_agents(const boost::system::error_code& e,
+									network::identifier id,
 									boost::shared_ptr<get_list_agents> ptr);
 		};
 	}

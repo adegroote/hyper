@@ -170,8 +170,7 @@ namespace hyper {
 					{
 						actor.logger(DEBUG_PROTOCOL) << "[" << actor.name << ", " << id;
 						actor.logger(DEBUG_PROTOCOL) << "] Writing failed " << e << std::endl;
-						actor.db.remove(id);
-						boost::get<0>(handler) (e);
+						boost::get<0>(handler) (e, id);
 					}
 				}
 
@@ -194,8 +193,7 @@ namespace hyper {
 							e  = boost::asio::error::invalid_argument;
 						}
 					}
-					actor.db.remove(id);
-					boost::get<0>(handler)(e);
+					boost::get<0>(handler)(e, id);
 				}
 
 				template <typename Input, typename Handler>

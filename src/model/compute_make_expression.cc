@@ -9,8 +9,11 @@ namespace hyper {
 
 		void compute_make_expression::handle_end_computation(
 				const boost::system::error_code& e,
+				network::identifier id,
 				cb_type cb)
 		{
+			a.db.remove(id);
+
 			if (e) 
 				cb(e);
 
@@ -30,7 +33,7 @@ namespace hyper {
 
 			id = a.client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_make_expression::handle_end_computation,
-								this, boost::asio::placeholders::error, cb));
+								this, boost::asio::placeholders::error, _2, cb));
 		}
 
 		void compute_make_expression::handle_abort(const boost::system::error_code&)

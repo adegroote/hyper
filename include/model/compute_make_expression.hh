@@ -18,7 +18,7 @@ namespace hyper {
 				network::request_constraint_answer ans;
 				network::abort abort_msg;
 
-				void handle_end_computation(const boost::system::error_code& e,  cb_type);
+				void handle_end_computation(const boost::system::error_code& e,  network::identifier, cb_type);
 				void handle_abort(const boost::system::error_code&);
 
 			public:

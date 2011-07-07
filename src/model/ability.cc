@@ -231,13 +231,16 @@ namespace hyper {
 
 			boost::shared_ptr<get_list_agents> ptr = boost::make_shared<get_list_agents>();
 			client_db["root"].async_request(ptr->first, ptr->second,
-					boost::bind(&ability::handle_list_agents, this, boost::asio::placeholders::error,  ptr));
+					boost::bind(&ability::handle_list_agents, this, boost::asio::placeholders::error, _2, ptr));
 
 		};
 
 		void ability::handle_list_agents(const boost::system::error_code& e, 
+									     network::identifier id,
 										 boost::shared_ptr<get_list_agents> ptr) 
 		{
+			db.remove(id);
+
 			if (e) 
 				return;
 

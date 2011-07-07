@@ -7,10 +7,13 @@ void dont_care(const boost::system::error_code& e)
 {}
 
 void ability_test::handle_send_constraint(const boost::system::error_code& e,
+		network::identifier id,
 		future_value<bool> res,
 		network::request_constraint* msg,
 		network::request_constraint_answer* ans)
 {
+	db.remove(id);
+
 	if (e) {
 		std::cerr << "Failed to make " << msg->constraint << std::endl;
 	} else {
@@ -41,7 +44,7 @@ future_value<bool> ability_test::send_constraint(const std::string& constraint, 
 			boost::bind(&ability_test::handle_send_constraint,
 				this,
 				boost::asio::placeholders::error,
-				res, msg, answer));
+				_2, res, msg, answer));
 
 	return res;
 }

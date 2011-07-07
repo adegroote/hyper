@@ -846,6 +846,7 @@ namespace hyper {
 
 					template <typename T, typename Handler>
 					void handle_get(const boost::system::error_code& e,
+									network::identifier id,
 								    T& output,
 									boost::tuple<Handler> handler)
 					{
@@ -854,6 +855,7 @@ namespace hyper {
 						else
 							output = deserialize_value<typename T::value_type>(ans.value);
 
+						actor.db.remove(id);
 						boost::get<0>(handler)(e);
 					}
 
@@ -868,6 +870,7 @@ namespace hyper {
 
 					template <typename T, typename Handler>
 					void handle_remote_value_get(const boost::system::error_code& e,
+									network::identifier id,
 									remote_value<T>& value,
 									boost::tuple<Handler> handler)
 					{
@@ -878,6 +881,7 @@ namespace hyper {
 						else 
 							value.value = deserialize_value<T>(value.ans.value);
 
+						actor.db.remove(id);
 						boost::get<0>(handler)(e);
 					}
 
@@ -891,6 +895,7 @@ namespace hyper {
 								   Handler handler)
 					{
 						void (remote_proxy::*f)(const boost::system::error_code&,
+								network::identifier,
 								T& output,
 								boost::tuple<Handler> handler) =
 							&remote_proxy::template handle_get<T, Handler>;
@@ -898,7 +903,7 @@ namespace hyper {
 						msg.var_name = var_name;
 						actor.client_db[actor_dst].async_request(msg, ans,
 								boost::bind(f, this,
-										   boost::asio::placeholders::error,
+										   boost::asio::placeholders::error, _2,
 										   boost::ref(output),
 										   boost::make_tuple(handler)));
 					}
@@ -907,6 +912,7 @@ namespace hyper {
 					void async_get(remote_value<T>& value, Handler handler)
 					{
 						void (remote_proxy::*f)(const boost::system::error_code&,
+								network::identifier,
 								remote_value<T>& output,
 								boost::tuple<Handler> handler) =
 							&remote_proxy::template handle_remote_value_get<T, Handler>;
@@ -914,7 +920,7 @@ namespace hyper {
 						actor.client_db[value.src].async_request(
 								value.msg, value.ans, 
 								boost::bind(f, this, 
-											boost::asio::placeholders::error,
+											boost::asio::placeholders::error, _2,
 											boost::ref(value),
 											boost::make_tuple(handler)));
 					}

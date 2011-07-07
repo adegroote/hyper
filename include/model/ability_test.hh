@@ -37,6 +37,7 @@ namespace hyper {
 								  const std::string& value);
 
 			void handle_send_constraint(const boost::system::error_code& e,
+										network::identifier id,
 										future_value<bool>, 
 									    network::request_constraint* msg,
 										network::request_constraint_answer* ans);
