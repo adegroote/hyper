@@ -12,6 +12,10 @@ struct always_false {
 
 bool is_even(int x) { return (x % 2 == 0); }
 
+struct double_ {
+	 int operator () (int value) { return 2 * value; }
+};
+
 BOOST_AUTO_TEST_CASE( utils_algorithm_test )
 {
 	using namespace boost::assign; // bring 'operator+=()' into scope
@@ -54,4 +58,17 @@ BOOST_AUTO_TEST_CASE( utils_algorithm_test )
 	BOOST_CHECK(res2[1] == -1);
 	BOOST_CHECK(res2[2] == 0);
 	BOOST_CHECK(res2[3] == 2);
+
+	v.clear();
+	res.clear();
+	v+= 0, 1, 2, 3, 4, 5;
+
+	hyper::utils::transform_if(v.begin(), v.end(), std::back_inserter(res),
+							   &is_even, double_());
+
+	BOOST_CHECK(res.size() == 3);
+	BOOST_CHECK(res[0] == 0);
+	BOOST_CHECK(res[1] == 4);
+	BOOST_CHECK(res[2] == 8);
+
 }

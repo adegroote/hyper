@@ -49,6 +49,23 @@ namespace hyper {
 
 			return res;
 		}
+
+		/*
+		 * transform_if apply the transformation op on element in the range
+		 * [first, last] to a range beginning at res, if that element fullfil pred.
+		 * The return value is the end of the resulting range
+		 */
+		template <typename InputIterator, typename OutputIterator, typename Predicate, typename UnaryOp>
+		OutputIterator
+		transform_if(InputIterator begin, InputIterator last, OutputIterator res, Predicate pred, UnaryOp op)
+		{
+			for (; begin != last; ++begin) {
+				if (pred(*begin))
+					*res++ = op(*begin);
+			}
+
+			return res;
+		}
 	}
 }
 
