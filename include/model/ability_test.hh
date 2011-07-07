@@ -64,7 +64,7 @@ namespace hyper {
 			}
 
 			public:
-			future_value<bool> send_constraint(const std::string& constraint);
+			future_value<bool> send_constraint(const std::string& constraint, bool repeat);
 			void abort(const std::string& reason);
 		};
 	}

@@ -372,8 +372,8 @@ ability::agent_export_declaration(std::ostream& oss, const typeList& tList) cons
 	oss << ") {} \n" << std::endl;
 	std::for_each(controlable_list.begin(), controlable_list.end(), print);
 	std::for_each(readable_list.begin(), readable_list.end(), print);
-	oss << "\t\t\thyper::model::future_value<bool> enforce(const std::string& ctr) {\n";
-	oss << "\t\t\t\treturn send_constraint(ctr);\n";
+	oss << "\t\t\thyper::model::future_value<bool> enforce(const std::string& ctr, bool repeat) {\n";
+	oss << "\t\t\t\treturn send_constraint(ctr, repeat);\n";
 	oss << "\t\t\t}\n";
 	oss << "\t\t\tvoid exit(const std::string& msg) {\n";
 	oss << "\t\t\t\treturn abort(msg);\n";

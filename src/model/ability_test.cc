@@ -28,11 +28,12 @@ void ability_test::handle_send_constraint(const boost::system::error_code& e,
 }
 
 
-future_value<bool> ability_test::send_constraint(const std::string& constraint)
+future_value<bool> ability_test::send_constraint(const std::string& constraint, bool repeat)
 {
 	network::request_constraint* msg(new network::request_constraint());
 	network::request_constraint_answer *answer(new network::request_constraint_answer());
 	msg->constraint = constraint;
+	msg->repeat = repeat;
 
 	future_value<bool> res(constraint);
 
