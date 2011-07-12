@@ -14,10 +14,12 @@ namespace {
 
 namespace hyper {
 	namespace model {
-		void parse_options(int argc, char** argv, const std::string& name, int& debug_lvl)
+		void parse_options(int argc, char** argv, const std::string& name, bool& background,
+																		   int& debug_lvl)
 		{
 			po::options_description desc("Allowed options");
 			desc.add_options()
+			("background,b", "run in background")
 			("help,h", "produce help message")
 			("debug_level,d", po::value<int>(&debug_lvl)->implicit_value(0),
 			 "enable verbosity (optionally specify level)")
@@ -32,6 +34,8 @@ namespace hyper {
 				usage(desc, name);
 				exit(0);
 			}
+
+			background = (vm.count("background") != 0);
 		}
 	}
 }

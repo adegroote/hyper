@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <unistd.h>
 
 #include <boost/system/system_error.hpp>
 
@@ -10,6 +11,7 @@ namespace hyper {
 	namespace model {
 
 		void parse_options(int argc, char** argv, const std::string& name,
+						   bool& background,
 						   int& debug_lvl);
 
 		template <typename Agent>
@@ -17,7 +19,10 @@ namespace hyper {
 		{
 			try {
 				int level;
-				parse_options(argc, argv, name, level);
+				bool bg;
+				parse_options(argc, argv, name, bg, level);
+				// XXX NON PORTABLE IMPLEMENTATION
+				if (bg) { daemon(1, 1); }
 				Agent agent(level);
 				agent.run();
 			} catch (boost::system::system_error& e) {
