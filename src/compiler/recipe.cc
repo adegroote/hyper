@@ -263,13 +263,24 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		return identifier.str();
 	}
 
-	std::string compute_target() const
+	std::string compute_make_target() const
 	{
 		std::ostringstream identifier;
 		if (target) {
 			identifier << "boost::fusion::at_c<" << symbolList_index(syms, *target) << ">(local_vars)";
 		} else {
 			identifier << "boost::fusion::at_key<bool>(unused_res)";
+		}
+		return identifier.str();
+	}
+
+	std::string compute_ensure_target() const
+	{
+		std::ostringstream identifier;
+		if (target) {
+			identifier << "boost::fusion::at_c<" << symbolList_index(syms, *target) << ">(local_vars)";
+		} else {
+			identifier << "boost::fusion::at_key<hyper::network::identifier>(unused_res)";
 		}
 		return identifier.str();
 	}
@@ -349,7 +360,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 	std::string operator() (const recipe_op<MAKE>& r) const
 	{
 		std::string indent = times(3, "\t");
-		std::string identifier = compute_target();
+		std::string identifier = compute_make_target();
 		std::ostringstream oss;
 
 		oss << indent << "push_back(new hyper::model::compute_make_expression(a, ";
@@ -360,6 +371,22 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 		return oss.str();
 
+	}
+
+	std::string operator() (const recipe_op<ENSURE>& r) const
+	{
+		std::string indent = times(3, "\t");
+		std::string indent_next = times(4, "\t");
+		std::string identifier = compute_ensure_target();
+		std::ostringstream oss;
+
+		oss << indent << "push_back(new hyper::model::compute_ensure_expression(a, ";
+		oss << quoted_string(*(r.content[0].dst)) << ", \n" << indent_next;
+		oss << quoted_string(generate_logic_expression(r.content[0].ast, a, u));
+		oss << ", \n" << indent_next << identifier << "));\n";
+		target = boost::none;
+
+		return oss.str();
 	}
 };
 
@@ -718,6 +745,7 @@ namespace hyper {
 			oss << "#include <" << context_a.name();
 			oss << "/recipes/" << name << ".hh>\n"; 
 			oss << "#include <model/abortable_function.hh>\n";
+			oss << "#include <model/compute_ensure_expression.hh>\n";
 			oss << "#include <model/compute_expression.hh>\n";
 			oss << "#include <model/compute_make_expression.hh>\n";
 			oss << "#include <model/compute_wait_expression.hh>\n";
