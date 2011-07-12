@@ -5,6 +5,7 @@
 
 #include <boost/bind.hpp>
 
+#include <compiler/output.hh>
 #include <compiler/symbols.hh>
 #include <compiler/types.hh>
 #include <compiler/scope.hh>
@@ -35,6 +36,82 @@ struct dump_serialize_struct
 	void operator() (const std::pair<std::string, symbol>& p)
 	{
 		oss << " & " << p.first;
+	}
+};
+
+struct default_construct
+{
+	std::ostream& oss;
+	const typeList& tList;
+
+	default_construct(std::ostream& oss, const typeList& tList) :
+		oss(oss), tList(tList)
+	{}
+
+	void operator() (const std::pair<std::string, symbol>& p)
+	{
+		type t = tList.get(p.second.t);
+		switch (t.t) {
+			case intType:
+				oss << p.first << "(0)";
+				break;
+			case boolType:
+				oss << p.first << "(false)";
+				break;
+			case doubleType:
+				oss << p.first << "(0.0)";
+				break;
+			case stringType:
+				oss << p.first << "(\"\")";
+				break;
+			default:
+				break;
+		}
+	}
+
+	void separator() {
+		oss << ", ";
+	}
+};
+
+struct list_arguments
+{
+	std::ostream& oss;
+	const typeList& tList;
+
+	list_arguments(std::ostream& oss, const typeList& tList) :
+		oss(oss), tList(tList)
+	{}
+
+	void operator() (const std::pair<std::string, symbol>& p)
+	{
+		type t = tList.get(p.second.t);
+		oss << t.type_name();
+		if (t.t == stringType || t.t == structType || t.t == opaqueType)
+			oss << " const & ";
+		else
+			oss << " ";
+		oss << p.first;
+	}
+
+	void separator() {
+		oss << ", ";
+	}
+};
+
+struct base_construct
+{
+	std::ostream& oss;
+
+	base_construct(std::ostream& oss) : oss(oss) {}
+
+	void operator() (const std::pair<std::string, symbol>& p)
+	{
+		oss << p.first << "(" << p.first << ")";
+	}
+
+	void separator() {
+		oss << ", ";
 	}
 };
 
@@ -71,6 +148,15 @@ struct dump_types_vis : public boost::static_visitor<void>
 		oss << "\t\t\t}"  << std::endl;
 		oss << "\t\tpublic:" << std::endl;
 		std::for_each(l->begin(), l->end(), dump_struct(oss, tList));
+
+		// generate ctor
+		oss << "\n\t\t\t" << scope::get_identifier(name) << "() : ";
+		hyper::compiler::list_of(l->begin(), l->end(), default_construct(oss, tList));
+		oss << "{} \n\n\t\t\t" << scope::get_identifier(name) << "(";
+		hyper::compiler::list_of(l->begin(), l->end(), list_arguments(oss, tList));
+		oss << ") : \n\t\t\t\t";
+		hyper::compiler::list_of(l->begin(), l->end(), base_construct(oss));
+		oss << "{}\n";
 		oss << "\t};\n" << std::endl;
 	}
 };

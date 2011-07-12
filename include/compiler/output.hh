@@ -100,6 +100,20 @@ namespace hyper {
 				oss << s;
 			return oss.str();
 		}
+
+		/*
+		 * Execute Func::operator() on each element. If it is not the last
+		 * element, execute Func::separator() after Func::operator().
+		 */
+		template <typename InputIterator, typename Func>
+		void list_of(InputIterator begin, InputIterator end, Func func)
+		{
+			for (; begin != end; ++begin) {
+				func(*begin);
+				if (std::distance(begin, end) != 1)
+					func.separator();
+			}
+		}
 	}
 }
 
