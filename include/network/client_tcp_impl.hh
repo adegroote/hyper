@@ -91,7 +91,10 @@ namespace hyper {
 					void async_connect(const std::vector<boost::asio::ip::tcp::endpoint>& endpoints,
 									   Handler handler)
 					{
-						assert(!endpoints.empty());
+						if (endpoints.empty()) 
+								return handler(boost::asio::error::make_error_code(
+																boost::asio::error::host_not_found));
+
 						void (client::*f)(
 								const boost::system::error_code& e,
 								std::vector<boost::asio::ip::tcp::endpoint>::const_iterator,
