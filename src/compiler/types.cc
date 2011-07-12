@@ -90,6 +90,8 @@ std::string type::type_name() const
 		return "std::string";
 	else if (name == "void")
 		return "boost::mpl::void_";
+	else if (name == "identifier")
+		return "hyper::network::identifier";
 	else
 		return name;
 }

@@ -453,7 +453,7 @@ struct extract_unused_result_visitor : public boost::static_visitor<void>
 		if (!catched) {
 			boost::optional<typeId> tid = u.typeOf(a, e, syms); 
 			type t = u.types().get(*tid);
-			list.insert(t.name);
+			list.insert(t.type_name());
 		}
 	}
 
@@ -472,7 +472,7 @@ struct extract_unused_result_visitor : public boost::static_visitor<void>
 	void operator() (const recipe_op<ENSURE>&) const
 	{
 		if (!catched)
-			list.insert("identifier");
+			list.insert("hyper::network::identifier");
 	}
 };
 
@@ -501,12 +501,7 @@ std::string unused_results(const std::set<std::string>& s)
 	std::ostringstream oss;
 	oss << "boost::fusion::set<";
 	while (it != s.end()) {
-		// void storage is a bit special in C++, use a mpl::void_ type
-		if (*it == "void") 
-			oss << "boost::mpl::void_";
-		else
-			oss << *it;
-		++it;
+		oss << *it++;
 		if (it != s.end())
 			oss << ", ";
 	}
