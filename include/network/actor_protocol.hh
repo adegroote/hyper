@@ -302,7 +302,7 @@ namespace hyper {
 							boost::tuple<Handler>)
 						= &actor_client::template handle_request<Output, Handler>;
 
-					actor.db.add(actor.name, input.id, 
+					actor.db.add(actor_dst, input.id, 
 								 boost::bind(request_cb,
 											 this, 
 											 boost::asio::placeholders::error,
