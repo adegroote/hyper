@@ -13,9 +13,10 @@ namespace hyper {
 				cb_type cb)
 		{
 			a.db.remove(id);
+			this->id = boost::none;
 
 			if (e) 
-				cb(e);
+				return cb(e);
 
 			res = ans.success;
 			if (res) {
