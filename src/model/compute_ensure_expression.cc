@@ -13,10 +13,20 @@ namespace hyper {
 				cb_type cb)
 		{
 			// in error case, go up to the caller, otherwise, let the work continue
-			if (e || !ans.success) {
+			if (e || ans.state != network::request_constraint_answer::SUCCESS) {
 				a.db.remove(*id);
 				id = boost::none;
-				cb(e);
+				if (e)
+					return cb(e);
+
+				switch (ans.state) {
+					case network::request_constraint_answer::FAILURE:
+						return cb(make_error_code(exec_layer_error::execution_ko));
+					case network::request_constraint_answer::INTERRUPTED:
+						return cb(make_error_code(boost::system::errc::interrupted));
+					default:
+						assert(false);
+				}
 			}
 		}
 

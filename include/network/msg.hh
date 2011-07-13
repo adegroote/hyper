@@ -272,18 +272,20 @@ namespace hyper {
 
 		struct request_constraint_answer
 		{
+			enum state_ { SUCCESS, FAILURE, INTERRUPTED };
+
 			private:
 				friend class boost::serialization::access;
 				template <class Archive>
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id & src & success;
+					ar & id & src & state;
 				}
 			public:
 				mutable identifier id;
 				mutable std::string src;
-				bool success;
+				state_ state;
 		};
 
 		struct log_msg

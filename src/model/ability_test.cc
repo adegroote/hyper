@@ -17,13 +17,14 @@ void ability_test::handle_send_constraint(const boost::system::error_code& e,
 	if (e) {
 		std::cerr << "Failed to make " << msg->constraint << std::endl;
 	} else {
-		if (ans->success == true) {
+		if (ans->state == network::request_constraint_answer::SUCCESS) {
 			std::cerr << "Succesfully enforcing " << msg->constraint << std::endl;
 		} else {
 			std::cerr << "Failed to enforce " << msg->constraint << std::endl;
 		}
 	}
-	res.get_raw() = (!e && ans->success);
+	res.get_raw() = (!e && 
+					 ans->state == network::request_constraint_answer::SUCCESS);
 	res.signal_ready();
 
 	delete msg;

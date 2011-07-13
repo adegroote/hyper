@@ -96,7 +96,7 @@ namespace {
 		void handle_constraint_answer(const boost::system::error_code&, 
 				network::request_constraint_answer* ans) const
 		{
-			a.logger(DEBUG) << " Answer send " << std::endl;
+			a.logger(DEBUG) << " Getting answer " << std::endl;
 			delete ans;
 		}
 
@@ -106,9 +106,15 @@ namespace {
 			network::request_constraint_answer* ans = new network::request_constraint_answer();
 			ans->id = ctr.id;
 			ans->src = ctr.src;
-			ans->success = !e; // conversion to bool \o/
+			if (e) {
+				if (e == boost::system::errc::interrupted)
+					ans->state = network::request_constraint_answer::INTERRUPTED;
+				else
+					ans->state = network::request_constraint_answer::FAILURE;
+			} else
+				ans->state = network::request_constraint_answer::SUCCESS;
 
-			a.logger(DEBUG) << ctr << " Getting answer " << std::endl;
+			a.logger(DEBUG) << ctr << " Sending answer " << ans->state << std::endl;
 			a.client_db[ctr.src].async_write(*ans,
 					boost::bind(&ability_visitor::handle_constraint_answer, this, 
 								 boost::asio::placeholders::error,  ans));

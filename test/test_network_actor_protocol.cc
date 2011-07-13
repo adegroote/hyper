@@ -64,7 +64,7 @@ namespace {
 		boost::mpl::void_ operator() (const request_constraint& r) 
 		{
 			ans.id = r.id;
-			ans.success = true;
+			ans.state= request_constraint_answer::SUCCESS;
 			db[r.src].async_write(ans, dont_care);
 
 			return boost::mpl::void_();
@@ -93,7 +93,7 @@ namespace {
 		{
 			BOOST_CHECK(!e);
 			BOOST_CHECK(ans.id == 42);
-			BOOST_CHECK(ans.success == true);
+			BOOST_CHECK(ans.state == request_constraint_answer::SUCCESS);
 			count_valid_test ++;
 		}
 

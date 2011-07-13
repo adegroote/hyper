@@ -18,12 +18,20 @@ namespace hyper {
 			if (e) 
 				return cb(e);
 
-			res = ans.success;
-			if (res) {
-				cb(boost::system::error_code());
-			} else {
-				cb(make_error_code(exec_layer_error::execution_ko));
-			}
+			switch (ans.state) {
+				case network::request_constraint_answer::INTERRUPTED:
+					res = false;
+					cb(make_error_code(boost::system::errc::interrupted));
+					break;
+				case network::request_constraint_answer::FAILURE:
+					res = false;
+					cb(make_error_code(exec_layer_error::execution_ko));
+					break;
+				case network::request_constraint_answer::SUCCESS:
+					res = true;
+					cb(boost::system::error_code());
+					break;
+			};
 		}
 
 		void compute_make_expression::compute(cb_type cb) 
