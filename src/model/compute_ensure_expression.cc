@@ -42,6 +42,7 @@ namespace hyper {
 			if (!id) 
 				return false;
 
+			abort_msg.src = a.name;
 			abort_msg.id = *id;
 			a.client_db[dst].async_write(abort_msg, 
 						boost::bind(&compute_ensure_expression::handle_abort,

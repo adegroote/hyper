@@ -336,13 +336,14 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id;
+					ar & src & id;
 				}
 			public:
+				std::string src;
 				identifier id;
 
 				abort() {};
-				abort(identifier id) : id(id) {}
+				abort(const std::string& src, identifier id) : src(src), id(id) {}
 		};
 
 		typedef boost::mpl::vector17<

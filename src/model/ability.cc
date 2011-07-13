@@ -21,7 +21,8 @@ namespace {
 							   network::inform_new_agent,
 							   network::list_agents,
 							   network::inform_death_agent,
-							   network::terminate> input_msg;
+							   network::terminate,
+							   network::abort> input_msg;
 	typedef boost::mpl::vector<network::variable_value,
 							   network::request_constraint_ack,
 							   network::request_constraint_answer,
@@ -174,6 +175,12 @@ namespace {
 		output_variant operator() (const network::list_agents& l) const
 		{
 			return actor_vis(l);
+		}
+
+		output_variant operator() (const network::abort& abort) const
+		{
+			a.logic().abort(abort.src, abort.id);
+			return boost::mpl::void_();
 		}
 	};
 }

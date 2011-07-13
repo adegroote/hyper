@@ -106,6 +106,8 @@ namespace hyper {
 			void async_exec(const std::string& task, network::identifier id, 
 							const std::string& src, logic_layer_cb cb);
 
+			void abort(const std::string& src, network::identifier id) {}
+
 			private:
 			void handle_exec_computation(const boost::system::error_code&e,
 										 logic_ctx_ptr logic_ctx);
