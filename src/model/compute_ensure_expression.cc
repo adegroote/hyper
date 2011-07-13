@@ -13,8 +13,9 @@ namespace hyper {
 				cb_type cb)
 		{
 			// in error case, go up to the caller, otherwise, let the work continue
-			if (e) {
+			if (e || !ans.success) {
 				a.db.remove(*id);
+				id = boost::none;
 				cb(e);
 			}
 		}
@@ -36,15 +37,16 @@ namespace hyper {
 		void compute_ensure_expression::handle_abort(const boost::system::error_code&)
 		{}
 
-		void compute_ensure_expression::abort() 
+		bool compute_ensure_expression::abort() 
 		{
-			if (!id)
-				return;
+			if (!id) 
+				return false;
 
 			abort_msg.id = *id;
 			a.client_db[dst].async_write(abort_msg, 
 						boost::bind(&compute_ensure_expression::handle_abort,
 									 this, boost::asio::placeholders::error));
+			return true;
 
 		}
 	}

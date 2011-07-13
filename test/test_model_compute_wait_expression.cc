@@ -18,7 +18,7 @@ namespace {
 			cb(boost::system::error_code());
 		}
 
-		void abort() {}
+		bool abort() { return false; }
 
 		void reset() { res_ = false; counter = 0; }
 

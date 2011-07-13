@@ -16,6 +16,7 @@ namespace hyper {
 				boost::asio::deadline_timer deadline_;
 				bool& res;
 				bool user_ask_abort;
+				bool running;
 
 				typedef boost::function<void (const boost::system::error_code&)> cb_type;
 
@@ -36,7 +37,7 @@ namespace hyper {
 						bool& res);
 
 				void compute(cb_type cb);
-				void abort();
+				bool abort();
 		};
 	}
 }

@@ -40,16 +40,16 @@ namespace hyper {
 		void compute_make_expression::handle_abort(const boost::system::error_code&)
 		{}
 
-		void compute_make_expression::abort() 
+		bool compute_make_expression::abort() 
 		{
 			if (!id)
-				return;
+				return false;
 
 			abort_msg.id = *id;
 			a.client_db[dst].async_write(abort_msg, 
 						boost::bind(&compute_make_expression::handle_abort,
 									 this, boost::asio::placeholders::error));
-
+			return true;
 		}
 	}
 }

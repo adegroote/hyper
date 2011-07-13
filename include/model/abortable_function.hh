@@ -11,12 +11,13 @@ namespace hyper {
 	namespace model {
 
 		static inline
-		void none_function() {}
+		bool none_function() { return false; }
 
 		struct abortable_function_base {
 			typedef boost::function<void (const boost::system::error_code& e)> cb_type;
 			virtual void compute (cb_type cb) = 0;
-			virtual void abort() = 0 ;
+			/* Wait for cb or not */
+			virtual bool abort() = 0 ;
 			virtual ~abortable_function_base() {};
 		};
 
@@ -48,7 +49,7 @@ namespace hyper {
 
 		struct abortable_function : public abortable_function_base {
 			typedef boost::function<void (cb_type)> exec_type;
-			typedef boost::function<void (void)> abort_type;
+			typedef boost::function<bool (void)> abort_type;
 
 			exec_type exec_;
 			abort_type abort_;
@@ -60,7 +61,7 @@ namespace hyper {
 				return exec_(cb);
 			}
 
-			void abort() {
+			bool abort() {
 				return abort_();
 			}
 		};
@@ -82,29 +83,22 @@ namespace hyper {
 				typedef boost::shared_ptr<abortable_function_base> abortable_function_ptr;
 				typedef std::vector<abortable_function_ptr> computation_seq;
 
-
 				computation_seq seq;
 				cb_type cb;
 				size_t index;
 				bool user_ask_abort;
 
-				void handle_computation(const boost::system::error_code& e)
-				{
-					if (e) 
-						cb(e);
-					else {
-						if (user_ask_abort) 
-							return cb(make_error_code(exec_layer_error::interrupted));
-						if (index+1 == seq.size())
-							cb(boost::system::error_code());
-						else {
-							index++;
-							seq[index]->compute(boost::bind(
-										&abortable_computation::handle_computation,
-										this, boost::asio::placeholders::error));
-						}
-					}
-				}
+				void handle_computation(const boost::system::error_code& e);
+
+				/* Wait for the terminaison of the computation. With ensure
+				 * clause, we may have some running clause we need to close
+				 * before deleting the task */
+				bool wait_terminaison;
+				boost::system::error_code err;
+				size_t still_pending;
+
+				void terminaison(const boost::system::error_code& e);
+				bool check_is_terminated(const boost::system::error_code& e);
 
 			public:
 				abortable_computation() {}
@@ -113,22 +107,11 @@ namespace hyper {
 					seq.push_back(abortable_function_ptr(fun));
 				}
 
-				void compute(cb_type cb_) {
-					cb = cb_;
-					index = 0;
-					user_ask_abort = false;
-
-					seq[index]->compute(boost::bind(&abortable_computation::handle_computation,
-										this, boost::asio::placeholders::error));
-				}
-
-				void abort() {
-					seq[index]->abort();
-					user_ask_abort = true;
-				}
+				void compute(cb_type cb_);
+				void abort();
 
 				void clear() { seq.clear(); }
-				virtual ~abortable_computation() {};
+				virtual ~abortable_computation() {}
 		};
 	};
 };

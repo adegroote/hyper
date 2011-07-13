@@ -25,7 +25,7 @@ namespace hyper {
 				compute_make_expression(ability&, const std::string&, const std::string&, bool&);
 
 				void compute (cb_type cb);
-				void abort();
+				bool abort();
 		};
 	}
 }
