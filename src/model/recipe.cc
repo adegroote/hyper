@@ -46,14 +46,22 @@ void recipe::execute(recipe_execution_callback cb)
 		return;
 
 	is_running = true;
+	must_interrupt = false;
 
 	async_evaluate_preconditions(
 			boost::bind(&recipe::handle_evaluate_preconditions, this, _1));
 }
 
+void recipe::abort()
+{
+	must_interrupt = true;
+	if (is_running && computation)
+		computation->abort();
+}
+
 void recipe::handle_evaluate_preconditions(conditionV error)
 {
-	if (!error.empty())
+	if (!error.empty() || must_interrupt)
 		return end_execute(false);
 
 	do_execute(boost::bind(&recipe::handle_execute, this, _1));

@@ -47,6 +47,9 @@ namespace hyper {
 				std::vector<state> recipe_states;
 
 				bool is_running;
+				bool executing_recipe;
+				bool must_interrupt;
+
 				std::vector<task_execution_callback> pending_cb;
 			public:
 				task(ability& a_, const std::string& name_) 
@@ -56,6 +59,7 @@ namespace hyper {
 				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
 				virtual void async_evaluate_postconditions(condition_execution_callback cb) = 0;
 				void execute(task_execution_callback cb);
+				void abort();
 				virtual ~task() {};
 
 			protected:

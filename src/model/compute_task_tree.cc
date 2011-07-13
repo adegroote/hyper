@@ -105,10 +105,14 @@ namespace hyper {
 			layer(layer_), ctx(ctx_)
 		{}
 
+#define CHECK_INTERRUPT if (must_interrupt) return handler(false);
+
 		void 
 		compute_task_tree::handle_eval_all_constraints(
 				cond_logic_evaluation& cond, bool res, compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
 			if (res) {
 				return handler(res);
 			} else {
@@ -126,6 +130,8 @@ namespace hyper {
 				cond_logic_evaluation& cond, task_logic_evaluation& task,
 				conditionV failed, compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT 
+
 			layer.a_.logger(DEBUG) << ctx.ctr << " End evaluation precondition for task ";
 			layer.a_.logger(DEBUG) << task.name << std::endl;
 
@@ -168,6 +174,8 @@ namespace hyper {
 		void compute_task_tree::handle_evaluate_hypothesis(size_t i, size_t j, cond_logic_evaluation& cond,
 																			   compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
 			size_t next_i, next_j;
 			bool no_more = false;
 
@@ -218,6 +226,8 @@ namespace hyper {
 		compute_task_tree::async_evaluate_hypothesis(size_t i, size_t j, cond_logic_evaluation& cond, 
 																		 compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
 			layer.a_.logger(DEBUG) << ctx.ctr << " Evaluating hypothesis " << hyp_eval[i].hyps.hyps[j] << std::endl;
 			return async_eval_expression(layer.a_.io_s, hyp_eval[i].hyps.hyps[j],
 										  layer.a_, hyp_eval[i].res_exec,
@@ -229,6 +239,8 @@ namespace hyper {
 		compute_task_tree::async_eval_constraint(cond_logic_evaluation& cond, 
 												 compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
 			layer.a_.logger(DEBUG) << ctx.ctr << " Searching to solve ";
 			layer.a_.logger(DEBUG) << cond.condition << std::endl;
 			std::vector<std::string> res;
@@ -256,6 +268,8 @@ namespace hyper {
 		compute_task_tree::handle_eval_constraint(task_logic_evaluation& task, 
 				size_t i, bool res, compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
 			if (!res) {
 				layer.a_.logger(DEBUG) << ctx.ctr << " Failed to solve ";
 				layer.a_.logger(DEBUG) << task.conds[i].condition << std::endl;
@@ -282,6 +296,8 @@ namespace hyper {
 		compute_task_tree::start_eval_constraint(task_logic_evaluation& task, 
 												 compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
 			if (task.conds.empty())
 				handler(true);
 			else {
@@ -306,6 +322,8 @@ namespace hyper {
 		compute_task_tree::async_eval_task(const std::string& s, 
 										   compute_task_tree::cb_type  handler)
 		{
+			must_interrupt = false;
+			running_tasks.clear();
 			cond_root.condition = "";
 			cond_root.tasks.push_back(generate_task_eval()(s));
 			async_eval_all_preconditions(*this, handler, cond_root)(cond_root.tasks[0]);
@@ -315,6 +333,8 @@ namespace hyper {
 		compute_task_tree::async_eval_cond(const std::string& s, 
 										   compute_task_tree::cb_type handler)
 		{
+			must_interrupt = false;
+			running_tasks.clear();
 			cond_root.condition = s;
 			async_eval_constraint(cond_root, handler);
 		}
@@ -322,10 +342,13 @@ namespace hyper {
 		void compute_task_tree::handle_execute_cond(task_logic_evaluation& task,
 													compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
 			if (task.all_conds_executed()) {
-				if (task.all_conds_succesfully_executed())
+				if (task.all_conds_succesfully_executed()) {
+					running_tasks.insert(task.name);
 					layer.tasks[task.name]->execute(handler);
-				else
+				} else
 					handler(false);
 			}
 		}
@@ -335,6 +358,9 @@ namespace hyper {
 													bool res,
 													compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
+			running_tasks.erase(task.name);
 			task.res_exec = res;
 			
 			if (cond.all_tasks_executed()) {
@@ -365,8 +391,11 @@ namespace hyper {
 		void compute_task_tree::async_execute_task(task_logic_evaluation& task,
 												   compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
 			if (task.conds.empty()) {
-					layer.tasks[task.name]->execute(handler);
+				running_tasks.insert(task.name);
+				layer.tasks[task.name]->execute(handler);
 			} else {
 				std::for_each(task.conds.begin(), task.conds.end(), 
 							  async_exec_all_conditions(*this, handler, task));
@@ -398,6 +427,8 @@ namespace hyper {
 		compute_task_tree::async_execute_cond(cond_logic_evaluation& cond,
 											  compute_task_tree::cb_type handler)
 		{
+			CHECK_INTERRUPT
+
 			if (cond.all_tasks_executed()) {
 				handler(cond.is_succesfully_executed());
 			} else {
@@ -409,7 +440,26 @@ namespace hyper {
 		void
 		compute_task_tree::async_execute(compute_task_tree::cb_type handler)
 		{
+			must_interrupt = false;
+			running_tasks.clear();
 			async_execute_cond(cond_root, handler);
+		}
+
+		struct abort_ {
+			logic_layer& layer;
+			
+			abort_(logic_layer &layer) : layer(layer) {}
+
+			void operator() (const std::string& name) 
+			{
+				layer.tasks[name]->abort();
+			}
+		};
+
+		void compute_task_tree::abort()
+		{
+			must_interrupt = true;
+			std::for_each(running_tasks.begin(), running_tasks.end(), abort_(layer));
 		}
 	}
 }

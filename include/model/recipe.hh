@@ -21,6 +21,7 @@ namespace hyper {
 				ability &a;
 
 				bool is_running;
+				bool must_interrupt;
 				std::vector<recipe_execution_callback> pending_cb;
 
 				void handle_evaluate_preconditions(conditionV error);
@@ -45,6 +46,8 @@ namespace hyper {
 				agent_const_iterator end() const { return required_agents.end(); }
 
 				const std::string& r_name() const { return name; }
+
+				void abort();
 
 				virtual ~recipe() {};
 		};

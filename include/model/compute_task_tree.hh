@@ -86,6 +86,9 @@ namespace hyper {
 				cond_logic_evaluation cond_root;
 				std::vector<hypothesis_evaluation> hyp_eval;
 
+				bool must_interrupt;
+				std::set<std::string> running_tasks;
+
 			friend struct async_eval_all_preconditions;
 			friend struct async_exec_all_tasks;
 			friend struct async_exec_all_conditions;
@@ -99,7 +102,7 @@ namespace hyper {
 				void async_eval_cond(const std::string& s, cb_type);
 
 				void async_execute(cb_type);
-
+				void abort();
 
 			private:
 				void handle_eval_all_constraints(cond_logic_evaluation&, 

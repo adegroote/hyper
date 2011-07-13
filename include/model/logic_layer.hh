@@ -48,6 +48,11 @@ namespace hyper {
 
 			boost::asio::deadline_timer deadline_;
 
+			enum state { IDLE, EXEC, LOGIC, LOGIC_EXEC, WAIT };
+
+			bool must_interrupt;
+			state s_;
+
 			/* More to come */
 			logic_context(logic_layer& logic); 
 			logic_context(const logic_constraint& ctr_, logic_layer& logic);  
@@ -83,6 +88,7 @@ namespace hyper {
 			logic::engine engine;
 			ability& a_;
 			std::map<std::string, task_ptr> tasks;
+			std::map<std::string, logic_ctx_ptr> running_ctx;
 
 			logic_layer(ability &a);
 			~logic_layer();
@@ -106,7 +112,7 @@ namespace hyper {
 			void async_exec(const std::string& task, network::identifier id, 
 							const std::string& src, logic_layer_cb cb);
 
-			void abort(const std::string& src, network::identifier id) {}
+			void abort(const std::string& src, network::identifier id);
 
 			private:
 			void handle_exec_computation(const boost::system::error_code&e,
@@ -114,7 +120,11 @@ namespace hyper {
 			void handle_eval_task_tree(bool success, logic_ctx_ptr ptr);
 			void handle_exec_task_tree(bool success, logic_ctx_ptr ptr);
 			void handle_success(logic_ctx_ptr ptr);
+			void handle_failure(logic_ctx_ptr ptr, const boost::system::error_code&);
 			void handle_timeout(const boost::system::error_code&, logic_ctx_ptr);
+
+			std::string make_key(const std::string& src, network::identifier id) const;
+			std::string make_key(logic_ctx_ptr ptr) const;
 		};
 	}
 }
