@@ -62,6 +62,15 @@ namespace hyper {
 		{
 			if (check_is_terminated(e)) return;
 
+			if (e == boost::system::errc::interrupted) {
+				/* do nothing for the moment. If we are not waiting for
+				 * termaison, it is the result of an aborted ensure, and we
+				 * must continue. Of course, it means there is no other of
+				 * aborting in the system, which is currently true (modulo bug))
+				 */
+				return;
+			}
+
 			if (e) {
 				terminaison(e);
 			} else {
