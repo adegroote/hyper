@@ -244,45 +244,47 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 	template <typename T> 
 	std::string operator() (const T&) const { return ""; }
 
+	std::string local_symbol(const std::string& s) const 
+	{
+		std::ostringstream oss;
+		oss << "boost::fusion::at_c<" << symbolList_index(syms, s) << ">(local_vars)";
+		return oss.str();
+	}
+
+	std::string unused_symbol(const std::string& t) const
+	{
+		return "boost::fusion::at_key<" + t + ">(unused_res)";
+	}
+
 	std::string compute_target(const expression_ast& e) const
 	{
-		std::ostringstream identifier;
-
 		if (target) {
 			std::pair<bool, symbolACL> p = a.get_symbol(*target);
 			if (p.first) 
-				identifier <<  "a." << *target;
+				return "a." + *target;
 			else 
-				identifier << "boost::fusion::at_c<" << symbolList_index(syms, *target) << ">(local_vars)";
+				return local_symbol(*target);
 		} else {
 			boost::optional<typeId> tid = u.typeOf(a, e, syms);
 			type t = u.types().get(*tid);
-			identifier << "boost::fusion::at_key<" << t.type_name() << ">(unused_res)";
+			return unused_symbol(t.type_name());
 		}
-
-		return identifier.str();
 	}
 
 	std::string compute_make_target() const
 	{
-		std::ostringstream identifier;
-		if (target) {
-			identifier << "boost::fusion::at_c<" << symbolList_index(syms, *target) << ">(local_vars)";
-		} else {
-			identifier << "boost::fusion::at_key<bool>(unused_res)";
-		}
-		return identifier.str();
+		if (target) 
+			return local_symbol(*target);
+		else 
+			return unused_symbol("bool");
 	}
 
 	std::string compute_ensure_target() const
 	{
-		std::ostringstream identifier;
-		if (target) {
-			identifier << "boost::fusion::at_c<" << symbolList_index(syms, *target) << ">(local_vars)";
-		} else {
-			identifier << "boost::fusion::at_key<hyper::model::identifier>(unused_res)";
-		}
-		return identifier.str();
+		if (target) 
+			return local_symbol(*target);
+		else 
+			return unused_symbol("hyper::model::identifier");
 	}
 
 	std::string abortable_function(const std::string& identifier, const expression_ast& e) const
@@ -384,6 +386,20 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		oss << quoted_string(*(r.content[0].dst)) << ", \n" << indent_next;
 		oss << quoted_string(generate_logic_expression(r.content[0].ast, a, u));
 		oss << ", \n" << indent_next << identifier << "));\n";
+		target = boost::none;
+
+		return oss.str();
+	}
+
+	std::string operator() (const abort_decl& a) const
+	{
+		std::string indent = times(3, "\t");
+		std::string indent_next = times(4, "\t");
+		std::ostringstream oss;
+
+		oss << indent << "push_back(new hyper::model::compute_abort_expression(a, \n";
+		oss << indent_next << local_symbol(a.identifier) << ", \n";
+		oss << indent_next << unused_symbol("boost::mpl::void_") << "));";
 		target = boost::none;
 
 		return oss.str();
@@ -500,6 +516,12 @@ struct extract_unused_result_visitor : public boost::static_visitor<void>
 	{
 		if (!catched)
 			list.insert("hyper::model::identifier");
+	}
+
+	void operator() (const abort_decl&) const
+	{
+		if(!catched) 
+			list.insert("boost::mpl::void_");
 	}
 };
 
@@ -745,6 +767,7 @@ namespace hyper {
 			oss << "#include <" << context_a.name();
 			oss << "/recipes/" << name << ".hh>\n"; 
 			oss << "#include <model/abortable_function.hh>\n";
+			oss << "#include <model/compute_abort_expression.hh>\n";
 			oss << "#include <model/compute_ensure_expression.hh>\n";
 			oss << "#include <model/compute_expression.hh>\n";
 			oss << "#include <model/compute_make_expression.hh>\n";
