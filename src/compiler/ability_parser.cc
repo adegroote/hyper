@@ -8,6 +8,7 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const programming_
 {
 	os << d.types;
 	os << d.funcs;
+	os << d.rules;
 	return os;
 }
 

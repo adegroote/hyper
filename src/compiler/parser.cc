@@ -71,9 +71,22 @@ BOOST_FUSION_ADAPT_STRUCT(
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
+	rule_decl,
+	(std::string, name)
+	(std::vector<expression_ast>, premises)
+	(std::vector<expression_ast>, conclusions)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+	rule_decl_list,
+	(std::vector<rule_decl>, l)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
 	programming_decl,
 	(type_decl_list, types)
 	(function_decl_list, funcs)
+	(rule_decl_list, rules)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -201,8 +214,9 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				 lit("export")
 				 > lit('=')
 				 > lit('{')
-				 > block_type_decl
-				 > block_function_decl
+				 > -block_type_decl
+				 > -block_function_decl
+				 > -block_rule_decl
 				 > lit('}')
 				 ;
 
@@ -218,6 +232,11 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 				> lit('}')
 				;
 
+		block_rule_decl = 
+				lit('{')
+				> rule_decl_list_
+				> lit('}')
+				;
 
 		v_decl_list = (*v_decl			    [insert(at_c<0>(_val), end(at_c<0>(_val)), 
 											  begin(at_c<0>(_1)), end(at_c<0>(_1)))])
@@ -287,6 +306,16 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 					 > -lit(';')
 					 ;
 
+		rule_decl_ = identifier				 
+					 >> lit('=')
+					 >> -( expression	% ',')		 
+					 >> lit("|-")
+					 >> -( expression	% ',')		 
+					 > -lit(';')
+					 ;
+
+		rule_decl_list_ = (*rule_decl_);
+
 
 		ability_.name("ability declaration");
 		ability_description.name("ability description");
@@ -306,6 +335,9 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 		new_type_decl.name("newtype declaration");
 		opaque_decl_.name("opaque type declaration");
 		tag_decl.name("tag declaration");
+		rule_decl_.name("rule declaration");
+		rule_decl_list_.name("rule list declaration");
+		block_rule_decl.name("block rule declartion");
 
 		qi::on_error<qi::fail> (ability_, error_handler(_4, _3, _2));
 
@@ -328,6 +360,9 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 		debug(new_type_decl);
 		debug(opaque_decl_);
 		debug(tag_decl);
+		debug(rule_decl_);
+		debug(rule_decl_list_);
+		debug(block_rule_decl);
 #endif
 	}
 
@@ -348,12 +383,16 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 	qi::rule<Iterator, newtype_decl(), white_space_> new_type_decl;
 	qi::rule<Iterator, opaque_decl(), white_space_> opaque_decl_;
 	qi::rule<Iterator, std::string(), white_space_> tag_decl;
+	qi::rule<Iterator, rule_decl(), white_space_> rule_decl_;
+	qi::rule<Iterator, std::vector<rule_decl>(), white_space_> rule_decl_list_;
+	qi::rule<Iterator, rule_decl_list(), white_space_> block_rule_decl;
 
 	function<ability_add_adaptator> ability_adder;
 	identifier_grammar<Iterator> identifier;
 	scoped_identifier_grammar<Iterator> scoped_identifier;
 	initializer_grammar<Iterator> initializer;
 	import_grammar<Iterator> import_list;
+	grammar_expression<Iterator> expression;
 };
 
 

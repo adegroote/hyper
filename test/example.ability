@@ -47,6 +47,13 @@ first = ability
 			double square(double);
 			bool   isToto(test);
 			@genom double genomTagTest(Module, double);
+			int less_int(int, int);
+		}
+		{
+			/* Here, define your rule */
+			distance_symetry = distance(A, B) |- distance(A,B) == distance(B,A);
+			less_false = less(A, A) |- ;
+			less_assoc = less(A, B), less(B, C) |- less(A,C);
 		}
 	}
 }

@@ -8,12 +8,14 @@
 #include <compiler/types_parser.hh>
 #include <compiler/symbols_parser.hh>
 #include <compiler/functions_def_parser.hh>
+#include <compiler/rules_def_parser.hh>
 
 namespace hyper {
 	namespace compiler {
 		struct programming_decl {
 			type_decl_list types;
 			function_decl_list funcs;
+			rule_decl_list rules;
 		};
 
 		std::ostream& operator << (std::ostream&, const programming_decl& p);

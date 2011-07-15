@@ -16,15 +16,10 @@ other = ability
 		}
 	}
 
-	tasks = {}
-
 	export = 
 	{
 		{
 			other_type = struct { string x, y; };
-		}
-		{
-			/* Here, define your fonction */
 		}
 	}
 }
