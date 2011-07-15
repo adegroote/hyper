@@ -177,7 +177,7 @@ std::string type::type_name() const
 	else if (name == "void")
 		return "boost::mpl::void_";
 	else if (name == "identifier")
-		return "hyper::network::identifier";
+		return "hyper::model::identifier";
 	else
 		return name;
 }

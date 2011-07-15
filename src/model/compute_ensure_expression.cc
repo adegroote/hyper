@@ -5,7 +5,7 @@ namespace hyper {
 	namespace model {
 		compute_ensure_expression::compute_ensure_expression(
 			ability& a, const std::string& dst, const std::string& ctr, 
-			network::identifier& res) : 
+			model::identifier& res) : 
 			a(a), dst(dst), constraint(ctr), res_id(res), id(boost::none) {}
 
 		void compute_ensure_expression::handle_end_computation(
@@ -40,7 +40,8 @@ namespace hyper {
 					boost::bind(&compute_ensure_expression::handle_end_computation,
 								this, boost::asio::placeholders::error, cb));
 
-			res_id = *id;
+			res_id.first = dst;
+			res_id.second = *id;
 			cb(boost::system::error_code());
 		}
 

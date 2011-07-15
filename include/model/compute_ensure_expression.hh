@@ -3,6 +3,7 @@
 
 #include <boost/system/error_code.hpp>
 #include <model/abortable_function.hh>
+#include <model/types.hh>
 
 namespace hyper {
 	namespace model {
@@ -10,7 +11,7 @@ namespace hyper {
 
 		class compute_ensure_expression : public abortable_function_base {
 				ability& a;
-				network::identifier& res_id;
+				model::identifier& res_id;
 				std::string dst;
 				std::string constraint;
 				boost::optional<network::identifier> id;
@@ -22,7 +23,7 @@ namespace hyper {
 				void handle_abort(const boost::system::error_code&);
 
 			public:
-				compute_ensure_expression(ability&, const std::string&, const std::string&, network::identifier &);
+				compute_ensure_expression(ability&, const std::string&, const std::string&, model::identifier &);
 
 				void compute (cb_type cb);
 				bool abort();

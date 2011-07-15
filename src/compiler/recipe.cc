@@ -280,7 +280,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		if (target) {
 			identifier << "boost::fusion::at_c<" << symbolList_index(syms, *target) << ">(local_vars)";
 		} else {
-			identifier << "boost::fusion::at_key<hyper::network::identifier>(unused_res)";
+			identifier << "boost::fusion::at_key<hyper::model::identifier>(unused_res)";
 		}
 		return identifier.str();
 	}
@@ -499,7 +499,7 @@ struct extract_unused_result_visitor : public boost::static_visitor<void>
 	void operator() (const recipe_op<ENSURE>&) const
 	{
 		if (!catched)
-			list.insert("hyper::network::identifier");
+			list.insert("hyper::model::identifier");
 	}
 };
 
