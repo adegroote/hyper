@@ -28,9 +28,10 @@ namespace {
 	{
 		const ability& a;
 		boost::optional<const universe&> u;
+		bool is_rule;
 
-		dump_logic_expression_ast(const ability& a, boost::optional<const universe&> u) : 
-			a(a), u(u)
+		dump_logic_expression_ast(const ability& a, boost::optional<const universe&> u, bool is_rule) : 
+			a(a), u(u), is_rule(is_rule)
 		{}
 
 		std::string operator() (const empty& e) const { (void)e; assert(false); }
@@ -55,7 +56,7 @@ namespace {
 
 		std::string operator() (const std::string& s) const
 		{
-			if (!scope::is_scoped_identifier(s))
+			if (!is_rule && !scope::is_scoped_identifier(s))
 				return a.name() + "::" + s;
 			else
 				return s;
@@ -69,7 +70,7 @@ namespace {
 			else 
 				oss << a.name() << "::" << f.fName << "(";
 			for (size_t i = 0; i < f.args.size(); ++i) {
-				oss << boost::apply_visitor(dump_logic_expression_ast(a, u), f.args[i].expr);
+				oss << boost::apply_visitor(*this, f.args[i].expr);
 				if (i != (f.args.size() - 1)) {
 					oss << ",";
 				}
@@ -82,7 +83,7 @@ namespace {
 		{
 			std::ostringstream oss;
 			oss << "(";
-			oss << boost::apply_visitor(dump_logic_expression_ast(a, u), e.expr);
+			oss << boost::apply_visitor(*this, e.expr);
 			oss << ")";
 			return oss.str();
 		}
@@ -100,9 +101,9 @@ namespace {
 				}
 			}
 			oss << "(";
-			oss << boost::apply_visitor(dump_logic_expression_ast(a, u), op.left.expr);
+			oss << boost::apply_visitor(*this, op.left.expr);
 			oss << ",";
-			oss << boost::apply_visitor(dump_logic_expression_ast(a, u), op.right.expr); 
+			oss << boost::apply_visitor(*this, op.right.expr); 
 			oss << ")";
 			return oss.str();
 		}
@@ -112,7 +113,7 @@ namespace {
 		{
 			std::ostringstream oss;
 			oss << "(";
-			oss << boost::apply_visitor(dump_logic_expression_ast(a, u), op.subject.expr);
+			oss << boost::apply_visitor(*this, op.subject.expr);
 			oss << ")";
 			return oss.str();
 		}
@@ -122,9 +123,9 @@ namespace {
 namespace hyper {
 	namespace compiler {
 		std::string generate_logic_expression(const expression_ast& e, const ability& a, 
-				boost::optional<const universe&> u)
+				boost::optional<const universe&> u, bool is_rule)
 		{
-			return boost::apply_visitor(dump_logic_expression_ast(a, u), e.expr);
+			return boost::apply_visitor(dump_logic_expression_ast(a, u, is_rule), e.expr);
 		}
 	}
 }

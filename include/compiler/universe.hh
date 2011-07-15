@@ -16,6 +16,7 @@
 #include <compiler/depends.hh>
 #include <compiler/types.hh>
 #include <compiler/functions_def.hh>
+#include <compiler/rules_def_parser.hh>
 
 namespace hyper {
 	namespace compiler {
@@ -37,6 +38,7 @@ namespace hyper {
 
 				typeList tList;
 				functionDefList fList;
+				rule_decl_list rList;
 
 				/*
 				 * Check if is part of native identifier
@@ -50,6 +52,7 @@ namespace hyper {
 				bool add_symbols(const std::string&, const symbol_decl_list& decl, 
 						symbolList& s);
 
+				bool add_rules(const std::string&, const rule_decl_list& decl);
 
 			public:
 				universe();

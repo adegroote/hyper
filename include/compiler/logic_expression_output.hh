@@ -11,7 +11,8 @@ namespace hyper {
 		class universe;
 
 		std::string generate_logic_expression(const expression_ast& e, 
-				const ability& a, boost::optional<const universe&> u = boost::none);
+				const ability& a, boost::optional<const universe&> u = boost::none,
+								  bool is_rule = false);
 	}
 }
 

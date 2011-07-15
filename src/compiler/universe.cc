@@ -8,6 +8,7 @@
 
 #include <compiler/ability_parser.hh>
 #include <compiler/extension.hh>
+#include <compiler/logic_expression_output.hh>
 #include <compiler/output.hh>
 #include <compiler/universe.hh>
 #include <compiler/scope.hh>
@@ -103,6 +104,19 @@ struct functions_def_add_scope {
 	}
 };
 
+struct rule_add_scope {
+	std::string scope;
+
+	rule_add_scope(const std::string& s) : scope(s) {};
+
+	rule_decl operator()(const rule_decl& decl)
+	{
+		rule_decl res = decl;
+		res.name = scope::add_scope(scope, res.name);
+		return res;
+	}
+};
+
 struct type_diagnostic_visitor : public boost::static_visitor<void>
 {
 	// XXX improve type_diagnostic :)
@@ -194,6 +208,22 @@ universe::add_functions(const std::string& scope_, const function_decl_list& f)
 	return isOk;
 }
 
+bool 
+universe::add_rules(const std::string& scope, const rule_decl_list& r)
+{
+	rule_decl_list r_scoped;
+	r_scoped.l.resize(r.l.size());
+	rule_add_scope add_scope(scope);
+
+	std::transform(r.l.begin(), r.l.end(),
+				   r_scoped.l.begin(), add_scope);
+
+	/* TODO check the consistency of the rules according to the system */
+	rList.l.insert(rList.l.end(), r_scoped.l.begin(), r_scoped.l.end());
+
+	return true;
+}
+
 bool
 universe::add_symbols(const std::string& scope_, const symbol_decl_list& d,
 					  symbolList& s)
@@ -254,6 +284,7 @@ universe::add(const ability_decl& decl)
 	
 	bool res = add_types(decl.name, decl.blocks.env.types);
 	res = add_functions(decl.name, decl.blocks.env.funcs) && res;
+	res = add_rules(decl.name, decl.blocks.env.rules) && res;
 	symbolList controlables(tList); 
 	symbolList readables(tList);
 	symbolList privates(tList);
@@ -720,9 +751,70 @@ struct output_logic_type {
 	}
 };
 
+struct is_local_rules {
+	std::string scope;
+
+	is_local_rules(const std::string& scope): scope(scope) {}
+
+	bool operator() (const rule_decl& decl) {
+		return (scope::get_scope(decl.name) == scope);
+	}
+};
+
+struct dump_rule {
+	std::ostream& oss;
+	const ability& a;
+	const universe& u;
+
+	dump_rule(std::ostream& oss,
+			  const ability &a,
+			  const universe& u) : 
+		oss(oss), a(a), u(u) {}
+
+	void operator() (const expression_ast& ast) 
+	{
+		oss << "(" << quoted_string(generate_logic_expression(ast, a, u, true)) << ")";
+	}
+};
+
+struct output_logic_rules {
+	std::ostream& oss;
+	const ability& a;
+	const universe& u;
+
+	output_logic_rules(std::ostream& oss,
+					   const ability &a,
+					   const universe& u) : 
+		oss(oss), a(a), u(u) {}
+
+	void operator() (const rule_decl& r) {
+		oss << "\t\t\t\ta.logic().add_rules(" << quoted_string(r.name) << ",\n";
+		if (r.premises.empty()) 
+			oss << "\t\t\t\t\tstd::vector<std::string>(),\n";
+		else {
+			oss << "\t\t\t\t\tboost::assign::list_of";
+			std::for_each(r.premises.begin(), r.premises.end(), dump_rule(oss, a, u));
+			oss << ",\n";
+		};
+		if (r.conclusions.empty()) 
+			oss << "\t\t\t\t\tstd::vector<std::string>());\n";
+		else {
+			oss << "\t\t\t\t\tboost::assign::list_of";
+			std::for_each(r.conclusions.begin(), r.conclusions.end(), dump_rule(oss, a, u));
+			oss << ");\n";
+		};
+	}
+};
+
 void
 universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const
 {
+	abilityMap::const_iterator it = abilities.find(name);
+	if (it == abilities.end()) {
+		std::cerr << "ability " << name << " seems to not be defined ! " << std::endl;
+		return;
+	}
+
 	oss << "#include <" << name << "/import.hh>\n\n";
 	oss << "#include <model/logic_layer_impl.hh>\n\n";
 	oss << "#include <boost/assign/list_of.hpp>\n\n";
@@ -736,6 +828,12 @@ universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& 
 
 	std::for_each(types.begin(), types.end(), output_logic_type(oss));
 	std::for_each(funcs.begin(), funcs.end(), output_import_helper(oss, *this));
+
+	std::vector<rule_decl> rules; 
+	hyper::utils::copy_if(rList.l.begin(), rList.l.end(), std::back_inserter(rules), 
+						  is_local_rules(name));
+
+	std::for_each(rules.begin(), rules.end(), output_logic_rules(oss, *it->second, *this));
 
 	oss << "\t\t\t}" << std::endl;
 }

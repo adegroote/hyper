@@ -106,6 +106,12 @@ namespace hyper {
 			template <typename Func>
 			void add_func(const std::string& s, const std::vector<std::string>& args_type);
 
+			void add_rules(const std::string& s, const std::vector<std::string>& premises, 
+												 const std::vector<std::string>& conclusions)
+			{
+				engine.add_rule(s, premises, conclusions);
+			}
+
 			void add_logic_type(const std::string& s);
 
 			void async_exec(const logic_constraint& ctr, logic_layer_cb cb);
