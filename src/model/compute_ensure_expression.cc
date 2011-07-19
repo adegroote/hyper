@@ -5,8 +5,10 @@ namespace hyper {
 	namespace model {
 		compute_ensure_expression::compute_ensure_expression(
 			ability& a, const std::string& dst, const std::string& ctr, 
+			const network::request_constraint::unification_list& unify_list,
 			model::identifier& res) : 
-			a(a), dst(dst), constraint(ctr), res_id(res), id(boost::none) {}
+			a(a), dst(dst), constraint(ctr), unify_list(unify_list), 
+			res_id(res), id(boost::none) {}
 
 		void compute_ensure_expression::handle_end_computation(
 				const boost::system::error_code& e,
@@ -35,6 +37,7 @@ namespace hyper {
 			id = boost::none;
 			rqst.constraint =  constraint;
 			rqst.repeat = true;
+			rqst.unify_list = unify_list;
 
 			id = a.client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_ensure_expression::handle_end_computation,

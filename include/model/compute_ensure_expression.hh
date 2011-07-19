@@ -14,6 +14,7 @@ namespace hyper {
 				model::identifier& res_id;
 				std::string dst;
 				std::string constraint;
+				network::request_constraint::unification_list unify_list;
 				boost::optional<network::identifier> id;
 				network::request_constraint rqst;
 				network::request_constraint_answer ans;
@@ -23,7 +24,9 @@ namespace hyper {
 				void handle_abort(const boost::system::error_code&);
 
 			public:
-				compute_ensure_expression(ability&, const std::string&, const std::string&, model::identifier &);
+				compute_ensure_expression(ability&, const std::string&, const std::string&, 
+										 const network::request_constraint::unification_list&,
+										 model::identifier &);
 
 				void compute (cb_type cb);
 				bool abort();

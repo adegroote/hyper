@@ -15,6 +15,7 @@
 #include <boost/date_time/posix_time/time_serialize.hpp>
 #include <boost/mpl/vector/vector20.hpp>
 #include <boost/serialization/serialization.hpp>
+#include <boost/serialization/utility.hpp>
 #include <boost/serialization/variant.hpp> 
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/split_member.hpp>
@@ -245,12 +246,15 @@ namespace hyper {
 				void serialize(Archive& ar, const unsigned int version)
 				{
 					(void) version;
-					ar & id & src & constraint & repeat;
+					ar & id & src & unify_list & constraint & repeat; 
 				}
 			public:
+				typedef std::pair<std::string, std::string> unification_pair;
+				typedef std::vector<unification_pair> unification_list;
 				mutable identifier id;
 				mutable std::string src;
 				std::string constraint;
+				unification_list  unify_list;
 				bool repeat;
 		};
 
