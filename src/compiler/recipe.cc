@@ -228,6 +228,30 @@ bool are_valid_recipe_expressions(Iterator begin, Iterator end,
 	return b;
 }
 
+struct dump_unify_pair {
+	std::ostream& os;
+	std::string separator_;
+	const ability & a;
+	const universe& u;
+
+	dump_unify_pair(std::ostream& os, const ability& a, const universe& u) : 
+		os(os), a(a), u(u) 
+	{
+		separator_ = "\n" + times(5, "\t");
+	}
+
+	void operator() (const unification_expression& p) 
+	{
+		os << "(" << quoted_string(generate_logic_expression(p.first.expr, a, u));
+		os << ", " << quoted_string(generate_logic_expression(p.second.expr, a, u));
+		os << ")";
+	};
+
+	void separator () { 
+		os << separator_;
+	}
+};
+
 struct dump_recipe_visitor : public boost::static_visitor<std::string>
 {
 	const universe& u;
@@ -316,6 +340,21 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		return boost::apply_visitor(*this, s.bounded.expr);
 	}
 
+	std::string dump_unification(const std::vector<unification_expression>& unify_list) const
+	{
+		std::ostringstream oss;
+		if (unify_list.empty()) 
+			oss << "network::request_constraint::unification_list()";
+		else {
+			oss << "boost::assign::list_of<std::pair<std::string, std::string> >";
+			oss << "\n" << times(5, "\t");
+			hyper::compiler::list_of(unify_list.begin(), unify_list.end(), dump_unify_pair(oss, a, u));
+			oss << "\n";
+		}
+
+		return oss.str();
+	}
+
 	std::string operator() (const wait_decl& w) const
 	{
 		std::string indent = times(3, "\t");
@@ -362,12 +401,14 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 	std::string operator() (const recipe_op<MAKE>& r) const
 	{
 		std::string indent = times(3, "\t");
+		std::string indent_next = times(4, "\t");
 		std::string identifier = compute_make_target();
 		std::ostringstream oss;
 
 		oss << indent << "push_back(new hyper::model::compute_make_expression(a, ";
 		oss << quoted_string(*(r.content[0].dst)) << ", ";
 		oss << quoted_string(generate_logic_expression(r.content[0].logic_expr.main, a, u));
+		oss << ", \n" << indent_next << dump_unification(r.content[0].logic_expr.unification_clauses);
 		oss << ", " << identifier << "));\n";
 		target = boost::none;
 
@@ -385,6 +426,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		oss << indent << "push_back(new hyper::model::compute_ensure_expression(a, ";
 		oss << quoted_string(*(r.content[0].dst)) << ", \n" << indent_next;
 		oss << quoted_string(generate_logic_expression(r.content[0].logic_expr.main, a, u));
+		oss << ", \n" << indent_next << dump_unification(r.content[0].logic_expr.unification_clauses);
 		oss << ", \n" << indent_next << identifier << "));\n";
 		target = boost::none;
 
