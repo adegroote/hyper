@@ -60,6 +60,60 @@ struct validate_expression
 	}
 };
 
+struct valid_unification
+{
+	bool & b;
+	const ability& a;
+	const universe& u;
+	const symbolList& local;
+	boost::optional<std::string> dst;
+
+	valid_unification(bool& b, const ability& a, const universe& u, 
+					  const symbolList& local,
+					  const boost::optional<std::string>& dst) :
+		b(b), a(a), u(u), local(local), dst(dst)
+	{}
+
+	void operator() (const unification_expression& p)
+	{
+		if (!dst) {
+			b = false;
+			return;
+		}
+
+		boost::optional<typeId> t1, t2;
+		t1 = u.typeOf(a, p.first, local);
+		t2 = u.typeOf(a, p.second, local);
+
+		b = b && t1 && t2 && (*t1 == *t2);
+		if (!b)
+			return;
+
+		/* Check there are at least one symbol, and that it modifies one
+		 * element of dst */
+		const std::string *s1, *s2;
+		s1 = boost::get<std::string>(&p.first.expr);
+		s2 = boost::get<std::string>(&p.second.expr);
+
+		if (!s1 && !s2) {
+			b = false;
+			std::cerr << "Invalid unification_expression : no symbol " << p << std::endl;
+			return;
+		}
+
+		bool b1 = s1 && scope::get_scope(*s1) == *dst;
+		bool b2 = s2 && scope::get_scope(*s2) == *dst;
+
+		/* One symbol exactly must be part of the dst */
+		if (! b1 ^ b2 ) {
+			b = false;
+			std::cerr << "Invalid unification_expression : no " << *dst << " symbol ";
+			std::cerr << p << std::endl;
+			return;
+		}
+	}
+};
+
 struct validate_recipe_expression_ : public boost::static_visitor<bool>
 {
 	const ability& a;
@@ -80,8 +134,12 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 	bool operator() (const recipe_op<kind>& op) const {
 		std::vector<remote_constraint>::const_iterator it;
 		bool valid = true;
-		for (it = op.content.begin(); it != op.content.end(); ++it) 
+		for (it = op.content.begin(); it != op.content.end(); ++it) {
 			valid &= (it->dst && it->logic_expr.main.is_valid_predicate(a, u, local));
+			std::for_each(it->logic_expr.unification_clauses.begin(),
+						  it->logic_expr.unification_clauses.end(),
+						  valid_unification(valid, a, u, local, it->dst));
+		}
 
 		return valid;
 	}

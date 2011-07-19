@@ -215,6 +215,45 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 												};							\
 											};", false);			
 
+	/* checking where syntax and validity */
+	check_recipe.do_build_test("r26 = recipe { pre = {}; post = {};			\
+											   body = {						\
+											   make(first::isOk == true     \
+												    where first::test_where == 2.0 \
+												    )						\
+												};							\
+											};", true);			
 
+	check_recipe.do_build_test("r27 = recipe { pre = {}; post = {};			\
+											   body = {						\
+											   make(first::isOk == true     \
+												    where first::test_where ==  other::thresold\
+												    )						\
+												};							\
+											};", true);			
+
+	check_recipe.do_build_test("r28 = recipe { pre = {}; post = {};			\
+											   body = {						\
+											   make(first::isOk == true     \
+												    where first::test_where ==  other::isEmpty\
+												    )						\
+												};							\
+											};", false);			
+
+	check_recipe.do_build_test("r28 = recipe { pre = {}; post = {};			\
+											   body = {						\
+											   make(first::isOk == true     \
+												    where first::test_where ==  unknownVariable\
+												    )						\
+												};							\
+											};", false);			
+
+	check_recipe.do_build_test("r29 = recipe { pre = {}; post = {};			\
+											   body = {						\
+											   make(first::isOk == true     \
+												    where other::isEmpty ==  false\
+												    )						\
+												};							\
+											};", false);			
 	
 }

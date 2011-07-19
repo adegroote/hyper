@@ -867,6 +867,7 @@ universe::get_ability(const std::string& name)
 {
 	abilityMap::iterator it = abilities.find(name);
 	if (it == abilities.end()) {
+		std::cerr << "universe::get_ability : can't retrieve " << name << std::endl;
 		assert(false);
 	}
 	return *(it->second);
