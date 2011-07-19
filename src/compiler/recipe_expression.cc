@@ -6,6 +6,24 @@
 
 using namespace hyper::compiler;
 
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const unification_expression& uni)
+{
+	os << uni.first << " == " << uni.second;
+	return os;
+}
+
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const logic_expression_decl& decl)
+{
+	os << decl.main;
+	if (!decl.unification_clauses.empty()) {
+		os << " where ";
+		std::copy(decl.unification_clauses.begin(), decl.unification_clauses.end(),
+				  std::ostream_iterator<unification_expression>(os, ", "));
+	}
+
+	return os;
+}
+
 std::ostream& hyper::compiler::operator<< (std::ostream& os, const let_decl& e)
 {
 	os << "let " << e.identifier << " = " << e.bounded;
@@ -88,14 +106,20 @@ struct extract_destination : public boost::static_visitor<boost::optional<std::s
 	}
 };
 
-remote_constraint::remote_constraint(const expression_ast& ast) : ast(ast)
+remote_constraint::remote_constraint(const expression_ast& ast) 
 {
-	dst = boost::apply_visitor(extract_destination(), ast.expr);
+	logic_expr.main = ast;
+	dst = boost::apply_visitor(extract_destination(), logic_expr.main.expr);
+}
+
+remote_constraint::remote_constraint(const logic_expression_decl& decl) : logic_expr(decl)
+{
+	dst = boost::apply_visitor(extract_destination(), logic_expr.main.expr);
 }
 
 std::ostream& hyper::compiler::operator<< (std::ostream& os, const remote_constraint& ctr)
 {
-	os << ctr.ast;
+	os << ctr.logic_expr;
 	return os;
 }
 

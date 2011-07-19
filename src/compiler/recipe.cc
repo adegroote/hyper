@@ -81,7 +81,7 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 		std::vector<remote_constraint>::const_iterator it;
 		bool valid = true;
 		for (it = op.content.begin(); it != op.content.end(); ++it) 
-			valid &= (it->dst && it->ast.is_valid_predicate(a, u, local));
+			valid &= (it->dst && it->logic_expr.main.is_valid_predicate(a, u, local));
 
 		return valid;
 	}
@@ -367,7 +367,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 		oss << indent << "push_back(new hyper::model::compute_make_expression(a, ";
 		oss << quoted_string(*(r.content[0].dst)) << ", ";
-		oss << quoted_string(generate_logic_expression(r.content[0].ast, a, u));
+		oss << quoted_string(generate_logic_expression(r.content[0].logic_expr.main, a, u));
 		oss << ", " << identifier << "));\n";
 		target = boost::none;
 
@@ -384,7 +384,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 		oss << indent << "push_back(new hyper::model::compute_ensure_expression(a, ";
 		oss << quoted_string(*(r.content[0].dst)) << ", \n" << indent_next;
-		oss << quoted_string(generate_logic_expression(r.content[0].ast, a, u));
+		oss << quoted_string(generate_logic_expression(r.content[0].logic_expr.main, a, u));
 		oss << ", \n" << indent_next << identifier << "));\n";
 		target = boost::none;
 

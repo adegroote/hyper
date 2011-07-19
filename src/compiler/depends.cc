@@ -80,7 +80,7 @@ struct compute_recipe_op_deps
 
 	void operator() (const remote_constraint& constraint) const
 	{
-		add_depends(constraint.ast, name, u, d);
+		add_depends(constraint.logic_expr.main, name, u, d);
 	}
 };
 

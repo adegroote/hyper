@@ -12,6 +12,17 @@ namespace hyper {
 	namespace compiler {
 		struct let_decl;
 
+		typedef std::pair<expression_ast, expression_ast> unification_expression;
+
+		struct logic_expression_decl
+		{
+			expression_ast main;
+			std::vector<unification_expression> unification_clauses;
+		};
+
+		std::ostream& operator << (std::ostream&, const unification_expression&);
+		std::ostream& operator << (std::ostream&, const logic_expression_decl&);
+
 		struct abort_decl {
 			std::string identifier;
 
@@ -37,10 +48,11 @@ namespace hyper {
 
 		struct remote_constraint {
 			boost::optional<std::string> dst;
-			expression_ast ast;
+			logic_expression_decl logic_expr;
 
 			remote_constraint() {}
 			remote_constraint(const expression_ast& ast);
+			remote_constraint(const logic_expression_decl& decl);
 		};
 
 		std::ostream& operator<< (std::ostream& os, const remote_constraint&);
@@ -52,6 +64,11 @@ namespace hyper {
 
 			recipe_op() {}
 			recipe_op(const std::vector<expression_ast>& content_) {
+				std::copy(content_.begin(), content_.end(),
+						  std::back_inserter(content));
+			}
+			
+			recipe_op(const std::vector<logic_expression_decl>& content_) {
 				std::copy(content_.begin(), content_.end(),
 						  std::back_inserter(content));
 			}

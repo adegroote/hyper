@@ -5,6 +5,9 @@
 #include <compiler/import_parser.hh>
 #include <compiler/utils.hh>
 
+#include <boost/fusion/adapted/std_pair.hpp>
+#include <boost/fusion/include/std_pair.hpp>
+
 using namespace hyper::compiler;
 
 namespace qi = boost::spirit::qi;
@@ -48,6 +51,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
+	logic_expression_decl,
+	(expression_ast, main)
+	(std::vector<unification_expression>, unification_clauses)
+
+);
+BOOST_FUSION_ADAPT_STRUCT(
 	recipe_decl_list,
 	(std::vector<recipe_decl>, recipes)
 )
@@ -73,6 +82,49 @@ BOOST_FUSION_ADAPT_STRUCT(
 	wait_decl,
 	(expression_ast, content)
 )
+
+
+template <typename Iterator>
+struct logic_expression_grammar :
+	qi::grammar<Iterator, logic_expression_decl(), white_space<Iterator> >
+{
+	typedef white_space<Iterator> white_space_;
+	logic_expression_grammar() :
+		logic_expression_grammar::base_type(start)
+	{
+		using qi::lit;
+
+		start = expression 
+			   > -(lit("where")
+				    > unification_list
+				   )
+			;
+
+		unification_list = unification_expression_ % lit("&&");
+
+		unification_expression_ =  atom 
+							  > lit("==") 
+							  > atom
+							  ;
+
+		start.name("logic_expression");
+		unification_list.name("unification list");
+		unification_expression_.name("unification expression");
+
+#ifdef HYPER_DEBUG_RULES
+		debug(start);
+		debug(unification_list);
+		debug(unification_expression_);
+#endif
+	}
+
+	qi::rule<Iterator, unification_expression(), white_space_> unification_expression_;
+	qi::rule<Iterator, std::vector<unification_expression>(), white_space_> unification_list;
+	qi::rule<Iterator, logic_expression_decl(), white_space_> start;
+
+	atom_grammar<Iterator> atom;
+	grammar_expression<Iterator> expression;
+};
 
 template <typename Iterator>
 struct body_block_grammar :
@@ -142,7 +194,7 @@ struct body_block_grammar :
 				  > lit(")")
 				  ;
 
-		expression_list = expression % lit("=>>");
+		expression_list = logic_expression % lit("=>>");
 
 		start.name("body block");
 		body_decl_list.name("recipe expression list");
@@ -172,7 +224,7 @@ struct body_block_grammar :
 	qi::rule<Iterator, body_block_decl(), white_space_> start;
 	qi::rule<Iterator, std::vector<recipe_expression>(), white_space_> body_decl_list;
 	qi::rule<Iterator, recipe_expression(), white_space_> body_decl;
-	qi::rule<Iterator, std::vector<expression_ast>(), white_space_> expression_list;
+	qi::rule<Iterator, std::vector<logic_expression_decl>(), white_space_> expression_list;
 	qi::rule<Iterator, let_decl(), white_space_> let_decl_;
 	qi::rule<Iterator, set_decl(), white_space_> set_decl_;
 	qi::rule<Iterator, abort_decl(), white_space_> abort_decl_;
@@ -182,6 +234,7 @@ struct body_block_grammar :
 
 	grammar_expression<Iterator> expression;
 	identifier_grammar<Iterator> identifier;
+	logic_expression_grammar<Iterator> logic_expression;
 	scoped_identifier_grammar<Iterator> scoped_identifier;
 };
 
@@ -235,6 +288,20 @@ struct  grammar_recipe :
 	import_grammar<Iterator> import_list;
 };
 
+bool parser::parse_logic_expression(const std::string& expr)
+{
+	logic_expression_decl decl;
+	logic_expression_grammar<std::string::const_iterator> g;
+	bool r;
+	try {
+		r = parse(g, expr, decl);
+	} catch (hyper::compiler::import_exception &e) 
+	{
+		std::cerr << e.what() << std::endl;
+		return false;
+	}
+	return r;
+}
 
 bool parser::parse_recipe(const std::string& expr)
 {

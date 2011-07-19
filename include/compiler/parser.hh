@@ -29,6 +29,7 @@ namespace hyper {
 					u(u_), include_path(includes) {};
 				bool parse_ability_file(const std::string&);
 				bool parse_expression(const std::string&);
+				bool parse_logic_expression(const std::string&);
 				bool parse_task(const std::string&);
 				bool parse_task(const std::string&, task_decl_list&);
 				bool parse_task_file(const std::string&);

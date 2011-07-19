@@ -37,6 +37,14 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 	BOOST_CHECK( P.parse_expression("(pos::computeDistance(Dtm::lastMerged, Pos::currentPosition)"
 									"< threshold) && (Path3D::goal == currentGoal)") == true );
 
+	/* Basic expression with no unification clause clauses */
+	BOOST_CHECK( P.parse_logic_expression("first::X == 1") == true );
+	BOOST_CHECK( P.parse_logic_expression("loc::distance(pos::current, pos::goal) < 0.5") == true);
+	BOOST_CHECK( P.parse_logic_expression("loc::distance(pos::current, pos::goal) < 0.5 where pos::goal == currentGoal") == true);
+	BOOST_CHECK( P.parse_logic_expression("loc::distance(pos::current, pos::goal) < 0.5 \
+													where pos::goal == currentGoal\
+													    && pos::thresold == 0.2") == true);
+
 	/* Testing recipe parsing */
 	BOOST_CHECK( P.parse_recipe("r0 = recipe { pre = {}; post = {}; body = {}; };"));
 
@@ -53,7 +61,7 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 
 	BOOST_CHECK( P.parse_recipe("r4 = recipe { pre = {};	\
 											   post = {};   \
-											   body = {  let Z ensure ((first::X == 1)); \
+											   body = {  let Z ensure (first::X == 1); \
 														 abort Z; \
 													  }; };"));
 	
@@ -68,12 +76,27 @@ BOOST_AUTO_TEST_CASE ( compiler_parser_test )
 		post = {};		\
 		body = {		\
 			ensure((pos::distance(dtm::lastMerge, pos::current) < 0.5) \
-				&& (p3d::goal == currentGoal) \
-				&& (control::tracking == p3dSpeedRef) \
+				=>> (p3d::goal == currentGoal) \
+				=>> (control::tracking == p3dSpeedRef) \
 				);									\
 			wait(pos::distance(currentGoal, pos::current) < goalThreshold); \
 			}; \
 		}";
 
 	BOOST_CHECK( P.parse_recipe(p3d_recipe));
+
+	std::string p3d_recipe2 = 
+		"r7 = recipe { \
+		pre = {};		\
+		post = {};		\
+		body = {		\
+			ensure(pos::distance(dtm::lastMerge, pos::current) < 0.5 \
+				=>> p3d::goal == currentGoal where p3d::goal == pos::current \
+				=>> control::tracking == p3dSpeedRef \
+				);									\
+			wait(pos::distance(currentGoal, pos::current) < goalThreshold); \
+			}; \
+		}";
+
+	BOOST_CHECK( P.parse_recipe(p3d_recipe2));
 }
