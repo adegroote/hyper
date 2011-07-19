@@ -115,6 +115,22 @@ struct base_construct
 	}
 };
 
+struct equality_construct 
+{
+	std::ostream& oss;
+
+	equality_construct(std::ostream& oss) : oss(oss) {}
+
+	void operator() (const std::pair<std::string, symbol>& p)
+	{
+		oss << "a." << p.first << " == b." << p.first;
+	}
+
+	void separator() {
+		oss << " && ";
+	}
+};
+
 struct dump_types_vis : public boost::static_visitor<void>
 {
 	std::ostream & oss;
@@ -158,6 +174,17 @@ struct dump_types_vis : public boost::static_visitor<void>
 		hyper::compiler::list_of(l->begin(), l->end(), base_construct(oss));
 		oss << "{}\n";
 		oss << "\t};\n" << std::endl;
+
+		// generate operator == and !=
+		oss << "\tinline bool operator == (const " << scope::get_identifier(name) << "& a, const ";
+		oss << scope::get_identifier(name) << "& b) {\n";
+		oss << "\t\treturn ";
+		hyper::compiler::list_of(l->begin(), l->end(), equality_construct(oss));
+		oss << ";\n";
+		oss << "\t};\n";
+
+		oss << "\tinline bool operator != (const " << scope::get_identifier(name) << "&a, const ";
+		oss << scope::get_identifier(name) << " & b) { return !(a == b); }\n\n";
 	}
 };
 
