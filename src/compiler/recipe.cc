@@ -881,11 +881,12 @@ namespace hyper {
 					if (syms.empty()) {
 						oss << ",\n";
 					} else {
-						oss << ",\n" << indent << "\t\tupdater" << i << "(a\n";
+						oss << ",\n" << indent << "\t\tupdater" << i << "(a";
 						if (!syms.local_with_updater.empty())
-							oss << "\t," << syms.local_list_variables_updated(next_indent);
+							oss << ",\n\t" << syms.local_list_variables_updated(next_indent);
 						if (!syms.remote.empty())
-							oss << "\t," << syms.remote_list_variables(next_indent) << indent << "\t\t),\n";
+							oss << ",\n\t" << syms.remote_list_variables(next_indent);
+						oss << indent << "\t\t),\n";
 					}
 					oss << indent << "\t\texpression_exec" << i << "(updater" << i << ")";
 				}
