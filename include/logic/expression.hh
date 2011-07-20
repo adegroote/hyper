@@ -70,6 +70,9 @@ namespace hyper {
 
 		bool operator < (const expression& e1, const expression& e2);
 
+		
+		boost::optional<expression> generate_node(const std::string&);
+
 		struct function_call {
 			std::string name; // only for parsing stuff
 			functionId id;

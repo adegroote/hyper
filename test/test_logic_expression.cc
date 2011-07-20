@@ -5,6 +5,13 @@ BOOST_AUTO_TEST_CASE ( logic_expression_test)
 {
 	using namespace hyper::logic;
 
+	BOOST_CHECK(generate_node("x"));
+	BOOST_CHECK(generate_node("x::value"));
+	BOOST_CHECK(generate_node("22"));
+	BOOST_CHECK(generate_node("33.0"));
+	BOOST_CHECK(generate_node("true"));
+	BOOST_CHECK(!generate_node("equal(x, y)"));
+
 	funcDefList list;
 	list.add("equal", 2);
 	list.add("less", 2);
@@ -55,4 +62,5 @@ BOOST_AUTO_TEST_CASE ( logic_expression_test)
 	BOOST_CHECK(r1.e < r3.e);
 	BOOST_CHECK(! (r1.e < r4.e));
 	BOOST_CHECK(! (r3.e < r6.e));
+
 }

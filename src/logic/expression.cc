@@ -154,34 +154,20 @@ struct validate_func_adaptor {
 };
 
 template <typename Iterator, typename Lexer>
-struct  grammar_expression : qi::grammar<Iterator, function_call(), qi::in_state_skipper<Lexer> >
+struct grammar_node : qi::grammar<Iterator, expression(), qi::in_state_skipper<Lexer> >
 {
     typedef qi::in_state_skipper<Lexer> white_space_;
 
 	template <typename TokenDef>
-    grammar_expression(const TokenDef& tok, const funcDefList& funcs) : 
-		grammar_expression::base_type(func_call, "expression"),
-		validate_func(funcs)
+    grammar_node(const TokenDef& tok) :
+		grammar_node::base_type(start, "node")
 	{
-	    using qi::lit;
-        using qi::lexeme;
-        using ascii::char_;
         using namespace qi::labels;
 
 		using phoenix::at_c;
 		using phoenix::val;
-		using phoenix::push_back;
 
-		expression_ =
-			primary_expr.alias()
-				;
-
-		primary_expr =
-					func_call						[_val = _1]
-			       |node_							[_val = _1]
-			;
-
-		node_ = 
+		start  = 
 				(
 				  cst_int				   
 				| cst_double			   
@@ -189,7 +175,7 @@ struct  grammar_expression : qi::grammar<Iterator, function_call(), qi::in_state
 				| cst_bool
 				| var_inst 			   
 				)			   [_val = _1]
-			 ;
+				;
 
 		cst_int = tok.constant_int		[at_c<0>(_val) = _1]
 				;
@@ -207,6 +193,55 @@ struct  grammar_expression : qi::grammar<Iterator, function_call(), qi::in_state
 		var_inst = tok.scoped_identifier [_val = _1]
 			;
 
+		start.name("node declaration");
+		cst_int.name("const int");
+		cst_double.name("const double");
+		cst_string.name("const string");
+		cst_bool.name("const bool");
+		var_inst.name("var instance");
+
+#if 0
+		debug(start);
+		debug(cst_int);
+		debug(cst_double);
+		debug(cst_bool);
+		debug(var_inst);
+#endif
+
+		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
+	}
+
+	qi::rule<Iterator, expression(), white_space_> start;
+	qi::rule<Iterator, Constant<int>(), white_space_> cst_int;
+	qi::rule<Iterator, Constant<double>(), white_space_> cst_double;
+	qi::rule<Iterator, Constant<bool>(), white_space_> cst_bool;
+	qi::rule<Iterator, Constant<std::string>(), white_space_> cst_string;
+	qi::rule<Iterator, std::string(), white_space_> var_inst;
+};
+
+template <typename Iterator, typename Lexer>
+struct  grammar_expression : qi::grammar<Iterator, function_call(), qi::in_state_skipper<Lexer> >
+{
+    typedef qi::in_state_skipper<Lexer> white_space_;
+
+	template <typename TokenDef>
+    grammar_expression(const TokenDef& tok, const funcDefList& funcs) : 
+		grammar_expression::base_type(func_call, "expression"),
+		validate_func(funcs),
+		node(tok)
+	{
+	    using qi::lit;
+        using namespace qi::labels;
+
+		using phoenix::at_c;
+		using phoenix::val;
+		using phoenix::push_back;
+
+		expression_ =
+					 func_call						
+			        |node							
+					;
+
 		func_call = tok.scoped_identifier [at_c<0>(_val) = _1]
 				  >> lit('(')
 				  >> -(
@@ -218,23 +253,10 @@ struct  grammar_expression : qi::grammar<Iterator, function_call(), qi::in_state
 				  ;
 
 		expression_.name("expression declaration");
-		primary_expr.name("primary expression declaration");
-		node_.name("node declaration");
-		cst_int.name("const int");
-		cst_double.name("const double");
-		cst_string.name("const string");
-		cst_bool.name("const bool");
-		var_inst.name("var instance");
 		func_call.name("function declaration instance");
 
 #if 0
 		debug(expression_);
-		debug(primary_expr);
-		debug(node_);
-		debug(cst_int);
-		debug(cst_double);
-		debug(cst_bool);
-		debug(var_inst);
 		debug(func_call);
 #endif
 
@@ -242,15 +264,10 @@ struct  grammar_expression : qi::grammar<Iterator, function_call(), qi::in_state
 	}
 
 	qi::rule<Iterator, expression(), white_space_> expression_;
-	qi::rule<Iterator, expression(), white_space_> node_, primary_expr;
-	qi::rule<Iterator, Constant<int>(), white_space_> cst_int;
-	qi::rule<Iterator, Constant<double>(), white_space_> cst_double;
-	qi::rule<Iterator, Constant<bool>(), white_space_> cst_bool;
-	qi::rule<Iterator, Constant<std::string>(), white_space_> cst_string;
-	qi::rule<Iterator, std::string(), white_space_> var_inst;
 	qi::rule<Iterator, function_call(), white_space_> func_call;
 
 	function<validate_func_adaptor> validate_func;
+	grammar_node<Iterator, Lexer> node;
 };
 
 struct are_expression_equal : public boost::static_visitor<bool>
@@ -291,6 +308,42 @@ struct are_expression_equal : public boost::static_visitor<bool>
 
 namespace hyper {
 	namespace logic {
+		boost::optional<expression> generate_node(const std::string& expr)
+		{
+    		typedef std::string::const_iterator base_iterator_type;
+
+    		typedef lex::lexertl::token<
+    		    base_iterator_type, boost::mpl::vector<std::string, int , double> 
+    		> token_type;
+
+    		// Here we use the lexertl based lexer engine.
+    		typedef lex::lexertl::lexer<token_type> lexer_type;
+
+    		// This is the token definition type (derived from the given lexer type).
+    		typedef expression_lexer<lexer_type> expression_lexer;
+
+    		// this is the iterator type exposed by the lexer 
+    		typedef expression_lexer::iterator_type iterator_type;
+
+    		// this is the type of the grammar to parse
+    		typedef grammar_node<iterator_type, expression_lexer::lexer_def> hyper_node;
+
+			expression_lexer our_lexer;
+			hyper_node g(our_lexer);
+
+			base_iterator_type it = expr.begin();
+			iterator_type iter = our_lexer.begin(it, expr.end());
+			iterator_type end = our_lexer.end();
+			expression result;
+			bool r;
+			r  = phrase_parse(iter, end, g, qi::in_state("WS")[our_lexer.self], result);
+
+			if (r && iter == end)
+				return result;
+			else
+				return boost::none;
+		}
+
 		generate_return generate(const std::string& expr, const funcDefList& funcs)
 		{
     		typedef std::string::const_iterator base_iterator_type;
