@@ -806,6 +806,18 @@ struct output_logic_rules {
 	}
 };
 
+struct import_types {
+	std::string name;
+
+	import_types(const std::string& name) : name(name) {}
+
+	bool operator() (const type& t) {
+		std::string scope = scope::get_scope(t.name);
+
+		return (t.is_user_defined() && scope == name);
+	}
+};
+
 void
 universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const
 {
@@ -824,7 +836,7 @@ universe::dump_ability_import_module_impl(std::ostream& oss, const std::string& 
 
 	namespaces n(oss, name);
 	oss << "\t\t\tvoid import_funcs(model::ability &a) {" << std::endl;
-	std::vector<type> types = tList.select(boost::bind(&type::is_user_defined, _1));
+	std::vector<type> types = tList.select(import_types(name));
 
 	std::for_each(types.begin(), types.end(), output_logic_type(oss));
 	std::for_each(funcs.begin(), funcs.end(), output_import_helper(oss, *this));

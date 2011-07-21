@@ -240,7 +240,8 @@ struct add_import_funcs
 
 	void operator () (const std::string& s) const
 	{
-		oss << "\t\t\t\t\t" << s << "::import_funcs(*this);" << std::endl;
+		if (s != "")
+			oss << "\t\t\t\t\t" << s << "::import_funcs(*this);" << std::endl;
 	}
 };
 
@@ -300,7 +301,10 @@ ability::dump(std::ostream& oss, const universe& u) const
 
 	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
 	oss << std::endl;
-	std::for_each(deps.fun_depends.begin(), deps.fun_depends.end(), dump_depends(oss, "import.hh"));
+
+	std::set<std::string> import_depends(type_depends);
+	import_depends.insert(deps.fun_depends.begin(), deps.fun_depends.end());; 
+	std::for_each(import_depends.begin(), import_depends.end(), dump_depends(oss, "import.hh"));
 	oss << std::endl;
 	std::for_each(tasks.begin(), tasks.end(), add_task_header(oss, name_));
 	oss << "#include <model/ability_impl.hh>" << std::endl;
@@ -323,7 +327,7 @@ ability::dump(std::ostream& oss, const universe& u) const
 	oss << "{\n" ;
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy_symbol(oss));
 	std::for_each(readable_list.begin(), readable_list.end(), add_proxy_symbol(oss));
-	std::for_each(deps.fun_depends.begin(), deps.fun_depends.end(), add_import_funcs(oss));
+	std::for_each(import_depends.begin(), import_depends.end(), add_import_funcs(oss));
 	std::for_each(tasks.begin(), tasks.end(), add_task_declaration(oss));
 	oss << "\t\t\t\t}\n;" << std::endl;
 	oss << "\t\t\t};" << std::endl;
