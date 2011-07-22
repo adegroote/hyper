@@ -228,6 +228,7 @@ namespace hyper {
 			client_db(*this),
 			base_id(0),
 			updater(*this),
+			setter(*this),
 			name(name_),
 			impl(new ability_impl(*this, level))
 		{

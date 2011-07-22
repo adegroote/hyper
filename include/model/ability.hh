@@ -8,6 +8,7 @@
 
 #include <model/discover_root.hh>
 #include <model/execute.hh>
+#include <model/setter.hh>
 #include <model/update.hh>
 
 #include <boost/scoped_ptr.hpp>
@@ -47,6 +48,8 @@ namespace hyper {
 			model::updater updater;
 			network::proxy_serializer serializer;
 			network::local_proxy proxy;
+			model::setter setter;
+
 			std::string name;
 			model::functions_map f_map;
 
@@ -59,6 +62,9 @@ namespace hyper {
 
 			template <typename T>
 			void export_variable(const std::string& name, T& value);
+
+			template <typename T>
+			void export_writable_variable(const std::string& name, T& value);
 
 			template <typename T>
 			void export_variable(const std::string& name, T& value, 
