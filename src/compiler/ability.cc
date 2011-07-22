@@ -232,6 +232,19 @@ struct add_proxy_symbol
 	}
 };
 
+struct add_setter_symbol
+{
+	std::ostream& oss;
+
+	add_setter_symbol(std::ostream& oss_) : oss(oss_) {};
+
+	void operator() (const std::pair<std::string, symbol>& p) const
+	{
+		oss << "\t\t\t\t\texport_writable_variable(" << quoted_string(p.second.name) << ", ";
+		oss << p.second.name << ");\n";
+	}
+};
+
 struct add_import_funcs
 {
 	std::ostream& oss;
@@ -327,6 +340,7 @@ ability::dump(std::ostream& oss, const universe& u) const
 	oss << "{\n" ;
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy_symbol(oss));
 	std::for_each(readable_list.begin(), readable_list.end(), add_proxy_symbol(oss));
+	std::for_each(controlable_list.begin(), controlable_list.end(), add_setter_symbol(oss));
 	std::for_each(import_depends.begin(), import_depends.end(), add_import_funcs(oss));
 	std::for_each(tasks.begin(), tasks.end(), add_task_declaration(oss));
 	oss << "\t\t\t\t}\n;" << std::endl;
