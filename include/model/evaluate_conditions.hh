@@ -82,7 +82,7 @@ namespace hyper {
 									boost::array<condition, N> condition_calls_,
 									boost::array<std::string, M> update_status_) :
 					a(a_), is_computing(false), condition_calls(condition_calls_),
-					updater(a, update_status_)
+					updater(a_, update_status_)
 				{}
 
 
@@ -91,7 +91,7 @@ namespace hyper {
 									const typename remote_values::remote_vars_conf& vars):
 					a(a_), is_computing(false), 
 					condition_calls(condition_calls_), 
-					updater(a, vars)
+					updater(a_, vars)
 				{}
 
 				evaluate_conditions(A& a_, 
@@ -100,7 +100,7 @@ namespace hyper {
 									const typename remote_values::remote_vars_conf& vars):
 					a(a_), is_computing(false), 
 					condition_calls(condition_calls_), 
-					updater(a, update_status_, vars)
+					updater(a_, update_status_, vars)
 				{}
 
 				void async_compute(condition_execution_callback cb)
