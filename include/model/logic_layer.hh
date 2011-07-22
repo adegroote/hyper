@@ -17,12 +17,18 @@ namespace hyper {
 	namespace model {
 		struct ability;
 
+		typedef std::pair<std::string, std::string> unification_pair;
+		typedef std::pair<std::string, logic::expression> unification_expr;
+		typedef std::vector<unification_pair> unify_pair_list;
+		typedef std::vector<unification_expr> unify_expr_list;
+
 		struct logic_constraint
 		{
 			size_t id;
 			std::string src;
 
 			std::string constraint;
+			unify_pair_list unify_list;
 			bool repeat;
 		};
 
@@ -38,6 +44,9 @@ namespace hyper {
 		{
 			logic_constraint ctr;	
 			logic_layer_cb cb;
+
+			/* Unification context */
+			unify_expr_list unify_list;
 
 			/* Context for executing remote rqst */
 			logic::function_call call_exec;
@@ -121,6 +130,8 @@ namespace hyper {
 			void abort(const std::string& src, network::identifier id);
 
 			private:
+			void handle_unification_computation(const boost::system::error_code& e,
+												logic_ctx_ptr logic_ctx);
 			void handle_exec_computation(const boost::system::error_code&e,
 										 logic_ctx_ptr logic_ctx);
 			void handle_eval_task_tree(bool success, logic_ctx_ptr ptr);

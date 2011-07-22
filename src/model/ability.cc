@@ -126,6 +126,7 @@ namespace {
 			ctr.constraint = r.constraint;
 			ctr.id = r.id;
 			ctr.src = r.src;
+			ctr.unify_list = r.unify_list;
 			ctr.repeat = r.repeat;
 
 			a.logger(INFORMATION) << ctr << " Handling ";

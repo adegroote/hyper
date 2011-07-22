@@ -83,14 +83,21 @@ namespace hyper {
 			m[s] = boost::bind(f, boost::ref(a), boost::ref(var), _1, _2);
 		}
 
+		inline
 		void setter::set(const std::string& s, const logic::expression& e, setter::cb_fun cb) const
 		{
 			map_fun::const_iterator it;
 			it = m.find(s);
-			if (it == m.end())
+			if (it == m.end()) {
 				cb(boost::asio::error::invalid_argument);
-			else
+			} else
 				it->second(e, cb);
+		}
+
+		inline
+		void setter::set(const std::pair<std::string, const logic::expression>& p, cb_fun cb) const
+		{
+			return set(compiler::scope::get_identifier(p.first), p.second, cb);
 		}
 	}
 }

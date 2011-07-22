@@ -29,6 +29,7 @@ namespace hyper {
 				template <typename T>
 				void add(const std::string& s, T& var);
 				void set(const std::string& s, const logic::expression& e, cb_fun cb) const;
+				void set(const std::pair<std::string, const logic::expression>& p, cb_fun cb) const;
 		};
 	}
 }
