@@ -89,6 +89,9 @@ namespace hyper {
 
 		void abortable_computation::compute(cb_type cb_) 
 		{
+			if (seq.empty()) 
+				return cb_(boost::system::error_code());
+
 			cb = cb_;
 			index = 0;
 			user_ask_abort = false;
