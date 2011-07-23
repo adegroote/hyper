@@ -45,7 +45,6 @@ namespace {
 
 		output_variant operator() (const hyper::network::inform_new_agent& msg) const
 		{
-			std::cout << "new agent msg" << std::endl;
 			std::ostringstream oss;
 			oss << "New agent(s) in the system : ";
 			std::copy(msg.new_agents.begin(), msg.new_agents.end(),
@@ -76,7 +75,7 @@ namespace {
 		{
 			boost::posix_time::ptime oldest(boost::posix_time::microsec_clock::local_time());
 			oldest -= delay_;
-			return (msg.date < oldest);
+			return (msg.date > oldest);
 		}
 	};
 
