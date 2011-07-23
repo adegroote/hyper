@@ -747,7 +747,8 @@ struct output_logic_type {
 	output_logic_type(std::ostream& oss) : oss(oss) {}
 
 	void operator() (const type& t) {
-		oss << "\t\t\t\ta.logic().add_logic_type(" << quoted_string(t.type_name()) << ");\n";
+		oss << "\t\t\t\ta.logic().add_equalable_type<" << t.type_name();
+		oss << ">(" << quoted_string(t.type_name()) << ");\n";
 	}
 };
 

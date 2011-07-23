@@ -12,6 +12,7 @@ namespace hyper {
 		template <typename T>
 		void logic_layer::add_equalable_type(std::string s) 
 		{
+			engine.add_type(s);
 			hyper::model::add_equalable_type<T>(a_.f_map, s);
 			hyper::model::add_logic_equalable_type(engine, s);
 		}

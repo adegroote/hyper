@@ -110,9 +110,6 @@ namespace hyper {
 			add_numeric_type<double>("double");
 		}
 
-		void logic_layer::add_logic_type(const std::string& type) {
-			engine.add_type(type);
-		}
 #define CHECK_INTERRUPT if (ctx->must_interrupt) \
 							return handle_failure(ctx, make_error_code(boost::system::errc::interrupted));
 
