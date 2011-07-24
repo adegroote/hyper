@@ -251,6 +251,7 @@ namespace hyper {
 				return handler(false);
 
 			if (!res.empty()) {
+				cond.tasks.clear();
 				std::transform(res.begin(), res.end(), std::back_inserter(cond.tasks),
 						generate_task_eval());
 
