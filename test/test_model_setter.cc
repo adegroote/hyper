@@ -35,6 +35,8 @@ namespace {
 			setter.add("y", y);
 			setter.add("z", z);
 			setter.add("pos", pos);
+
+			start();
 		}
 	};
 
@@ -47,6 +49,8 @@ namespace {
 		{
 			export_variable("j", j);
 			export_variable("g", g);
+
+			start();
 		}
 	};
 

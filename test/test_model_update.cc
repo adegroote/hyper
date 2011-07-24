@@ -19,6 +19,7 @@ namespace {
 			export_variable("x", x);
 			export_variable("y", y);
 			export_variable("z", z);
+			start();
 		}
 	};
 
@@ -29,6 +30,7 @@ namespace {
 		goal_ability() : hyper::model::ability("goal")
 		{
 			export_variable("j", j);
+			start();
 		}
 	};
 

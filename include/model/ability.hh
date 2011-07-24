@@ -86,6 +86,9 @@ namespace hyper {
 
 			virtual ~ability();
 
+			protected:
+			void start();
+
 			private:
 			template <typename T>
 			void export_variable_helper(const std::string& name, const T& value)

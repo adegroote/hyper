@@ -15,7 +15,9 @@ namespace hyper {
 			ability_test(const std::string& name_) : 
 				ability(name_ +  "_test", DEBUG_ALL), target(name_),
 				thr(boost::bind(&ability::run, this))
-			{}
+			{
+				start();
+			}
 
 			private:
 			template <typename T>

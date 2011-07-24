@@ -343,7 +343,8 @@ ability::dump(std::ostream& oss, const universe& u) const
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_setter_symbol(oss));
 	std::for_each(import_depends.begin(), import_depends.end(), add_import_funcs(oss));
 	std::for_each(tasks.begin(), tasks.end(), add_task_declaration(oss));
-	oss << "\t\t\t\t}\n;" << std::endl;
+	oss << "\t\t\t\t\tstart();\n;";
+	oss << "\t\t\t\t}\n;";
 	oss << "\t\t\t};" << std::endl;
 }
 

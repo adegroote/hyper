@@ -83,6 +83,8 @@ namespace {
 			f_map.add("distance", new hyper::model::function_execution<distance>());
 			f_map.add("add_int", new hyper::model::function_execution<add<int> >());
 			f_map.add("square_int", new hyper::model::function_execution<square<int> >());
+
+			start();
 		}
 	};
 
@@ -93,6 +95,8 @@ namespace {
 		goal_ability() : hyper::model::ability("goal")
 		{
 			export_variable("goal", goal);
+
+			start();
 		}
 	};
 }

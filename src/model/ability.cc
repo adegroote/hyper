@@ -232,23 +232,25 @@ namespace hyper {
 			setter(*this),
 			name(name_),
 			impl(new ability_impl(*this, level))
+		{};
+
+		void ability::start()
 		{
 			const std::vector<boost::asio::ip::tcp::endpoint>& addrs = impl->serv.local_endpoints();
 			bool res = name_client.register_name(name, addrs);
 			if (res) {
-				std::cout << "Succesfully registring " << name_ << " on " ;
+				std::cout << "Succesfully registring " << name << " on " ;
 				std::copy(addrs.begin(), addrs.end(), 
 						std::ostream_iterator<boost::asio::ip::tcp::endpoint>(std::cout, " "));
 				std::cout << std::endl;
 			}
 			else
-				std::cout << "failed to register " << name_ << std::endl;
+				std::cout << "failed to register " << name << std::endl;
 
 			boost::shared_ptr<get_list_agents> ptr = boost::make_shared<get_list_agents>();
 			client_db["root"].async_request(ptr->first, ptr->second,
 					boost::bind(&ability::handle_list_agents, this, boost::asio::placeholders::error, _2, ptr));
-
-		};
+		}
 
 		void ability::handle_list_agents(const boost::system::error_code& e, 
 									     network::identifier id,
