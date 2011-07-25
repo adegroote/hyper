@@ -167,7 +167,8 @@ namespace hyper {
 		{
 			CHECK_INTERRUPT
 
-			a_.logger(DEBUG) <<  ctx->ctr << " End execution " << success << std::endl;
+			a_.logger(DEBUG) <<  ctx->ctr << " End execution with ";
+			a_.logger(DEBUG) << (success ? "success" : "failure")  << std::endl;
 			if (success) 
 				handle_success(ctx);
 			else 

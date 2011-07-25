@@ -22,6 +22,7 @@ recipe::recipe(const std::string& name, ability& a):
 
 void recipe::handle_execute(const boost::system::error_code& e)
 {
+	a.logger(DEBUG) << "[Recipe " << name <<"] End real execution " << e << std::endl;
 	end_execute(!e);
 }
 
@@ -48,8 +49,8 @@ void recipe::execute(recipe_execution_callback cb)
 	is_running = true;
 	must_interrupt = false;
 
-	async_evaluate_preconditions(
-			boost::bind(&recipe::handle_evaluate_preconditions, this, _1));
+	a.logger(DEBUG) << "[Recipe " << name <<"] Start real execution " << std::endl;
+	do_execute(boost::bind(&recipe::handle_execute, this, _1));
 }
 
 void recipe::abort()
@@ -58,12 +59,3 @@ void recipe::abort()
 	if (is_running && computation)
 		computation->abort();
 }
-
-void recipe::handle_evaluate_preconditions(conditionV error)
-{
-	if (!error.empty() || must_interrupt)
-		return end_execute(false);
-
-	do_execute(boost::bind(&recipe::handle_execute, this, _1));
-}
-

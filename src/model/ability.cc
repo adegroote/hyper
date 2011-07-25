@@ -100,6 +100,7 @@ namespace {
 			delete ans;
 		}
 
+
 		void handle_async_exec_completion(const boost::system::error_code& e,
 				model::logic_constraint ctr) const
 		{
@@ -114,7 +115,19 @@ namespace {
 			} else
 				ans->state = network::request_constraint_answer::SUCCESS;
 
-			a.logger(DEBUG) << ctr << " Sending answer " << ans->state << std::endl;
+			a.logger(DEBUG) << ctr << " Sending answer " ;
+			switch(ans->state) {
+				case network::request_constraint_answer::SUCCESS:
+					a.logger(DEBUG) << "success";
+					break;
+				case network::request_constraint_answer::FAILURE:
+					a.logger(DEBUG) << "failure";
+					break;
+				case network::request_constraint_answer::INTERRUPTED:
+					a.logger(DEBUG) << "interrupted";
+					break;
+			}
+			a.logger(DEBUG)	<< std::endl;
 			a.client_db[ctr.src].async_write(*ans,
 					boost::bind(&ability_visitor::handle_constraint_answer, this, 
 								 boost::asio::placeholders::error,  ans));
@@ -186,6 +199,7 @@ namespace {
 
 		output_variant operator() (const network::abort& abort) const
 		{
+			a.logger(INFORMATION) << "[" << abort.src << ", " << abort.id << "] Abort requested " << std::endl;
 			a.logic().abort(abort.src, abort.id);
 			return boost::mpl::void_();
 		}

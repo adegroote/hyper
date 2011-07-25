@@ -24,7 +24,6 @@ namespace hyper {
 				bool must_interrupt;
 				std::vector<recipe_execution_callback> pending_cb;
 
-				void handle_evaluate_preconditions(conditionV error);
 				void handle_execute(const boost::system::error_code& e);
 				void end_execute(bool res);
 
