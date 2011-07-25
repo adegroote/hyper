@@ -420,7 +420,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		std::string next_indent = "\t" + indent;
 
 		std::ostringstream oss;
-		oss << indent << "push_back(new hyper::model::compute_wait_expression(a.io_s, boost::posix_time::milliseconds(20), \n";
+		oss << indent << "push_back(new hyper::model::compute_wait_expression(a.io_s, boost::posix_time::milliseconds(50), \n";
 		oss << abortable_function(identifier, w.content) << ",";
 		oss << next_indent << identifier << "));\n";
 
@@ -993,7 +993,6 @@ namespace hyper {
 			oss << indent << "void " << exported_name();
 			oss << "::do_execute(hyper::model::abortable_computation::cb_type cb)\n";
 			oss << indent << "{\n";
-			oss << next_indent << "std::cerr << __PRETTY_FUNCTION__ << std::endl;" << std::endl;
 			oss << next_indent << "computation = new exec_driver(a);\n";
 			oss << next_indent << "computation->compute(cb);\n";
 			oss << indent << "}\n";
