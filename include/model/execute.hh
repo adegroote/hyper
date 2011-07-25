@@ -48,7 +48,7 @@ namespace hyper {
 
 			public:
 				void add(const std::string& s, function_execution_base* f);
-				function_execution_base* get(const std::string& s);
+				function_execution_base* get(const std::string& s) const;
 		};
 	}
 }
