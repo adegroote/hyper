@@ -8,7 +8,7 @@
 
 namespace hyper {
 	namespace model {
-		typedef boost::function<void (conditionV)> condition_execution_callback;
+		typedef boost::function<void (const boost::system::error_code&e, conditionV)> condition_execution_callback;
 		typedef boost::function<void (bool)> task_execution_callback;
 		struct task;
 		typedef boost::shared_ptr<task> task_ptr;

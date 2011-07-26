@@ -21,9 +21,12 @@ namespace hyper {
 
 #define CHECK_INTERRUPT if (must_interrupt) return end_execute(false);
 
-		void task::handle_final_postcondition_handle(conditionV failed)
+		void task::handle_final_postcondition_handle(const boost::system::error_code &e, conditionV failed)
 		{
 			CHECK_INTERRUPT
+
+			if (e)
+				return end_execute(false);
 
 			if (!failed.empty()) {
 				a.logger(DEBUG) << "[Task " << name << "] Still have some failed postcondition : \n";
@@ -47,12 +50,15 @@ namespace hyper {
 			// check the post-conditions to be sure that everything is ok
 			return async_evaluate_postconditions(boost::bind(
 						&task::handle_final_postcondition_handle,
-						this, _1));
+						this, _1, _2));
 		}
 
-		void task::async_evaluate_recipe_preconditions(conditionV failed, size_t i)
+		void task::async_evaluate_recipe_preconditions(const boost::system::error_code& e, conditionV failed, size_t i)
 		{
 			CHECK_INTERRUPT
+
+			if (e)
+				return end_execute(false);
 
 			recipe_states[i].failed = failed;
 			recipe_states[i].index = i;
@@ -67,7 +73,7 @@ namespace hyper {
 				if (electable)
 					return recipes[i+1]->async_evaluate_preconditions(
 							boost::bind(&task::async_evaluate_recipe_preconditions,
-								this, _1, i+1));
+								this, _1, _2, i+1));
 			} 
 
 			a.logger(DEBUG) << "[Task " << name << "] Finish to evaluate recipe preconditions" << std::endl;
@@ -87,9 +93,12 @@ namespace hyper {
 					boost::bind(&task::handle_execute, this, _1));
 		}
 
-		void task::handle_precondition_handle(conditionV failed)
+		void task::handle_precondition_handle(const boost::system::error_code& e, conditionV failed)
 		{
 			CHECK_INTERRUPT
+
+			if (e)
+				return end_execute(false);
 
 			/* If some pre-conditions are not ok, something is wrong, just
 			 * returns false */
@@ -149,11 +158,14 @@ namespace hyper {
 			/* compute precondition for all recipe */
 			recipes[*first_electable]->async_evaluate_preconditions(
 					boost::bind(&task::async_evaluate_recipe_preconditions,
-								this, _1, 0));
+								this, _1, _2, 0));
 		}
 
-		void task::handle_initial_postcondition_handle(conditionV failed)
+		void task::handle_initial_postcondition_handle(const boost::system::error_code& e, conditionV failed)
 		{
+			if (e) 
+				return end_execute(false);
+
 			CHECK_INTERRUPT
 			/* If all post-conditions are ok, no need to execute the task
 			 * anymore */
@@ -168,7 +180,7 @@ namespace hyper {
 			a.logger(DEBUG) << "[Task " << name << "] Evaluation pre-condition" << std::endl;
 			return async_evaluate_preconditions(boost::bind(
 						&task::handle_precondition_handle, 
-						this, _1));
+						this, _1, _2));
 		}
 
 		void task::execute(task_execution_callback cb)
@@ -191,11 +203,11 @@ namespace hyper {
 			if (has_postconditions())
 				return async_evaluate_postconditions(boost::bind(
 							&task::handle_initial_postcondition_handle, 
-							this, _1));
+							this, _1, _2));
 			else
 				return async_evaluate_preconditions(boost::bind(
 							&task::handle_precondition_handle, 
-							this, _1));
+							this, _1, _2));
 
 		}
 

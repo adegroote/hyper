@@ -128,12 +128,16 @@ namespace hyper {
 
 		void compute_task_tree::handle_eval_all_preconditions(
 				cond_logic_evaluation& cond, task_logic_evaluation& task,
+				const boost::system::error_code& e,
 				conditionV failed, compute_task_tree::cb_type handler)
 		{
 			CHECK_INTERRUPT 
 
 			layer.a_.logger(DEBUG) << ctx.ctr << " End evaluation precondition for task ";
-			layer.a_.logger(DEBUG) << task.name << std::endl;
+			layer.a_.logger(DEBUG) << task.name << " " << e << std::endl;
+
+			if (e)
+				handler(false);
 
 			task.conds.resize(failed.size());
 			std::copy(failed.begin(), failed.end(), task.conds.begin());
@@ -167,7 +171,7 @@ namespace hyper {
 				tree.async_evaluate_preconditions(*task_eval, 
 						boost::bind(&compute_task_tree::handle_eval_all_preconditions, 
 							&tree, boost::ref(cond), boost::ref(*task_eval), 
-							_1, handler));
+							_1, _2, handler));
 			}
 		};
 

@@ -30,7 +30,7 @@ namespace {
 
 		virtual void async_evaluate_preconditions(condition_execution_callback cb) 
 		{
-			cb(hyper::model::conditionV());
+			cb(boost::system::error_code(), hyper::model::conditionV());
 		}
 
 		virtual void do_execute(abortable_computation::cb_type cb)
@@ -48,7 +48,7 @@ namespace {
 
 		virtual void async_evaluate_preconditions(condition_execution_callback cb) 
 		{
-			cb(hyper::model::conditionV());
+			cb(boost::system::error_code(), hyper::model::conditionV());
 		}
 
 		virtual void do_execute(abortable_computation::cb_type cb)
@@ -68,7 +68,7 @@ namespace {
 		{
 			hyper::model::conditionV error;
 			error.push_back("failed condition");
-			cb(error);
+			cb(boost::system::error_code(), error);
 		}
 
 		virtual void do_execute(abortable_computation::cb_type cb)
@@ -91,15 +91,6 @@ namespace {
 		{
 		};
 
-		void handle_third_test(bool res)
-		{
-			BOOST_CHECK(!res);
-			BOOST_CHECK(pos.x == 42);
-			BOOST_CHECK(pos.y == 3);
-			BOOST_CHECK(pos.z == 42 * 3);
-			valid_test++;
-		}
-
 		void handle_second_test(bool res)
 		{
 			BOOST_CHECK(res);
@@ -107,7 +98,6 @@ namespace {
 			BOOST_CHECK(pos.y == 3);
 			BOOST_CHECK(pos.z == 42 * 3);
 			valid_test++;
-			div_.execute(boost::bind(&recipe_test::handle_third_test, this, _1));
 		}
 
 		void handle_first_test(bool res)
@@ -151,7 +141,7 @@ BOOST_AUTO_TEST_CASE ( model_recipe_test )
 
 	// sleep a bit to be sure that everything happens
 	boost::this_thread::sleep(boost::posix_time::milliseconds(10)); 
-	BOOST_CHECK(test.valid_test == 3);
+	BOOST_CHECK(test.valid_test == 2);
 
 	pos_.stop();
 	thr2.join();

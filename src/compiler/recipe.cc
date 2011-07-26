@@ -985,7 +985,7 @@ namespace hyper {
 			oss << std::endl;
 			oss << indent << "{" << std::endl;
 			if (pre.empty()) 
-				oss << next_indent << "cb(hyper::model::conditionV());\n";
+				oss << next_indent << "cb(boost::system::error_code(), hyper::model::conditionV());\n";
 			else
 				oss << next_indent << "preds.async_compute(cb);\n"; 
 			oss << indent << "}" << std::endl;

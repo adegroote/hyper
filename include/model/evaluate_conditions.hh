@@ -64,7 +64,9 @@ namespace hyper {
 
 				void handle_update(const boost::system::error_code& e)
 				{
-					// XXX deal correctly with e
+					if (e)
+						return handle_terminaison(e);
+
 					for (size_t i = 0; i != N; ++i) {
 						a.io_s.post(boost::bind(condition_calls[i].first, boost::cref(a), 
 															  boost::ref(success[i]),
@@ -126,16 +128,27 @@ namespace hyper {
 					if (!is_terminated())
 						return;
 
-					// generate a vector for condition not enforced
-					conditionV res;
-					for (size_t j = 0; j != N; ++j) {
-						if (!success[j])
-							res.push_back(condition_calls[j].second);
-					}
+					handle_terminaison(boost::system::error_code());
 
-					// for each callback call it
-					for (size_t j = 0; j < callbacks.size(); ++j) {
-						a.io_s.post(boost::bind(callbacks[j],res));
+				}
+
+				void handle_terminaison(const boost::system::error_code& e)
+				{
+					if (e) {
+						for (size_t j = 0; j < callbacks.size(); ++j)
+							a.io_s.post(boost::bind(callbacks[j], e, conditionV()));
+					} else {
+						// generate a vector for condition not enforced
+						conditionV res;
+						for (size_t j = 0; j != N; ++j) {
+							if (!success[j])
+								res.push_back(condition_calls[j].second);
+						}
+
+						// for each callback call it
+						for (size_t j = 0; j < callbacks.size(); ++j) {
+							a.io_s.post(boost::bind(callbacks[j], e, res));
+						}
 					}
 
 					is_computing = false;

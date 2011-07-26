@@ -44,24 +44,26 @@ struct async_test {
 			(check_i, "check_i")(check_j, "check_j")), a_(a)
 	{}
 
-	void handle_second_test(hyper::model::conditionV vec)
+	void handle_second_test(const boost::system::error_code& e, hyper::model::conditionV vec)
 	{
+		BOOST_CHECK(!e);
 		BOOST_CHECK(vec.size() == 1);
 		BOOST_CHECK(vec[0] == "check_j");
 		a_.tested++;
 	}
 
-	void handle_first_test(hyper::model::conditionV vec)
+	void handle_first_test(const boost::system::error_code& e, hyper::model::conditionV vec)
 	{
 		BOOST_CHECK(vec.size() == 0);
+		BOOST_CHECK(!e);
 		a_.tested++;
 		a_.j = 4242;
-		eval.async_compute(boost::bind(&async_test::handle_second_test, this, _1));
+		eval.async_compute(boost::bind(&async_test::handle_second_test, this, _1, _2));
 	}
 
 	void test()
 	{
-		eval.async_compute(boost::bind(&async_test::handle_first_test, this, _1));
+		eval.async_compute(boost::bind(&async_test::handle_first_test, this, _1, _2));
 	}
 };
 }

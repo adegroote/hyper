@@ -111,7 +111,8 @@ namespace hyper {
 				void handle_eval_constraint(task_logic_evaluation& task, 
 											  size_t i, bool res,  cb_type );
 				void handle_eval_all_preconditions(cond_logic_evaluation&,
-					task_logic_evaluation&, conditionV, cb_type);
+					task_logic_evaluation&, const boost::system::error_code&,
+					conditionV, cb_type);
 				void start_eval_constraint(task_logic_evaluation&, cb_type );
 				void async_evaluate_preconditions(task_logic_evaluation&, 
 												 condition_execution_callback );
