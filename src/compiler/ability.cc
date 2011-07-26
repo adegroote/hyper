@@ -102,29 +102,28 @@ struct compute_type_depends
 	}
 };
 
-
 struct compute_fun_depends
 {
 	depends& d;
-	const std::string& name;
-	const universe& u;
+       const std::string& name;
+       const universe& u;
 
-	compute_fun_depends(depends& d_, const std::string& n, const universe& u) :
-		d(d_), name(n), u(u) {};
+       compute_fun_depends(depends& d_, const std::string& n, const universe& u) :
+               d(d_), name(n), u(u) {};
 
-	void operator() (const task& t) const
-	{
-		void (*f)(const expression_ast&, const std::string&, const universe&,  depends&)
-			= &add_depends;
-		std::for_each(t.pre_begin(), t.pre_end(), 
-				boost::bind(f, _1, boost::cref(name),
-								   boost::cref(u),
-								   boost::ref(d)));
-		std::for_each(t.post_begin(), t.post_end(), 
-				boost::bind(f, _1, boost::cref(name),
-								   boost::cref(u),
-								   boost::ref(d)));
-	}
+       void operator() (const task& t) const
+       {
+               void (*f)(const expression_ast&, const std::string&, const universe&,  depends&)
+                      = &add_depends;
+               std::for_each(t.pre_begin(), t.pre_end(), 
+                               boost::bind(f, _1, boost::cref(name),
+                                                  boost::cref(u),
+                                                  boost::ref(d)));
+               std::for_each(t.post_begin(), t.post_end(), 
+                               boost::bind(f, _1, boost::cref(name),
+                                                  boost::cref(u),
+                                                  boost::ref(d)));
+       }
 };
 
 struct print_initializer_helpers : boost::static_visitor<std::string>
@@ -258,14 +257,13 @@ struct add_import_funcs
 	}
 };
 
-
 depends 
 ability::get_function_depends(const universe& u) const
 {
-	depends d;
-	compute_fun_depends fun_deps(d, name_, u);
-	std::for_each(tasks.begin(), tasks.end(), fun_deps);
-	return d;
+       depends d;
+       compute_fun_depends fun_deps(d, name_, u);
+       std::for_each(tasks.begin(), tasks.end(), fun_deps);
+       return d;
 }
 
 struct add_task_header
@@ -346,6 +344,18 @@ ability::dump(std::ostream& oss, const universe& u) const
 	oss << "\t\t\t\t\tstart();\n;";
 	oss << "\t\t\t\t}\n;";
 	oss << "\t\t\t};" << std::endl;
+}
+
+std::set<std::string>
+ability::get_type_depends(const typeList& tList) const
+{
+	std::set<std::string> type_depends;
+	compute_type_depends type_deps(type_depends, tList);
+	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
+	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
+	std::for_each(private_list.begin(), private_list.end(), type_deps);
+
+	return type_depends;
 }
 
 struct agent_export_symbol

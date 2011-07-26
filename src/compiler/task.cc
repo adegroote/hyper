@@ -211,14 +211,9 @@ namespace hyper {
 				oss << indent << "};" << std::endl;
 			}
 
-			void task::dump(std::ostream& oss, const universe& u) const
+			void task::add_depends(depends& deps, const universe& u) const
 			{
-				const std::string indent="\t\t";
-				const std::string next_indent = indent + "\t";
-				const std::string next_next_indent = indent + "\t";
-
-				depends deps;
-				void (*f)(const expression_ast&, const std::string&, const universe& u, depends&) = &add_depends;
+				void (*f)(const expression_ast&, const std::string&, const universe& u, depends&) = &hyper::compiler::add_depends;
 				std::for_each(pre.begin(), pre.end(),
 							  boost::bind(f ,_1, boost::cref(ability_context.name()),
 												 boost::cref(u),
@@ -227,6 +222,16 @@ namespace hyper {
 							  boost::bind(f ,_1, boost::cref(ability_context.name()),
 												 boost::cref(u),
 												 boost::ref(deps)));
+			}
+
+			void task::dump(std::ostream& oss, const universe& u) const
+			{
+				const std::string indent="\t\t";
+				const std::string next_indent = indent + "\t";
+				const std::string next_next_indent = indent + "\t";
+
+				depends deps;
+				add_depends(deps, u);
 				
 				oss << "#include <" << ability_context.name();
 				oss << "/ability.hh>" << std::endl;

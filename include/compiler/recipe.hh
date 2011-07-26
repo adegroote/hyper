@@ -16,6 +16,7 @@ namespace hyper {
 		class universe;
 		class typeList;
 		class task;
+		class depends;
 		struct recipe_decl;
 
 		class recipe {
@@ -39,6 +40,7 @@ namespace hyper {
 				bool validate(const universe&) ;
 				void dump_include(std::ostream& oss, const universe&) const;
 				void dump(std::ostream& oss, const universe&) const;
+				void add_depends(depends& deps, const universe& u) const;
 
 				const std::string& get_name() const { return name; }
 				std::string exported_name() const {	return "_" + context_t.get_name() + 

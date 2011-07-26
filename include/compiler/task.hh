@@ -40,6 +40,7 @@ namespace hyper {
 				bool validate(const universe& u) const;
 				void dump(std::ostream& oss, const universe& u) const;
 				void dump_include(std::ostream& oss, const universe& u) const;
+				void add_depends(depends& deps, const universe& u) const;
 
 				bool add_recipe(const recipe& r);
 				const recipe& get_recipe(const std::string& name) const;

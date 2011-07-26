@@ -82,7 +82,17 @@ void build_base_cmake(std::ostream& oss, const std::string& name,
 		"\n"
 		;
 
-	oss << hyper::compiler::replace_by(base_cmake, "@NAME@", name);
+	std::string s;
+	if (depends.empty())
+		s = name;
+	else {
+		std::ostringstream oss;
+		oss << name << " REQUIRES ";
+		std::copy(depends.begin(), depends.end(), std::ostream_iterator<std::string>(oss, " "));
+		s = oss.str();
+	}
+
+	oss << hyper::compiler::replace_by(base_cmake, "@NAME@", s);
 }
 
 /*
@@ -157,6 +167,7 @@ struct generate_recipe
 	const typeList& tList;
 	ability& ab;
 	task& t;
+	depends& deps;
 
 	bool success;
 	std::string directoryName;
@@ -164,9 +175,10 @@ struct generate_recipe
 	generate_recipe(universe& u_,
 					const std::string& abilityName, 
 					const std::string& taskName,
-					const std::string& directoryName_) :
+					const std::string& directoryName_,
+					depends& deps) :
 		u(u_), ab(u_.get_ability(abilityName)), tList(u.types()), 
-		t(ab.get_task(taskName)),
+		t(ab.get_task(taskName)), deps(deps),
 		success(true), directoryName(directoryName_) 
 	{}
 
@@ -180,6 +192,7 @@ struct generate_recipe
 		success = success && valid;
 		success = success && t.add_recipe(r);
 		if (success) {
+			r.add_depends(deps, u);
 			{
 			std::string fileName = directoryName + "/" + r.get_name() + ".cc";
 			std::ofstream oss(fileName.c_str());
@@ -199,13 +212,15 @@ struct add_task
 	const universe& u;
 	ability& ab;
 	const typeList& tList;
+	depends& deps;
 
 	bool success;
 
 	add_task(universe& u_,
-				  const std::string& abilityName) :
+				  const std::string& abilityName,
+				  depends& deps) :
 		u(u_), ab(u_.get_ability(abilityName)), tList(u.types()),
-		success(true)
+		deps(deps), success(true)
 	{}
 
 	void operator() (const task_decl& decl)
@@ -217,6 +232,8 @@ struct add_task
 		}
 		valid &= ab.add_task(t);
 		success = success && valid;
+		if (valid) 
+			t.add_depends(deps, u);
 	}
 };
 
@@ -389,6 +406,7 @@ int main(int argc, char** argv)
 		return -1;
 
 	const ability& current_a = u.get_ability(abilityName);
+	depends deps;
 
 	if (exists(taskDirectory)) {
 		directory_iterator end_itr; // default construction yields past-the-end
@@ -402,7 +420,7 @@ int main(int argc, char** argv)
 					std::cerr << "Fail to parse " << itr->path().string() << std::endl;
 					return -1;
 				}
-				add_task adder(u, abilityName);
+				add_task adder(u, abilityName, deps);
 				std::for_each(task_decls.list.begin(), 
 						task_decls.list.end(),
 						adder);
@@ -430,7 +448,7 @@ int main(int argc, char** argv)
 							return -1;
 						}
 
-						generate_recipe gen(u, abilityName, taskName, directoryRecipeName);
+						generate_recipe gen(u, abilityName, taskName, directoryRecipeName, deps);
 						std::for_each(rec_decls.recipes.begin(),
 								rec_decls.recipes.end(),
 								gen);
@@ -501,8 +519,14 @@ int main(int argc, char** argv)
 	{
 		std::string fileName = ".hyper/CMakeLists.txt";
 		std::ofstream oss(fileName.c_str());
-		depends d = u.get_function_depends(abilityName);
-		build_base_cmake(oss, abilityName,  d.fun_depends);
+		std::set<std::string> d = current_a.get_type_depends(u.types());
+		d.insert(deps.fun_depends.begin(), deps.fun_depends.end());
+
+		// remove special case, need for empty namespace (base) and current
+		// system (always link with itself)
+		d.erase("");
+		d.erase(current_a.name());
+		build_base_cmake(oss, abilityName,  d);
 	}
 
 	{

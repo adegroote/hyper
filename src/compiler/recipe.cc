@@ -845,15 +845,10 @@ namespace hyper {
 			oss << indent << "};" << std::endl;
 		}
 
-		void recipe::dump(std::ostream& oss, const universe& u) const
+		void recipe::add_depends(depends& deps, const universe& u) const 
 		{
-			const std::string indent="\t\t";
-			const std::string next_indent = indent + "\t";
-			const std::string next_next_indent = next_indent + "\t";
-
-			depends deps;
-			void (*f1)(const expression_ast&, const std::string&, const universe&, depends&) = &add_depends;
-			void (*f2)(const recipe_expression&, const std::string&, const universe&, depends&) = &add_depends;
+			void (*f1)(const expression_ast&, const std::string&, const universe&, depends&) = &hyper::compiler::add_depends;
+			void (*f2)(const recipe_expression&, const std::string&, const universe&, depends&) = &hyper::compiler::add_depends;
 			std::for_each(pre.begin(), pre.end(),
 						  boost::bind(f1 ,_1, boost::cref(context_a.name()),
 											  boost::cref(u),
@@ -862,6 +857,16 @@ namespace hyper {
 						  boost::bind(f2 ,_1, boost::cref(context_a.name()),
 											  boost::cref(u),
 											  boost::ref(deps)));
+		}
+
+		void recipe::dump(std::ostream& oss, const universe& u) const
+		{
+			const std::string indent="\t\t";
+			const std::string next_indent = indent + "\t";
+			const std::string next_next_indent = next_indent + "\t";
+
+			depends deps;
+			add_depends(deps, u);
 			
 			oss << "#include <" << context_a.name() << "/ability.hh>\n"; 
 			oss << "#include <" << context_a.name();
