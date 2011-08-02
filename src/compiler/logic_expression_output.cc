@@ -36,11 +36,25 @@ namespace {
 
 		std::string operator() (const empty& e) const { (void)e; assert(false); }
 
-		template <typename T>
-		std::string operator() (const Constant<T>& c) const
+		std::string operator() (const Constant<int>& c) const
 		{
 			std::ostringstream oss;
 			oss << c.value;
+			return oss.str();
+		}
+
+		std::string operator() (const Constant<double>& c) const
+		{
+			std::ostringstream oss;
+			oss.precision(6);
+			oss << std::fixed << c.value;
+			return oss.str();
+		}
+
+		std::string operator() (const Constant<std::string>& c) const
+		{
+			std::ostringstream oss;
+			oss << "\\\"" << c.value << "\\\"";
 			return oss.str();
 		}
 
