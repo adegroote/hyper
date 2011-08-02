@@ -169,17 +169,18 @@ struct generate_recipe
 	task& t;
 	depends& deps;
 
-	bool success;
+	bool& success;
 	std::string directoryName;
 
 	generate_recipe(universe& u_,
 					const std::string& abilityName, 
 					const std::string& taskName,
 					const std::string& directoryName_,
-					depends& deps) :
+					depends& deps,
+					bool& success) :
 		u(u_), ab(u_.get_ability(abilityName)), tList(u.types()), 
 		t(ab.get_task(taskName)), deps(deps),
-		success(true), directoryName(directoryName_) 
+		success(success), directoryName(directoryName_) 
 	{}
 
 	void operator() (const recipe_decl& decl)
@@ -187,7 +188,7 @@ struct generate_recipe
 		recipe r(decl, ab, t, tList);
 		bool valid = r.validate(u);
 		if (!valid) {
-			std::cerr << r.get_name() << " seems not valid " << std::endl;
+			std::cerr << "Recipe " << r.get_name() << " seems not valid " << std::endl;
 		}
 		success = success && valid;
 		success = success && t.add_recipe(r);
@@ -214,13 +215,13 @@ struct add_task
 	const typeList& tList;
 	depends& deps;
 
-	bool success;
+	bool& success;
 
 	add_task(universe& u_,
 				  const std::string& abilityName,
-				  depends& deps) :
+				  depends& deps, bool& success) :
 		u(u_), ab(u_.get_ability(abilityName)), tList(u.types()),
-		deps(deps), success(true)
+		deps(deps), success(success)
 	{}
 
 	void operator() (const task_decl& decl)
@@ -228,7 +229,7 @@ struct add_task
 		task t(decl, ab, tList);
 		bool valid = t.validate(u);
 		if (!valid) {
-			std::cerr << t.get_name() << " seems not valid " << std::endl;
+			std::cerr << "Task " << t.get_name() << " seems not valid " << std::endl;
 		}
 		valid &= ab.add_task(t);
 		success = success && valid;
@@ -420,11 +421,13 @@ int main(int argc, char** argv)
 					std::cerr << "Fail to parse " << itr->path().string() << std::endl;
 					return -1;
 				}
-				add_task adder(u, abilityName, deps);
+
+				bool success = true;
+				add_task adder(u, abilityName, deps, success);
 				std::for_each(task_decls.list.begin(), 
 						task_decls.list.end(),
 						adder);
-				if (adder.success == false)
+				if (success == false)
 					return -1;
 			} 
 		} 
@@ -448,11 +451,12 @@ int main(int argc, char** argv)
 							return -1;
 						}
 
-						generate_recipe gen(u, abilityName, taskName, directoryRecipeName, deps);
+						bool success = true;
+						generate_recipe gen(u, abilityName, taskName, directoryRecipeName, deps, success);
 						std::for_each(rec_decls.recipes.begin(),
 								rec_decls.recipes.end(),
 								gen);
-						if (gen.success == false)
+						if (success == false)
 							return -1;
 					}
 				}

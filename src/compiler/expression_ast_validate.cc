@@ -114,14 +114,29 @@ template <binary_op_kind T>
 struct ast_binary_valid 
 {
 	const universe& u;
+	const binary_op<T>& expr;
 	
-	ast_binary_valid(const universe& u_) : u(u_) {};
+	ast_binary_valid(const universe& u_, const binary_op<T>& expr) : u(u_), expr(expr) {};
 
 	bool operator() (boost::optional<typeId> leftType, boost::optional<typeId> rightType)
 	{
-		// only accept operation on same type
-		if (!leftType || !rightType  || *leftType != *rightType) 
+		if (!leftType) {
+			std::cerr << "Can't get typeOf of " << expr.left << " in expression " << expr << std::endl;
+			return false;
+		}
+
+		if (!rightType) {
+			std::cerr << "Can't get typeOf of " << expr.right << " in expression " << expr << std::endl;
+			return false;
+		}
+
+		if (*leftType != *rightType) 
 		{
+			type l = u.types().get(*leftType);
+			type r = u.types().get(*rightType);
+
+			std::cerr << "Left operand of type " << l.name << " mismatches with right operand of type " << r.name;
+			std::cerr << " in expression " << expr << std::endl;
 			return false;
 		}
 
@@ -225,7 +240,7 @@ struct ast_valid : public boost::static_visitor<bool>
 		bool left_valid, right_valid;
 		left_valid = boost::apply_visitor(ast_valid(ab, u, context, false), b.left.expr);
 		right_valid = boost::apply_visitor(ast_valid(ab, u, context, false), b.right.expr);
-		return left_valid && right_valid && ast_binary_valid<T>(u) ( 
+		return left_valid && right_valid && ast_binary_valid<T>(u, b) ( 
 													u.typeOf(ab, b.left.expr, context),
 													u.typeOf(ab, b.right.expr, context));
 	}
