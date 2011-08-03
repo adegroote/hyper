@@ -840,6 +840,7 @@ namespace hyper {
 			oss << next_indent;
 			oss << "void async_evaluate_preconditions(model::condition_execution_callback cb);";
 			oss << std::endl;
+			oss << "size_t nb_preconditions() const { return " << pre.size() << "; }";
 			oss << next_indent << "void do_execute(model::abortable_computation::cb_type cb);\n"; 
 
 			oss << indent << "};" << std::endl;

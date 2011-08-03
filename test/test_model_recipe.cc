@@ -38,6 +38,8 @@ namespace {
 			pos.z = pos.x + pos.y;
 			cb(boost::system::error_code());
 		}
+
+		virtual size_t nb_preconditions() const { return 0; }
 	};
 
 	struct mult_recipe : public hyper::model::recipe
@@ -56,6 +58,8 @@ namespace {
 			pos.z = pos.x * pos.y;
 			cb(boost::system::error_code());
 		}
+
+		virtual size_t nb_preconditions() const { return 0; }
 	};
 
 	struct div_recipe : public hyper::model::recipe
@@ -76,6 +80,7 @@ namespace {
 			pos.z = pos.x / pos.y;
 			cb(boost::system::error_code());
 		}
+		virtual size_t nb_preconditions() const { return 0; }
 	};
 
 	struct recipe_test {

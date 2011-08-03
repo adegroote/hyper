@@ -40,6 +40,7 @@ namespace hyper {
 				recipe(const std::string& name, ability& a);
 				void execute(recipe_execution_callback cb);
 				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
+				virtual size_t nb_preconditions() const = 0;
 
 				agent_const_iterator begin() const { return required_agents.begin(); }
 				agent_const_iterator end() const { return required_agents.end(); }

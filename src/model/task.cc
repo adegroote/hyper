@@ -62,7 +62,6 @@ namespace hyper {
 
 			recipe_states[i].failed = failed;
 			recipe_states[i].index = i;
-			recipe_states[i].nb_preconds = 0; // XXX<
 
 			if (i != (recipes.size() - 1)) {
 				boost::optional<size_t> electable;
@@ -70,10 +69,13 @@ namespace hyper {
 					if (recipe_states[j].missing_agents.empty())
 						electable = j;
 
-				if (electable)
-					return recipes[i+1]->async_evaluate_preconditions(
+				if (electable) {
+					a.logger(DEBUG) << "[Task " << name << "] Starting to evaluate preconditions for recipe ";
+					a.logger(DEBUG) << recipes[*electable]->r_name() << std::endl;
+					return recipes[*electable]->async_evaluate_preconditions(
 							boost::bind(&task::async_evaluate_recipe_preconditions,
-								this, _1, _2, i+1));
+								this, _1, _2, *electable));
+				}
 			} 
 
 			a.logger(DEBUG) << "[Task " << name << "] Finish to evaluate recipe preconditions" << std::endl;
@@ -154,11 +156,12 @@ namespace hyper {
 				return end_execute(false);
 			}
 
-			a.logger(DEBUG) << "[Task " << name << "] Starting to evaluate recipe preconditions" << std::endl;
+			a.logger(DEBUG) << "[Task " << name << "] Starting to evaluate preconditions for recipe ";
+			a.logger(DEBUG) << recipes[*first_electable]->r_name() << std::endl;
 			/* compute precondition for all recipe */
 			recipes[*first_electable]->async_evaluate_preconditions(
 					boost::bind(&task::async_evaluate_recipe_preconditions,
-								this, _1, _2, 0));
+								this, _1, _2, *first_electable));
 		}
 
 		void task::handle_initial_postcondition_handle(const boost::system::error_code& e, conditionV failed)
@@ -235,6 +238,7 @@ namespace hyper {
 		{
 			recipes.push_back(ptr);
 			recipe_states.resize(recipes.size());
+			recipe_states[recipes.size() - 1].nb_preconds = ptr->nb_preconditions();
 		}
 #undef CHECK_INTERRUPT
 	}
