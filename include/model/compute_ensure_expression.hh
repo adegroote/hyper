@@ -5,6 +5,8 @@
 #include <model/abortable_function.hh>
 #include <model/types.hh>
 
+#include <boost/optional.hpp>
+
 namespace hyper {
 	namespace model {
 		struct ability;

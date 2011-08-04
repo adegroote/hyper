@@ -1,6 +1,7 @@
 #include <logic/facts.hh>
 #include <logic/eval.hh>
 #include <boost/test/unit_test.hpp>
+#include <boost/variant/apply_visitor.hpp>
 
 using namespace boost::logic;
 using namespace hyper::logic;

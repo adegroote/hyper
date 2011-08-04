@@ -1,5 +1,8 @@
 #include <model/abortable_function.hh>
 
+#include <boost/asio/placeholders.hpp>
+#include <boost/bind.hpp>
+
 namespace hyper {
 	namespace model {
 		const char* exec_layer_category_impl::name() const {

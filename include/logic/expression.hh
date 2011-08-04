@@ -5,7 +5,8 @@
 
 #include <vector>
 
-#include <boost/variant.hpp>
+#include <boost/variant/variant.hpp>
+#include <boost/variant/recursive_wrapper.hpp>
 
 namespace hyper {
 	namespace logic {
@@ -90,8 +91,6 @@ namespace hyper {
 		generate_return generate(const std::string&, const funcDefList&);
 
 		std::ostream& operator << (std::ostream& oss, const function_call& f);
-
-
 	}
 }
 

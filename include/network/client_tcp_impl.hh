@@ -2,13 +2,10 @@
 #ifndef _CLIENT_TCP_IMPL_HH_
 #define _CLIENT_TCP_IMPL_HH_ 
 
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
 
 #include <network/socket_tcp_serialized.hh>
-
 
 namespace hyper {
 	namespace network {

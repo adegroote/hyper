@@ -9,7 +9,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include <boost/function/function0.hpp>
 #include <boost/optional/optional.hpp>
 
 namespace hyper {

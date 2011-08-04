@@ -1,6 +1,8 @@
 #include <logic/function_def.hh>
 #include <logic/eval.hh>
 
+#include <boost/optional/optional.hpp>
+
 namespace hyper {
 	namespace logic {
 		funcDefList::funcDefList()

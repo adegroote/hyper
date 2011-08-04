@@ -1,7 +1,8 @@
 #ifndef HYPER_MODEL_TASK_FWD_HH_
 #define HYPER_MODEL_TASK_FWD_HH_
 
-#include <boost/function.hpp>
+#include <boost/function/function1.hpp>
+#include <boost/function/function2.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <model/eval_conditions_fwd.hh>

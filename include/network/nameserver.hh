@@ -4,7 +4,6 @@
 #include <map>
 #include <string>
 
-#include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/variant/variant.hpp>

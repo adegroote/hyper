@@ -2,6 +2,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <boost/logic/tribool.hpp>
+#include <boost/variant/apply_visitor.hpp>
 
 using namespace boost::logic;
 using namespace hyper::logic;

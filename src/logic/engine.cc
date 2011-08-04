@@ -5,17 +5,13 @@
 
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/spirit/include/phoenix_bind.hpp>
 #include <boost/logic/tribool_io.hpp>
+#include <boost/variant/apply_visitor.hpp>
 
 #include <set>
 #include <sstream>
 
 #include <utils/algorithm.hh>
-
-namespace phx = boost::phoenix;
 
 namespace {
 	using namespace hyper::logic;
@@ -582,12 +578,12 @@ namespace hyper {
 		{
 			std::vector<rule> rules;
 			hyper::utils::copy_if(rs.begin(), rs.end(), std::back_inserter(rules),
-						 phx::bind(&rule::inconsistency, phx::arg_names::arg1));
+						 boost::bind(&rule::inconsistency, _1));
 
 			std::vector<boost::logic::tribool> matches;
 			for (size_t i = 0; i < facts.f.max_id(); ++i)
 				std::transform(facts.f.begin(i), facts.f.end(i), std::back_inserter(matches),
-						phx::bind(&facts::matches, &facts.f, phx::arg_names::arg1));
+						boost::bind(&facts::matches, &facts.f, _1));
 
 			bool res = ! hyper::utils::any(rules.begin(), rules.end(), 
 									 lead_to_inconsistency(facts));

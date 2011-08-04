@@ -1,7 +1,6 @@
 #ifndef _HYPER_MODEL_EXECUTION_IMPL_HH_
 #define _HYPER_MODEL_EXECUTION_IMPL_HH_
 
-#include <iostream>
 #include <map>
 #include <string>
 
@@ -26,7 +25,6 @@
 #include <boost/preprocessor/punctuation/comma_if.hpp>
 #include <boost/preprocessor/repetition.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #ifndef EVAL_MAX_PARAMS
 #define EVAL_MAX_PARAMS 10

@@ -3,9 +3,10 @@
 
 #include <vector>
 
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include <boost/function/function0.hpp>
+#include <boost/function/function1.hpp>
+#include <boost/system/error_code.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace hyper {
 	namespace model {

@@ -1,6 +1,8 @@
 #include <logic/function_def.hh>
 #include <boost/test/unit_test.hpp>
 
+#include <boost/optional/optional.hpp>
+
 BOOST_AUTO_TEST_CASE ( logic_function_def_test)
 {
 	using namespace hyper::logic;

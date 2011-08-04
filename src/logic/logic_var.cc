@@ -5,13 +5,11 @@
 #include <logic/logic_var.hh>
 #include <utils/algorithm.hh>
 
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/spirit/include/phoenix_bind.hpp>
+#include <boost/bind.hpp>
+#include <boost/variant/apply_visitor.hpp>
 
 static int generator;
 
-namespace phx = boost::phoenix;
 
 namespace {
 	using namespace hyper::logic;
@@ -168,9 +166,8 @@ namespace {
 			std::vector<expression> s(p.second.unified.size());
 			std::transform(p.second.unified.begin(), p.second.unified.end(),
 					s.begin(),
-					phx::bind(&apply_permutation_on_facts,
-						phx::arg_names::arg1,
-						phx::cref(perms)));
+					boost::bind(&apply_permutation_on_facts, _1,
+						boost::cref(perms)));
 
 			std::swap(p.second.unified, s);
 		}

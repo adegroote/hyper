@@ -1,6 +1,10 @@
 #include <iostream>
 
 #include <model/compute_wait_expression.hh>
+
+#include <boost/bind.hpp>
+#include <boost/asio/placeholders.hpp>
+
 #include <boost/test/unit_test.hpp>
 
 namespace {

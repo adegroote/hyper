@@ -1,7 +1,8 @@
 #ifndef HYPER_WAIT_COMPUTE_WAIT_EXPRESSION_HH_
 #define HYPER_WAIT_COMPUTE_WAIT_EXPRESSION_HH_
 
-#include <boost/asio.hpp>
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/deadline_timer.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include <model/abortable_function.hh>

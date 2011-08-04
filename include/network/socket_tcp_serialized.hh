@@ -9,18 +9,19 @@
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
-#include <boost/asio.hpp>
+#include <boost/asio/read.hpp>
+#include <boost/asio/write.hpp>
+#include <boost/asio/placeholders.hpp>
 #include <boost/bind.hpp>
-#include <boost/fusion/container.hpp>
+#include <boost/fusion/include/as_vector.hpp>
+#include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include <boost/fusion/adapted/mpl.hpp>
-#include <boost/fusion/include/mpl.hpp>
 #include <boost/mpl/at.hpp>
 #include <boost/mpl/end.hpp>
 #include <boost/mpl/find.hpp>
 #include <boost/mpl/not.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/preprocessor/repetition/repeat.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/variant.hpp>

@@ -1,9 +1,9 @@
 #ifndef HYPER_NETWORK_ALGORITHM_HH_
 #define HYPER_NETWORK_ALGORITHM_HH_
 
-#include <iostream>
+#include <vector>
 
-#include <boost/asio.hpp>
+#include <boost/asio/placeholders.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/optional.hpp>

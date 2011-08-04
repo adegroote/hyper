@@ -3,11 +3,8 @@
 #include <logic/facts.hh>
 #include <logic/eval.hh>
 
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/spirit/include/phoenix_bind.hpp>
-
-namespace phx = boost::phoenix;
+#include <boost/bind.hpp>
+#include <boost/variant/apply_visitor.hpp>
 
 namespace {
 	using namespace hyper::logic;
@@ -273,7 +270,7 @@ namespace hyper {
 					boost::apply_visitor(inner_function_call(db, s), it->expr);
 
 				bool (facts::*f)(const function_call&) = &facts::add;
-				std::for_each(s.begin(), s.end(), phx::bind(f, this, phx::arg_names::arg1));
+				std::for_each(s.begin(), s.end(), boost::bind(f, this, _1));
 			}
 			return p.second;
 		}
@@ -284,8 +281,8 @@ namespace hyper {
 				expressionS tmp;
 				std::transform(list[i].begin(), list[i].end(), 
 							   std::inserter(tmp, tmp.begin()),
-							   phx::bind(&apply_permutation_f, phx::arg_names::arg1,
-										 phx::cref(seq)));
+							   boost::bind(&apply_permutation_f, _1,
+										 boost::cref(seq)));
 				std::swap(list[i], tmp);
 			}
 
@@ -293,8 +290,8 @@ namespace hyper {
 				sub_expressionS tmp;	
 				std::transform(sub_list[i].begin(), sub_list[i].end(),
 							   std::inserter(tmp, tmp.begin()),
-							   phx::bind(&apply_permutation_e, phx::arg_names::arg1,
-										 phx::cref(seq)));
+							   boost::bind(&apply_permutation_e, _1,
+										 boost::cref(seq)));
 				std::swap(sub_list[i], tmp);
 			}
 

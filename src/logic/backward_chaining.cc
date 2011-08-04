@@ -6,6 +6,8 @@
 
 #include <boost/bimap/bimap.hpp>
 #include <boost/fusion/include/std_pair.hpp> 
+#include <boost/variant/apply_visitor.hpp>
+
 
 namespace phx = boost::phoenix;
 

@@ -8,9 +8,8 @@
 #include <logic/expression.hh>
 
 #include <boost/any.hpp>
-#include <boost/asio.hpp>
-#include <boost/function.hpp>
-#include <boost/noncopyable.hpp>
+#include <boost/asio/io_service.hpp>
+#include <boost/function/function2.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace hyper {

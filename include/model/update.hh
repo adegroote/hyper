@@ -7,7 +7,8 @@
 
 #include <network/msg.hh>
 
-#include <boost/function.hpp>
+#include <boost/function/function1.hpp>
+#include <boost/function/function3.hpp>
 #include <boost/system/error_code.hpp>
 
 namespace hyper {

@@ -1,5 +1,8 @@
 #include <model/compute_wait_expression.hh>
 
+#include <boost/asio/placeholders.hpp>
+#include <boost/bind.hpp>
+
 namespace hyper {
 	namespace model {
 		compute_wait_expression::compute_wait_expression(boost::asio::io_service& io_s,

@@ -1,4 +1,6 @@
 #include <logic/rules.hh>
+#include <algorithm>
+#include <boost/variant/apply_visitor.hpp>
 
 namespace {
 	using namespace hyper::logic;

@@ -4,7 +4,7 @@
 #include <set>
 #include <algorithm>
 
-#include <boost/asio.hpp>
+#include <boost/asio/ip/host_name.hpp>
 #include <boost/bind.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>

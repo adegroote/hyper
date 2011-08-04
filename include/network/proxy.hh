@@ -9,7 +9,7 @@
 
 #include <boost/any.hpp>
 #include <boost/array.hpp>
-#include <boost/function.hpp>
+#include <boost/function/function1.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/mpl/at.hpp>
 #include <boost/mpl/for_each.hpp>

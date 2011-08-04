@@ -10,7 +10,6 @@
 #include <network/nameserver.hh>
 #include <network/proxy.hh>
 
-#include <boost/mpl/size.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/shared_ptr.hpp>
 

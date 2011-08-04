@@ -1,7 +1,7 @@
 #ifndef HYPER_MODEL_LOGIC_LAYER_FWD_HH_
 #define HYPER_MODEL_LOGIC_LAYER_FWD_HH_
 
-#include <boost/function.hpp>
+#include <boost/function/function1.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/system/error_code.hpp>
 

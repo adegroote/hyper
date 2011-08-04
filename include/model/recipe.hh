@@ -4,8 +4,6 @@
 #include <vector>
 #include <set>
 
-#include <boost/thread.hpp>
-
 #include <model/abortable_function.hh>
 #include <model/task_fwd.hh>
 #include <model/recipe_fwd.hh>

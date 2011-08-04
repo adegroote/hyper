@@ -4,13 +4,12 @@
 #include <string>
 #include <map>
 
-#include <boost/function.hpp>
+#include <boost/function/function1.hpp>
 #include <boost/mpl/assert.hpp>
 #include <boost/mpl/end.hpp>
 #include <boost/mpl/find.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/void.hpp>
-#include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/variant/variant.hpp>
 #include <boost/variant/get.hpp>

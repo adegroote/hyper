@@ -2,7 +2,6 @@
 #define HYPER_MODEL_EVALUATE_CONDITIONS_HH_
 
 #include <algorithm>
-#include <deque>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -11,12 +10,11 @@
 #include <model/update_impl.hh>
 #include <model/task_fwd.hh>
 
-#include <boost/asio.hpp>
+#include <boost/asio/placeholders.hpp>
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include <boost/function/function4.hpp>
 #include <boost/mpl/vector.hpp>
-#include <boost/utility/enable_if.hpp>
 
 namespace hyper {
 	namespace model {

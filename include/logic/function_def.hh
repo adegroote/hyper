@@ -1,11 +1,12 @@
 #ifndef _HYPER_LOGIC_FUNCTION_HH_
 #define _HYPER_LOGIC_FUNCTION_HH_
 
+#include <cassert>
 #include <map>
 #include <string>
 #include <vector>
 
-#include <boost/optional.hpp>
+#include <boost/optional/optional_fwd.hpp>
 #include <boost/noncopyable.hpp>
 
 namespace hyper {

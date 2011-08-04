@@ -8,9 +8,7 @@
 #include <model/setter.hh>
 #include <model/update.hh>
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/thread/shared_mutex.hpp>
-
 
 namespace hyper {
 	namespace model {

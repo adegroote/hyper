@@ -3,6 +3,8 @@
 
 #include <list>
 
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/placeholders.hpp>
 #include <boost/bind.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/thread/thread.hpp>

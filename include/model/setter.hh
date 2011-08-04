@@ -4,8 +4,8 @@
 #include <map>
 #include <string>
 
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include <boost/function/function1.hpp>
+#include <boost/function/function2.hpp>
 
 #include <logic/expression.hh>
 

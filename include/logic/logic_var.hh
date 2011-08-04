@@ -7,7 +7,7 @@
 #include <boost/bimap/multiset_of.hpp>
 
 #include <boost/optional.hpp>
-#include <boost/variant.hpp>
+#include <boost/variant/variant.hpp>
 
 namespace hyper {
 	namespace logic {

@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include <model/abortable_function.hh>
+
+#include <boost/bind.hpp>
 #include <boost/test/unit_test.hpp>
 
 namespace {

@@ -4,7 +4,7 @@
 #include <deque>
 #include <string>
 
-#include <boost/function.hpp>
+#include <boost/function/function1.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <logic/engine.hh>

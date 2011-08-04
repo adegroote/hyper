@@ -1,5 +1,5 @@
-
 #include <logic/unify.hh>
+#include <boost/variant/apply_visitor.hpp>
 
 namespace {
 	using namespace hyper::logic;

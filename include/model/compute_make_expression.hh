@@ -1,7 +1,9 @@
 #ifndef HYPER_MODEL_COMPUTE_MAKE_EXPRESSION_HH_
 #define HYPER_MODEL_COMPUTE_MAKE_EXPRESSION_HH_
 
+#include <boost/optional.hpp>
 #include <boost/system/error_code.hpp>
+
 #include <model/abortable_function.hh>
 
 namespace hyper {
