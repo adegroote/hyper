@@ -77,14 +77,14 @@ namespace hyper {
 			{
 				std::pair<bool, ns::addr_storage> res;
 				res = map_.get(r.name);
-				output_ << "receiving name request : " << r << std::endl;
+//				output_ << "receiving name request : " << r << std::endl;
 
 				request_name_answer res_msg;
 				res_msg.name = r.name;
 				res_msg.success = res.first;
 				res_msg.endpoints = res.second.tcp_endpoints;
 
-				output_ << "answering to name request : " << res_msg << std::endl;
+//				output_ << "answering to name request : " << res_msg << std::endl;
 				return res_msg;
 			}
 
@@ -92,7 +92,7 @@ namespace hyper {
 			{
 				using namespace boost::asio;
 
-				output_ << "receiving name register request : " << r << std::endl;
+//				output_ << "receiving name register request : " << r << std::endl;
 				ns::addr_storage addr;
 				addr.tcp_endpoints = r.endpoints;
 				bool res = map_.add(r.name, addr);
@@ -101,7 +101,7 @@ namespace hyper {
 				res_msg.name = r.name;
 				res_msg.success = res;
 
-				output_ << "answering to name register request : " << res_msg << std::endl;
+//				output_ << "answering to name register request : " << res_msg << std::endl;
 				return res_msg;
 			}
 		}

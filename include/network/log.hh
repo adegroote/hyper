@@ -106,7 +106,6 @@ namespace hyper {
 
 					std::streamsize write(const char* s, std::streamsize n)
 					{
-						std::cerr << s << std::endl;
 						return n;
 					}
 			};

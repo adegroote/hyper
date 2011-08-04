@@ -1,59 +1,11 @@
 #ifndef _NETWORK_MSG_HH_
 #define _NETWORK_MSG_HH_
 
-#include <stdint.h>
-
-#include <iostream>
 #include <string>
 
-#include <logic/expression.hh>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/date_time/posix_time/time_serialize.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/mpl/vector/vector20.hpp>
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/utility.hpp>
-#include <boost/serialization/variant.hpp> 
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include <boost/variant.hpp>
-
-namespace boost {
-	namespace serialization {
-		template<class Archive>
-		void save(Archive& ar, const boost::asio::ip::tcp::endpoint& e, const unsigned int version)
-		{
-			(void) version;
-			std::string addr = e.address().to_string();
-			unsigned short port = e.port();
-			ar & addr & port;
-		}
-
-		template<class Archive>
-		void load(Archive& ar, boost::asio::ip::tcp::endpoint& e, const unsigned int version)
-		{
-			(void) version;
-			std::string addr;
-			boost::asio::ip::address address;
-			unsigned short port;
-
-			ar & addr & port;
-
-			address = boost::asio::ip::address::from_string(addr);
-			e = boost::asio::ip::tcp::endpoint(address, port);
-		}
-
-		template<class Archive>
-		void serialize(Archive & ar, boost::asio::ip::tcp::endpoint& e, const unsigned int version)
-		{
-			split_free(ar, e, version); 
-		}
-	}
-}
 
 namespace hyper {
 	namespace network {
@@ -68,288 +20,176 @@ namespace hyper {
 
 		struct request_name
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive & ar, const unsigned int version)
-				{
-					(void) version;
-					ar & name;
-				}
+			std::string name;
 
-			public:
-				std::string name;
+			template<class Archive>
+			void serialize(Archive & ar, const unsigned int version);
 		};
 
 		struct request_name_answer
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive & ar, const unsigned int version)
-				{
-					(void) version;
-					ar & name & success & endpoints;
-				}
+			template<class Archive>
+			void serialize(Archive & ar, const unsigned int version);
 
-			public:
-				std::string name;
-				bool success;
-				std::vector<boost::asio::ip::tcp::endpoint> endpoints;
+			std::string name;
+			bool success;
+			std::vector<boost::asio::ip::tcp::endpoint> endpoints;
 		};
 
 		struct register_name
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & name & endpoints;
-				}
+			template<class Archive>
+			void serialize(Archive& ar, const unsigned int version);
 
-			public:
-				std::string name;
-				std::vector<boost::asio::ip::tcp::endpoint> endpoints;
+			std::string name;
+			std::vector<boost::asio::ip::tcp::endpoint> endpoints;
 		};
 
 		struct register_name_answer
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive & ar, const unsigned int version) 
-				{
-					(void) version;
-					ar & name & success;
-				}
+			template<class Archive>
+			void serialize(Archive & ar, const unsigned int version);
 
-			public:
-				std::string name;
-				bool success;
+			std::string name;
+			bool success;
 		};
 
 		struct ping
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & name & value;
-				}
-			public:
-				std::string name;
-				identifier value;
+			template<class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			std::string name;
+			identifier value;
 		};
 
 		struct request_list_agents
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & id & src;
-				}
-			public:
-				mutable identifier id;
-				mutable std::string src;
+			template<class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			mutable identifier id;
+			mutable std::string src;
 		};
 
 		struct list_agents 
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & id & src & all_agents;
-				}
-			public:
-				mutable identifier id;
-				mutable std::string src;
-				std::vector<std::string> all_agents;
+			template<class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			mutable identifier id;
+			mutable std::string src;
+			std::vector<std::string> all_agents;
 		};
 
 		struct inform_new_agent 
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & new_agents;
-				}
-			public:
-				std::vector<std::string> new_agents;
+			template<class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			std::vector<std::string> new_agents;
 		};
 
 		struct inform_death_agent
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & dead_agents;
-				}
-			public:
-				std::vector<std::string> dead_agents;
+			template<class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			std::vector<std::string> dead_agents;
 		};
 
 		struct request_variable_value
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & id & src & var_name;
-				}
-			public:
-				mutable identifier id;
-				mutable std::string src;
-				std::string var_name;
+			template<class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			mutable identifier id;
+			mutable std::string src;
+			std::string var_name;
 		};
 
 		struct variable_value
 		{
-			private:
-				friend class boost::serialization::access;
-				template<class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & id & src & var_name & success & value ;
-				}
-			public:
-				mutable identifier id;
-				mutable std::string src;
-				std::string var_name;
-				bool success;
-				std::string value;
+			template<class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			mutable identifier id;
+			mutable std::string src;
+			std::string var_name;
+			bool success;
+			std::string value;
 		};
 
 		struct request_constraint
 		{
-			private:
-				friend class boost::serialization::access;
-				template <class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & id & src & unify_list & constraint & repeat; 
-				}
-			public:
-				typedef std::pair<std::string, std::string> unification_pair;
-				typedef std::vector<unification_pair> unification_list;
-				mutable identifier id;
-				mutable std::string src;
-				std::string constraint;
-				unification_list  unify_list;
-				bool repeat;
+			template <class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			typedef std::pair<std::string, std::string> unification_pair;
+			typedef std::vector<unification_pair> unification_list;
+			mutable identifier id;
+			mutable std::string src;
+			std::string constraint;
+			unification_list  unify_list;
+			bool repeat;
 		};
 
 		struct request_constraint_ack
 		{
-			private:
-				friend class boost::serialization::access;
-				template <class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & id & src & acked; 
-				}
-			public:
-				mutable identifier id;
-				mutable std::string src;
-				bool acked;
+			template <class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			mutable identifier id;
+			mutable std::string src;
+			bool acked;
 		};
 
 		struct request_constraint_answer
 		{
 			enum state_ { SUCCESS, FAILURE, INTERRUPTED };
 
-			private:
-				friend class boost::serialization::access;
-				template <class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & id & src & state;
-				}
-			public:
-				mutable identifier id;
-				mutable std::string src;
-				state_ state;
+			template <class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			mutable identifier id;
+			mutable std::string src;
+			state_ state;
 		};
 
 		struct log_msg
 		{
-			private:
-				friend class boost::serialization::access;
-				template <class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & date & src & msg;
-				}
+			template <class Archive>
+			void serialize(Archive& ar, const unsigned int version);
 
-			public:
-				boost::posix_time::ptime date;
-				std::string src;
-				std::string msg;
+			boost::posix_time::ptime date;
+			std::string src;
+			std::string msg;
 
-				log_msg() {}
-				log_msg(const std::string& src_, const std::string& msg_) :
-					date(boost::posix_time::microsec_clock::local_time()),
-					src(src_), msg(msg_)
-				{
-					boost::trim(msg);
-				}
+			log_msg() {}
+			log_msg(const std::string& src_, const std::string& msg_);
 		};
 
 		struct terminate
 		{
-			private:
-				friend class boost::serialization::access;
-				template <class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & reason;
-				}
-			public:
-				std::string reason;
+			template <class Archive>
+			void serialize(Archive& ar, const unsigned int version);
 
-				terminate() {};
-				terminate(const std::string& src) : reason(src) {}
+			std::string reason;
+
+			terminate() {};
+			terminate(const std::string& src) : reason(src) {}
 		};
 
 		struct abort 
 		{
-			private:
-				friend class boost::serialization::access;
-				template <class Archive>
-				void serialize(Archive& ar, const unsigned int version)
-				{
-					(void) version;
-					ar & src & id;
-				}
-			public:
-				std::string src;
-				identifier id;
+			template <class Archive>
+			void serialize(Archive& ar, const unsigned int version);
 
-				abort() {};
-				abort(const std::string& src, identifier id) : src(src), id(id) {}
+			std::string src;
+			identifier id;
+
+			abort() {};
+			abort(const std::string& src, identifier id) : src(src), id(id) {}
 		};
 
 		typedef boost::mpl::vector17<
@@ -374,9 +214,6 @@ namespace hyper {
 
 #define MESSAGE_TYPE_MAX 17
 
-		typedef boost::make_variant_over<message_types>::type message_variant;
-
-		std::ostream& operator << (std::ostream&, const message_variant&);
 	}
 }
 

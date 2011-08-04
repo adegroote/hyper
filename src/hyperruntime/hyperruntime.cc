@@ -112,8 +112,6 @@ namespace details {
 
 		output_variant operator() (const network::request_name& r) const
 		{
-			std::cerr << "receiving name request : " << r << std::endl;
-
 			network::request_name_answer res_msg;
 			res_msg.name = r.name;
 
@@ -128,7 +126,6 @@ namespace details {
 					res_msg.endpoints = it->second.addr.tcp_endpoints;
 			}
 
-			std::cerr << "answering to name request : " << res_msg << std::endl;
 			return res_msg;
 		}
 
@@ -136,7 +133,6 @@ namespace details {
 		{
 			using namespace boost::asio;
 
-			std::cerr << "receiving name register request : " << r << std::endl;
 			ability_context ctx;
 			ctx.addr.tcp_endpoints = r.endpoints;
 			ctx.timeout_occurence = 0;
@@ -150,8 +146,6 @@ namespace details {
 			network::register_name_answer res_msg;
 			res_msg.name = r.name;
 			res_msg.success = !already_here;
-
-			std::cerr << "answering to name register request : " << res_msg << std::endl;
 
 			if (!already_here) {
 				boost::shared_ptr<network::inform_new_agent> ptr_msg;

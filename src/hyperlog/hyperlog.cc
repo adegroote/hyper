@@ -8,6 +8,8 @@
 
 #include <model/discover_root.hh>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 
 namespace {
 	typedef boost::mpl::vector<hyper::network::log_msg,
