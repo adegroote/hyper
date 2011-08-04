@@ -1,4 +1,5 @@
 #include <model/ability_test.hh>
+#include <model/actor_impl.hh>
 #include <model/future.hh>
 
 using namespace hyper::model;
@@ -12,7 +13,7 @@ void ability_test::handle_send_constraint(const boost::system::error_code& e,
 		network::request_constraint* msg,
 		network::request_constraint_answer* ans)
 {
-	db.remove(id);
+	actor->db.remove(id);
 
 	if (e) {
 		std::cerr << "Failed to make " << msg->constraint << std::endl;
@@ -41,7 +42,7 @@ future_value<bool> ability_test::send_constraint(const std::string& constraint, 
 
 	future_value<bool> res(constraint);
 
-	client_db[target].async_request(*msg, *answer, 
+	actor->client_db[target].async_request(*msg, *answer, 
 			boost::bind(&ability_test::handle_send_constraint,
 				this,
 				boost::asio::placeholders::error,
@@ -53,5 +54,5 @@ future_value<bool> ability_test::send_constraint(const std::string& constraint, 
 void ability_test::abort(const std::string& msg)
 {
 	network::terminate term(msg);
-	client_db[target].async_write(term, &dont_care);
+	actor->client_db[target].async_write(term, &dont_care);
 }

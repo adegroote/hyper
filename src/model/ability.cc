@@ -1,7 +1,8 @@
 #include <model/ability.hh>
+#include <model/actor_impl.hh>
 #include <model/logic_layer.hh>
 
-#include <network/log.hh>
+#include <network/log_level.hh>
 #include <network/ping.hh>
 #include <network/server_tcp_impl.hh>
 
@@ -38,7 +39,7 @@ namespace {
 
 		void operator() (const std::string& agent) 
 		{
-			a.client_db[agent].close();
+			a.actor->client_db[agent].close();
 			a.alive_agents.erase(agent);
 		}
 	};
@@ -46,13 +47,13 @@ namespace {
 	struct ability_visitor : public boost::static_visitor<output_variant>
 	{
 		model::ability &a;
-		network::actor::proxy_visitor<model::ability> proxy_vis;
-		network::actor_protocol_visitor<model::ability> actor_vis;
+		network::actor::proxy_visitor<model::actor_impl> proxy_vis;
+		network::actor_protocol_visitor<model::actor_impl> actor_vis;
 
 		ability_visitor(model::ability& a_) : 
 			a(a_), 
-			proxy_vis(a_, a_.serializer),
-			actor_vis(a_)
+			proxy_vis(*a_.actor, a_.serializer),
+			actor_vis(*a_.actor)
 		{}
 
 		void handle_update_value(const boost::system::error_code& e,
@@ -66,7 +67,7 @@ namespace {
 				ans->src = m.src;
 				ans->var_name = m.var_name;
 				ans->success = false;
-				return a.client_db[m.src].async_write(*ans, 
+				return a.actor->client_db[m.src].async_write(*ans, 
 						boost::bind(&handle_write_value,
 							boost::asio::placeholders::error,
 							ans));
@@ -128,7 +129,7 @@ namespace {
 					break;
 			}
 			a.logger(DEBUG)	<< std::endl;
-			a.client_db[ctr.src].async_write(*ans,
+			a.actor->client_db[ctr.src].async_write(*ans,
 					boost::bind(&ability_visitor::handle_constraint_answer, this, 
 								 boost::asio::placeholders::error,  ans));
 		}
@@ -172,7 +173,7 @@ namespace {
 			a.logger(INFORMATION) << std::endl;
 
 			std::for_each(d.dead_agents.begin(), d.dead_agents.end(),
-					boost::bind(&model::ability::cb_db::cancel, &a.db, _1));
+					boost::bind(&model::actor_impl::cb_db::cancel, &a.actor->db, _1));
 			std::for_each(d.dead_agents.begin(), d.dead_agents.end(),
 						  close_dead_agent(a));
 
@@ -217,8 +218,6 @@ namespace hyper {
 			ability& a;
 			ability_visitor vis;
 
-			/* Logger for the system */
-			network::logger<network::name_client> logger;
 
 			tcp_ability_impl serv;
 			network::ping_process ping;
@@ -226,7 +225,6 @@ namespace hyper {
 
 			ability_impl(ability& a_, int level) :
 				a(a_), 
-				logger(a.io_s, a.name, "logger", a.name_client, level),
 				vis(a_),
 				serv(vis, a.io_s),
 				ping(a.io_s, boost::posix_time::milliseconds(100), a.name, 
@@ -236,12 +234,18 @@ namespace hyper {
 				std::cout << "discover " << a.discover.root_addr() << " " << a.discover.root_port() << std::endl;
 			}
 		};
-
-		ability::ability(const std::string& name_, int level) : 
-			discover(),
+		actor_impl::actor_impl(boost::asio::io_service& io_s, const std::string& name, int level, 
+							   const discover_root& discover):
+			io_s(io_s), name(name),
 			name_client(io_s, discover.root_addr(), discover.root_port()),
 			client_db(*this),
 			base_id(0),
+			logger_(io_s, name, "logger", name_client, level)
+		{}
+
+		ability::ability(const std::string& name_, int level) : 
+			discover(),
+			actor(new actor_impl(io_s, name_, level, discover)),
 			updater(*this),
 			setter(*this),
 			name(name_),
@@ -251,7 +255,7 @@ namespace hyper {
 		void ability::start()
 		{
 			const std::vector<boost::asio::ip::tcp::endpoint>& addrs = impl->serv.local_endpoints();
-			bool res = name_client.register_name(name, addrs);
+			bool res = actor->name_client.register_name(name, addrs);
 			if (res) {
 				std::cout << "Succesfully registring " << name << " on " ;
 				std::copy(addrs.begin(), addrs.end(), 
@@ -262,7 +266,7 @@ namespace hyper {
 				std::cout << "failed to register " << name << std::endl;
 
 			boost::shared_ptr<get_list_agents> ptr = boost::make_shared<get_list_agents>();
-			client_db["root"].async_request(ptr->first, ptr->second,
+			actor->client_db["root"].async_request(ptr->first, ptr->second,
 					boost::bind(&ability::handle_list_agents, this, boost::asio::placeholders::error, _2, ptr));
 		}
 
@@ -270,7 +274,7 @@ namespace hyper {
 									     network::identifier id,
 										 boost::shared_ptr<get_list_agents> ptr) 
 		{
-			db.remove(id);
+			actor->db.remove(id);
 
 			if (e) 
 				return;
@@ -298,7 +302,7 @@ namespace hyper {
 
 		std::ostream& ability::logger(int level)
 		{
-			return impl->logger(level);
+			return actor->logger(level);
 		}
 
 		logic_layer& ability::logic()
@@ -306,6 +310,6 @@ namespace hyper {
 			return impl->logic;
 		}
 
-		ability::~ability() { delete impl; }
+		ability::~ability() { delete impl;  delete actor; }
 	}
 }

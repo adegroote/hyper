@@ -1,6 +1,9 @@
 #ifndef HYPER_MODEL_MODULE_ABILITY_TEST_HH
 #define HYPER_MODEL_MODULE_ABILITY_TEST_HH
 
+#include <network/log_level.hh>
+#include <network/proxy.hh>
+
 #include <model/ability.hh>
 #include <model/future.hh>
 

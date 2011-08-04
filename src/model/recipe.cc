@@ -1,6 +1,8 @@
+#include <network/log_level.hh>
 
 #include <model/recipe.hh>
 #include <model/ability.hh>
+
 
 using namespace hyper::model;
 namespace {

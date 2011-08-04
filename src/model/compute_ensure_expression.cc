@@ -1,4 +1,5 @@
 #include <model/ability.hh>
+#include <model/actor_impl.hh>
 #include <model/compute_ensure_expression.hh>
 
 namespace hyper {
@@ -16,7 +17,7 @@ namespace hyper {
 		{
 			// in error case, go up to the caller, otherwise, let the work continue
 			if (e || ans.state != network::request_constraint_answer::SUCCESS) {
-				a.db.remove(*id);
+				a.actor->db.remove(*id);
 				id = boost::none;
 				if (e)
 					return cb(e);
@@ -39,7 +40,7 @@ namespace hyper {
 			rqst.repeat = true;
 			rqst.unify_list = unify_list;
 
-			id = a.client_db[dst].async_request(rqst, ans, 
+			id = a.actor->client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_ensure_expression::handle_end_computation,
 								this, boost::asio::placeholders::error, cb));
 
@@ -58,7 +59,7 @@ namespace hyper {
 
 			abort_msg.src = a.name;
 			abort_msg.id = *id;
-			a.client_db[dst].async_write(abort_msg, 
+			a.actor->client_db[dst].async_write(abort_msg, 
 						boost::bind(&compute_ensure_expression::handle_abort,
 									 this, boost::asio::placeholders::error));
 			return true;

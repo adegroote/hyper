@@ -1,4 +1,5 @@
 #include <model/ability.hh>
+#include <model/actor_impl.hh>
 #include <model/compute_abort_expression.hh>
 
 namespace hyper {
@@ -15,7 +16,7 @@ namespace hyper {
 		{
 			abort_msg.src = a.name;
 			abort_msg.id = id.second;
-			a.client_db[id.first].async_write(abort_msg, 
+			a.actor->client_db[id.first].async_write(abort_msg, 
 						boost::bind(&compute_abort_expression::handle_abort,
 									 this, boost::asio::placeholders::error));
 			cb(boost::system::error_code());

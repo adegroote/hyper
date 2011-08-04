@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-#include <network/proxy.hh>
 #include <model/eval_conditions_fwd.hh>
 #include <model/update_impl.hh>
 #include <model/task_fwd.hh>

@@ -2,6 +2,7 @@
 #define HYPER_MODEL_SETTER_IMPL_HH_
 
 #include <model/setter.hh>
+#include <model/actor_impl.hh>
 
 namespace hyper {
 	namespace model {
@@ -9,12 +10,12 @@ namespace hyper {
 
 			template <typename T>
 			struct proxy {
-				typedef network::actor::remote_proxy<model::ability> ability_remote_proxy;
+				typedef network::actor::remote_proxy<model::actor_impl> ability_remote_proxy;
 
 				boost::optional<T> tmp;
 				ability_remote_proxy proxy_;
 
-				proxy(hyper::model::ability& a) : proxy_(a) {}
+				proxy(hyper::model::ability& a) : proxy_(*a.actor) {}
 			};
 
 			template <typename T>

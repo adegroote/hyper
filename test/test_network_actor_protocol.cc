@@ -1,5 +1,6 @@
 #include <network/actor_protocol.hh>
 #include <network/msg.hh>
+#include <network/log.hh>
 #include <boost/test/unit_test.hpp>
 
 #include <boost/thread.hpp>

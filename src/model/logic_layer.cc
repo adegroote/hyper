@@ -6,6 +6,7 @@
 #include <network/algorithm.hh>
 
 #include <model/ability.hh>
+#include <model/actor_impl.hh>
 #include <model/compute_task_tree.hh>
 #include <model/execute_impl.hh>
 #include <model/setter_impl.hh>

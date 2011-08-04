@@ -1,4 +1,5 @@
 #include <model/ability.hh>
+#include <model/actor_impl.hh>
 #include <model/compute_make_expression.hh>
 
 namespace hyper {
@@ -15,7 +16,7 @@ namespace hyper {
 				network::identifier id,
 				cb_type cb)
 		{
-			a.db.remove(id);
+			a.actor->db.remove(id);
 			this->id = boost::none;
 
 			if (e) 
@@ -44,7 +45,7 @@ namespace hyper {
 			rqst.repeat = false;
 			rqst.unify_list = unify_list;
 
-			id = a.client_db[dst].async_request(rqst, ans, 
+			id = a.actor->client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_make_expression::handle_end_computation,
 								this, boost::asio::placeholders::error, _2, cb));
 		}
@@ -59,7 +60,7 @@ namespace hyper {
 
 			abort_msg.id = *id;
 			abort_msg.src = a.name;
-			a.client_db[dst].async_write(abort_msg, 
+			a.actor->client_db[dst].async_write(abort_msg, 
 						boost::bind(&compute_make_expression::handle_abort,
 									 this, boost::asio::placeholders::error));
 			return true;

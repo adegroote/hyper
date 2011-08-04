@@ -6,8 +6,10 @@
 #include <string>
 
 #include <logic/expression.hh>
-#include <network/proxy.hh>
 
+#include <boost/any.hpp>
+#include <boost/asio.hpp>
+#include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 

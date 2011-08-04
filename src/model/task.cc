@@ -1,3 +1,5 @@
+#include <network/log_level.hh>
+
 #include <model/ability.hh>
 #include <model/task.hh>
 #include <model/recipe.hh>

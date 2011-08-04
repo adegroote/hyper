@@ -9,6 +9,7 @@
 #include <logic/expression.hh>
 #include <network/utils.hh>
 #include <network/proxy.hh>
+#include <model/actor_impl.hh>
 #include <model/execute.hh>
 
 #include <boost/any.hpp>
@@ -36,7 +37,7 @@ namespace hyper {
 		typedef boost::function<void (const boost::system::error_code&)> fun_cb;
 
 		namespace details {
-			typedef network::actor::remote_proxy<model::ability> ability_remote_proxy;
+			typedef network::actor::remote_proxy<model::actor_impl> ability_remote_proxy;
 
 			inline
 			void handle_nothing(const boost::system::error_code&)
@@ -91,7 +92,7 @@ namespace hyper {
 							boost::shared_lock<boost::shared_mutex> lock(a.mtx);
 							res = a.proxy.eval<typename T::value_type>(p.second);
 						} else {
-							ability_remote_proxy* proxy (new ability_remote_proxy(a));
+							ability_remote_proxy* proxy (new ability_remote_proxy(*a.actor));
 
 							fun_cb local_cb = boost::bind(
 									handle_remote_proxy_get, 

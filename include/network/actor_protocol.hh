@@ -15,7 +15,7 @@
 #include <boost/variant/variant.hpp>
 #include <boost/variant/get.hpp>
 
-#include <network/log.hh>
+#include <network/log_level.hh>
 #include <network/msg.hh>
 #include <network/nameserver.hh>
 #include <network/client_tcp_impl.hh>

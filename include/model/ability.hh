@@ -1,10 +1,7 @@
 #ifndef _MODEL_ABILITY_HH_
 #define _MODEL_ABILITY_HH_
 
-#include <network/actor_protocol.hh>
-#include <network/msg.hh>
-#include <network/proxy.hh>
-#include <network/nameserver.hh>
+#include <network/proxy_container.hh>
 
 #include <model/discover_root.hh>
 #include <model/execute.hh>
@@ -12,38 +9,27 @@
 #include <model/update.hh>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/thread/shared_mutex.hpp>
 
 
 namespace hyper {
 	namespace model {
 
 		struct ability_impl;
+		struct actor_impl;
 		struct logic_layer;
-
-		namespace details {
-			typedef boost::mpl::vector<network::variable_value,
-									   network::request_constraint_answer,
-									   network::list_agents> input_cb;
-		}
 
 		struct ability : public boost::noncopyable {
 
-			typedef network::callback_database<details::input_cb>
-				cb_db;
-
 
 			boost::asio::io_service io_s;
+
 
 			/* Lock for the ability context */
 			boost::shared_mutex mtx;
 
 			model::discover_root discover;
-			network::name_client name_client;
-
-			/* db to store expected callback */
-			cb_db db;
-			network::actor_client_database<ability> client_db;
-			network::identifier base_id;
+			actor_impl* actor;
 
 			model::updater updater;
 			network::proxy_serializer serializer;
@@ -72,11 +58,6 @@ namespace hyper {
 
 			void test_run();
 			void run();
-
-			network::identifier gen_identifier()
-			{
-				return base_id++;
-			}
 
 			void stop();
 
