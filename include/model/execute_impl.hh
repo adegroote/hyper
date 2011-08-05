@@ -81,13 +81,11 @@ namespace hyper {
 				void operator() (const std::string& s) const
 				{
 					if (!compiler::scope::is_scoped_identifier(s)) {
-						boost::shared_lock<boost::shared_mutex> lock(a.mtx);
 						res = a.proxy.eval<typename T::value_type>(s);
 					} else {
 						std::pair<std::string, std::string> p =
 							compiler::scope::decompose(s);
 						if (p.first == a.name) {
-							boost::shared_lock<boost::shared_mutex> lock(a.mtx);
 							res = a.proxy.eval<typename T::value_type>(p.second);
 						} else {
 							ability_remote_proxy* proxy (new ability_remote_proxy(*a.actor));

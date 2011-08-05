@@ -5,7 +5,6 @@
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/thread/shared_mutex.hpp>
 #include <boost/variant/variant.hpp>
 
 #include <network/msg.hh>
@@ -38,8 +37,6 @@ namespace hyper {
 			{
 				typedef std::map<std::string, addr_storage> addrs;
 				addrs map_;
-				// Locking doesn't change the semantic of map_addr
-				mutable boost::shared_mutex m_;
 
 				public:
 					map_addr();

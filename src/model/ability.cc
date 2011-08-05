@@ -73,7 +73,6 @@ namespace {
 							ans));
 			} else {
 				a.logger(DEBUG) << " Value succesfully updated " << std::endl;
-				boost::shared_lock<boost::shared_mutex> lock(a.mtx);
 				proxy_vis(m);
 			}
 		}

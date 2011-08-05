@@ -8,8 +8,6 @@
 #include <model/setter.hh>
 #include <model/update.hh>
 
-#include <boost/thread/shared_mutex.hpp>
-
 namespace hyper {
 	namespace model {
 
@@ -21,10 +19,6 @@ namespace hyper {
 
 
 			boost::asio::io_service io_s;
-
-
-			/* Lock for the ability context */
-			boost::shared_mutex mtx;
 
 			model::discover_root discover;
 			actor_impl* actor;

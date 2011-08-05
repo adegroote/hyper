@@ -1,4 +1,3 @@
-#include <boost/thread/locks.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <network/nameserver.hh>
@@ -6,11 +5,10 @@
 namespace hyper {
 	namespace network {
 		namespace ns {
-			map_addr::map_addr() : map_(), m_()  {}
+			map_addr::map_addr() {}
 
 			bool map_addr::add(const std::string& key, const addr_storage& s)
 			{
-				boost::upgrade_lock<boost::shared_mutex> lock(m_);
 				addrs::const_iterator it = map_.find(key);
 				if (it != map_.end())
 					return false;
@@ -21,7 +19,6 @@ namespace hyper {
 
 			bool map_addr::remove(const std::string& key)
 			{
-				boost::upgrade_lock<boost::shared_mutex> lock(m_);
 				addrs::iterator it = map_.find(key);
 				if (it == map_.end())
 					return false;
@@ -32,7 +29,6 @@ namespace hyper {
 
 			bool map_addr::isIn(const std::string& key) const
 			{
-				boost::shared_lock<boost::shared_mutex> lock(m_);
 				addrs::const_iterator it = map_.find(key);
 				return (it != map_.end());
 			}
@@ -40,7 +36,6 @@ namespace hyper {
 			std::pair<bool, addr_storage>
 			map_addr::get(const std::string& key) const
 			{
-				boost::shared_lock<boost::shared_mutex> lock(m_);
 				addrs::const_iterator it = map_.find(key);
 				if (it == map_.end())
 					return std::make_pair(false, addr_storage());

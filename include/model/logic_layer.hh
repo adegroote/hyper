@@ -7,7 +7,6 @@
 #include <boost/asio/placeholders.hpp>
 #include <boost/bind.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/thread/thread.hpp>
 
 #include <logic/engine.hh>
 #include <logic/function_def.hh>
