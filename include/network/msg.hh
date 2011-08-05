@@ -7,6 +7,8 @@
 #include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/mpl/vector/vector20.hpp>
 
+#include <network/types.hh>
+
 namespace hyper {
 	namespace network {
 
@@ -15,8 +17,6 @@ namespace hyper {
 			uint32_t type;
 			uint32_t size;
 		};
-
-		typedef size_t identifier;
 
 		struct request_name
 		{

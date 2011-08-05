@@ -13,6 +13,7 @@
 #include <model/logic_layer_fwd.hh>
 #include <model/task_fwd.hh>
 #include <model/compute_task_tree.hh>
+#include <network/types.hh>
 
 namespace hyper {
 	namespace model {

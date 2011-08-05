@@ -14,6 +14,7 @@ namespace hyper {
 		struct ability_impl;
 		struct actor_impl;
 		struct logic_layer;
+		struct get_list_agents;
 
 		struct ability : public boost::noncopyable {
 
@@ -70,7 +71,6 @@ namespace hyper {
 				proxy.register_variable(name, value);
 			}
 
-			typedef std::pair<network::request_list_agents, network::list_agents> get_list_agents;
 			void handle_list_agents(const boost::system::error_code& e,
 									network::identifier id,
 									boost::shared_ptr<get_list_agents> ptr);

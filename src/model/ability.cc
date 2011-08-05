@@ -3,6 +3,7 @@
 #include <model/logic_layer.hh>
 
 #include <network/log_level.hh>
+#include <network/msg.hh>
 #include <network/ping.hh>
 #include <network/server_tcp_impl.hh>
 
@@ -208,6 +209,11 @@ namespace {
 
 namespace hyper {
 	namespace model {
+		struct get_list_agents {
+			network::request_list_agents first;
+			network::list_agents second;
+		};
+
 		struct ability_impl {
 			typedef network::tcp::server<input_msg, 
 										 output_msg, 

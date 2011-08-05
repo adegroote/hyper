@@ -3,7 +3,6 @@
 
 #include <network/actor_protocol.hh>
 #include <network/log.hh>
-#include <network/msg.hh>
 #include <network/proxy.hh>
 #include <network/nameserver.hh>
 

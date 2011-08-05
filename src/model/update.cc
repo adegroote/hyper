@@ -2,6 +2,7 @@
 #include <model/ability.hh>
 #include <model/logic_layer.hh>
 
+
 namespace {
 	void pass(hyper::network::identifier id, const std::string& src, 
 			  hyper::model::updater::cb_type cb)

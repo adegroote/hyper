@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 
-#include <network/msg.hh>
+#include <network/types.hh>
 
+#include <boost/array.hpp>
 #include <boost/function/function1.hpp>
 #include <boost/function/function3.hpp>
 #include <boost/system/error_code.hpp>
