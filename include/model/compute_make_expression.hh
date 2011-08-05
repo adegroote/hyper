@@ -5,6 +5,8 @@
 #include <boost/system/error_code.hpp>
 
 #include <model/abortable_function.hh>
+#include <model/types.hh>
+#include <network/msg_constraint.hh>
 
 namespace hyper {
 	namespace model {

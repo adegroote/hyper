@@ -7,7 +7,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/variant/variant.hpp>
 
-#include <network/msg.hh>
+#include <network/msg_name.hh>
 #include <network/server_tcp_impl.hh>
 #include <network/client_tcp_impl.hh>
 

@@ -1,11 +1,13 @@
 #ifndef HYPER_MODEL_COMPUTE_ABORT_EXPRESSION_HH_
 #define HYPER_MODEL_COMPUTE_ABORT_EXPRESSION_HH_
 
+#include <boost/optional/optional_fwd.hpp>
 #include <boost/system/error_code.hpp>
+
+#include <network/msg_constraint.hh>
 #include <model/abortable_function.hh>
 #include <model/types.hh>
 
-#include <boost/optional/optional_fwd.hpp>
 
 namespace hyper {
 	namespace model {

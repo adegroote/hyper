@@ -6,7 +6,7 @@
 #include <sstream>
 #include <string>
 
-#include <network/msg.hh>
+#include <network/msg_log.hh>
 #include <network/nameserver.hh>
 #include <network/client_tcp_impl.hh>
 

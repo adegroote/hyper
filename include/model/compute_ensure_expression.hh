@@ -1,11 +1,12 @@
 #ifndef HYPER_MODEL_COMPUTE_ENSURE_EXPRESSION_HH_
 #define HYPER_MODEL_COMPUTE_ENSURE_EXPRESSION_HH_
 
-#include <boost/system/error_code.hpp>
-#include <model/abortable_function.hh>
-#include <model/types.hh>
-
 #include <boost/optional.hpp>
+#include <boost/system/error_code.hpp>
+
+#include <model/abortable_function.hh>
+#include <network/msg_constraint.hh>
+#include <model/types.hh>
 
 namespace hyper {
 	namespace model {
