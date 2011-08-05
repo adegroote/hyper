@@ -76,7 +76,7 @@ macro(HYPER_NODE node)
 				DESTINATION include/hyper/${node})
 	endif()
 
-	set(SRC src/main.cc)
+	set(SRC src/main.cc ${base_directory}/ability.cc)
 	file(GLOB tasks ${base_directory}/tasks/*cc)
 	set(SRC ${tasks} ${SRC})
 	file(GLOB recipes ${base_directory}/recipes/*cc)

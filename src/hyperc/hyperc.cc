@@ -511,7 +511,13 @@ int main(int argc, char** argv)
 	{
 		std::string fileName = directoryName + "/ability.hh";
 		std::ofstream oss(fileName.c_str());
-		u.dump_ability(oss, abilityName);
+		current_a.dump_include(oss, u);
+	}
+
+	{
+		std::string fileName = directoryName + "/ability.cc";
+		std::ofstream oss(fileName.c_str());
+		current_a.dump(oss, u);
 	}
 
 	{

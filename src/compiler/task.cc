@@ -233,6 +233,7 @@ namespace hyper {
 				depends deps;
 				add_depends(deps, u);
 				
+				oss << "#include <model/logic_layer.hh>\n";
 				oss << "#include <" << ability_context.name();
 				oss << "/ability.hh>" << std::endl;
 				oss << "#include <" << ability_context.name();

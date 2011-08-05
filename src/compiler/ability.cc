@@ -297,8 +297,8 @@ struct add_task_declaration
 	}
 };
 
-void
-ability::dump(std::ostream& oss, const universe& u) const
+void 
+ability::dump_include(std::ostream& oss, const universe& u) const
 {
 	std::set<std::string> type_depends;
 	compute_type_depends type_deps(type_depends, u.types());
@@ -306,20 +306,14 @@ ability::dump(std::ostream& oss, const universe& u) const
 	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
 	std::for_each(private_list.begin(), private_list.end(), type_deps);
 
-	depends deps = get_function_depends(u);
-
 	guards g(oss, name_, "_ABILITY_HH_");
 
+	oss << "#include <model/ability.hh>\n";
+	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
+	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
+	std::for_each(private_list.begin(), private_list.end(), type_deps);
 	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
 	oss << std::endl;
-
-	std::set<std::string> import_depends(type_depends);
-	import_depends.insert(deps.fun_depends.begin(), deps.fun_depends.end());; 
-	std::for_each(import_depends.begin(), import_depends.end(), dump_depends(oss, "import.hh"));
-	oss << std::endl;
-	std::for_each(tasks.begin(), tasks.end(), add_task_header(oss, name_));
-	oss << "#include <model/ability_impl.hh>" << std::endl;
-	oss << "#include <model/logic_layer_impl.hh>" << std::endl;
 
 	namespaces n(oss, name_);
 
@@ -330,8 +324,33 @@ ability::dump(std::ostream& oss, const universe& u) const
 	std::for_each(readable_list.begin(), readable_list.end(), print);
 	std::for_each(private_list.begin(), private_list.end(), print);
 
+	oss << "\t\t\t\tability(int level);\n";
+	oss << "\t\t\t};\n";
+}
+
+void
+ability::dump(std::ostream& oss, const universe& u) const
+{
+	std::set<std::string> type_depends;
+	compute_type_depends type_deps(type_depends, u.types());
+	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
+	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
+	std::for_each(private_list.begin(), private_list.end(), type_deps);
+	depends deps = get_function_depends(u);
+
+	oss << "#include <" << name_ << "/ability.hh>\n";
+
+	std::set<std::string> import_depends(type_depends);
+	import_depends.insert(deps.fun_depends.begin(), deps.fun_depends.end());; 
+	std::for_each(import_depends.begin(), import_depends.end(), dump_depends(oss, "import.hh"));
+	oss << std::endl;
+	std::for_each(tasks.begin(), tasks.end(), add_task_header(oss, name_));
+	oss << "#include <model/ability_impl.hh>" << std::endl;
+	oss << "#include <model/logic_layer_impl.hh>" << std::endl;
+
+	namespaces n(oss, name_);
+	oss << "\t\t\t\tability::ability(int level) : model::ability(" << quoted_string(name_) << ", level)";
 	initialize_variable initialize(oss);
-	oss << "\t\t\t\tability(int level) : model::ability(\"" << name_ << "\", level)";
 	std::for_each(controlable_list.begin(), controlable_list.end(), initialize);
 	std::for_each(readable_list.begin(), readable_list.end(), initialize);
 	std::for_each(private_list.begin(), private_list.end(), initialize);
@@ -342,8 +361,7 @@ ability::dump(std::ostream& oss, const universe& u) const
 	std::for_each(import_depends.begin(), import_depends.end(), add_import_funcs(oss));
 	std::for_each(tasks.begin(), tasks.end(), add_task_declaration(oss));
 	oss << "\t\t\t\t\tstart();\n;";
-	oss << "\t\t\t\t}\n;";
-	oss << "\t\t\t};" << std::endl;
+	oss << "\t\t\t\t}\n";
 }
 
 std::set<std::string>
