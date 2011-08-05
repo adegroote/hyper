@@ -3,7 +3,7 @@
 
 #include <compiler/scope.hh>
 #include <model/ability.hh>
-#include <model/actor_impl.hh>
+#include <model/proxy.hh>
 #include <model/update.hh>
 
 namespace hyper {
@@ -13,14 +13,12 @@ namespace hyper {
 
 			template <typename T>
 			struct remote_args {
-				typedef network::actor::remote_proxy<model::actor_impl> ability_remote_proxy;
-					
 				T& value_to_bind;
-				ability_remote_proxy proxy;
+				remote_proxy proxy;
 				boost::optional<T> tmp;
 
 				remote_args(model::ability& a, T& to_bind) :
-					value_to_bind(to_bind), proxy(*a.actor) {}
+					value_to_bind(to_bind), proxy(a) {}
 			};
 
 			template <typename T>
@@ -117,17 +115,17 @@ namespace hyper {
 		class update_variables<A, 0, vectorT> 
 		{
 			public:
-				typedef network::actor::remote_values<vectorT> remote_values;
+				typedef model::remote_values<vectorT> remote_values;
 				typedef typename remote_values::seqReturn seqReturn;
 				typedef typename remote_values::remote_vars_conf remote_vars_conf;
 
 			private:
-				network::actor::remote_proxy<model::actor_impl> proxy;
+				remote_proxy proxy;
 				remote_values remote;
 
 			public:
 				update_variables(A& a, const typename remote_values::remote_vars_conf& vars):
-					proxy(*a.actor), remote(vars)
+					proxy(a), remote(vars)
 				{}
 
 				template <typename Handler>
@@ -148,13 +146,13 @@ namespace hyper {
 		class update_variables 
 		{
 			public:
-				typedef network::actor::remote_values<vectorT> remote_values;
+				typedef model::remote_values<vectorT> remote_values;
 				typedef typename remote_values::seqReturn seqReturn;
 				typedef typename remote_values::remote_vars_conf remote_vars_conf;
 
 			private:
 				A& a;
-				network::actor::remote_proxy<model::actor_impl> proxy;
+				remote_proxy proxy;
 				local_vars local_update_status;
 				remote_values remote_update_status;
 
@@ -170,7 +168,7 @@ namespace hyper {
 			public:
 				update_variables(A& a, const boost::array<std::string, N>& update,
 								 const typename remote_values::remote_vars_conf& vars):
-					a(a), proxy(*a.actor), local_update_status(update),
+					a(a), proxy(a), local_update_status(update),
 					remote_update_status(vars)
 				{}
 				

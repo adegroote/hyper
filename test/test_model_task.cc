@@ -78,6 +78,7 @@ BOOST_AUTO_TEST_CASE ( model_task_test )
 	name_server s("127.0.0.1", "4242", io_s, false);
 	boost::thread thr( boost::bind(& boost::asio::io_service::run, &io_s));
 
+#if 0
 	{
 	boost::asio::io_service ios2;
 	hyper::network::name_client nc(ios2, "127.0.0.1", "4242");
@@ -91,6 +92,7 @@ BOOST_AUTO_TEST_CASE ( model_task_test )
 	(void) e_empty;
 	(void) e_not_empty;
 	}
+#endif
 
 	agent our_agent;
 	our_agent.i = 42;

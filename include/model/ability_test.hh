@@ -1,11 +1,12 @@
 #ifndef HYPER_MODEL_MODULE_ABILITY_TEST_HH
 #define HYPER_MODEL_MODULE_ABILITY_TEST_HH
 
-#include <network/log_level.hh>
-#include <network/proxy.hh>
 
 #include <model/ability.hh>
 #include <model/future.hh>
+#include <model/proxy.hh>
+#include <network/log_level.hh>
+#include <network/msg_constraint.hh>
 
 #include <boost/thread/thread.hpp>
 
@@ -25,7 +26,7 @@ namespace hyper {
 			private:
 			template <typename T>
 			void handle_get_value(const boost::system::error_code&e,
-					network::actor::remote_proxy<ability>* proxy,
+					remote_proxy* proxy,
 					future_value<T> future)
 			{
 				delete proxy;
@@ -38,7 +39,7 @@ namespace hyper {
 			}
 
 			void handle_get_value(const boost::system::error_code&e,
-								  network::actor::remote_proxy<ability>* proxy,
+								  remote_proxy* proxy,
 								  const std::string& value);
 
 			void handle_send_constraint(const boost::system::error_code& e,
@@ -51,13 +52,13 @@ namespace hyper {
 			template <typename T>
 			future_value<T> get_value(const std::string& value)
 			{
-				network::actor::remote_proxy<ability>* proxy = 
-					new network::actor::remote_proxy<ability> (*this);
+				remote_proxy* proxy = 
+					new remote_proxy (*this);
 			
 				future_value<T> res(value);
 
 				void (ability_test::*f) (const boost::system::error_code&,
-										 network::actor::remote_proxy<ability>*,
+										 remote_proxy*,
 										 future_value<T>) =
 					&ability_test::template handle_get_value<T>;
 

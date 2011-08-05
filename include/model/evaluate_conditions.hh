@@ -34,7 +34,7 @@ namespace hyper {
 
 				typedef std::pair<fun_call, std::string> condition;
 
-				typedef network::actor::remote_values<vectorT> remote_values;
+				typedef model::remote_values<vectorT> remote_values;
 				typedef update_variables<A, M, vectorT> updater_type;
 				updater_type updater;
 

@@ -1,6 +1,7 @@
 #include <model/ability.hh>
 #include <model/actor_impl.hh>
 #include <model/logic_layer.hh>
+#include <network/proxy_visitor.hh>
 
 #include <network/log_level.hh>
 #include <network/msg.hh>
@@ -48,7 +49,7 @@ namespace {
 	struct ability_visitor : public boost::static_visitor<output_variant>
 	{
 		model::ability &a;
-		network::actor::proxy_visitor<model::actor_impl> proxy_vis;
+		network::proxy_visitor<model::actor_impl> proxy_vis;
 		network::actor_protocol_visitor<model::actor_impl> actor_vis;
 
 		ability_visitor(model::ability& a_) : 

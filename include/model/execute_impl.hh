@@ -7,9 +7,9 @@
 #include <compiler/scope.hh>
 #include <logic/expression.hh>
 #include <network/utils.hh>
-#include <network/proxy.hh>
 #include <model/actor_impl.hh>
 #include <model/execute.hh>
+#include <model/proxy.hh>
 
 #include <boost/any.hpp>
 #include <boost/array.hpp>
@@ -35,8 +35,6 @@ namespace hyper {
 		typedef boost::function<void (const boost::system::error_code&)> fun_cb;
 
 		namespace details {
-			typedef network::actor::remote_proxy<model::actor_impl> ability_remote_proxy;
-
 			inline
 			void handle_nothing(const boost::system::error_code&)
 			{}
@@ -50,7 +48,7 @@ namespace hyper {
 
 			static
 			void handle_remote_proxy_get(const boost::system::error_code& e,
-										 ability_remote_proxy* proxy,
+										 remote_proxy* proxy,
 										 fun_cb cb)
 			{
 				delete proxy;
@@ -88,7 +86,7 @@ namespace hyper {
 						if (p.first == a.name) {
 							res = a.proxy.eval<typename T::value_type>(p.second);
 						} else {
-							ability_remote_proxy* proxy (new ability_remote_proxy(*a.actor));
+							remote_proxy* proxy (new remote_proxy(a));
 
 							fun_cb local_cb = boost::bind(
 									handle_remote_proxy_get, 

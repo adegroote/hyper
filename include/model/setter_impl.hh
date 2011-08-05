@@ -2,7 +2,9 @@
 #define HYPER_MODEL_SETTER_IMPL_HH_
 
 #include <model/setter.hh>
-#include <model/actor_impl.hh>
+#include <model/proxy.hh>
+
+#include <boost/variant/apply_visitor.hpp>
 
 namespace hyper {
 	namespace model {
@@ -10,12 +12,10 @@ namespace hyper {
 
 			template <typename T>
 			struct proxy {
-				typedef network::actor::remote_proxy<model::actor_impl> ability_remote_proxy;
-
 				boost::optional<T> tmp;
-				ability_remote_proxy proxy_;
+				remote_proxy proxy_;
 
-				proxy(hyper::model::ability& a) : proxy_(*a.actor) {}
+				proxy(hyper::model::ability& a) : proxy_(a) {}
 			};
 
 			template <typename T>
