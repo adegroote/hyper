@@ -70,8 +70,7 @@ namespace {
 			{
 				symbolList::const_iterator it = syms.find(s);
 				if (it != syms.end()) {
-					size_t i = std::distance(syms.begin(), it);
-					oss << "boost::fusion::at_c<" << i << ">(" << local_access << ")";
+					oss << local_access << "." << s ;
 				} else {
 					std::string real_name;
 					if (!scope::is_scoped_identifier(s))

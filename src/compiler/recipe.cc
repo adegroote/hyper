@@ -21,28 +21,53 @@ using namespace hyper::compiler;
 std::pair<bool, std::string> 
 is_tagged_func_call(const expression_ast& e, const std::string& name, const universe &u);
 
-std::string symbolList_to_vectorType(const symbolList& syms, const typeList& tList)
-{
-	std::ostringstream oss;
-	oss << "boost::fusion::vector<";
-	symbolList::const_iterator it = syms.begin();
-	while (it != syms.end()) {
-		type t = tList.get(it->second.t);
-		oss << t.type_name();
-		++it;
-		if (it != syms.end())
-			oss << ", ";
-	}
-	oss << ">";
+struct dump_sym {
+	std::ostream& oss;
+	const typeList& tList;
 
+	dump_sym(std::ostream& oss, const typeList& tList) :
+		oss(oss), tList(tList)
+	{}
+
+	void operator() (const std::pair<std::string, symbol>& p) const
+	{
+		const symbol& sym = p.second;
+		type t = tList.get(sym.t);
+		oss << times(3, "\t") << t.type_name() << " " << sym.name << ";\n";
+	}
+};
+
+std::string make_local_ctx_structure(const symbolList& syms, const typeList& tList)
+{
+	std::ostringstream oss; 
+	oss << "struct local_context {\n";
+	std::for_each(syms.begin(), syms.end(), dump_sym(oss, tList));
+	oss << "\t\t};\n";
 	return oss.str();
 }
 
-size_t symbolList_index(const symbolList& sym, const std::string& current_sym)
+std::string mangle(const std::string& s)
 {
-	symbolList::const_iterator it = sym.find(current_sym);
-	assert(it != sym.end());
-	return std::distance(sym.begin(), it);
+	return "__hyper_" + hyper::compiler::replace_by(s, "::", "__");
+}
+
+struct dump_unused_type {
+	std::ostream& oss;
+	
+	dump_unused_type(std::ostream& oss) : oss(oss) {}
+
+	void operator() (const std::string& s) {
+		oss << times(3, "\t") << s << " " << mangle(s) << ";\n";
+	}
+};
+
+std::string make_unused_ctx_structure(const std::set<std::string>& s)
+{
+	std::ostringstream oss;
+	oss << "struct unused_context {\n";
+	std::for_each(s.begin(), s.end(), dump_unused_type(oss));
+	oss << "\t\t};\n";
+	return oss.str();
 }
 
 struct validate_expression
@@ -328,14 +353,12 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 	std::string local_symbol(const std::string& s) const 
 	{
-		std::ostringstream oss;
-		oss << "boost::fusion::at_c<" << symbolList_index(syms, s) << ">(local_vars)";
-		return oss.str();
+		return "local_vars." + s;
 	}
 
 	std::string unused_symbol(const std::string& t) const
 	{
-		return "boost::fusion::at_key<" + t + ">(unused_res)";
+		return "unused_res." + mangle(t);
 	}
 
 	std::string compute_target(const expression_ast& e) const
@@ -375,7 +398,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 		if (p.first) 
 			return u.get_extension(p.second).generate_abortable_function(
-					u, a, t, symbolList_to_vectorType(syms, u.types()), counter++, identifier);
+					u, a, t, "local_context", counter++, identifier);
 
 		std::ostringstream oss;
 		std::string indent = times(3, "\t");
@@ -384,8 +407,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 		oss << next_indent << "new hyper::model::abortable_function(\n";
 		oss << next_indent << "boost::bind(&hyper::model::compute_expression<expression_" << counter << ">::async_eval<\n";
 		oss << next_indent << "hyper::model::abortable_computation::cb_type,\n";
-		oss << next_indent << "hyper::" << a.name() << "::ability,\n";
-		oss << next_indent << symbolList_to_vectorType(syms, u.types()) << " >,\n";
+		oss << next_indent << "hyper::" << a.name() << "::ability, local_context>,\n";
 		oss << next_indent << "&expression_exec" << counter++ << ", _1, boost::cref(a), boost::cref(local_vars),\n";
 		oss << next_indent << "boost::ref(" << identifier << ")))\n";
 
@@ -642,23 +664,6 @@ struct extract_unused_result {
 	}
 };
 
-std::string unused_results(const std::set<std::string>& s)
-{
-	if (s.empty()) return "";
-
-	std::set<std::string>::const_iterator it = s.begin();
-	std::ostringstream oss;
-	oss << "boost::fusion::set<";
-	while (it != s.end()) {
-		oss << *it++;
-		if (it != s.end())
-			oss << ", ";
-	}
-	oss << "> unused_res;";
-
-	return oss.str();
-}
-
 struct is_tagged_func_call_helper : public boost::static_visitor< std::pair<bool, std::string> >
 {
 	std::string name;
@@ -879,10 +884,6 @@ namespace hyper {
 			oss << "#include <model/compute_make_expression.hh>\n";
 			oss << "#include <model/compute_wait_expression.hh>\n";
 			oss << "#include <boost/assign/list_of.hpp>\n"; 
-			oss << "#include <boost/fusion/container/vector.hpp>\n";
-			oss << "#include <boost/fusion/container/set.hpp>\n";
-			oss << "#include <boost/fusion/include/at_key.hpp>\n" << std::endl;
-
 
 			std::for_each(deps.fun_depends.begin(), 
 						  deps.fun_depends.end(), dump_depends(oss, "import.hh"));
@@ -918,15 +919,16 @@ namespace hyper {
 				oss << indent << "using namespace hyper;\n";
 				oss << indent << "using namespace hyper::" << context_a.name() << ";\n";
 
-				std::string local_data = symbolList_to_vectorType(local_symbol, u.types());
+				oss << indent << make_local_ctx_structure(local_symbol, u.types()) << "\n";
+				oss << indent << make_unused_ctx_structure(unused_result_set) << "\n";
 
-				dump_eval_expression e_dump(oss, u, context_a, context_t, local_data, local_symbol);
+				dump_eval_expression e_dump(oss, u, context_a, context_t, "local_context", local_symbol);
 				std::for_each(expression_list.begin(), expression_list.end(), e_dump);
 
 				oss << indent << "struct exec_driver : public hyper::model::abortable_computation {\n";
 				oss << indent << "\tability& a;\n";
-				oss << indent << "\t" << local_data << " local_vars;\n";
-				oss << indent << "\t" << unused_results(unused_result_set) << "\n";
+				oss << indent << "\tlocal_context local_vars;\n";
+				oss << indent << "\tunused_context unused_res;\n";
 				for (size_t i = 0; i < expression_list.size(); ++i) {
 					std::pair<bool, std::string> p;
 					p = is_tagged_func_call(expression_list[i], context_a.name(), u);
