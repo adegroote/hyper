@@ -21,6 +21,78 @@ using namespace hyper::compiler;
 std::pair<bool, std::string> 
 is_tagged_func_call(const expression_ast& e, const std::string& name, const universe &u);
 
+std::string exported_symbol(const std::string& s, const task& t)
+{
+	return t.exported_name() + "_" + s;
+}
+
+struct prepare_logic_symbol_ : public boost::static_visitor<expression_ast>
+{
+	const symbolList& sym;
+	const task& t;
+
+	prepare_logic_symbol_(const symbolList& sym, const task& t) : sym(sym), t(t) {}
+
+	template <typename T>
+	expression_ast operator() (const T& t) const { return t; }
+
+	expression_ast operator() (const std::string& s) const {
+		std::pair<bool, symbol> p = sym.get(s);
+		if (p.first) 
+			return exported_symbol(s, t);
+		else
+			return s;
+	}
+
+	expression_ast operator() (const function_call& f) const {
+		function_call res(f);
+		for (size_t i = 0; i < f.args.size(); ++i)
+			res.args[i] = boost::apply_visitor(*this, f.args[i].expr);
+		return res;
+	}
+
+	expression_ast operator() (const expression_ast& e) const {
+		return boost::apply_visitor(*this, e.expr);
+	}
+
+	template <unary_op_kind T>
+	expression_ast operator() (const unary_op<T>& op) const {
+		unary_op<T> res(op);
+		res.subject = boost::apply_visitor(*this, op.subject.expr);
+		return res;
+	}
+
+	template <binary_op_kind T>
+	expression_ast operator() (const binary_op<T>& op) const {
+		binary_op<T> res(op);
+		res.left = boost::apply_visitor(*this, op.left.expr);
+		res.right = boost::apply_visitor(*this, op.right.expr);
+		return res;
+	}
+};
+
+struct prepare_logic_symbol_unification {
+	prepare_logic_symbol_ vis;
+
+	prepare_logic_symbol_unification(const symbolList& sym, const task& t) : vis(sym, t) {}
+
+	unification_expression operator() (const unification_expression& p) const
+	{
+		return std::make_pair( boost::apply_visitor(vis, p.first.expr),
+							   boost::apply_visitor(vis, p.second.expr));
+	}
+};
+
+logic_expression_decl prepare_logic_symbol(const logic_expression_decl& decl,
+										   const symbolList& sym, const task& t)
+{
+	logic_expression_decl res(decl);
+	res.main = boost::apply_visitor(prepare_logic_symbol_(sym, t), decl.main.expr);
+	std::transform(res.unification_clauses.begin(), res.unification_clauses.end(),
+				   res.unification_clauses.begin(), prepare_logic_symbol_unification(sym, t));
+	return res;
+}
+
 struct dump_sym {
 	std::ostream& oss;
 	const typeList& tList;
@@ -437,7 +509,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 	std::string operator() (const wait_decl& w) const
 	{
-		std::string indent = times(3, "\t");
+		std::string indent = times(4, "\t");
 		std::string identifier = compute_target(w.content);
 		std::string next_indent = "\t" + indent;
 
@@ -453,7 +525,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 	std::string operator() (const expression_ast& e) const
 	{
-		std::string indent = times(3, "\t");
+		std::string indent = times(4, "\t");
 		std::string identifier = compute_target(e);
 
 		std::ostringstream oss;
@@ -466,7 +538,7 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 	std::string operator() (const set_decl& s) const
 	{
-		std::string indent = times(3, "\t");
+		std::string indent = times(4, "\t");
 
 		target = s.identifier;
 		std::string identifier = compute_target(s.bounded.expr);
@@ -480,15 +552,17 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 	std::string operator() (const recipe_op<MAKE>& r) const
 	{
-		std::string indent = times(3, "\t");
-		std::string indent_next = times(4, "\t");
+		std::string indent = times(4, "\t");
+		std::string indent_next = times(5, "\t");
 		std::string identifier = compute_make_target();
+		logic_expression_decl local_expr = prepare_logic_symbol(r.content[0].logic_expr, syms, t);
+
 		std::ostringstream oss;
 
 		oss << indent << "push_back(new hyper::model::compute_make_expression(a, ";
 		oss << quoted_string(*(r.content[0].dst)) << ", ";
-		oss << quoted_string(generate_logic_expression(r.content[0].logic_expr.main, a, u));
-		oss << ", \n" << indent_next << dump_unification(r.content[0].logic_expr.unification_clauses);
+		oss << quoted_string(generate_logic_expression(local_expr.main, a, u));
+		oss << ", \n" << indent_next << dump_unification(local_expr.unification_clauses);
 		oss << ", " << identifier << "));\n";
 		target = boost::none;
 
@@ -498,15 +572,16 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 	std::string operator() (const recipe_op<ENSURE>& r) const
 	{
-		std::string indent = times(3, "\t");
-		std::string indent_next = times(4, "\t");
+		std::string indent = times(4, "\t");
+		std::string indent_next = times(5, "\t");
 		std::string identifier = compute_ensure_target();
+		logic_expression_decl local_expr = prepare_logic_symbol(r.content[0].logic_expr, syms, t);
 		std::ostringstream oss;
 
 		oss << indent << "push_back(new hyper::model::compute_ensure_expression(a, ";
 		oss << quoted_string(*(r.content[0].dst)) << ", \n" << indent_next;
-		oss << quoted_string(generate_logic_expression(r.content[0].logic_expr.main, a, u));
-		oss << ", \n" << indent_next << dump_unification(r.content[0].logic_expr.unification_clauses);
+		oss << quoted_string(generate_logic_expression(local_expr.main, a, u));
+		oss << ", \n" << indent_next << dump_unification(local_expr.unification_clauses);
 		oss << ", \n" << indent_next << identifier << "));\n";
 		target = boost::none;
 
@@ -515,8 +590,8 @@ struct dump_recipe_visitor : public boost::static_visitor<std::string>
 
 	std::string operator() (const abort_decl& a) const
 	{
-		std::string indent = times(3, "\t");
-		std::string indent_next = times(4, "\t");
+		std::string indent = times(4, "\t");
+		std::string indent_next = times(5, "\t");
 		std::ostringstream oss;
 
 		oss << indent << "push_back(new hyper::model::compute_abort_expression(a, \n";
@@ -545,6 +620,31 @@ struct dump_recipe_expression {
 	void operator() (const recipe_expression& r)
 	{
 		oss << boost::apply_visitor(vis, r.expr);
+	}
+};
+
+
+struct export_ {
+	std::ostream& oss;
+	const task& t;
+
+	export_(std::ostream& oss, const task& t) : oss(oss), t(t) {}
+
+	void operator() (const std::pair<std::string, symbol>& p) const {
+		oss << times(4, "\t") << "a.export_local_variable(";
+		oss << quoted_string(exported_symbol(p.first, t)) << ", local_vars." << p.first << ");\n";
+	}
+};
+
+struct remove_ {
+	std::ostream& oss;
+	const task& t;
+
+	remove_(std::ostream& oss, const task& t) : oss(oss), t(t) {}
+
+	void operator() (const std::pair<std::string, symbol>& p) const {
+		oss << times(4, "\t") << "a.remove_local_variable(";
+		oss << quoted_string(exported_symbol(p.first, t)) << ");\n";
 	}
 };
 
@@ -957,10 +1057,15 @@ namespace hyper {
 					oss << indent << "\t\texpression_exec" << i << "(updater" << i << ")";
 				}
 				oss << "\n" << indent << "\t{\n";
+				std::for_each(local_symbol.begin(), local_symbol.end(), export_(oss, context_t));
 				std::for_each(body.begin(), body.end(), 
 							  dump_recipe_expression(oss, u, context_a, context_t, local_symbol));
-				oss << indent << "\t};\n";
+				oss << indent << "\t}\n";
+				oss << indent << "\t~exec_driver() {\n";
+				std::for_each(local_symbol.begin(), local_symbol.end(), remove_(oss, context_t));
+				oss << indent << "\t}\n";
 				oss << indent << "};";
+
 			}
 
 			namespaces n(oss, context_a.name());
