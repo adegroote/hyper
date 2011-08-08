@@ -60,6 +60,19 @@ namespace hyper {
 
 			virtual ~ability();
 
+			template <typename T>
+			void export_local_variable(const std::string& name, const T& value)
+			{
+				serializer.register_variable(name, value);
+				updater.add(name);
+			}
+
+			void remove_local_variable(const std::string& name)
+			{
+				serializer.remove_variable(name);
+				updater.remove(name);
+			}
+
 			protected:
 			void start();
 

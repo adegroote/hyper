@@ -71,6 +71,8 @@ namespace hyper {
 				
 				bool add(const std::string& var);
 
+				bool remove(const std::string& var);
+
 				void async_update(const std::string& var, network::identifier id, 
 								  const std::string& str, cb_type cb);
 

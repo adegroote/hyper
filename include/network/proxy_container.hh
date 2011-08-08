@@ -80,6 +80,17 @@ namespace hyper {
 						return std::make_pair(false, "");
 					return std::make_pair(true, it->second());
 				}
+
+				bool remove_variable(const std::string& name)
+				{
+					serializer::iterator it = s.find(name);
+					if (it == s.end())
+						return false;
+					else {
+						s.erase(it);
+						return true;
+					}
+				}
 		};
 
 		class local_proxy 
@@ -119,6 +130,17 @@ namespace hyper {
 					}
 
 					return boost::none;
+				}
+
+				bool remove_variable(const std::string& name)
+				{
+					l_proxy::iterator it = l.find(name);
+					if (it == l.end())
+						return false;
+					else {
+						l.erase(it);
+						return true;
+					}
 				}
 		};
 	}

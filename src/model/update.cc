@@ -33,6 +33,17 @@ namespace hyper {
 
 		updater::updater(ability& a_) : a(a_) {}
 
+		bool updater::remove(const std::string& var) 
+		{
+			map_type::iterator it = map.find(var);
+			if (it == map.end())
+				return false;
+			else {
+				map.erase(it);
+				return true;
+			}
+		}
+
 		bool updater::add(const std::string& var) 
 		{
 			std::pair<map_type::iterator, bool> p;
