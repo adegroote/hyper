@@ -48,6 +48,12 @@ namespace {
 			update.add("z", "goal::j", pos.z); // sync z with goal::j
 		};
 
+		void handle_third_test(const boost::system::error_code& e)
+		{
+			BOOST_CHECK(e == boost::asio::error::invalid_argument);
+			valid_test++;
+		}
+
 		void handle_second_test(const boost::system::error_code& e)
 		{
 			BOOST_CHECK(!e);
@@ -56,6 +62,12 @@ namespace {
 			BOOST_CHECK(pos.y == 3);
 			BOOST_CHECK(pos.z == 42);
 			valid_test++;
+
+			// update a non existing variable
+			update.async_update("pipo", 2, "test", 
+					boost::bind(&update_test::handle_third_test,
+								this,
+								boost::asio::placeholders::error));
 		}
 
 		void handle_first_test(const boost::system::error_code& e)
@@ -108,7 +120,7 @@ BOOST_AUTO_TEST_CASE ( model_update_test )
 
 	// sleep a bit to be sure that everything happens
 	boost::this_thread::sleep(boost::posix_time::milliseconds(10)); 
-	BOOST_CHECK(test.valid_test == 2);
+	BOOST_CHECK(test.valid_test == 3);
 
 	goal_.stop();
 	thr3.join();

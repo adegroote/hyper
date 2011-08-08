@@ -55,7 +55,7 @@ namespace hyper {
 		{
 			map_type::const_iterator it = map.find(var);
 			if (it == map.end())
-				cb(boost::asio::error::invalid_argument);
+				return cb(boost::asio::error::invalid_argument);
 
 			return it->second(id, src, cb);
 		}
