@@ -377,6 +377,7 @@ struct extract_expression {
 	}
 };
 
+
 struct dump_eval_expression {
 	std::ostream& oss;
 	const universe &u;
@@ -461,6 +462,19 @@ struct dump_required_agents
 			return;
 		oss << times(3, "\t") << "required_agents.insert(";
 		oss << quoted_string(agent) << ");\n";
+	}
+};
+
+struct is_exportable_symbol
+{
+	const typeList& tList;
+
+	is_exportable_symbol(const typeList& tList) : tList(tList) {}
+
+	bool operator() (const std::pair<std::string, symbol>& p) const
+	{
+		type t = tList.get(p.second.t);
+		return (t.t != opaqueType);
 	}
 };
 
@@ -632,12 +646,15 @@ namespace hyper {
 					oss << indent << "\t\texpression_exec" << i << "(updater" << i << ")";
 				}
 				oss << "\n" << indent << "\t{\n";
-				std::for_each(local_symbol.begin(), local_symbol.end(), export_(oss, context_t));
+				std::vector<std::pair<std::string, symbol> > exportable_symbol;
+				hyper::utils::copy_if(local_symbol.begin(), local_symbol.end(), std::back_inserter(exportable_symbol),
+										   is_exportable_symbol(u.types()));
+				std::for_each(exportable_symbol.begin(), exportable_symbol.end(), export_(oss, context_t));
 				std::for_each(body.begin(), body.end(), 
 							  dump_recipe_expression(oss, u, context_a, context_t, local_symbol));
 				oss << indent << "\t}\n";
 				oss << indent << "\t~exec_driver() {\n";
-				std::for_each(local_symbol.begin(), local_symbol.end(), remove_(oss, context_t));
+				std::for_each(exportable_symbol.begin(), exportable_symbol.end(), remove_(oss, context_t));
 				oss << indent << "\t}\n";
 				oss << indent << "};";
 
