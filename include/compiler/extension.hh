@@ -47,6 +47,9 @@ namespace hyper {
 
 			virtual ~extension() {}
 		};
+
+		std::pair<bool, std::string> 
+		is_tagged_func_call(const expression_ast& e, const std::string& name, const universe &u);
 	}
 }
 
