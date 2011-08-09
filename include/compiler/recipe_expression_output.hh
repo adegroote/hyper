@@ -17,11 +17,12 @@ namespace hyper {
 			const ability &a;
 			const task& t;
 			const symbolList& syms;
+			mutable size_t counter;
 
 			dump_recipe_expression(std::ostream& oss_, const universe& u_,
 								   const ability & a_, const task& t_,
 								   const symbolList& syms_) : 
-				oss(oss_), u(u_), a(a_), t(t_), syms(syms_)
+				oss(oss_), u(u_), a(a_), t(t_), syms(syms_), counter(0)
 				{}
 
 			void operator() (const recipe_expression& r) const;

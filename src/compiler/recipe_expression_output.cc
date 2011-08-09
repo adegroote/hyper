@@ -109,12 +109,12 @@ namespace {
 		const ability &a;
 		const task& t;
 		const symbolList& syms;
-		mutable size_t counter;
+		size_t& counter;
 		mutable boost::optional<std::string> target;
 
 		dump_recipe_visitor(const universe & u_, const ability& a_, const task& t_, 
-						   const symbolList& syms_) : 
-			u(u_), a(a_), t(t_), syms(syms_), counter(0), target(boost::none) {}
+						   const symbolList& syms_, size_t& counter) : 
+			u(u_), a(a_), t(t_), syms(syms_), counter(counter), target(boost::none) {}
 
 		template <typename T> 
 		std::string operator() (const T&) const { return ""; }
@@ -314,7 +314,7 @@ namespace hyper {
 
 		void dump_recipe_expression::operator() (const recipe_expression& r) const
 		{
-			dump_recipe_visitor vis(u, a, t, syms);
+			dump_recipe_visitor vis(u, a, t, syms, counter);
 			oss << boost::apply_visitor(vis, r.expr);
 		}
 	}
