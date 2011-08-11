@@ -607,6 +607,7 @@ universe::dump_ability_functions_proto(std::ostream& oss, const std::string& nam
 
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
 
+		oss << "#include <string>\n";
 		oss << "#include <boost/mpl/vector.hpp>\n\n"; 
 
 		namespaces n(oss, name);
