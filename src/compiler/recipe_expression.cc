@@ -109,10 +109,15 @@ struct extract_destination : public boost::static_visitor<boost::optional<std::s
 remote_constraint::remote_constraint(const expression_ast& ast) 
 {
 	logic_expr.main = ast;
-	dst = boost::apply_visitor(extract_destination(), logic_expr.main.expr);
+	compute_dst();
 }
 
 remote_constraint::remote_constraint(const logic_expression_decl& decl) : logic_expr(decl)
+{
+	compute_dst();
+}
+
+void remote_constraint::compute_dst()
 {
 	dst = boost::apply_visitor(extract_destination(), logic_expr.main.expr);
 }

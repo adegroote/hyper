@@ -118,7 +118,8 @@ struct valid_unification
 
 		if (!s1 && !s2) {
 			b = false;
-			std::cerr << "Invalid unification_expression : no symbol " << p << std::endl;
+			std::cerr << "Invalid unification_expression : nor " << s1 << " nor "; 
+			std::cerr << s2 << " are symbol " << std::endl;
 			return;
 		}
 
@@ -478,14 +479,139 @@ struct is_exportable_symbol
 	}
 };
 
+struct adapt_expression_to_context_helper : public boost::static_visitor<expression_ast>
+{
+	const recipe_context_decl::map_type& map;
+
+	adapt_expression_to_context_helper(const recipe_context_decl::map_type& map) : map(map) {}
+
+	template <typename T>
+	expression_ast operator() (const T& t) const { return t; }
+
+	expression_ast operator() (const std::string& s) const {
+		recipe_context_decl::map_type::const_iterator it;
+		it = map.find(s);
+		if (it != map.end())
+			return boost::apply_visitor(*this, it->second.expr);
+		else
+			return s;
+	}
+
+	expression_ast operator() (const expression_ast& e) const {
+		return boost::apply_visitor(*this, e.expr);
+	}
+
+	expression_ast operator() (const function_call& f) const {
+		function_call res(f);
+		for (size_t i = 0; i < res.args.size(); ++i)
+			res.args[i] = boost::apply_visitor(*this, res.args[i].expr);
+		return res;
+	}
+
+	template <unary_op_kind K>
+	expression_ast operator() (const unary_op<K>& op) const {
+		unary_op<K> res(op);
+		res.subject = boost::apply_visitor(*this, op.subject.expr);
+		return res;
+	}
+
+	template <binary_op_kind K>
+	expression_ast operator() (const binary_op<K>& op) const {
+		binary_op<K> res(op);
+		res.left = boost::apply_visitor(*this, op.left.expr);
+		res.right = boost::apply_visitor(*this, op.right.expr);
+		return res;
+	}
+};
+
+struct adapt_expression_to_context {
+	const recipe_context_decl::map_type& map;
+
+	adapt_expression_to_context(const recipe_context_decl::map_type& map) : 
+		map(map)
+	{}
+
+	expression_ast operator() (const expression_ast& ast)
+	{
+		return boost::apply_visitor(adapt_expression_to_context_helper(map), ast.expr);
+	}
+};
+
+struct adapt_recipe_expression_to_context_helper : public boost::static_visitor<recipe_expression> {
+	const recipe_context_decl::map_type& map;
+
+	adapt_recipe_expression_to_context_helper(const recipe_context_decl::map_type& map) :
+		map(map)
+	{}
+
+	template <typename T>
+	recipe_expression operator() (const T& t) const { return t; }
+
+	recipe_expression operator() (const let_decl& l) const {
+		let_decl res(l);
+		res.bounded = boost::apply_visitor(*this, l.bounded.expr);
+		return res;
+	}
+
+	recipe_expression operator() (const set_decl& s) const {
+		set_decl res(s);
+		res.bounded = adapt_expression_to_context(map)(s.bounded.expr);
+		return res;
+	}
+
+	recipe_expression operator() (const expression_ast& e) const {
+		return adapt_expression_to_context(map)(e.expr);
+	}
+
+	recipe_expression operator() (const wait_decl& w) const {
+		wait_decl res(w);
+		res.content = adapt_expression_to_context(map)(res.content.expr);
+		return res;
+	}
+
+	template <recipe_op_kind K>
+	recipe_expression operator() (const recipe_op<K>& op) const {
+		recipe_op<K> res(op);
+		for (size_t i = 0; i < res.content.size(); ++i) {
+			res.content[i].logic_expr.main =
+				adapt_expression_to_context(map)(res.content[i].logic_expr.main.expr);
+			res.content[i].compute_dst();
+		}
+		return res;
+	}
+};
+
+struct adapt_recipe_expression_to_context {
+	const recipe_context_decl::map_type& map;
+
+	adapt_recipe_expression_to_context(const recipe_context_decl::map_type& map) :
+		map(map)
+	{}
+
+	recipe_expression operator() (const recipe_expression& ast)
+	{
+		return boost::apply_visitor(adapt_recipe_expression_to_context_helper(map), ast.expr);
+	}
+};
+
 namespace hyper {
 	namespace compiler {
-		recipe::recipe(const recipe_decl& r_parser, const ability& a, 
-						const task& t, const typeList& tList_) :
+		recipe::recipe(const recipe_decl& r_parser, 
+					   const recipe_context_decl& context,	
+					   const ability& a, 
+					   const task& t, const typeList& tList_) :
 			name(r_parser.name), pre(r_parser.conds.pre.list),
 			post(r_parser.conds.post.list), body(r_parser.body.list),
 			context_a(a), context_t(t), tList(tList_), local_symbol(tList) 
-		{}
+		{
+			recipe_context_decl::map_type map = make_name_expression_map(context);
+			std::transform(pre.begin(), pre.end(), pre.begin(),
+						   adapt_expression_to_context(map));
+			std::transform(post.begin(), post.end(), post.begin(),
+						   adapt_expression_to_context(map));
+			std::transform(body.begin(), body.end(), body.begin(),
+						   adapt_recipe_expression_to_context(map));
+		}
 
 		bool recipe::validate(const universe& u) 
 							  

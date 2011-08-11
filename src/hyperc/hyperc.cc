@@ -170,6 +170,7 @@ struct generate_recipe
 	depends& deps;
 
 	bool& success;
+	const recipe_context_decl& context;
 	std::string directoryName;
 
 	generate_recipe(universe& u_,
@@ -177,15 +178,16 @@ struct generate_recipe
 					const std::string& taskName,
 					const std::string& directoryName_,
 					depends& deps,
-					bool& success) :
+					bool& success,
+					const recipe_context_decl& context) :
 		u(u_), ab(u_.get_ability(abilityName)), tList(u.types()), 
 		t(ab.get_task(taskName)), deps(deps),
-		success(success), directoryName(directoryName_) 
+		success(success), context(context), directoryName(directoryName_) 
 	{}
 
 	void operator() (const recipe_decl& decl)
 	{
-		recipe r(decl, ab, t, tList);
+		recipe r(decl, context, ab, t, tList);
 		bool valid = r.validate(u);
 		if (!valid) {
 			std::cerr << "Recipe " << r.get_name() << " seems not valid " << std::endl;
@@ -452,12 +454,13 @@ int main(int argc, char** argv)
 						}
 
 						bool success = true;
-						generate_recipe gen(u, abilityName, taskName, directoryRecipeName, deps, success);
+						generate_recipe gen(u, abilityName, taskName, directoryRecipeName, 
+											deps, success, rec_decls.context);
 						std::for_each(rec_decls.recipes.begin(),
 								rec_decls.recipes.end(),
 								gen);
-						if (success == false)
-							return -1;
+//						if (success == false)
+//							return -1;
 					}
 				}
 			}

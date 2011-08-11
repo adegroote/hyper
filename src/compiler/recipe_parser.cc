@@ -38,6 +38,38 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const recipe_decl_l
 	return os;
 }
 
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const letname_expression_decl& l)
+{
+	os << l.name << " ==> " << l.expr;
+	return os;
+}
+
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const recipe_context_decl& decl)
+{
+	std::copy(decl.expression_names.begin(), decl.expression_names.end(), 
+			  std::ostream_iterator<letname_expression_decl>(os, ", "));
+}
+
+struct make_pair {
+	std::pair<std::string, expression_ast>
+	operator() (const letname_expression_decl& decl) 
+	{
+		return std::make_pair(decl.name, decl.expr);
+	}
+};
+
+recipe_context_decl::map_type 
+hyper::compiler::make_name_expression_map(const recipe_context_decl& decl)
+{
+	recipe_context_decl::map_type res;
+	std::transform(decl.expression_names.begin(), decl.expression_names.end(),
+				   std::inserter(res, res.end()), 
+				   make_pair());
+
+	return res;
+}
+
+
 BOOST_FUSION_ADAPT_STRUCT(
 	body_block_decl,
 	(std::vector<recipe_expression>, list)
@@ -58,6 +90,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 );
 BOOST_FUSION_ADAPT_STRUCT(
 	recipe_decl_list,
+	(recipe_context_decl, context)
 	(std::vector<recipe_decl>, recipes)
 )
 
@@ -83,6 +116,53 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(expression_ast, content)
 )
 
+
+BOOST_FUSION_ADAPT_STRUCT(
+	letname_expression_decl,
+	(std::string, name)
+	(expression_ast, expr)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+	recipe_context_decl,
+	(std::vector<letname_expression_decl>, expression_names)
+)
+
+template <typename Iterator>
+struct recipe_context_grammar :
+	qi::grammar<Iterator, recipe_context_decl(), white_space<Iterator> >
+{
+	typedef white_space<Iterator> white_space_;
+	recipe_context_grammar() : recipe_context_grammar::base_type(start)
+	{
+		using qi::lit;
+
+		start = letname_list;
+
+		letname_list = (*letname_expression_);
+
+		letname_expression_ = lit("letname") 
+							  > identifier
+							  > expression
+							  ;
+
+		start.name("recipe context");
+		letname_expression_.name("name context");
+		letname_list.name("name context list");
+#ifdef HYPER_DEBUG_RULES
+		debug(start);
+		debug(letname_list);
+		debug(letname_expression_);
+#endif
+	}
+
+	qi::rule<Iterator, letname_expression_decl(), white_space_> letname_expression_;
+	qi::rule<Iterator, std::vector<letname_expression_decl>(), white_space_> letname_list;
+	qi::rule<Iterator, recipe_context_decl(), white_space_> start;
+
+	grammar_expression<Iterator> expression;
+	identifier_grammar<Iterator> identifier;
+};
 
 template <typename Iterator>
 struct logic_expression_grammar :
@@ -251,7 +331,7 @@ struct  grammar_recipe :
 	    using qi::lit;
         using namespace qi::labels;
 
-		start = import_list > recipe_list;
+		start = import_list > recipe_context_ > recipe_list;
 
 		recipe_list = (*recipe);
 
@@ -286,6 +366,7 @@ struct  grammar_recipe :
 	cond_block_grammar<Iterator> cond_block;
 	body_block_grammar<Iterator> body_block;
 	import_grammar<Iterator> import_list;
+	recipe_context_grammar<Iterator> recipe_context_;
 };
 
 bool parser::parse_logic_expression(const std::string& expr)

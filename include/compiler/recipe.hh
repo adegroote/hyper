@@ -18,6 +18,7 @@ namespace hyper {
 		class task;
 		class depends;
 		struct recipe_decl;
+		struct recipe_context_decl;
 
 		class recipe {
 			private:
@@ -32,7 +33,8 @@ namespace hyper {
 				symbolList local_symbol;
 			
 			public:
-				recipe(const recipe_decl&, const ability&, const task&, const typeList&);
+				recipe(const recipe_decl&, const recipe_context_decl&,
+					   const ability&, const task&, const typeList&);
 				/*
 				 * This method is not const, because it currently build local_symbol, while
 				 * verifying the coherency of the recipe

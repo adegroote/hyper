@@ -53,6 +53,8 @@ namespace hyper {
 			remote_constraint() {}
 			remote_constraint(const expression_ast& ast);
 			remote_constraint(const logic_expression_decl& decl);
+
+			void compute_dst();
 		};
 
 		std::ostream& operator<< (std::ostream& os, const remote_constraint&);

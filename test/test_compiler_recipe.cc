@@ -29,7 +29,7 @@ namespace {
 			BOOST_CHECK( P.parse_recipe(recipe_descr, r_list));
 			BOOST_CHECK( r_list.recipes.size() == 1);
 
-			recipe rec(r_list.recipes[0], ab, t, u.types());
+			recipe rec(r_list.recipes[0], r_list.context, ab, t, u.types());
 			BOOST_CHECK( rec.validate(u) == expect_valid );
 		}
 	};
@@ -49,7 +49,6 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 	/* make and ensure expect that a remote name appears in the expression */
 	check_recipe.do_build_test("r1 = recipe { pre = {}; post = {}; body = {  make (2 == 1); }; };",
 								false);
-
 	check_recipe.do_build_test("r2 = recipe { pre = {}; \
 											   post = {};  \
 											   body = {  make ((first::i == 1)); }; };",
@@ -255,5 +254,19 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 												    )						\
 												};							\
 											};", false);			
-	
+
+	/* Add some context */
+	check_recipe.do_build_test("letname first_ctr first::isOk == true \
+							    r30 = recipe { pre = {}; post = {};	  \
+								body = {							  \
+									make(first_ctr)					  \
+									}								  \
+								};", true);
+
+	check_recipe.do_build_test("letname first_ctr first::isOk == true \
+							    r31 = recipe { pre = {}; post = {};	  \
+								body = {							  \
+									make(first_ctr where first::test_where == 2.0)	 \
+									}								  \
+								};", true);
 }
