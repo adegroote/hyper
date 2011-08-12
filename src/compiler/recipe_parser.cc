@@ -48,6 +48,14 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const recipe_contex
 {
 	std::copy(decl.expression_names.begin(), decl.expression_names.end(), 
 			  std::ostream_iterator<letname_expression_decl>(os, ", "));
+	return os;
+}
+
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const fun_decl& decl)
+{
+	std::copy(decl.args.begin(), decl.args.end(), std::ostream_iterator<std::string>(os, " "));
+	os << " ==> " << decl.impl;
+	return os;
 }
 
 struct make_pair {
@@ -92,6 +100,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 	recipe_decl_list,
 	(recipe_context_decl, context)
 	(std::vector<recipe_decl>, recipes)
+	(std::vector<fun_decl>, fun_defs)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -124,45 +133,17 @@ BOOST_FUSION_ADAPT_STRUCT(
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-	recipe_context_decl,
-	(std::vector<letname_expression_decl>, expression_names)
+	fun_decl,
+	(std::vector<std::string>, args)
+	(body_block_decl, impl)
 )
 
-template <typename Iterator>
-struct recipe_context_grammar :
-	qi::grammar<Iterator, recipe_context_decl(), white_space<Iterator> >
-{
-	typedef white_space<Iterator> white_space_;
-	recipe_context_grammar() : recipe_context_grammar::base_type(start)
-	{
-		using qi::lit;
+BOOST_FUSION_ADAPT_STRUCT(
+	recipe_context_decl,
+	(std::vector<letname_expression_decl>, expression_names)
+	(std::vector<fun_decl>, fun_defs)
+)
 
-		start = letname_list;
-
-		letname_list = (*letname_expression_);
-
-		letname_expression_ = lit("letname") 
-							  > identifier
-							  > expression
-							  ;
-
-		start.name("recipe context");
-		letname_expression_.name("name context");
-		letname_list.name("name context list");
-#ifdef HYPER_DEBUG_RULES
-		debug(start);
-		debug(letname_list);
-		debug(letname_expression_);
-#endif
-	}
-
-	qi::rule<Iterator, letname_expression_decl(), white_space_> letname_expression_;
-	qi::rule<Iterator, std::vector<letname_expression_decl>(), white_space_> letname_list;
-	qi::rule<Iterator, recipe_context_decl(), white_space_> start;
-
-	grammar_expression<Iterator> expression;
-	identifier_grammar<Iterator> identifier;
-};
 
 template <typename Iterator>
 struct logic_expression_grammar :
@@ -217,9 +198,8 @@ struct body_block_grammar :
 	{
 		using qi::lit;
 
-		start = lit("body")
-			>> lit("=")
-			>> lit('{')
+		start = 
+			lit('{')
 			>> body_decl_list
 			>> lit('}')
 			>> -lit(';')
@@ -319,6 +299,55 @@ struct body_block_grammar :
 };
 
 template <typename Iterator>
+struct recipe_context_grammar :
+	qi::grammar<Iterator, recipe_context_decl(), white_space<Iterator> >
+{
+	typedef white_space<Iterator> white_space_;
+	recipe_context_grammar() : recipe_context_grammar::base_type(start)
+	{
+		using qi::lit;
+
+		start = letname_list > letfun_list;
+
+		letname_list = (*letname_expression_);
+
+		letname_expression_ = lit("letname") 
+							  > identifier
+							  > expression
+							  ;
+
+		letfun_list = (*letfun_expression);
+
+		letfun_expression = lit("let")
+							> +identifier
+							> lit("=")
+							> lit("fun")
+							> body_block
+							;
+
+		start.name("recipe context");
+		letname_expression_.name("name context");
+		letname_list.name("name context list");
+		letfun_expression.name("fun context");
+#ifdef HYPER_DEBUG_RULES
+		debug(start);
+		debug(letname_list);
+		debug(letname_expression_);
+#endif
+	}
+
+	qi::rule<Iterator, letname_expression_decl(), white_space_> letname_expression_;
+	qi::rule<Iterator, std::vector<letname_expression_decl>(), white_space_> letname_list;
+	qi::rule<Iterator, fun_decl(), white_space_> letfun_expression;
+	qi::rule<Iterator, std::vector<fun_decl>(), white_space_> letfun_list;
+	qi::rule<Iterator, recipe_context_decl(), white_space_> start;
+
+	grammar_expression<Iterator> expression;
+	identifier_grammar<Iterator> identifier;
+	body_block_grammar<Iterator> body_block;
+};
+
+template <typename Iterator>
 struct  grammar_recipe : 
 	qi::grammar<Iterator, recipe_decl_list(), white_space<Iterator> >
 {
@@ -340,6 +369,8 @@ struct  grammar_recipe :
 			 > lit("recipe")
 			 > lit("{")
 			 > cond_block
+			 > lit("body") 
+			 > lit('=')
 			 > body_block
 			 > lit('}')
 			 > -lit(';')

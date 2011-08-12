@@ -269,4 +269,22 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 									make(first_ctr where first::test_where == 2.0)	 \
 									}								  \
 								};", true);
+
+	check_recipe.do_build_test("letname first_ctr first::isOk == true	\
+								let f y = fun { make(first_ctr where first::test_where == y) } \
+							    r32 = recipe { pre = {}; post = {};	  \
+								body = {							  \
+										f(2.0)						  \
+									}								  \
+								};", true);
+
+	check_recipe.do_build_test("letname first_ctr first::isOk == true	\
+								let f y = fun { make(first_ctr where first::test_where == y) } \
+								let g x = fun { let z x; f(z) }		  \
+							    r33 = recipe { pre = {}; post = {};	  \
+								body = {							  \
+										let z 3.0					  \
+										g(z)						  \
+									}								  \
+								};", true);
 }

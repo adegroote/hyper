@@ -32,9 +32,17 @@ namespace hyper {
 
 		std::ostream& operator << (std::ostream&, const letname_expression_decl&);
 
+		struct fun_decl {
+			std::vector<std::string> args;
+			body_block_decl impl;
+		};
+
+		std::ostream& operator << (std::ostream&, const fun_decl&);
+
 		struct recipe_context_decl {
 			typedef std::map<std::string, expression_ast> map_type;
 			std::vector<letname_expression_decl> expression_names;
+			std::vector<fun_decl> fun_defs;
 		};
 
 		std::ostream& operator << (std::ostream& , const recipe_context_decl&);
