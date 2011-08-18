@@ -6,8 +6,10 @@
 
 #include <vector>
 
+#include <boost/mpl/contains.hpp>
 #include <boost/variant.hpp>
 #include <boost/optional/optional_fwd.hpp>
+#include <boost/utility/enable_if.hpp>
 
 namespace hyper {
 	namespace compiler {
@@ -15,6 +17,7 @@ namespace hyper {
 		class ability;
 		class universe;
 		class symbolList;
+		struct recipe_expression;
 
 		template <typename T>
 		struct Constant
@@ -72,9 +75,14 @@ namespace hyper {
 			expression_ast()
 				: expr(empty()) {}
 
+			/* type::types contains the sequence of unwrapped types of the
+			 * variant, not sure it is really part of the interface */
 			template <typename Expr>
-				expression_ast(Expr const& expr)
+			expression_ast(const Expr& expr,
+						   typename boost::enable_if<boost::mpl::contains<type::types, Expr> >::type* dummy = 0) 
 				: expr(expr) {}
+
+			expression_ast(type expr) : expr(expr) {}
 
 			type expr;
 

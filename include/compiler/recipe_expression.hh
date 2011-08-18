@@ -81,7 +81,7 @@ namespace hyper {
 		{
 			os << kind << " ("; 
 			std::copy(r.content.begin(), r.content.end(), 
-					  std::ostream_iterator<expression_ast>(os, "\n"));
+					  std::ostream_iterator<remote_constraint>(os, "\n"));
 			os << " )";
 			return os;
 		}
@@ -115,8 +115,11 @@ namespace hyper {
 			recipe_expression() : expr(empty()) {}
 
 			template <typename Expr>
-				recipe_expression(Expr const& expr)
+			recipe_expression(const Expr& expr,
+							  typename boost::enable_if<boost::mpl::contains<type::types, Expr> >::type* dummy = 0) 
 				: expr(expr) {}
+
+			recipe_expression(const type& expr) : expr(expr) {}
 
 		};
 
