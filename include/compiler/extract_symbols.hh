@@ -8,6 +8,7 @@ namespace hyper {
 	namespace compiler {
 
 		struct expression_ast;
+		struct recipe_condition;
 		struct universe;
 		struct ability;
 
@@ -19,6 +20,7 @@ namespace hyper {
 
 			extract_symbols(const ability &a);
 			void extract(const expression_ast& e);
+			void extract(const recipe_condition& cond);
 
 			std::string 
 			remote_vector_type_output(const universe& u) const;

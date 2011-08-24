@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <compiler/recipe_parser.hh>
+#include <compiler/recipe_condition.hh>
 
 namespace hyper {
 	namespace compiler {
@@ -33,6 +34,16 @@ namespace hyper {
 			{}
 
 			expression_ast operator() (const expression_ast& ast) const;
+		};
+
+		struct adapt_recipe_condition_to_context {
+			const recipe_context_decl::map_type& map;
+
+			adapt_recipe_condition_to_context(const recipe_context_decl::map_type& map) : 
+				map(map)
+			{}
+
+			recipe_condition operator() (const recipe_condition & ast) const;
 		};
 
 		struct adapt_recipe_expression_to_context {

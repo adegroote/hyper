@@ -165,8 +165,9 @@ namespace hyper {
 
 				/* Extract local and remote symbols for pre and post-conditions */
 				extract_symbols pre_symbols(ability_context), post_symbols(ability_context);
-				std::for_each(pre.begin(), pre.end(), boost::bind(&extract_symbols::extract, &pre_symbols, _1));
-				std::for_each(post.begin(), post.end(), boost::bind(&extract_symbols::extract, &post_symbols, _1));
+				void (extract_symbols::*f)(const expression_ast& e) = &extract_symbols::extract;
+				std::for_each(pre.begin(), pre.end(), boost::bind(f, &pre_symbols, _1));
+				std::for_each(post.begin(), post.end(), boost::bind(f, &post_symbols, _1));
 
 				oss << "#include <model/task.hh>" << std::endl;
 				oss << "#include <model/evaluate_conditions.hh>" << std::endl;
@@ -250,8 +251,9 @@ namespace hyper {
 
 				/* Extract local and remote symbols for pre and post-conditions */
 				extract_symbols pre_symbols(ability_context), post_symbols(ability_context);
-				std::for_each(pre.begin(), pre.end(), boost::bind(&extract_symbols::extract, &pre_symbols, _1));
-				std::for_each(post.begin(), post.end(), boost::bind(&extract_symbols::extract, &post_symbols, _1));
+				void (extract_symbols::*f)(const expression_ast& e) = &extract_symbols::extract;
+				std::for_each(pre.begin(), pre.end(), boost::bind(f, &pre_symbols, _1));
+				std::for_each(post.begin(), post.end(), boost::bind(f, &post_symbols, _1));
 
 				std::string context_name = "hyper::" + ability_context.name() + "::" + exported_name();
 

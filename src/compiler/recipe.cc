@@ -67,18 +67,18 @@ std::string make_unused_ctx_structure(const std::set<std::string>& s)
 	return oss.str();
 }
 
-struct validate_expression
+struct validate_condition
 {
 	bool &b;
 	const ability& a;
 	const universe &u;
 
-	validate_expression(bool & b_, const ability& a_, const universe& u_) : 
+	validate_condition(bool & b_, const ability& a_, const universe& u_) : 
 		b(b_), a(a_), u(u_) {}
 
-	void operator() (const expression_ast& e) const
+	void operator() (const recipe_condition& e) const
 	{
-		b = e.is_valid_predicate(a, u, boost::none) && b;
+		b = e.is_valid(a, u) && b;
 	}
 };
 
@@ -290,11 +290,11 @@ struct validate_recipe_expression
 };
 
 template <typename Iterator> 
-bool are_valid_expressions(Iterator begin, Iterator end,
+bool are_valid_conditions(Iterator begin, Iterator end,
 						  const ability& a, const universe& u)
 {
 	bool b = true;
-	std::for_each(begin, end, validate_expression(b, a, u));
+	std::for_each(begin, end, validate_condition(b, a, u));
 
 	return b;
 }
@@ -481,14 +481,85 @@ struct is_exportable_symbol
 };
 
 
+struct generate_recipe_condition_helper : public boost::static_visitor<void>
+{
+	std::ostream& oss;
+	const generate_condition& gen;
+
+	generate_recipe_condition_helper(std::ostream& oss, const generate_condition& gen) : 
+		oss(oss), gen(gen)
+	{}
+
+	void operator() (const empty&) const {}
+
+	void operator() (const expression_ast& e) const {
+		return gen(e);
+	}
+};
+
+struct generate_recipe_condition {
+	std::ostream& oss;
+	generate_condition gen;
+
+
+	generate_recipe_condition(std::ostream& oss, const std::string& base,
+			const ability& a, 
+			boost::optional<const universe&> u = boost::none) : 
+		oss(oss), gen(oss, base, a, u)
+	{}
+
+	void operator() (const recipe_condition& cond) const
+	{
+		return boost::apply_visitor(generate_recipe_condition_helper(oss, gen), cond.expr);
+	}
+};
+
+struct exec_condition_output_helper : public boost::static_visitor<void>
+{
+	exec_expression_output& exec_output;
+
+	exec_condition_output_helper(exec_expression_output& exec_output) :
+		exec_output(exec_output)
+	{}
+
+	void operator() (const empty&) const {}
+
+	void operator() (const expression_ast& e) const {
+		return exec_output(e);
+	}
+};
+
+struct exec_condition_output
+{
+	exec_expression_output exec_output;
+
+	exec_condition_output(
+			const ability& ability_context, 
+			const std::string& context_name,
+			std::ostream& oss,
+			const std::string& base_expr,
+			const std::set<std::string>& remote_symbols,
+			const symbolList& local_symbols):
+		exec_output(ability_context, context_name, oss, base_expr, remote_symbols, local_symbols)
+	{}
+
+	void operator() (const recipe_condition& cond)
+	{
+		return boost::apply_visitor(exec_condition_output_helper(exec_output), cond.expr);
+	}
+};
+
+
 namespace hyper {
 	namespace compiler {
 		recipe::recipe(const recipe_decl& r_parser, 
 					   const recipe_context_decl& context,	
 					   const ability& a, 
 					   const task& t, const typeList& tList_) :
-			name(r_parser.name), pre(r_parser.conds.pre.list),
-			post(r_parser.conds.post.list), body(r_parser.body.list),
+			name(r_parser.name), 
+			pre(r_parser.conds.pre.list.begin(), r_parser.conds.pre.list.end()),
+			post(r_parser.conds.post.list.begin(), r_parser.conds.post.list.end()),
+			body(r_parser.body.list),
 			context_a(a), context_t(t), tList(tList_), local_symbol(tList) 
 		{
 			recipe_context_decl::map_type map = make_name_expression_map(context);
@@ -497,9 +568,9 @@ namespace hyper {
 			apply_fun_body(body, map_fun);
 
 			std::transform(pre.begin(), pre.end(), pre.begin(),
-						   adapt_expression_to_context(map));
+						   adapt_recipe_condition_to_context(map));
 			std::transform(post.begin(), post.end(), post.begin(),
-						   adapt_expression_to_context(map));
+						   adapt_recipe_condition_to_context(map));
 			std::transform(body.begin(), body.end(), body.begin(),
 						   adapt_recipe_expression_to_context(map));
 		}
@@ -507,8 +578,8 @@ namespace hyper {
 		bool recipe::validate(const universe& u) 
 							  
 		{
-			return are_valid_expressions(pre.begin(), pre.end(), context_a, u) &&
-				   are_valid_expressions(post.begin(), post.end(), context_a, u) &&
+			return are_valid_conditions(pre.begin(), pre.end(), context_a, u) &&
+				   are_valid_conditions(post.begin(), post.end(), context_a, u) &&
 				   are_valid_recipe_expressions(body.begin(), body.end(), context_a, u, local_symbol);
 		}
 
@@ -522,9 +593,11 @@ namespace hyper {
 						   exported_name_big.begin(), toupper);
 			guards g(oss, context_a.name(), exported_name_big + "_HH");
 
+			void (extract_symbols::*f) (const recipe_condition&) = &extract_symbols::extract;
+
 			extract_symbols pre_symbols(context_a);
 			std::for_each(pre.begin(), pre.end(), 
-						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
+						  boost::bind(f, &pre_symbols, _1));
 
 
 			oss << "#include <model/recipe.hh>" << std::endl;
@@ -559,7 +632,7 @@ namespace hyper {
 
 		void recipe::add_depends(depends& deps, const universe& u) const 
 		{
-			void (*f1)(const expression_ast&, const std::string&, const universe&, depends&) = &hyper::compiler::add_depends;
+			void (*f1)(const recipe_condition&, const std::string&, const universe&, depends&) = &hyper::compiler::add_depends;
 			void (*f2)(const recipe_expression&, const std::string&, const universe&, depends&) = &hyper::compiler::add_depends;
 			std::for_each(pre.begin(), pre.end(),
 						  boost::bind(f1 ,_1, boost::cref(context_a.name()),
@@ -600,15 +673,16 @@ namespace hyper {
 			oss << "\n\n";
 
 			extract_symbols pre_symbols(context_a);
+			void (extract_symbols::*f) (const recipe_condition&) = &extract_symbols::extract;
 			std::for_each(pre.begin(), pre.end(), 
-						  boost::bind(&extract_symbols::extract, &pre_symbols, _1));
+						  boost::bind(f, &pre_symbols, _1));
 			{
 			anonymous_namespaces n(oss);
 			oss << indent << "using namespace hyper;\n";
 			oss << indent << "using namespace hyper::" << context_a.name() << ";\n";
 
 			std::string context_name = "hyper::" + context_a.name() + "::" + exported_name();
-			exec_expression_output e_dump(context_a, context_name, oss, "pre_", 
+			exec_condition_output e_dump(context_a, context_name, oss, "pre_", 
 										  pre_symbols.remote, symbolList(u.types()));
 			std::for_each(pre.begin(), pre.end(), e_dump);
 			} 
@@ -689,7 +763,7 @@ namespace hyper {
 			oss << indent << "preds(a_, \n";
 			oss << next_indent << "boost::assign::list_of<hyper::" << context_a.name(); 
 			oss << "::" << exported_name() << "::pre_conditions::condition>\n";
-			generate_condition e_cond(oss, "pre", context_a, u);
+			generate_recipe_condition e_cond(oss, "pre", context_a, u);
 			std::for_each(pre.begin(), pre.end(), e_cond);
 
 			std::string base_type = "pre_conditions::remote_values::remote_vars_conf";

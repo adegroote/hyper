@@ -2,6 +2,7 @@
 #include <compiler/extract_symbols.hh>
 #include <compiler/output.hh>
 #include <compiler/scope.hh>
+#include <compiler/recipe_condition.hh>
 #include <compiler/universe.hh>
 
 #include <boost/bind.hpp>
@@ -66,6 +67,23 @@ namespace {
 		void operator() (const unary_op<T>& op) const
 		{
 			boost::apply_visitor(extract_syms_helper(syms), op.subject.expr);
+		}
+	};
+	
+	struct extract_cond_syms_helper : public boost::static_visitor<void>
+	{
+		extract_symbols& syms;
+
+		extract_cond_syms_helper(extract_symbols& syms) :
+			syms(syms)
+		{}
+
+		template <typename T>
+		void operator() (const T& t) const {}
+
+		void operator() (const expression_ast& e) const 
+		{
+			syms.extract(e);
 		}
 	};
 
@@ -143,6 +161,11 @@ namespace hyper {
 		void extract_symbols::extract(const expression_ast& e)
 		{
 			boost::apply_visitor(extract_syms_helper(*this), e.expr);
+		}
+
+		void extract_symbols::extract(const recipe_condition& cond)
+		{
+			boost::apply_visitor(extract_cond_syms_helper(*this), cond.expr);
 		}
 
 		std::string extract_symbols::remote_vector_type_output(const universe& u) const

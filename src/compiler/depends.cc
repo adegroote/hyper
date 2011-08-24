@@ -1,6 +1,7 @@
 #include <hyperConfig.hh>
 #include <compiler/depends.hh>
 #include <compiler/scope.hh>
+#include <compiler/recipe_condition.hh>
 #include <compiler/recipe_expression.hh>
 #include <compiler/universe.hh>
 #include <compiler/types.hh>
@@ -84,6 +85,23 @@ struct compute_recipe_op_deps
 	}
 };
 
+struct compute_recipe_condition_deps : public boost::static_visitor<void>
+{
+	depends& d;	
+	const std::string& name;
+	const universe& u;
+
+	compute_recipe_condition_deps(depends& d_, const std::string& name_, 
+											    const universe& u) :
+		d(d_), name(name_), u(u) {}
+
+	void operator() (const empty&) const {}
+
+	void operator() (const expression_ast& ast) const {
+		add_depends(ast, name, u, d);
+	}
+};
+
 struct compute_recipe_expression_deps : public boost::static_visitor<void>
 {
 	depends& d;	
@@ -131,6 +149,12 @@ namespace hyper {
 						 depends& d)
 		{
 			boost::apply_visitor(compute_expression_deps(d, context, u), e.expr);
+		}
+
+		void add_depends(const recipe_condition& e, const std::string& context, const universe& u,
+						 depends& d)
+		{
+			boost::apply_visitor(compute_recipe_condition_deps(d, context, u), e.expr);
 		}
 
 		void add_depends(const recipe_expression& e, const std::string& context, const universe& u, 

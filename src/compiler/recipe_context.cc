@@ -219,6 +219,21 @@ struct adapt_expression_to_context_helper : public boost::static_visitor<express
 	}
 };
 
+struct adapt_recipe_condition_to_context_helper : public boost::static_visitor<recipe_condition> {
+	const recipe_context_decl::map_type& map;
+
+	adapt_recipe_condition_to_context_helper(const recipe_context_decl::map_type& map) :
+		map(map)
+	{}
+
+	template <typename T>
+	recipe_condition operator() (const T& t) const { return t; }
+
+	recipe_condition operator() (const expression_ast& ast) {
+		return adapt_expression_to_context(map)(ast);
+	}
+};
+
 
 struct adapt_recipe_expression_to_context_helper : public boost::static_visitor<recipe_expression> {
 	const recipe_context_decl::map_type& map;
@@ -341,5 +356,11 @@ namespace hyper {
 		{
 			return boost::apply_visitor(adapt_recipe_expression_to_context_helper(map), ast.expr);
 		}
+
+		recipe_condition adapt_recipe_condition_to_context::operator() (const recipe_condition& cond) const 
+		{
+			return boost::apply_visitor(adapt_recipe_condition_to_context_helper(map), cond.expr);
+		}
+
 	}
 }

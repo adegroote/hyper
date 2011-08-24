@@ -7,6 +7,7 @@
 namespace hyper {
 	namespace compiler {
 		struct expression_ast;
+		struct recipe_condition;
 		struct recipe_expression;
 		class universe;
 
@@ -17,6 +18,8 @@ namespace hyper {
 		};
 
 		void add_depends(const expression_ast&, const std::string& context, const universe& u, depends& );
+
+		void add_depends(const recipe_condition&, const std::string& context, const universe& u, depends& );
 
 		void add_depends(const recipe_expression&, const std::string& context, const universe& u, depends& );
 	}

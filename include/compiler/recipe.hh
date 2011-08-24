@@ -7,6 +7,7 @@
 
 #include <compiler/symbols.hh>
 #include <compiler/expression_ast.hh>
+#include <compiler/recipe_condition.hh>
 #include <compiler/recipe_expression.hh>
 
 namespace hyper {
@@ -23,8 +24,8 @@ namespace hyper {
 		class recipe {
 			private:
 				std::string name;
-				std::vector<expression_ast> pre;
-				std::vector<expression_ast> post;
+				std::vector<recipe_condition> pre;
+				std::vector<recipe_condition> post;
 				std::vector<recipe_expression> body;
 
 				const ability& context_a;
