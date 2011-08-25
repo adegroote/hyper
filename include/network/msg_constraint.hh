@@ -6,6 +6,7 @@
 #include <utility>
 
 #include <network/types.hh>
+#include <logic/expression.hh>
 
 
 namespace hyper {
@@ -20,6 +21,20 @@ namespace hyper {
 			mutable identifier id;
 			mutable std::string src;
 			std::string constraint;
+			unification_list  unify_list;
+			bool repeat;
+		};
+
+		struct request_constraint2
+		{
+			template <class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			typedef std::pair<std::string, std::string> unification_pair;
+			typedef std::vector<unification_pair> unification_list;
+			mutable identifier id;
+			mutable std::string src;
+			logic::function_call constraint;
 			unification_list  unify_list;
 			bool repeat;
 		};

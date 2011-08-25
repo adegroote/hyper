@@ -40,6 +40,33 @@ namespace boost {
 		{
 			split_free(ar, e, version); 
 		}
+
+		template <class Archive>
+		void serialize(Archive & ar, hyper::logic::expression& e, const unsigned int version)
+		{
+			(void) version;
+			ar & e.expr;
+		}
+
+		template <class Archive>
+		void serialize(Archive & ar, hyper::logic::function_call& f, const unsigned int version)
+		{
+			(void) version;
+			ar & f.name & f.args;
+		}
+
+		template <class Archive>
+		void serialize(Archive& ar, hyper::logic::empty& e, const unsigned int version)
+		{
+			(void) version; (void) e;
+		}
+
+		template <typename Archive, typename T>
+		void serialize(Archive& ar, hyper::logic::Constant<T>& c, const unsigned int version)
+		{
+			(void) version; 
+			ar & c.value;
+		}
 	}
 }
 
@@ -214,6 +241,19 @@ template void request_constraint::serialize<boost::archive::text_iarchive>(
 		    boost::archive::text_iarchive & ar, const unsigned int file_version);
 
 template void request_constraint::serialize<boost::archive::text_oarchive>(
+		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+
+		template <class Archive>
+		void request_constraint2::serialize(Archive& ar, const unsigned int version)
+		{
+			(void) version;
+			ar & id & src & unify_list & constraint & repeat; 
+		}
+
+template void request_constraint2::serialize<boost::archive::text_iarchive>(
+		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+
+template void request_constraint2::serialize<boost::archive::text_oarchive>(
 		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
 
 		template <class Archive>
