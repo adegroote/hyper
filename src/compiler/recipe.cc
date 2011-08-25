@@ -310,9 +310,6 @@ bool are_valid_recipe_expressions(Iterator begin, Iterator end,
 }
 
 
-
-
-
 struct export_ {
 	std::ostream& oss;
 	const task& t;
@@ -495,6 +492,11 @@ struct generate_recipe_condition_helper : public boost::static_visitor<void>
 	void operator() (const expression_ast& e) const {
 		return gen(e);
 	}
+
+	void operator() (const last_error& error) const {
+		// XXX TODO
+		(void) error;
+	}
 };
 
 struct generate_recipe_condition {
@@ -526,6 +528,11 @@ struct exec_condition_output_helper : public boost::static_visitor<void>
 
 	void operator() (const expression_ast& e) const {
 		return exec_output(e);
+	}
+
+	void operator() (const last_error& error) const {
+		// XXX TODO
+		(void) error;
 	}
 };
 

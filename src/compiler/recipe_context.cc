@@ -229,7 +229,13 @@ struct adapt_recipe_condition_to_context_helper : public boost::static_visitor<r
 	template <typename T>
 	recipe_condition operator() (const T& t) const { return t; }
 
-	recipe_condition operator() (const expression_ast& ast) {
+	recipe_condition operator() (const last_error& e) const {
+		last_error res(e);
+		res.error = adapt_expression_to_context(map)(e.error);
+		return res;
+	}
+
+	recipe_condition operator() (const expression_ast& ast) const {
 		return adapt_expression_to_context(map)(ast);
 	}
 };

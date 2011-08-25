@@ -287,4 +287,10 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 										g(z)						  \
 									}								  \
 								};", true);
+
+	check_recipe.do_build_test("letname first_ctr first::isOk == true \
+								r34 = recipe { pre = {{ last_error?(first_ctr) }} \
+											   post = {} body = {} };", true);
+
+
 }

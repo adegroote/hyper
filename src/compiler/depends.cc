@@ -100,6 +100,10 @@ struct compute_recipe_condition_deps : public boost::static_visitor<void>
 	void operator() (const expression_ast& ast) const {
 		add_depends(ast, name, u, d);
 	}
+
+	void operator() (const last_error& e) const {
+		add_depends(e.error, name, u, d);
+	}
 };
 
 struct compute_recipe_expression_deps : public boost::static_visitor<void>

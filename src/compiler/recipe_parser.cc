@@ -27,6 +27,7 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const recipe_cond_b
 {
 	std::copy(cond.pre.begin(), cond.pre.end(), std::ostream_iterator<recipe_condition>(os, "\n"));
 	std::copy(cond.post.begin(), cond.post.end(), std::ostream_iterator<recipe_condition>(os, "\n"));
+	return os;
 }
 
 std::ostream& hyper::compiler::operator<< (std::ostream& os, const recipe_decl& r)
@@ -396,11 +397,22 @@ struct recipe_cond_block_grammar :
 			> -lit(';')
 			;
 
-		recipe_condition_ = expression;
+		recipe_condition_ = 
+							last_error_
+							|expression
+							;
+
+		last_error_ = lit("last_error?")
+					> lit("(")
+					> expression
+					> lit(")")
+					;
 
 		start.name("block cond");
 		pre_cond.name("pre_cond");
 		post_cond.name("post_cond");
+		recipe_condition_.name("recipe_condition");
+		last_error_.name("last_error");
 		cond.name("cond");
 		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
 	}
@@ -409,6 +421,7 @@ struct recipe_cond_block_grammar :
 	qi::rule<Iterator, std::vector<recipe_condition>(), white_space_> pre_cond, post_cond;
 	qi::rule<Iterator, std::vector<recipe_condition>(), white_space_> cond;
 	qi::rule<Iterator, recipe_condition(), white_space_> recipe_condition_;
+	qi::rule<Iterator, last_error(), white_space_> last_error_;
 	grammar_expression<Iterator> expression;
 };
 

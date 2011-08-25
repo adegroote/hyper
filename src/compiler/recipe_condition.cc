@@ -15,6 +15,10 @@ namespace {
 		template <typename T>
 		bool operator() (const T& t) const { return false; }
 
+		bool operator() (const last_error& e) const {
+			return e.error.is_valid_predicate(a, u, boost::none);
+		}
+
 		bool operator() (const expression_ast& ast) const {
 			return ast.is_valid_predicate(a, u, boost::none);
 		}
@@ -42,6 +46,12 @@ namespace hyper {
 		bool recipe_condition::is_valid(const ability& a, const universe& u) const
 		{
 			return boost::apply_visitor(valid_helper(a, u), expr);
+		}
+
+		std::ostream& operator<< (std::ostream& os, const last_error& e)
+		{
+			os << "last_error() == " << e.error;
+			return os;
 		}
 
 		std::ostream& operator<< (std::ostream& os, const recipe_condition& cond)

@@ -11,10 +11,20 @@ namespace hyper {
 		class ability;
 		class universe;
 
+		struct last_error {
+			expression_ast error;
+
+			last_error() {};
+			last_error(const expression_ast& e) : error(e) {}
+		};
+
+		std::ostream& operator << (std::ostream&, const last_error&);
+
 		struct recipe_condition {
 			typedef boost::variant<
 				empty,
-				expression_ast
+				expression_ast,
+				last_error
 			>
 			type;
 
