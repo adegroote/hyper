@@ -7,6 +7,7 @@
 #include <map>
 
 #include <compiler/task_parser.hh>
+#include <compiler/recipe_condition.hh>
 #include <compiler/recipe_expression.hh>
 
 namespace hyper {
@@ -17,9 +18,16 @@ namespace hyper {
 
 		std::ostream& operator<< (std::ostream&, const body_block_decl&);
 
+		struct recipe_cond_block_decl {
+			std::vector<recipe_condition> pre;
+			std::vector<recipe_condition> post;
+		};
+
+		std::ostream& operator<< (std::ostream&, const recipe_cond_block_decl&);
+
 		struct recipe_decl {
 			std::string name;
-			cond_block_decl conds;
+			recipe_cond_block_decl conds;
 			body_block_decl body;
 		};
 

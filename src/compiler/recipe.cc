@@ -557,8 +557,8 @@ namespace hyper {
 					   const ability& a, 
 					   const task& t, const typeList& tList_) :
 			name(r_parser.name), 
-			pre(r_parser.conds.pre.list.begin(), r_parser.conds.pre.list.end()),
-			post(r_parser.conds.post.list.begin(), r_parser.conds.post.list.end()),
+			pre(r_parser.conds.pre),
+			post(r_parser.conds.post),
 			body(r_parser.body.list),
 			context_a(a), context_t(t), tList(tList_), local_symbol(tList) 
 		{

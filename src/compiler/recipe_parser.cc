@@ -1,6 +1,5 @@
 
 #include <compiler/parser.hh>
-#include <compiler/cond_block_parser.hh>
 #include <compiler/recipe_parser.hh>
 #include <compiler/import_parser.hh>
 #include <compiler/utils.hh>
@@ -22,6 +21,12 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const body_block_de
 {
 	std::copy(d.list.begin(), d.list.end(), std::ostream_iterator<recipe_expression>( os ));
 	return os;
+}
+
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const recipe_cond_block_decl& cond)
+{
+	std::copy(cond.pre.begin(), cond.pre.end(), std::ostream_iterator<recipe_condition>(os, "\n"));
+	std::copy(cond.post.begin(), cond.post.end(), std::ostream_iterator<recipe_condition>(os, "\n"));
 }
 
 std::ostream& hyper::compiler::operator<< (std::ostream& os, const recipe_decl& r)
@@ -86,7 +91,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
 	recipe_decl,
 	(std::string, name)
-	(cond_block_decl, conds)
+	(recipe_cond_block_decl, conds)
 	(body_block_decl, body)
 )
 
@@ -142,6 +147,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 	recipe_context_decl,
 	(std::vector<letname_expression_decl>, expression_names)
 	(std::vector<fun_decl>, fun_defs)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+	recipe_cond_block_decl,
+	(std::vector<recipe_condition>, pre)
+	(std::vector<recipe_condition>, post)
 )
 
 
@@ -347,6 +358,60 @@ struct recipe_context_grammar :
 	body_block_grammar<Iterator> body_block;
 };
 
+
+
+template <typename Iterator>
+struct recipe_cond_block_grammar :
+	qi::grammar<Iterator, recipe_cond_block_decl(), white_space<Iterator> >
+{
+	typedef white_space<Iterator> white_space_;
+
+	recipe_cond_block_grammar() :
+		recipe_cond_block_grammar::base_type(start)
+	{
+		using qi::lit;
+		using namespace qi::labels;
+
+		start = pre_cond
+			> post_cond
+			;
+
+		pre_cond = lit("pre")
+			> lit("=")
+			> cond
+			;
+
+		post_cond = lit("post")
+			> lit("=")
+			> cond
+			;
+
+		cond = 
+			lit('{')
+			> *( lit('{')
+					> recipe_condition_
+					> lit('}')
+			   )
+			> lit('}')
+			> -lit(';')
+			;
+
+		recipe_condition_ = expression;
+
+		start.name("block cond");
+		pre_cond.name("pre_cond");
+		post_cond.name("post_cond");
+		cond.name("cond");
+		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
+	}
+
+	qi::rule<Iterator, recipe_cond_block_decl(), white_space_> start;
+	qi::rule<Iterator, std::vector<recipe_condition>(), white_space_> pre_cond, post_cond;
+	qi::rule<Iterator, std::vector<recipe_condition>(), white_space_> cond;
+	qi::rule<Iterator, recipe_condition(), white_space_> recipe_condition_;
+	grammar_expression<Iterator> expression;
+};
+
 template <typename Iterator>
 struct  grammar_recipe : 
 	qi::grammar<Iterator, recipe_decl_list(), white_space<Iterator> >
@@ -394,7 +459,7 @@ struct  grammar_recipe :
 	qi::rule<Iterator, recipe_decl(), white_space_> recipe;
 
 	scoped_identifier_grammar<Iterator> scoped_identifier;
-	cond_block_grammar<Iterator> cond_block;
+	recipe_cond_block_grammar<Iterator> cond_block;
 	body_block_grammar<Iterator> body_block;
 	import_grammar<Iterator> import_list;
 	recipe_context_grammar<Iterator> recipe_context_;

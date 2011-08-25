@@ -31,6 +31,8 @@ namespace hyper {
 
 			bool is_valid(const ability&, const universe&) const;
 		};
+
+		std::ostream& operator<< (std::ostream&, const recipe_condition&);
 	}
 }
 
