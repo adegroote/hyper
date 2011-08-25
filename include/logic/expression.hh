@@ -8,6 +8,8 @@
 #include <boost/variant/variant.hpp>
 #include <boost/variant/recursive_wrapper.hpp>
 
+#include <boost/preprocessor/repetition/repeat.hpp>
+
 namespace hyper {
 	namespace logic {
 
@@ -74,11 +76,29 @@ namespace hyper {
 		
 		boost::optional<expression> generate_node(const std::string&);
 
+#define NEW_PARAMS_ARGS(z, n, _) ,const expression& arg ## n
+#define PUSH_BACK_ARGS(z, n, _) args.push_back(arg ## n);
+#define EVAL_MAX_ARGS 10
+
+#define NEW_CTR_DECL(z, n, _) \
+	function_call(const std::string& name BOOST_PP_REPEAT(n, NEW_PARAMS_ARGS, _) )\
+				  : name(name), args(n) {\
+			BOOST_PP_REPEAT(n, PUSH_BACK_ARGS, _) \
+		}
+
 		struct function_call {
 			std::string name; // only for parsing stuff
 			functionId id;
 			std::vector< expression > args;
+
+			function_call() {}
+
+			BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_ARGS), NEW_CTR_DECL, _)
 		};
+
+#undef EVAL_MAX_ARGS
+#undef PUSH_BACK_ARGS
+#undef NEW_PARAMS_ARGS
 
 		bool operator < (const function_call& f1, const function_call& f2);
 
