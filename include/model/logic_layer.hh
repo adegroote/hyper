@@ -28,10 +28,10 @@ namespace hyper {
 		{
 			size_t id;
 			std::string src;
+			bool repeat;
 
 			std::string constraint;
 			unify_pair_list unify_list;
-			bool repeat;
 		};
 
 		inline
@@ -123,7 +123,12 @@ namespace hyper {
 				engine.add_rule(s, premises, conclusions);
 			}
 
-			void async_exec(const logic_constraint& ctr, logic_layer_cb cb);
+			void async_exec(const logic_constraint& ctr, 
+							const std::string& constraint, 
+							const unify_pair_list&, logic_layer_cb cb);
+			void async_exec(const logic_constraint& ctr, 
+							const logic::function_call& constraint, 
+							const unify_pair_list&, logic_layer_cb cb);
 			void async_exec(const std::string& task, network::identifier id, 
 							const std::string& src, logic_layer_cb cb);
 
@@ -142,6 +147,9 @@ namespace hyper {
 
 			std::string make_key(const std::string& src, network::identifier id) const;
 			std::string make_key(logic_ctx_ptr ptr) const;
+
+			logic_ctx_ptr prepare_async_exec(const logic_constraint& ctr, logic_layer_cb cb);
+			void async_exec_(const unify_pair_list& list, logic_ctx_ptr ctx);
 		};
 	}
 }

@@ -19,6 +19,7 @@ namespace {
 
 	typedef boost::mpl::vector<network::request_variable_value,
 							   network::request_constraint,
+							   network::request_constraint2,
 							   network::variable_value,
 							   network::request_constraint_answer,
 							   network::inform_new_agent,
@@ -138,16 +139,31 @@ namespace {
 		output_variant operator() (const network::request_constraint& r) const
 		{
 			model::logic_constraint ctr;
-			ctr.constraint = r.constraint;
 			ctr.id = r.id;
 			ctr.src = r.src;
-			ctr.unify_list = r.unify_list;
 			ctr.repeat = r.repeat;
 
 			a.logger(INFORMATION) << ctr << " Handling ";
 			a.logger(INFORMATION) << r.constraint << std::endl;
 
-			a.logic().async_exec(ctr, 
+			a.logic().async_exec(ctr, r.constraint, r.unify_list, 
+					boost::bind(&ability_visitor::handle_async_exec_completion, this,
+								boost::asio::placeholders::error, ctr));
+
+			return boost::mpl::void_();
+		}
+
+		output_variant operator() (const network::request_constraint2& r) const
+		{
+			model::logic_constraint ctr;
+			ctr.id = r.id;
+			ctr.src = r.src;
+			ctr.repeat = r.repeat;
+
+			a.logger(INFORMATION) << ctr << " Handling ";
+			a.logger(INFORMATION) << r.constraint << std::endl;
+
+			a.logic().async_exec(ctr, r.constraint, r.unify_list,
 					boost::bind(&ability_visitor::handle_async_exec_completion, this,
 								boost::asio::placeholders::error, ctr));
 

@@ -46,9 +46,10 @@ namespace {
 		}
 	};
 
-	void prepare_unification(const std::string& name, model::logic_ctx_ptr ctx) {
+	void prepare_unification(const std::string& name, const model::unify_pair_list& unify, 
+													  model::logic_ctx_ptr ctx) {
 		ctx->unify_list.clear();
-		std::transform(ctx->ctr.unify_list.begin(), ctx->ctr.unify_list.end(),
+		std::transform(unify.begin(), unify.end(),
 					   std::back_inserter(ctx->unify_list),
 					   transform_unification(name));
 	}
@@ -111,10 +112,7 @@ namespace hyper {
 			add_numeric_type<double>("double");
 		}
 
-#define CHECK_INTERRUPT if (ctx->must_interrupt) \
-							return handle_failure(ctx, make_error_code(boost::system::errc::interrupted));
-
-		void logic_layer::async_exec(const logic_constraint& ctr, logic_layer_cb cb)
+		logic_ctx_ptr logic_layer::prepare_async_exec(const logic_constraint& ctr, logic_layer_cb cb)
 		{
 			logic_ctx_ptr ctx = boost::shared_ptr<logic_context>(
 					new logic_context(ctr, *this));
@@ -123,9 +121,12 @@ namespace hyper {
 			ctx->s_ = logic_context::IDLE;
 
 			running_ctx[make_key(ctx)] = ctx;
+		}
 
+		void logic_layer::async_exec_(const unify_pair_list& list, logic_ctx_ptr ctx)
+		{
 			try {
-				prepare_unification(a_.name, ctx);
+				prepare_unification(a_.name, list, ctx);
 			} catch (transfrom_unification_error) {
 				return handle_failure(ctx, make_error_code(logic_layer_error::parse_error));
 			}
@@ -135,7 +136,42 @@ namespace hyper {
 												   boost::bind(&setter::set, a_.setter, _1, _2), 
 												   boost::bind(&logic_layer::handle_unification_computation,
 															  this, boost::asio::placeholders::error, ctx));
+		}
 
+#define CHECK_INTERRUPT if (ctx->must_interrupt) \
+							return handle_failure(ctx, make_error_code(boost::system::errc::interrupted));
+
+		void logic_layer::async_exec(const logic_constraint& ctr, const std::string& constraint, 
+									const unify_pair_list& list, logic_layer_cb cb)
+		{
+			logic_ctx_ptr ctx = prepare_async_exec(ctr, cb);
+
+			logic::generate_return ret_exec =
+						logic::generate(constraint, engine.funcs());
+
+			if (ret_exec.res == false) {
+				a_.logger(WARNING) << ctx->ctr << " Fail to parse " << constraint << std::endl;
+				return handle_failure(ctx, make_error_code(logic_layer_error::parse_error));
+			}
+			ctx->call_exec = ret_exec.e;
+
+			return async_exec_(list, ctx);
+		}
+
+		void logic_layer::async_exec(const logic_constraint& ctr, const logic::function_call& f,
+									 const unify_pair_list& list, logic_layer_cb cb)
+		{
+			logic_ctx_ptr ctx = prepare_async_exec(ctr, cb);
+
+			logic::generate_return ret_exec =
+						logic::generate(f, engine.funcs());
+
+			if (ret_exec.res == false) {
+				a_.logger(WARNING) << ctx->ctr << " Fail to adapt " << f << " to local context" << std::endl;
+				return handle_failure(ctx, make_error_code(logic_layer_error::parse_error));
+			}
+			ctx->call_exec = ret_exec.e;
+			return async_exec_(list, ctx);
 		}
 
 		void logic_layer::handle_unification_computation(const boost::system::error_code& e, logic_ctx_ptr ctx)
@@ -145,15 +181,6 @@ namespace hyper {
 			if (e) 
 				return handle_failure(ctx, e);
 
-			logic::generate_return ret_exec =
-						logic::generate(ctx->ctr.constraint, engine.funcs());
-
-			if (ret_exec.res == false) {
-				a_.logger(WARNING) << ctx->ctr << " Fail to parse " << ctx->ctr.constraint << std::endl;
-				return handle_failure(ctx, make_error_code(logic_layer_error::parse_error));
-			}
-
-			ctx->call_exec = ret_exec.e;
 			ctx->s_ = logic_context::EXEC;
 
 			a_.logger(DEBUG) << ctx->ctr << " Computation of the state " << std::endl;
