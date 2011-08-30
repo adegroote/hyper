@@ -110,6 +110,10 @@ namespace hyper {
 
 		generate_return generate(const std::string&, const funcDefList&);
 
+		/* Just fill the functionId of each function_call, as it is not the
+		 * same between different agents*/
+		generate_return generate(const function_call& f, const funcDefList&);
+
 		std::ostream& operator << (std::ostream& oss, const function_call& f);
 	}
 }

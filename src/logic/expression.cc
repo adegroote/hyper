@@ -306,6 +306,36 @@ struct are_expression_equal : public boost::static_visitor<bool>
 	}
 };
 
+function_call adapt_local_funcs(const funcDefList& funcs, const function_call& f);
+
+struct adapt_local_funcs_vis : public boost::static_visitor<expression>
+{
+	const funcDefList& funcs;
+
+	adapt_local_funcs_vis(const funcDefList& funcs) : funcs(funcs) {}
+
+	template <typename T>
+	expression operator() (const T& t) const { return t; }
+
+	expression operator() (const function_call& f) const {
+		return adapt_local_funcs(funcs, f);
+	}
+};
+
+function_call adapt_local_funcs(const funcDefList& funcs, const function_call& f)
+{
+	function_call f_res(f);
+	boost::optional<functionId> id = funcs.getId(f.name);
+	if (!id) 
+		throw unknow_func_exception(f.name);
+
+	f_res.id = *id;
+	for (size_t i = 0; i < f_res.args.size(); ++i)
+		f_res.args[i] = boost::apply_visitor(adapt_local_funcs_vis(funcs), f.args[i].expr);
+
+	return f_res;
+}
+
 namespace hyper {
 	namespace logic {
 		boost::optional<expression> generate_node(const std::string& expr)
@@ -389,6 +419,19 @@ namespace hyper {
 			}
 
 			result.res = (r && iter == end);
+			return result;
+		}
+
+		generate_return generate(const function_call& f, const funcDefList& funcs)
+		{
+			generate_return result;
+			try {
+				result.res = true;
+				result.e = adapt_local_funcs(funcs, f);
+			} catch (unknow_func_exception e) {
+				result.res = false;
+			}
+
 			return result;
 		}
 
