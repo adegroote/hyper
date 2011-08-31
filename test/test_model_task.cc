@@ -41,14 +41,19 @@ struct async_test {
 	async_test(agent& a) :
 		eval(a, 
 			boost::assign::list_of<hyper::model::evaluate_conditions<2,agent>::condition>
-			(check_i, "check_i")(check_j, "check_j")), a_(a)
+			(check_i, hyper::logic::function_call("check_i"))
+			(check_j, hyper::logic::function_call("check_j"))), a_(a)
 	{}
 
 	void handle_second_test(const boost::system::error_code& e, hyper::model::conditionV vec)
 	{
 		BOOST_CHECK(!e);
 		BOOST_CHECK(vec.size() == 1);
-		BOOST_CHECK(vec[0] == "check_j");
+		std::ostringstream oss1, oss2;
+		// diff on function_call relies on internal details not setted at this
+		// point, instead compare their string representation 
+		oss1 << vec[0]; oss2 << hyper::logic::function_call("check_j");
+		BOOST_CHECK(oss1.str() == oss2.str());
 		a_.tested++;
 	}
 

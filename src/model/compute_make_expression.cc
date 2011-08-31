@@ -5,11 +5,16 @@
 namespace hyper {
 	namespace model {
 		compute_make_expression::compute_make_expression(
-			ability& a, const std::string& dst, const std::string& ctr, 
+			ability& a, const std::string& dst, const logic::function_call& f, 
 			const network::request_constraint::unification_list& unify_list,
 			bool& res) : 
-			a(a), dst(dst), constraint(ctr), unify_list(unify_list), 
-			res(res), id(boost::none) {}
+			a(a), dst(dst), f(f), unify_list(unify_list), 
+			res(res), id(boost::none) 
+		{
+			rqst.constraint =  f;
+			rqst.repeat = false;
+			rqst.unify_list = unify_list;
+		}
 
 		void compute_make_expression::handle_end_computation(
 				const boost::system::error_code& e,
@@ -40,11 +45,6 @@ namespace hyper {
 
 		void compute_make_expression::compute(cb_type cb) 
 		{
-			id = boost::none;
-			rqst.constraint =  constraint;
-			rqst.repeat = false;
-			rqst.unify_list = unify_list;
-
 			id = a.actor->client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_make_expression::handle_end_computation,
 								this, boost::asio::placeholders::error, _2, cb));

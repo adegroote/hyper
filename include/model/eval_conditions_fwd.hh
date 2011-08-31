@@ -2,11 +2,11 @@
 #define HYPER_MODEL_EVAL_CONDITIONS_FWD_HH_
 
 #include <vector>
-#include <string>
+#include <logic/expression.hh>
 
 namespace hyper {
 	namespace model {
-		typedef std::vector<std::string> conditionV;
+		typedef std::vector<logic::function_call> conditionV;
 	}
 }
 

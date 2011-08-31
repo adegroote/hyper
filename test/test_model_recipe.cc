@@ -71,7 +71,7 @@ namespace {
 		virtual void async_evaluate_preconditions(condition_execution_callback cb) 
 		{
 			hyper::model::conditionV error;
-			error.push_back("failed condition");
+			error.push_back(hyper::logic::function_call());
 			cb(boost::system::error_code(), error);
 		}
 

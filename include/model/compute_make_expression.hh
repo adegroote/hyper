@@ -16,10 +16,10 @@ namespace hyper {
 				ability& a;
 				bool & res;
 				std::string dst;
-				std::string constraint;
+				logic::function_call f;
 				network::request_constraint::unification_list unify_list;
 				boost::optional<network::identifier> id;
-				network::request_constraint rqst;
+				network::request_constraint2 rqst;
 				network::request_constraint_answer ans;
 				network::abort abort_msg;
 
@@ -27,7 +27,7 @@ namespace hyper {
 				void handle_abort(const boost::system::error_code&);
 
 			public:
-				compute_make_expression(ability&, const std::string&, const std::string&, 
+				compute_make_expression(ability&, const std::string&, const logic::function_call& f,
 										const network::request_constraint::unification_list&,
 										bool&);
 

@@ -29,9 +29,6 @@ namespace hyper {
 			size_t id;
 			std::string src;
 			bool repeat;
-
-			std::string constraint;
-			unify_pair_list unify_list;
 		};
 
 		inline
@@ -117,8 +114,8 @@ namespace hyper {
 			template <typename Func>
 			void add_func(const std::string& s, const std::vector<std::string>& args_type);
 
-			void add_rules(const std::string& s, const std::vector<std::string>& premises, 
-												 const std::vector<std::string>& conclusions)
+			void add_rules(const std::string& s, const std::vector<logic::function_call>& premises, 
+												 const std::vector<logic::function_call>& conclusions)
 			{
 				engine.add_rule(s, premises, conclusions);
 			}

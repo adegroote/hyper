@@ -23,11 +23,11 @@ namespace hyper {
 
 		struct cond_logic_evaluation 
 		{
-			std::string condition;
+			logic::function_call condition;
 			std::deque<boost::shared_ptr<task_logic_evaluation> > tasks;
 
 			cond_logic_evaluation() {}
-			cond_logic_evaluation(const std::string& condition) : condition(condition) {}
+			cond_logic_evaluation(const logic::function_call& condition) : condition(condition) {}
 
 			bool all_tasks_evaluated() const;
 			bool all_tasks_executed() const;
@@ -99,7 +99,7 @@ namespace hyper {
 			public:
 				compute_task_tree(logic_layer& layer_, logic_context& ctx_); 
 				void async_eval_task(const std::string& s, cb_type);
-				void async_eval_cond(const std::string& s, cb_type);
+				void async_eval_cond(const logic::function_call& f, cb_type);
 
 				void async_execute(cb_type);
 				void abort();

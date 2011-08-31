@@ -121,6 +121,7 @@ namespace hyper {
 			ctx->s_ = logic_context::IDLE;
 
 			running_ctx[make_key(ctx)] = ctx;
+			return ctx;
 		}
 
 		void logic_layer::async_exec_(const unify_pair_list& list, logic_ctx_ptr ctx)
@@ -259,7 +260,7 @@ namespace hyper {
 
 			ctx->s_ = logic_context::LOGIC_EXEC;
 
-			ctx->logic_tree.async_eval_cond(ctx->ctr.constraint,
+			ctx->logic_tree.async_eval_cond(ctx->call_exec,
 					boost::bind(&logic_layer::handle_eval_task_tree, this,
 							   _1, ctx));
 		}

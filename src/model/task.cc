@@ -33,7 +33,7 @@ namespace hyper {
 			if (!failed.empty()) {
 				a.logger(DEBUG) << "[Task " << name << "] Still have some failed postcondition : \n";
 				std::copy(failed.begin(), failed.end(),
-						  std::ostream_iterator<std::string>(a.logger(DEBUG), "\n"));
+						  std::ostream_iterator<logic::function_call>(a.logger(DEBUG), "\n"));
 				a.logger(DEBUG) << std::endl;
 			}
 
@@ -114,7 +114,7 @@ namespace hyper {
 			if (!failed.empty()) {
 				a.logger(DEBUG) << "[Task " << name << "] Failure of some pre-conditions ";
 				std::copy(failed.begin(), failed.end(),
-						  std::ostream_iterator<std::string>(a.logger(DEBUG), ", "));
+						  std::ostream_iterator<logic::function_call>(a.logger(DEBUG), ", "));
 				a.logger(DEBUG) << std::endl;
 				return end_execute(false);
 			}

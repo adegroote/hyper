@@ -32,7 +32,7 @@ namespace hyper {
 											  evaluate_conditions<N, A, M, vectorT>&,
 											  size_t)> fun_call;
 
-				typedef std::pair<fun_call, std::string> condition;
+				typedef std::pair<fun_call, logic::function_call> condition;
 
 				typedef model::remote_values<vectorT> remote_values;
 				typedef update_variables<A, M, vectorT> updater_type;

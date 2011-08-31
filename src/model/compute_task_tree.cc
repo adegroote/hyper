@@ -329,18 +329,18 @@ namespace hyper {
 		{
 			must_interrupt = false;
 			running_tasks.clear();
-			cond_root.condition = "";
+			cond_root.condition = logic::function_call();
 			cond_root.tasks.push_back(generate_task_eval()(s));
 			async_eval_all_preconditions(*this, handler, cond_root)(cond_root.tasks[0]);
 		}
 
 		void 
-		compute_task_tree::async_eval_cond(const std::string& s, 
+		compute_task_tree::async_eval_cond(const logic::function_call& f,
 										   compute_task_tree::cb_type handler)
 		{
 			must_interrupt = false;
 			running_tasks.clear();
-			cond_root.condition = s;
+			cond_root.condition = f;
 			async_eval_constraint(cond_root, handler);
 		}
 
