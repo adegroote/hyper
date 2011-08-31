@@ -39,7 +39,7 @@ namespace {
 		std::string operator() (const Constant<int>& c) const
 		{
 			std::ostringstream oss;
-			oss << c.value;
+			oss << "logic::Constant<int>(" << c.value << ")";
 			return oss.str();
 		}
 
@@ -47,42 +47,49 @@ namespace {
 		{
 			std::ostringstream oss;
 			oss.precision(6);
-			oss << std::fixed << c.value;
+			oss << "logic::Constant<double>(" << std::fixed << c.value << ")";
 			return oss.str();
 		}
 
 		std::string operator() (const Constant<std::string>& c) const
 		{
 			std::ostringstream oss;
-			oss << "\\\"" << c.value << "\\\"";
+			oss << "logic::Constant<std::string>(\"" << c.value << "\")";
 			return oss.str();
 		}
 
 		std::string operator() (const Constant<bool>& c) const
 		{
 			std::ostringstream oss;
+			oss << "logic::Constant<bool>(";
 			if (c.value)
 				oss << "true";
 			else 
 				oss << "false";
+			oss << ")";
 			return oss.str();
 		}
 
 		std::string operator() (const std::string& s) const
 		{
+			std::ostringstream oss;
+			oss << "std::string(\"";
 			if (!is_rule && !scope::is_scoped_identifier(s))
-				return a.name() + "::" + s;
+				oss << a.name() <<  "::" << s;
 			else
-				return s;
+				oss << s;
+			oss << "\")";
+			return oss.str();
 		}
 
 		std::string operator() (const function_call& f) const
 		{
 			std::ostringstream oss;
+			oss << "logic::function_call(\"";
 			if (scope::is_basic_identifier(f.fName) || scope::is_scoped_identifier(f.fName))
-				oss << f.fName << "(";
+				oss << f.fName << "\", ";
 			else 
-				oss << a.name() << "::" << f.fName << "(";
+				oss << a.name() << "::" << f.fName << "\", ";
 			for (size_t i = 0; i < f.args.size(); ++i) {
 				oss << boost::apply_visitor(*this, f.args[i].expr);
 				if (i != (f.args.size() - 1)) {
@@ -95,17 +102,14 @@ namespace {
 
 		std::string operator() (const expression_ast& e) const
 		{
-			std::ostringstream oss;
-			oss << "(";
-			oss << boost::apply_visitor(*this, e.expr);
-			oss << ")";
-			return oss.str();
+			return boost::apply_visitor(*this, e.expr);
 		}
 
 		template <binary_op_kind T>
 		std::string operator() (const binary_op<T> & op) const
 		{
 			std::ostringstream oss;
+			oss << "logic::function_call(\"";
 			oss << logic_function<T>::name();
 			if (u) {
 				boost::optional<typeId> tid = (*u).typeOf(a, op.left.expr);
@@ -114,7 +118,7 @@ namespace {
 					oss << "_" << t.name;
 				}
 			}
-			oss << "(";
+			oss << "\", ";
 			oss << boost::apply_visitor(*this, op.left.expr);
 			oss << ",";
 			oss << boost::apply_visitor(*this, op.right.expr); 

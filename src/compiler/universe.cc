@@ -775,7 +775,7 @@ struct dump_rule {
 
 	void operator() (const expression_ast& ast) 
 	{
-		oss << "(" << quoted_string(generate_logic_expression(ast, a, u, true)) << ")";
+		oss << "(" << generate_logic_expression(ast, a, u, true) << ")";
 	}
 };
 

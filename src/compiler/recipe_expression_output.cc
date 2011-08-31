@@ -3,6 +3,7 @@
 #include <compiler/extension.hh>
 #include <compiler/logic_expression_output.hh>
 #include <compiler/output.hh>
+#include <compiler/scope.hh>
 #include <compiler/recipe_expression.hh>
 #include <compiler/recipe_expression_output.hh>
 #include <compiler/universe.hh>
@@ -79,6 +80,56 @@ namespace {
 		return res;
 	}
 
+	struct dump_atom_vis : public boost::static_visitor<std::string> 
+	{ 
+		const ability& a;
+
+		dump_atom_vis(const ability& a) : a(a) {}
+
+		template <typename T>
+		std::string operator() (const T& ) const { assert(false); return ""; }
+
+		std::string operator() (const Constant<int>& c) const
+		{
+			std::ostringstream oss;
+			oss << c.value;
+			return oss.str();
+		}
+
+		std::string operator() (const Constant<double>& c) const
+		{
+			std::ostringstream oss;
+			oss.precision(6);
+			oss << std::fixed << c.value;
+			return oss.str();
+		}
+
+		std::string operator() (const Constant<std::string>& c) const
+		{
+			return quoted_string(c.value);
+		}
+
+		std::string operator() (const Constant<bool>& c) const
+		{
+			std::ostringstream oss;
+			if (c.value)
+				oss << "true";
+			else 
+				oss << "false";
+			return oss.str();
+		}
+
+		std::string operator() (const std::string& s) const
+		{
+			std::ostringstream oss;
+			if (!scope::is_scoped_identifier(s))
+				oss << a.name() <<  "::" << s;
+			else
+				oss << s;
+			return oss.str();
+		}
+	};
+
 	struct dump_unify_pair {
 		std::ostream& os;
 		std::string separator_;
@@ -93,9 +144,8 @@ namespace {
 
 		void operator() (const unification_expression& p) 
 		{
-			os << "(" << quoted_string(generate_logic_expression(p.first.expr, a, u));
-			os << ", " << quoted_string(generate_logic_expression(p.second.expr, a, u));
-			os << ")";
+			os << "(\"" << boost::apply_visitor(dump_atom_vis(a), p.first.expr) ;
+			os << "\", \"" << boost::apply_visitor(dump_atom_vis(a), p.second.expr) << "\")";
 		};
 
 		void separator () { 
@@ -257,7 +307,7 @@ namespace {
 
 			oss << indent << "push_back(new hyper::model::compute_make_expression(a, ";
 			oss << quoted_string(*(r.content[0].dst)) << ", ";
-			oss << quoted_string(generate_logic_expression(local_expr.main, a, u));
+			oss << generate_logic_expression(local_expr.main, a, u);
 			oss << ", \n" << indent_next << dump_unification(local_expr.unification_clauses);
 			oss << ", " << identifier << "));\n";
 			target = boost::none;
@@ -276,7 +326,7 @@ namespace {
 
 			oss << indent << "push_back(new hyper::model::compute_ensure_expression(a, ";
 			oss << quoted_string(*(r.content[0].dst)) << ", \n" << indent_next;
-			oss << quoted_string(generate_logic_expression(local_expr.main, a, u));
+			oss << generate_logic_expression(local_expr.main, a, u);
 			oss << ", \n" << indent_next << dump_unification(local_expr.unification_clauses);
 			oss << ", \n" << indent_next << identifier << "));\n";
 			target = boost::none;

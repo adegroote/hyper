@@ -8,7 +8,7 @@ using namespace hyper::compiler;
 void generate_condition::operator() (const expression_ast& e) const
 {
 	oss << "\t\t\t\t(" << base << "_condition_" << counter++;
-	oss << ", " << quoted_string(generate_logic_expression(e, a, u)) << ")";
+	oss << ", " << generate_logic_expression(e, a, u) << ")";
 	oss << std::endl;
 }
 
