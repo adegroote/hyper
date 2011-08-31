@@ -243,8 +243,18 @@ namespace hyper {
 				return facts_.apply_permutations(perm.seq);
 			}
 		};
+		
 
 		bool facts::add(const function_call& f)
+		{
+			generate_return r = hyper::logic::generate(f, funcs);
+			assert(r.res);
+			if (!r.res) return false;
+
+			return add_(r.e);
+		}
+
+		bool facts::add_(const function_call& f)
 		{
 			resize(f.id, sub_list);
 			adapt_res res = db.adapt_and_unify(f);
@@ -269,7 +279,7 @@ namespace hyper {
 				for (it = f.args.begin(); it != f.args.end(); ++it)
 					boost::apply_visitor(inner_function_call(db, s), it->expr);
 
-				bool (facts::*f)(const function_call&) = &facts::add;
+				bool (facts::*f)(const function_call&) = &facts::add_;
 				std::for_each(s.begin(), s.end(), boost::bind(f, this, _1));
 			}
 			return p.second;
@@ -304,7 +314,7 @@ namespace hyper {
 			assert(r.res);
 			if (!r.res) return false;
 
-			return add(r.e);
+			return add_(r.e);
 		}
 
 		boost::logic::tribool facts::matches(const function_call& f) 
@@ -338,13 +348,6 @@ namespace hyper {
 			if (has_matched) 
 				return has_matched;
 			return boost::logic::indeterminate;
-		}
-
-		function_call facts::generate(const std::string& s)
-		{
-			generate_return r = hyper::logic::generate(s, funcs);
-			assert(r.res);
-			return db.adapt(r.e);
 		}
 
 		struct dump_facts
@@ -388,7 +391,7 @@ namespace hyper {
 			}
 		};
 
-		std::vector<function_call> facts::generate(const function_call& f) const
+		std::vector<function_call> facts::generate_all(const function_call& f) const
 		{
 			return  db.deadapt(f);
 		}

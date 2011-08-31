@@ -460,7 +460,7 @@ namespace hyper {
 
 		std::ostream& operator << (std::ostream& oss, const function_call& f)
 		{
-			oss << f.name << "(";
+			oss << f.name << "[" << f.id << "]" << "(";
 			for (size_t i = 0; i < f.args.size(); ++i) {
 				oss << f.args[i];
 				if (i != (f.args.size() - 1)) 

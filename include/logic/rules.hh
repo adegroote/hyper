@@ -56,6 +56,9 @@ namespace hyper {
 				bool add(const std::string& identifier,
 						 const std::vector<std::string>& cond,
 						 const std::vector<std::string>& action);
+				bool add(const std::string& identifier,
+						 const std::vector<function_call>& cond,
+						 const std::vector<function_call>& action);
 
 				const_iterator begin() const { return r_.begin(); }
 				const_iterator end() const { return r_.end(); }

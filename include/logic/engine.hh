@@ -76,23 +76,55 @@ namespace hyper {
 				void set_facts(const std::string& identifier, 
 							   const facts_ctx&);
 
+				boost::logic::tribool infer_(const logic::function_call& f, const std::string& identifier);
+				boost::logic::tribool infer_(const logic::function_call& f,
+											std::vector<logic::function_call>& hyps,
+										    const std::string& identifier);
+
+				bool generate_theory(facts_ctx& facts, const std::string& identifier);
+			
 			public:
 				engine();
 				bool add_type(const std::string&);
 				bool add_predicate(const std::string&, size_t, const std::vector<std::string>& args_type,
 															   eval_predicate* = 0);
 				bool add_func(const std::string&, size_t, const std::vector<std::string>& args_type);
-				bool add_fact(const std::string&,
-							  const std::string& identifier = "default");
+				template <typename FactType>
+				bool add_fact(const FactType& fact,
+							  const std::string& identifier = "default")
+				{
+					/* yes copy it, until we check the coherency */
+					facts_ctx current_facts = get_facts(identifier);
+					current_facts.add(fact);
+
+					return generate_theory(current_facts, identifier);
+				}
 				bool add_fact(const std::vector<std::string>&, 
 							  const std::string& identifier = "default");
+
+				template <typename FactType>
 				bool add_rule(const std::string& identifier,
-							  const std::vector<std::string>& cond,
-							  const std::vector<std::string>& action);
+							  const typename std::vector<FactType>& cond,
+							  const typename std::vector<FactType>& action)
+				{
+					bool res = rules_.add(identifier, cond, action);
+
+					// XXX rewrite it using boost::phoenix::bind
+					for (factsMap::iterator it = facts_.begin(); it != facts_.end(); ++it) 
+						apply_rules(it->second);
+					return res;
+				}
 
 				/* Check if goal is directly inferable in the current engine context */
-				boost::logic::tribool infer(const std::string& goal, 
-											const std::string& identifier = "default");
+				/* GoalType can be a string representing a function_call, or
+				 * directly a function_call */
+				template <typename GoalType>
+				boost::logic::tribool infer(const GoalType& goal,
+											const std::string& identifier = "default")
+				{
+					facts_ctx& current_facts = get_facts(identifier);
+					return infer_(current_facts.f.generate(goal), identifier);
+				}
 
 				/* Check if goal is directly inferable in the current engine context.
 				 * If it is not the case, hyps may contains hypothesis. If ANY of this 
@@ -100,16 +132,21 @@ namespace hyper {
 				 * or in other work,
 				 *    goal is true in the current context IF ANY of hyps is true
 				 */
-				boost::logic::tribool infer(const std::string& goal,
+				template <typename GoalType>
+				boost::logic::tribool infer(const GoalType& goal,
 											std::vector<logic::function_call>& hyps,
-											const std::string& identifier = "default");
+											const std::string& identifier = "default")
+				{
+					facts_ctx& current_facts = get_facts(identifier);
+					return infer_(current_facts.f.generate(goal), hyps, identifier);
+				}
 
 				/*
 				 * Fill OutputIterator with the list of identifier which
 				 * matches the goal
 				 */
-				template <typename OutputIterator>
-				OutputIterator infer_all(const std::string& goal, OutputIterator out)
+				template <typename GoalType, typename OutputIterator>
+				OutputIterator infer_all(const GoalType& goal, OutputIterator out)
 				{
 					for (factsMap::const_iterator it = facts_.begin();
 												  it != facts_.end(); ++it)
@@ -127,8 +164,8 @@ namespace hyper {
 					std::vector<function_call> hyps;
 				};
 
-				template <typename OutputIterator1, typename OutputIterator2>
-				void infer_all(const std::string& goal, OutputIterator1 out1, OutputIterator2 out2)
+				template <typename GoalType, typename OutputIterator1, typename OutputIterator2>
+				void infer_all(const GoalType& goal, OutputIterator1 out1, OutputIterator2 out2)
 				{
 					for (factsMap::const_iterator it = facts_.begin();
 												  it != facts_.end(); ++it)

@@ -15,7 +15,8 @@ namespace {
 			res(res_), funcs(funcs_), res_vector(res_vector_)
 		{}
 
-		void operator() (const std::string& s) 
+		template <typename FactType>
+		void operator() (const FactType& s) 
 		{
 			if (!res) return;
 			generate_return r = generate(s, funcs);
@@ -78,6 +79,38 @@ namespace {
 			v.push_back(p.first);
 		}
 	};
+
+	template <typename FactT>
+	bool add_helper(const std::string& identifier,
+				    const typename std::vector<FactT>& cond,
+				    const typename std::vector<FactT>& action,
+				    const funcDefList& funcs,
+				    std::vector<rule>& r_)
+	{
+		rule r;
+		{
+		bool res = true;
+		converter c(res, funcs, r.condition);
+		std::for_each(cond.begin(), cond.end(), c);
+		if (!res) return false;
+		}
+
+		{
+		bool res = true;
+		converter c(res, funcs, r.action);
+		std::for_each(action.begin(), action.end(), c);
+		if (!res) return false;
+		}
+		r.identifier = identifier;
+
+		std::for_each(r.condition.begin(), r.condition.end(), symbol_adder(r.symbol_to_fun));
+		std::for_each(r.action.begin(), r.action.end(), symbol_adder(r.symbol_to_fun));
+
+		std::for_each(r.symbol_to_fun.begin(), r.symbol_to_fun.end(), list_keys(r.symbols));
+
+		r_.push_back(r);
+		return true;
+	}
 }
 namespace hyper {
 	namespace logic {
@@ -98,29 +131,14 @@ namespace hyper {
 						const std::vector<std::string>& cond,
 						const std::vector<std::string>& action)
 		{
-			rule r;
-			{
-			bool res = true;
-			converter c(res, funcs, r.condition);
-			std::for_each(cond.begin(), cond.end(), c);
-			if (!res) return false;
-			}
+			return add_helper(identifier, cond, action, funcs, r_);
+		}
 
-			{
-			bool res = true;
-			converter c(res, funcs, r.action);
-			std::for_each(action.begin(), action.end(), c);
-			if (!res) return false;
-			}
-			r.identifier = identifier;
-
-			std::for_each(r.condition.begin(), r.condition.end(), symbol_adder(r.symbol_to_fun));
-			std::for_each(r.action.begin(), r.action.end(), symbol_adder(r.symbol_to_fun));
-
-			std::for_each(r.symbol_to_fun.begin(), r.symbol_to_fun.end(), list_keys(r.symbols));
-
-			r_.push_back(r);
-			return true;
+		bool rules::add(const std::string& identifier,
+						const std::vector<function_call>& cond,
+						const std::vector<function_call>& action)
+		{
+			return add_helper(identifier, cond, action, funcs, r_);
 		}
 
 		std::ostream& operator << (std::ostream& os, const rules& r)

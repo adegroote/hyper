@@ -47,31 +47,31 @@ BOOST_AUTO_TEST_CASE ( logic_engine_test )
 
 	BOOST_CHECK(e.add_func("distance", 2, boost::assign::list_of("point")("point")("double")));
 
-	BOOST_CHECK(e.add_rule("less_int_transitiviy", 
+	BOOST_CHECK(e.add_rule<std::string>("less_int_transitiviy", 
 						   boost::assign::list_of<std::string>("less_int(X, Y)")("less_int(Y,Z)"),
 						   boost::assign::list_of<std::string>("less_int(X, Z)")));
 
-	BOOST_CHECK(e.add_rule("less_double_transitiviy", 
+	BOOST_CHECK(e.add_rule<std::string>("less_double_transitiviy", 
 						   boost::assign::list_of<std::string>("less_double(X, Y)")("less_double(Y,Z)"),
 						   boost::assign::list_of<std::string>("less_double(X, Z)")));
 
-	BOOST_CHECK(e.add_rule("distance_symmetry",
+	BOOST_CHECK(e.add_rule<std::string>("distance_symmetry",
 						   boost::assign::list_of<std::string>("distance(A,B)"),
 						   boost::assign::list_of<std::string>("equal_double(distance(A,B), distance(B,A))")));
 
-	BOOST_CHECK(e.add_rule("less_int_false",
+	BOOST_CHECK(e.add_rule<std::string>("less_int_false",
 						   boost::assign::list_of<std::string>("less_int(A, A)"),
 						   std::vector<std::string>()));
 
-	BOOST_CHECK(e.add_rule("less_double_false",
+	BOOST_CHECK(e.add_rule<std::string>("less_double_false",
 						   boost::assign::list_of<std::string>("less_double(A, A)"),
 						   std::vector<std::string>()));
 
-	BOOST_CHECK(e.add_rule("less_int_antisymetry",
+	BOOST_CHECK(e.add_rule<std::string>("less_int_antisymetry",
 						   boost::assign::list_of<std::string>("less_int(A, B)")("less_int(B,A)"),
 						   std::vector<std::string>()));
 
-	BOOST_CHECK(e.add_rule("less_double_antisymetry",
+	BOOST_CHECK(e.add_rule<std::string>("less_double_antisymetry",
 						   boost::assign::list_of<std::string>("less_double(A, B)")("less_double(B,A)"),
 						   std::vector<std::string>()));
 

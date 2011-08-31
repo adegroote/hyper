@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE ( logic_rules_test)
 	res = r.add(
 		"reflexivity",
 		boost::assign::list_of<std::string>("equal(X,Y)"),
-		boost::assign::list_of<std::string>("equal(Y, X)")
+		std::vector<std::string>(1, "equal(Y, X)")
 	);
 
 	BOOST_CHECK(res);
@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE ( logic_rules_test)
 	res = r.add(
 		"transitivity",
 		boost::assign::list_of<std::string>("equal(X, Y)")("equal(Y, Z)"),
-		boost::assign::list_of<std::string>("equal(X, Z)")
+		std::vector<std::string>(1, "equal(X, Z)")
 	);
 
 	BOOST_CHECK(res);

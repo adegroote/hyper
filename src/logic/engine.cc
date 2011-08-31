@@ -294,11 +294,11 @@ namespace hyper {
 		{
 			funcs_.add("equal_" + name, 2, new eval<equal, 2>(), true);
 
-			add_rule("equal_" + name + "_reflexivity", 
+			add_rule<std::string>("equal_" + name + "_reflexivity", 
 					 boost::assign::list_of<std::string>("equal_" + name + "(X, Y)"),
 					 boost::assign::list_of<std::string>("equal_" + name + "(Y, X)"));
 
-			add_rule("equal_" + name + "_transitiviy", 
+			add_rule<std::string>("equal_" + name + "_transitiviy", 
 					  boost::assign::list_of<std::string>("equal_" + name + "(X, Y)")("equal_" + name +"(Y,Z)"),
 					  boost::assign::list_of<std::string>("equal_" + name + "(X, Z)"));
 
@@ -447,13 +447,7 @@ namespace hyper {
 			facts_.insert(std::make_pair(identifier, ctx));
 		}
 
-		bool engine::add_fact(const std::string& expr,
-							  const std::string& identifier)
-		{
-
-			/* yes copy it, until we check the coherency */
-			facts_ctx current_facts = get_facts(identifier);
-			current_facts.add(expr);
+		bool engine::generate_theory(facts_ctx& current_facts, const std::string& identifier) {
 			apply_rules(current_facts);
 
 			/* If the new fact does not lead to any inconstency, really commit
@@ -486,18 +480,6 @@ namespace hyper {
 		 * People who add rule are smart enough to don't add rules which lead
 		 * to inconsistency in the logic, isn't it ?
 		 */
-		bool engine::add_rule(const std::string& identifier,
-							  const std::vector<std::string>& cond,
-							  const std::vector<std::string>& action)
-		{
-			bool res = rules_.add(identifier, cond, action);
-
-			// XXX rewrite it using boost::phoenix::bind
-			for (factsMap::iterator it = facts_.begin(); it != facts_.end(); ++it) 
-				apply_rules(it->second);
-			return res;
-		}
-
 		void engine::apply_rules(facts_ctx& current_facts)
 		{
 			current_facts.new_rule();
@@ -513,11 +495,10 @@ namespace hyper {
 			}
 		}
 
-		boost::logic::tribool engine::infer(const std::string& goal,
+		boost::logic::tribool engine::infer_(const function_call& f,
 											const std::string& identifier)
 		{
 			facts_ctx& current_facts = get_facts(identifier);
-			function_call f = current_facts.f.generate(goal);
 
 			boost::logic::tribool b = current_facts.f.matches(f);
 			if (!boost::logic::indeterminate(b))
@@ -536,13 +517,11 @@ namespace hyper {
 			return boost::logic::indeterminate;
 		}
 
-		boost::logic::tribool engine::infer(const std::string& goal,
+		boost::logic::tribool engine::infer_(const function_call& f,
 										    std::vector<function_call>& hyps,
 											const std::string& identifier)
 		{
 			facts_ctx& current_facts = get_facts(identifier);
-			function_call f = current_facts.f.generate(goal);
-
 			boost::logic::tribool b = current_facts.f.matches(f);
 			if (!boost::logic::indeterminate(b))
 				return b;
@@ -561,7 +540,7 @@ namespace hyper {
 			hyps.clear();
 			for (size_t i = 0; i < hyps_.size(); ++i)
 			{
-				std::vector<function_call> v = current_facts.f.generate(hyps_[i]);
+				std::vector<function_call> v = current_facts.f.generate_all(hyps_[i]);
 				hyps.insert(hyps.end(), v.begin(), v.end());
 			}
 

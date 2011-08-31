@@ -82,7 +82,7 @@ namespace hyper {
 
 #define NEW_CTR_DECL(z, n, _) \
 	function_call(const std::string& name BOOST_PP_REPEAT(n, NEW_PARAMS_ARGS, _) )\
-				  : name(name), args(n) {\
+				  : name(name) {\
 			BOOST_PP_REPEAT(n, PUSH_BACK_ARGS, _) \
 		}
 

@@ -49,6 +49,7 @@ namespace hyper {
 						list_.resize(funcs.size());
 					}
 				}
+				bool add_(const function_call& f);
 
 			public:	
 				facts(const funcDefList& funcs_): funcs(funcs_), size__(0), db(funcs) {}
@@ -58,9 +59,14 @@ namespace hyper {
 
 				boost::logic::tribool matches(const function_call & e);
 
-				function_call generate(const std::string& s);
+				template <typename ExpressionType>
+				function_call generate(const ExpressionType& f) {
+					generate_return r = hyper::logic::generate(f, funcs);
+					assert(r.res);
+					return db.adapt(r.e);
+				}
 
-				std::vector<function_call> generate(const function_call& f) const;
+				std::vector<function_call> generate_all(const function_call& f) const;
 
 				const_iterator begin(functionId id) const { 
 					resize(id, list);
