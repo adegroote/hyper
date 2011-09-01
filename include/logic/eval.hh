@@ -18,6 +18,7 @@ namespace hyper {
 		struct eval_predicate
 		{
 			virtual tribool operator()(const std::vector<expression>& e) = 0;
+			virtual ~eval_predicate() {};
 		};
 
 		template <int N>
