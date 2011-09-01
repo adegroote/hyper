@@ -30,7 +30,7 @@ namespace hyper {
 			template <class Archive>
 			void serialize(Archive& ar, const unsigned int version);
 
-			typedef std::pair<std::string, std::string> unification_pair;
+			typedef std::pair<logic::expression, logic::expression> unification_pair;
 			typedef std::vector<unification_pair> unification_list;
 			mutable identifier id;
 			mutable std::string src;

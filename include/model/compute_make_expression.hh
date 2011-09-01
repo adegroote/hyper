@@ -17,7 +17,6 @@ namespace hyper {
 				bool & res;
 				std::string dst;
 				logic::function_call f;
-				network::request_constraint::unification_list unify_list;
 				boost::optional<network::identifier> id;
 				network::request_constraint2 rqst;
 				network::request_constraint_answer ans;
@@ -28,7 +27,7 @@ namespace hyper {
 
 			public:
 				compute_make_expression(ability&, const std::string&, const logic::function_call& f,
-										const network::request_constraint::unification_list&,
+										const network::request_constraint2::unification_list&,
 										bool&);
 
 				void compute (cb_type cb);

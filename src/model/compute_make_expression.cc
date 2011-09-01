@@ -6,9 +6,9 @@ namespace hyper {
 	namespace model {
 		compute_make_expression::compute_make_expression(
 			ability& a, const std::string& dst, const logic::function_call& f, 
-			const network::request_constraint::unification_list& unify_list,
+			const network::request_constraint2::unification_list& unify_list,
 			bool& res) : 
-			a(a), dst(dst), f(f), unify_list(unify_list), 
+			a(a), dst(dst), f(f),
 			res(res), id(boost::none) 
 		{
 			rqst.constraint =  f;

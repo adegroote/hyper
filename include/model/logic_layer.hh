@@ -20,8 +20,10 @@ namespace hyper {
 		struct ability;
 
 		typedef std::pair<std::string, std::string> unification_pair;
+		typedef std::pair<logic::expression, logic::expression> unification_pair2;
 		typedef std::pair<std::string, logic::expression> unification_expr;
 		typedef std::vector<unification_pair> unify_pair_list;
+		typedef std::vector<unification_pair2> unify_pair_list2;
 		typedef std::vector<unification_expr> unify_expr_list;
 
 		struct logic_constraint
@@ -125,7 +127,7 @@ namespace hyper {
 							const unify_pair_list&, logic_layer_cb cb);
 			void async_exec(const logic_constraint& ctr, 
 							const logic::function_call& constraint, 
-							const unify_pair_list&, logic_layer_cb cb);
+							const unify_pair_list2&, logic_layer_cb cb);
 			void async_exec(const std::string& task, network::identifier id, 
 							const std::string& src, logic_layer_cb cb);
 
@@ -146,7 +148,7 @@ namespace hyper {
 			std::string make_key(logic_ctx_ptr ptr) const;
 
 			logic_ctx_ptr prepare_async_exec(const logic_constraint& ctr, logic_layer_cb cb);
-			void async_exec_(const unify_pair_list& list, logic_ctx_ptr ctx);
+			void async_exec_(logic_ctx_ptr ctx);
 		};
 	}
 }

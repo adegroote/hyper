@@ -22,6 +22,22 @@ namespace {
 
 		transform_unification(const std::string& name) : name(name) {}
 
+		model::unification_expr make_pair(const logic::expression& first, 
+										  const logic::expression& second)
+		{
+			const std::string* s1 = boost::get<std::string>(& first.expr);
+			const std::string* s2 = boost::get<std::string>(& second.expr);
+
+			/* by construction b1 ^ b2 == true, see src/compiler/recipe.cc */
+			bool b1 = (s1 && compiler::scope::get_scope(*s1) == name);
+			bool b2 = (s2 && compiler::scope::get_scope(*s2) == name);
+
+			if (b1) 
+				return std::make_pair(*s1, second);
+			else
+				return std::make_pair(*s2, first);
+		}
+
 		model::unification_expr operator() (const model::unification_pair& p) {
 			boost::optional<logic::expression> first, second;
 
@@ -32,22 +48,17 @@ namespace {
 			if (!first || !second)
 				throw transfrom_unification_error();
 
-			std::string* s1 = boost::get<std::string>(& first->expr);
-			std::string* s2 = boost::get<std::string>(& second->expr);
+			return make_pair(*first, *second);
 
-			/* by construction b1 ^ b2 == true, see src/compiler/recipe.cc */
-			bool b1 = (s1 && compiler::scope::get_scope(*s1) == name);
-			bool b2 = (s2 && compiler::scope::get_scope(*s2) == name);
+		}
 
-			if (b1) 
-				return std::make_pair(*s1, *second);
-			else
-				return std::make_pair(*s2, *first);
+		model::unification_expr operator() (const model::unification_pair2& p) {
+			return make_pair(p.first, p.second);
 		}
 	};
 
-	void prepare_unification(const std::string& name, const model::unify_pair_list& unify, 
-													  model::logic_ctx_ptr ctx) {
+	template <typename T>
+	void prepare_unification(const std::string& name, const T& unify, model::logic_ctx_ptr ctx) {
 		ctx->unify_list.clear();
 		std::transform(unify.begin(), unify.end(),
 					   std::back_inserter(ctx->unify_list),
@@ -124,14 +135,8 @@ namespace hyper {
 			return ctx;
 		}
 
-		void logic_layer::async_exec_(const unify_pair_list& list, logic_ctx_ptr ctx)
+		void logic_layer::async_exec_(logic_ctx_ptr ctx)
 		{
-			try {
-				prepare_unification(a_.name, list, ctx);
-			} catch (transfrom_unification_error) {
-				return handle_failure(ctx, make_error_code(logic_layer_error::parse_error));
-			}
-
 			a_.logger(DEBUG) << ctx->ctr << " Try to set unification pattern " << std::endl;
 			hyper::network::async_parallel_for_each(ctx->unify_list.begin(), ctx->unify_list.end(),
 												   boost::bind(&setter::set, a_.setter, _1, _2), 
@@ -156,11 +161,17 @@ namespace hyper {
 			}
 			ctx->call_exec = ret_exec.e;
 
-			return async_exec_(list, ctx);
+			try {
+				prepare_unification(a_.name, list, ctx);
+			} catch (transfrom_unification_error) {
+				return handle_failure(ctx, make_error_code(logic_layer_error::parse_error));
+			}
+
+			return async_exec_(ctx);
 		}
 
 		void logic_layer::async_exec(const logic_constraint& ctr, const logic::function_call& f,
-									 const unify_pair_list& list, logic_layer_cb cb)
+									 const unify_pair_list2& list, logic_layer_cb cb)
 		{
 			logic_ctx_ptr ctx = prepare_async_exec(ctr, cb);
 
@@ -172,7 +183,9 @@ namespace hyper {
 				return handle_failure(ctx, make_error_code(logic_layer_error::parse_error));
 			}
 			ctx->call_exec = ret_exec.e;
-			return async_exec_(list, ctx);
+			prepare_unification(a_.name, list, ctx); // can't throw
+
+			return async_exec_(ctx);
 		}
 
 		void logic_layer::handle_unification_computation(const boost::system::error_code& e, logic_ctx_ptr ctx)

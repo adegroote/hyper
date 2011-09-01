@@ -81,6 +81,8 @@ BOOST_AUTO_TEST_CASE ( network_msg_test )
 	ctr1.src = "pipo";
 	ctr1.constraint = func;
 	ctr1.repeat = true;
+	ctr1.unify_list.push_back(std::make_pair(std::string("pipo"), std::string("toto")));
+	ctr1.unify_list.push_back(std::make_pair(std::string("pipo2"), Constant<double>(3.2)));
 
 	try_archive_interface(ctr1, ctr2);
 

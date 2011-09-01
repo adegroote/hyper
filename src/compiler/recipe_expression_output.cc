@@ -79,57 +79,6 @@ namespace {
 					   res.unification_clauses.begin(), prepare_logic_symbol_unification(sym, t));
 		return res;
 	}
-
-	struct dump_atom_vis : public boost::static_visitor<std::string> 
-	{ 
-		const ability& a;
-
-		dump_atom_vis(const ability& a) : a(a) {}
-
-		template <typename T>
-		std::string operator() (const T& ) const { assert(false); return ""; }
-
-		std::string operator() (const Constant<int>& c) const
-		{
-			std::ostringstream oss;
-			oss << c.value;
-			return oss.str();
-		}
-
-		std::string operator() (const Constant<double>& c) const
-		{
-			std::ostringstream oss;
-			oss.precision(6);
-			oss << std::fixed << c.value;
-			return oss.str();
-		}
-
-		std::string operator() (const Constant<std::string>& c) const
-		{
-			return quoted_string(c.value);
-		}
-
-		std::string operator() (const Constant<bool>& c) const
-		{
-			std::ostringstream oss;
-			if (c.value)
-				oss << "true";
-			else 
-				oss << "false";
-			return oss.str();
-		}
-
-		std::string operator() (const std::string& s) const
-		{
-			std::ostringstream oss;
-			if (!scope::is_scoped_identifier(s))
-				oss << a.name() <<  "::" << s;
-			else
-				oss << s;
-			return oss.str();
-		}
-	};
-
 	struct dump_unify_pair {
 		std::ostream& os;
 		std::string separator_;
@@ -144,8 +93,9 @@ namespace {
 
 		void operator() (const unification_expression& p) 
 		{
-			os << "(\"" << boost::apply_visitor(dump_atom_vis(a), p.first.expr) ;
-			os << "\", \"" << boost::apply_visitor(dump_atom_vis(a), p.second.expr) << "\")";
+			os << "(" << generate_logic_expression(p.first.expr, a, u);
+			os << ", " << generate_logic_expression(p.second.expr, a, u);
+			os << ")";
 		};
 
 		void separator () { 
@@ -242,9 +192,9 @@ namespace {
 		{
 			std::ostringstream oss;
 			if (unify_list.empty()) 
-				oss << "network::request_constraint::unification_list()";
+				oss << "network::request_constraint2::unification_list()";
 			else {
-				oss << "boost::assign::list_of<std::pair<std::string, std::string> >";
+				oss << "boost::assign::list_of<std::pair<logic::expression, logic::expression> >";
 				oss << "\n" << times(5, "\t");
 				hyper::compiler::list_of(unify_list.begin(), unify_list.end(), dump_unify_pair(oss, a, u));
 				oss << "\n";
