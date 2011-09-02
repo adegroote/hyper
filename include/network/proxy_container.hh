@@ -6,8 +6,8 @@
 #include <string>
 
 #include <boost/any.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 #include <boost/bind.hpp>
 #include <boost/function/function0.hpp>
 #include <boost/optional/optional.hpp>
@@ -29,7 +29,7 @@ namespace hyper {
 		std::string serialize_value(const T& value)
 		{
 			std::ostringstream archive_stream;
-			boost::archive::text_oarchive archive(archive_stream);
+			boost::archive::binary_oarchive archive(archive_stream);
 			archive << value;
 			return archive_stream.str();
 		}
@@ -40,7 +40,7 @@ namespace hyper {
 			T res;
 			try {
 				std::istringstream archive_stream(value);
-				boost::archive::text_iarchive archive(archive_stream);
+				boost::archive::binary_iarchive archive(archive_stream);
 				archive >> res;
 				return res;
 			} catch (std::exception& ) {

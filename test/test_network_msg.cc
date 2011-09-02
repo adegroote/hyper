@@ -1,8 +1,8 @@
 #include <network/msg.hh>
 #include <boost/test/unit_test.hpp>
 
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 
 template <typename T>
 void try_archive_interface(const T& src, T& dest)
@@ -10,14 +10,14 @@ void try_archive_interface(const T& src, T& dest)
 	std::string tmp;
 	{
 		std::ostringstream archive_stream;
-		boost::archive::text_oarchive archive(archive_stream);
+		boost::archive::binary_oarchive archive(archive_stream);
 		archive << src;
 		tmp = archive_stream.str();
 	}
 
 	{ 
 		std::istringstream archive_stream(tmp);
-		boost::archive::text_iarchive archive(archive_stream);
+		boost::archive::binary_iarchive archive(archive_stream);
 		archive >> dest;
 	}
 }

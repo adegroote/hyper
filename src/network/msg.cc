@@ -1,8 +1,8 @@
 #include <network/msg.hh>
 
 #include <boost/algorithm/string/trim.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/variant.hpp> 
@@ -78,7 +78,7 @@ namespace {
 		std::string operator() (const T& m) const
 		{
 			std::ostringstream archive_stream;
-			boost::archive::text_oarchive archive(archive_stream);
+			boost::archive::binary_oarchive archive(archive_stream);
 			archive << m;
 			return archive_stream.str();
 		}
@@ -95,11 +95,11 @@ namespace hyper {
 			ar & name;
 		}
 
-template void request_name::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void request_name::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void request_name::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void request_name::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void request_name_answer::serialize(Archive & ar, const unsigned int version)
@@ -108,11 +108,11 @@ template void request_name::serialize<boost::archive::text_oarchive>(
 			ar & name & success & endpoints;
 		}
 
-template void request_name_answer::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void request_name_answer::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void request_name_answer::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void request_name_answer::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void register_name::serialize(Archive& ar, const unsigned int version)
@@ -121,11 +121,11 @@ template void request_name_answer::serialize<boost::archive::text_oarchive>(
 			ar & name & endpoints;
 		}
 
-template void register_name::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void register_name::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void register_name::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void register_name::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void register_name_answer::serialize(Archive & ar, const unsigned int version) 
@@ -134,11 +134,11 @@ template void register_name::serialize<boost::archive::text_oarchive>(
 			ar & name & success;
 		}
 
-template void register_name_answer::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void register_name_answer::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void register_name_answer::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void register_name_answer::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void ping::serialize(Archive& ar, const unsigned int version)
@@ -147,11 +147,11 @@ template void register_name_answer::serialize<boost::archive::text_oarchive>(
 			ar & name & value;
 		}
 
-template void ping::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void ping::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void ping::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void ping::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void request_list_agents::serialize(Archive& ar, const unsigned int version)
@@ -160,11 +160,11 @@ template void ping::serialize<boost::archive::text_oarchive>(
 			ar & id & src;
 		}
 
-template void request_list_agents::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void request_list_agents::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void request_list_agents::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void request_list_agents::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void list_agents::serialize(Archive& ar, const unsigned int version)
@@ -173,11 +173,11 @@ template void request_list_agents::serialize<boost::archive::text_oarchive>(
 			ar & id & src & all_agents;
 		}
 
-template void list_agents::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void list_agents::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void list_agents::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void list_agents::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void inform_new_agent::serialize(Archive& ar, const unsigned int version)
@@ -185,11 +185,11 @@ template void list_agents::serialize<boost::archive::text_oarchive>(
 			(void) version;
 			ar & new_agents;
 		}
-template void inform_new_agent::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void inform_new_agent::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void inform_new_agent::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void inform_new_agent::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void inform_death_agent::serialize(Archive& ar, const unsigned int version)
@@ -198,11 +198,11 @@ template void inform_new_agent::serialize<boost::archive::text_oarchive>(
 			ar & dead_agents;
 		}
 
-template void inform_death_agent::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void inform_death_agent::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void inform_death_agent::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void inform_death_agent::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void request_variable_value::serialize(Archive& ar, const unsigned int version)
@@ -211,11 +211,11 @@ template void inform_death_agent::serialize<boost::archive::text_oarchive>(
 			ar & id & src & var_name;
 		}
 
-template void request_variable_value::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void request_variable_value::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void request_variable_value::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void request_variable_value::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template<class Archive>
 		void variable_value::serialize(Archive& ar, const unsigned int version)
@@ -224,11 +224,11 @@ template void request_variable_value::serialize<boost::archive::text_oarchive>(
 			ar & id & src & var_name & success & value ;
 		}
 
-template void variable_value::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void variable_value::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void variable_value::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void variable_value::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template <class Archive>
 		void request_constraint::serialize(Archive& ar, const unsigned int version)
@@ -237,11 +237,11 @@ template void variable_value::serialize<boost::archive::text_oarchive>(
 			ar & id & src & unify_list & constraint & repeat; 
 		}
 
-template void request_constraint::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void request_constraint::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void request_constraint::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void request_constraint::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template <class Archive>
 		void request_constraint2::serialize(Archive& ar, const unsigned int version)
@@ -250,11 +250,11 @@ template void request_constraint::serialize<boost::archive::text_oarchive>(
 			ar & id & src & unify_list & constraint & repeat; 
 		}
 
-template void request_constraint2::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void request_constraint2::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void request_constraint2::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void request_constraint2::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template <class Archive>
 		void request_constraint_ack::serialize(Archive& ar, const unsigned int version)
@@ -263,11 +263,11 @@ template void request_constraint2::serialize<boost::archive::text_oarchive>(
 			ar & id & src & acked; 
 		}
 
-template void request_constraint_ack::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void request_constraint_ack::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void request_constraint_ack::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void request_constraint_ack::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template <class Archive>
 		void request_constraint_answer::serialize(Archive& ar, const unsigned int version)
@@ -276,11 +276,11 @@ template void request_constraint_ack::serialize<boost::archive::text_oarchive>(
 			ar & id & src & state;
 		}
 
-template void request_constraint_answer::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void request_constraint_answer::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void request_constraint_answer::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void request_constraint_answer::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template <class Archive>
 		void log_msg::serialize(Archive& ar, const unsigned int version)
@@ -296,11 +296,11 @@ template void request_constraint_answer::serialize<boost::archive::text_oarchive
 			boost::trim(msg);
 		}
 
-template void log_msg::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
+template void log_msg::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
 
-template void log_msg::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void log_msg::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template <class Archive>
 		void terminate::serialize(Archive& ar, const unsigned int version)
@@ -309,10 +309,10 @@ template void log_msg::serialize<boost::archive::text_oarchive>(
 			ar & reason;
 		}
 
-template void terminate::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
-template void terminate::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void terminate::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
+template void terminate::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 		template <class Archive>
 		void abort::serialize(Archive& ar, const unsigned int version)
@@ -321,10 +321,10 @@ template void terminate::serialize<boost::archive::text_oarchive>(
 			ar & src & id;
 		}
 
-template void abort::serialize<boost::archive::text_iarchive>(
-		    boost::archive::text_iarchive & ar, const unsigned int file_version);
-template void abort::serialize<boost::archive::text_oarchive>(
-		    boost::archive::text_oarchive & ar,  const unsigned int file_version);
+template void abort::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
+template void abort::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
 #if 0
 		std::ostream& operator << (std::ostream& oss, const message_variant& m) 
