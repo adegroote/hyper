@@ -56,7 +56,7 @@ namespace hyper {
 				select_read_data_dispatch(serialized_socket<AuthorizedMessages> * socket) :
 					socket_(socket) {};
 
-				void operator () (msg_variant& m, boost::tuple<Handler> handler) 
+				void operator () (msg_variant& m, size_t size, boost::tuple<Handler> handler) 
 				{
 					using namespace boost::mpl;
 					typedef typename at_c<message_types, index>::type iter_type;
@@ -73,7 +73,7 @@ namespace hyper {
 						success::value
 					> s(socket_);
 
-					s(m, handler);
+					s(m, size, handler);
 				};
 
 				serialized_socket<AuthorizedMessages>* socket_;
@@ -212,7 +212,7 @@ namespace hyper {
 						header head;
 						memcpy(&head, inbound_header_, sizeof(head));
 
-						inbound_data_.resize(head.size);
+						inbound_data_.reserve(head.size);
 
 						typedef typename boost::mpl::find<message_types, T>::type right_index;
 
@@ -223,11 +223,11 @@ namespace hyper {
 							throw boost::system::system_error(error);
 						}
 
-						boost::asio::read(socket_, boost::asio::buffer(inbound_data_));
+						boost::asio::read(socket_, boost::asio::buffer(&inbound_data_[0], head.size));
 
 						try
 						{
-							std::string archive_data(&inbound_data_[0], inbound_data_.size());
+							std::string archive_data(&inbound_data_[0], head.size);
 							std::istringstream archive_stream(archive_data);
 							boost::archive::binary_iarchive archive(archive_stream);
 							archive >> t;
@@ -280,7 +280,7 @@ namespace hyper {
 					#define DECL(z, n, text) \
 						case n : {			 \
 							select_read_data_dispatch<AuthorizedMessages, Handler, n> s ## n(this);	\
-							return s ## n (m, handler);		\
+							return s ## n (m, head.size, handler);		\
 						}
 
 						switch (head.type) {
@@ -317,16 +317,16 @@ namespace hyper {
 							}
 
 							// Issue a read operation to read exactly the number of bytes of the struct
-							inbound_data_.resize(head.size);
+							inbound_data_.reserve(head.size);
 
 							void (serialized_socket::*f)(
 									const boost::system::error_code&,
-									T&, boost::tuple<Handler>);
+									T&, size_t, boost::tuple<Handler>);
 							f = &serialized_socket::template handle_read_data<T, Handler>;
 
-							boost::asio::async_read(socket_, boost::asio::buffer(inbound_data_),
+							boost::asio::async_read(socket_, boost::asio::buffer(&inbound_data_[0], head.size),
 									boost::bind(f,
-										this, boost::asio::placeholders::error, boost::ref(t),
+										this, boost::asio::placeholders::error, boost::ref(t), head.size,
 										handler));
 						}
 					}
@@ -334,7 +334,7 @@ namespace hyper {
 					/* Handle a completed read of message data. */
 					template <typename T, typename Handler>
 					int handle_read_data_(const boost::system::error_code& e,
-							T& t, boost::tuple<Handler> handler)
+							T& t, size_t size, boost::tuple<Handler> handler)
 					{
 						if (e)
 						{
@@ -346,7 +346,7 @@ namespace hyper {
 							/* Extract the data structure from the data just received. */
 							try
 							{
-								std::string archive_data(&inbound_data_[0], inbound_data_.size());
+								std::string archive_data(&inbound_data_[0], size);
 								std::istringstream archive_stream(archive_data);
 								boost::archive::binary_iarchive archive(archive_stream);
 								archive >> t;
@@ -365,9 +365,9 @@ namespace hyper {
 
 					template <typename T, typename Handler>
 					void handle_read_data(const boost::system::error_code& e,
-							T& t, boost::tuple<Handler> handler)
+							T& t, size_t size, boost::tuple<Handler> handler)
 					{
-						int res = handle_read_data_(e, t, handler);
+						int res = handle_read_data_(e, t, size, handler);
 						/* Inform caller that data has been received ok. */
 						if (res == 0)
 							boost::get<0>(handler)(e);
@@ -375,9 +375,9 @@ namespace hyper {
 
 					template <typename T, typename Handler>
 					void handle_read_data(const boost::system::error_code& e,
-								T& t, msg_variant& m, boost::tuple<Handler> handler)
+								T& t, msg_variant& m, size_t size, boost::tuple<Handler> handler)
 					{
-						int res = handle_read_data_(e, t, handler);
+						int res = handle_read_data_(e, t, size, handler);
 						if (res == 0) {
 							m = t;
 							/* Inform caller that data has been received ok. */
@@ -423,7 +423,7 @@ namespace hyper {
 					(void) socket;
 				};
 
-				void operator() (msg_variant& m, boost::tuple<Handler> handler) 
+				void operator() (msg_variant& m, size_t size, boost::tuple<Handler> handler) 
 				{
 					(void) m;
 					std::cerr << "Not acceptable msg : " << index << std::endl;
@@ -441,12 +441,12 @@ namespace hyper {
 				select_read_data(socket_type * socket) :
 					socket_(socket) {};
 
-				void operator() (msg_variant&m, boost::tuple<Handler> handler) 
+				void operator() (msg_variant&m, size_t size, boost::tuple<Handler> handler) 
 				{
 					void (socket_type::*f)(
 							const boost::system::error_code&,
 							T&,
-							msg_variant&,
+							msg_variant&, size_t, 
 							boost::tuple<Handler>);
 					f = & socket_type::template handle_read_data<T, Handler>;
 					boost::asio::async_read(socket_->socket_, 
@@ -454,7 +454,7 @@ namespace hyper {
 							boost::bind(f,
 								socket_, boost::asio::placeholders::error,
 								boost::ref( boost::fusion::at_c<index> (socket_->msgs)),
-								boost::ref(m),
+								boost::ref(m), size, 
 								handler));
 				}
 
