@@ -104,6 +104,7 @@ namespace {
 		{
 			agent.identifier = 42;
 			req.constraint = "test";
+			req.repeat = false;
 			client.async_request(req, ans, boost::bind(&agent_client::handle_test, this,
 										boost::asio::placeholders::error));
 		}
