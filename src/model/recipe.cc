@@ -8,9 +8,10 @@ using namespace hyper::model;
 namespace {
 	struct callback {
 		ability & a;
-		bool res;
+		boost::optional<hyper::logic::expression> res;
 
-		callback(ability& a, bool res) : a(a), res(res) {}	
+		callback(ability& a, boost::optional<hyper::logic::expression> res) :
+			a(a), res(res) {}	
 
 		void operator()(recipe_execution_callback cb) { 
 			a.io_s.post(boost::bind(cb, res));
@@ -28,9 +29,12 @@ void recipe::handle_execute(const boost::system::error_code& e)
 	end_execute(!e);
 }
 
-void recipe::end_execute(bool res)
+void recipe::end_execute(bool res_)
 {
 	is_running = false;
+	boost::optional<logic::expression> res;
+	if (!res_) 
+		res = computation->error();
 	if (computation != 0) {
 		delete computation;
 		computation = 0;

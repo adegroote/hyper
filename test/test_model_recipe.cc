@@ -96,18 +96,18 @@ namespace {
 		{
 		};
 
-		void handle_second_test(bool res)
+		void handle_second_test(boost::optional<hyper::logic::expression> e)
 		{
-			BOOST_CHECK(res);
+			BOOST_CHECK(!e);
 			BOOST_CHECK(pos.x == 42);
 			BOOST_CHECK(pos.y == 3);
 			BOOST_CHECK(pos.z == 42 * 3);
 			valid_test++;
 		}
 
-		void handle_first_test(bool res)
+		void handle_first_test(boost::optional<hyper::logic::expression> e)
 		{
-			BOOST_CHECK(res);
+			BOOST_CHECK(!e);
 			BOOST_CHECK(pos.x == 42);
 			BOOST_CHECK(pos.y == 3);
 			BOOST_CHECK(pos.z == 45);

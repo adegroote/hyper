@@ -8,6 +8,8 @@
 #include <boost/system/error_code.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <logic/expression.hh>
+
 namespace hyper {
 	namespace model {
 
@@ -19,6 +21,7 @@ namespace hyper {
 			virtual void compute (cb_type cb) = 0;
 			/* Wait for cb or not */
 			virtual bool abort() = 0 ;
+			virtual logic::expression error() const { return logic::empty(); };
 			virtual ~abortable_function_base() {};
 		};
 
@@ -54,9 +57,11 @@ namespace hyper {
 
 			exec_type exec_;
 			abort_type abort_;
+			logic::expression error_;
 
-			abortable_function(exec_type exec, abort_type abort = none_function):
-				exec_(exec), abort_(abort) {}
+			abortable_function(exec_type exec, abort_type abort = none_function, 
+							   const logic::expression &error = logic::empty()):
+				exec_(exec), abort_(abort), error_(error) {}
 
 			void compute (cb_type cb) {
 				return exec_(cb);
@@ -65,6 +70,8 @@ namespace hyper {
 			bool abort() {
 				return abort_();
 			}
+
+			logic::expression error() const { return error_; }
 		};
 
 		/* 
@@ -109,6 +116,7 @@ namespace hyper {
 				}
 
 				void compute(cb_type cb_);
+				logic::expression error() const;
 				void abort();
 
 				void clear() { seq.clear(); }

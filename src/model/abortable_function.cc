@@ -104,6 +104,10 @@ namespace hyper {
 						this, boost::asio::placeholders::error));
 		}
 
+		logic::expression abortable_computation::error() const {
+			return seq[index]->error();
+		}
+
 		void abortable_computation::abort() 
 		{
 			seq[index]->abort();

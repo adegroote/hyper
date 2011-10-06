@@ -40,14 +40,18 @@ namespace hyper {
 			end_execute(failed.empty());
 		}
 
-		void task::handle_execute(bool res)
+		void task::handle_execute(boost::optional<hyper::logic::expression> l)
 		{
 			CHECK_INTERRUPT
 
+			bool res = !l;
+
 			a.logger(DEBUG) << "[Task " << name << "] Recipe execution finish ";
 			a.logger(DEBUG) << (res ? "with success" : "with failure") << std::endl;
-			if (!res)
-				return end_execute(res); // XXX Add the error scope
+			if (!res) {
+				error_context.push_back(*l);
+				return end_execute(res); 
+			}
 
 			// check the post-conditions to be sure that everything is ok
 			return async_evaluate_postconditions(boost::bind(
@@ -197,6 +201,7 @@ namespace hyper {
 			is_running = true;
 			must_interrupt = false;
 			executing_recipe = false;
+			error_context.clear();
 
 			a.logger(DEBUG) << "[Task " << name <<"] Start execution " << std::endl;
 

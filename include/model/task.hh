@@ -58,12 +58,13 @@ namespace hyper {
 				virtual ~task() {};
 
 			protected:
+				std::vector<logic::expression> error_context;
 				virtual bool has_postconditions() const = 0;
 
 			private:
 				void handle_initial_postcondition_handle(const boost::system::error_code&, conditionV failed);
 				void handle_precondition_handle(const boost::system::error_code&, conditionV failed);
-				void handle_execute(bool res);
+				void handle_execute(boost::optional<hyper::logic::expression>);
 				void handle_final_postcondition_handle(const boost::system::error_code&, conditionV failed);
 				void async_evaluate_recipe_preconditions(const boost::system::error_code&, conditionV, size_t i);
 				void end_execute(bool res);

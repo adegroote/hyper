@@ -31,6 +31,7 @@ namespace hyper {
 										bool&);
 
 				void compute (cb_type cb);
+				logic::expression error() const { return f; }
 				bool abort();
 		};
 	}
