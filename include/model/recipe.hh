@@ -4,6 +4,8 @@
 #include <vector>
 #include <set>
 
+#include <boost/optional.hpp>
+
 #include <model/abortable_function.hh>
 #include <model/task_fwd.hh>
 #include <model/recipe_fwd.hh>
@@ -17,6 +19,8 @@ namespace hyper {
 			private:
 				std::string name;
 				ability &a;
+				task& t;
+				boost::optional<logic::expression> expected_error_;
 
 				bool is_running;
 				bool must_interrupt;
@@ -35,7 +39,8 @@ namespace hyper {
 			public:
 				typedef std::set<std::string>::const_iterator agent_const_iterator;
 
-				recipe(const std::string& name, ability& a);
+				recipe(const std::string& name, ability& a, task& t,
+					   boost::optional<logic::expression> expected_error = boost::none);
 				void execute(recipe_execution_callback cb);
 				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
 				virtual size_t nb_preconditions() const = 0;
@@ -44,6 +49,9 @@ namespace hyper {
 				agent_const_iterator end() const { return required_agents.end(); }
 
 				const std::string& r_name() const { return name; }
+
+				const boost::optional<logic::expression>& expected_error() const 
+				{ return expected_error_; }
 
 				void abort();
 

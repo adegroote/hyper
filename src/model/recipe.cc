@@ -2,6 +2,7 @@
 
 #include <model/recipe.hh>
 #include <model/ability.hh>
+#include <model/task.hh>
 
 
 using namespace hyper::model;
@@ -19,8 +20,10 @@ namespace {
 	};
 }
 
-recipe::recipe(const std::string& name, ability& a):
-	name(name), a(a), computation(0), is_running(false) 
+recipe::recipe(const std::string& name, ability& a, task& t, 
+			   boost::optional<logic::expression> error):
+	name(name), a(a), t(t), computation(0), is_running(false),
+	expected_error_(error)
 {}
 
 void recipe::handle_execute(const boost::system::error_code& e)

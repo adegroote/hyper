@@ -1,4 +1,5 @@
 #include <model/ability_impl.hh>
+#include <model/task.hh>
 #include <model/recipe.hh>
 #include <boost/test/unit_test.hpp>
 
@@ -21,12 +22,25 @@ namespace {
 			export_variable("z", z);
 		}
 	};
+	
+	struct my_task : public hyper::model::task 
+	{
+		my_task(hyper::model::ability& a) :
+			hyper::model::task(a, "my_task") {}
+
+		// uselesss for this test, only need the error_context
+		void async_evaluate_preconditions(hyper::model::condition_execution_callback cb)
+		{}
+		void async_evaluate_postconditions(hyper::model::condition_execution_callback cb)
+		{}
+		bool has_postconditions() const { return false; } 
+	};
 
 	struct add_recipe : public hyper::model::recipe
 	{
 		pos_ability& pos;
 
-		add_recipe(pos_ability& pos) : recipe("add", pos), pos(pos) {}
+		add_recipe(pos_ability& pos, my_task& t) : recipe("add", pos, t), pos(pos) {}
 
 		virtual void async_evaluate_preconditions(condition_execution_callback cb) 
 		{
@@ -46,7 +60,7 @@ namespace {
 	{
 		pos_ability& pos;
 
-		mult_recipe(pos_ability& pos) : recipe("mult", pos), pos(pos) {}
+		mult_recipe(pos_ability& pos, my_task& t) : recipe("mult", pos, t), pos(pos) {}
 
 		virtual void async_evaluate_preconditions(condition_execution_callback cb) 
 		{
@@ -66,7 +80,7 @@ namespace {
 	{
 		pos_ability& pos;
 
-		div_recipe(pos_ability& pos) : recipe("div", pos), pos(pos) {}
+		div_recipe(pos_ability& pos, my_task& t) : recipe("div", pos, t), pos(pos) {}
 
 		virtual void async_evaluate_preconditions(condition_execution_callback cb) 
 		{
@@ -85,14 +99,15 @@ namespace {
 
 	struct recipe_test {
 		pos_ability& pos;
+		my_task t;
 		size_t valid_test;
 		add_recipe add_;
 		mult_recipe mult_;
 		div_recipe div_;
 
 		recipe_test(pos_ability& pos):
-			pos(pos), valid_test(0),
-			add_(pos), mult_(pos), div_(pos)
+			pos(pos), t(pos), valid_test(0),
+			add_(pos, t), mult_(pos, t), div_(pos, t)
 		{
 		};
 
