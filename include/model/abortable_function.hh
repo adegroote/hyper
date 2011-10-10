@@ -94,9 +94,10 @@ namespace hyper {
 				computation_seq seq;
 				cb_type cb;
 				size_t index;
+				ssize_t error_index;
 				bool user_ask_abort;
 
-				void handle_computation(const boost::system::error_code& e);
+				void handle_computation(const boost::system::error_code& e, size_t index);
 
 				/* Wait for the terminaison of the computation. With ensure
 				 * clause, we may have some running clause we need to close

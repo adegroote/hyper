@@ -133,6 +133,8 @@ namespace hyper {
 
 			void abort(const std::string& src, network::identifier id);
 
+			logic::function_call generate(const logic::function_call& f);
+
 			private:
 			void handle_unification_computation(const boost::system::error_code& e,
 												logic_ctx_ptr logic_ctx);

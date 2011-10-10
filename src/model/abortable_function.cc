@@ -61,7 +61,7 @@ namespace hyper {
 
 		}
 
-		void abortable_computation::handle_computation(const boost::system::error_code& e)
+		void abortable_computation::handle_computation(const boost::system::error_code& e, size_t idx)
 		{
 			if (check_is_terminated(e)) return;
 
@@ -75,6 +75,7 @@ namespace hyper {
 			}
 
 			if (e) {
+				error_index = idx;
 				terminaison(e);
 			} else {
 				if (user_ask_abort) 
@@ -85,7 +86,7 @@ namespace hyper {
 					index++;
 					seq[index]->compute(boost::bind(
 								&abortable_computation::handle_computation,
-								this, boost::asio::placeholders::error));
+								this, boost::asio::placeholders::error, index));
 				}
 			}
 		}
@@ -97,15 +98,17 @@ namespace hyper {
 
 			cb = cb_;
 			index = 0;
+			error_index = -1;
 			user_ask_abort = false;
 			wait_terminaison = false;
 
 			seq[index]->compute(boost::bind(&abortable_computation::handle_computation,
-						this, boost::asio::placeholders::error));
+						this, boost::asio::placeholders::error, index));
 		}
 
 		logic::expression abortable_computation::error() const {
-			return seq[index]->error();
+			assert(error_index != -1);
+			return seq[error_index]->error();
 		}
 
 		void abortable_computation::abort() 

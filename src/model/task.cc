@@ -50,7 +50,8 @@ namespace hyper {
 			a.logger(DEBUG) << (res ? "with success" : "with failure") << std::endl;
 			if (!res) {
 				error_context.push_back(*l);
-				return end_execute(res); 
+				return handle_precondition_handle(boost::system::error_code(),
+												  conditionV());
 			}
 
 			// check the post-conditions to be sure that everything is ok
@@ -72,7 +73,7 @@ namespace hyper {
 			if (i != (recipes.size() - 1)) {
 				boost::optional<size_t> electable;
 				for (size_t j = i+1; j < recipes.size() && !electable; ++j)
-					if (recipe_states[j].missing_agents.empty())
+					if (recipe_states[j].is_electable())
 						electable = j;
 
 				if (electable) {
@@ -88,8 +89,8 @@ namespace hyper {
 
 			// time to select a recipe and execute it :)
 			std::sort(recipe_states.begin(), recipe_states.end());
-			if (! recipe_states[0].failed.empty() &&
-				! recipe_states[0].missing_agents.empty() ) {
+			if (! recipe_states[0].failed.empty() ||
+				! recipe_states[0].is_electable()) {
 				a.logger(DEBUG) << "[Task " << name << "] No recipe candidate found" << std::endl;
 				return end_execute(false);
 			}
@@ -133,6 +134,13 @@ namespace hyper {
 					 std::ostream_iterator<std::string>(a.logger(DEBUG), ", "));
 			a.logger(DEBUG) << std::endl;
 			
+			a.logger(DEBUG) << "[Task " << name << "] Error_context ";
+			if (error_context.empty())
+				a.logger(DEBUG) << "empty";
+			else 
+				a.logger(DEBUG) << error_context.back();
+			a.logger(DEBUG) << std::endl;
+
 			boost::optional<size_t> first_electable;
 			/* Evaluate the computable recipes, depending on the availables agent */
 			for (size_t i = 0; i < recipes.size(); ++i) {
@@ -152,9 +160,23 @@ namespace hyper {
 					a.logger(DEBUG) << std::endl;
 				}
 
-				if (recipe_states[i].missing_agents.empty() && !first_electable) 
+				const boost::optional<logic::expression>& expr = recipes[i]->expected_error();
+				recipe_states[i].last_error_valid = 
+					((!expr && error_context.empty()) ||
+					 (expr && !error_context.empty() && error_context.back() == *expr));
+
+				if (!recipe_states[i].last_error_valid) {
+					a.logger(DEBUG) << "[Task " << name << "] Won't evaluate " << recipes[i]->r_name();
+					a.logger(DEBUG) << " because the error_context is not consistent with expected error ";
+					if (!expr)
+						a.logger(DEBUG) << "none";
+					else
+						a.logger(DEBUG) << *expr;
+					a.logger(DEBUG) << std::endl;
+				}
+
+				if (recipe_states[i].is_electable() && !first_electable) 
 					first_electable = i;
-				
 			}
 
 			if (!first_electable) {// no computable recipe

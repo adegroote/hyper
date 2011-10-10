@@ -348,6 +348,12 @@ namespace hyper {
 
 		}
 
+		logic::function_call logic_layer::generate(const logic::function_call& f) {
+			logic::generate_return ret = logic::generate(f, engine.funcs());
+			assert(ret.res);
+			return ret.e;
+		}
+
 		logic_layer::~logic_layer() 
 		{
 		}

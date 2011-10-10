@@ -27,15 +27,22 @@ namespace hyper {
 					size_t index; // index in vect_recipes
 					size_t nb_preconds; // nb of preconditions
 					std::set<std::string> missing_agents; // missing agent to execute the recipe
+					bool last_error_valid; // last_error context coherent with error_context ?
 					conditionV failed; // failed precondition
 
 					bool operator< (const state& s) const
 					{
 						if (missing_agents.size() != s.missing_agents.size())
 							return (missing_agents.size() < s.missing_agents.size());
+						if (last_error_valid != s.last_error_valid) 
+							return last_error_valid;
 						if (failed.size() != s.failed.size())
 							return (failed.size() < s.failed.size());
 						return nb_preconds > s.nb_preconds;
+					}
+
+					bool is_electable() const {
+						return missing_agents.empty() && last_error_valid;
 					}
 				};
 
