@@ -556,6 +556,44 @@ struct exec_condition_output
 	}
 };
 
+struct is_last_error_helper : public boost::static_visitor<bool>
+{
+	template <typename T>
+	bool operator() (const T&) const { return false; }
+
+	bool operator() (const last_error& ) const { return true; }
+};
+
+struct is_last_error {
+	bool operator() (const recipe_condition& cond) const {
+		return boost::apply_visitor(is_last_error_helper(), cond.expr);
+	}
+};
+
+struct is_expression_helper : public boost::static_visitor<bool>
+{
+	template <typename T>
+	bool operator() (const T& ) const { return false; }
+
+	bool operator() (const expression_ast&) const { return true; }
+};
+
+struct is_expression_ast {
+	bool operator() (const recipe_condition& cond) const { 
+		return boost::apply_visitor(is_expression_helper(), cond.expr);
+	}
+};
+
+template <typename It>
+boost::optional<expression_ast> extract_last_error(It begin, It end)
+{
+	It found = std::find_if(begin, end, is_last_error());
+	if (found == end)
+		return boost::none;
+
+	last_error last = boost::get<last_error>(found->expr);
+	return last.error;
+}
 
 namespace hyper {
 	namespace compiler {
@@ -580,6 +618,8 @@ namespace hyper {
 						   adapt_recipe_condition_to_context(map));
 			std::transform(body.begin(), body.end(), body.begin(),
 						   adapt_recipe_expression_to_context(map));
+
+			has_preconds = (std::count_if(pre.begin(), pre.end(), is_expression_ast()) != 0);
 		}
 
 		bool recipe::validate(const universe& u) 
@@ -607,6 +647,7 @@ namespace hyper {
 						  boost::bind(f, &pre_symbols, _1));
 
 
+			oss << "#include <model/task.hh>" << std::endl;
 			oss << "#include <model/recipe.hh>" << std::endl;
 			oss << "#include <model/evaluate_conditions.hh>" << std::endl;
 
@@ -615,9 +656,11 @@ namespace hyper {
 			oss << indent << "struct " << exported_name();
 			oss << " : public model::recipe {" << std::endl;
 
-			if (!pre.empty()) {
+			size_t nb_exec_precondition = std::count_if(pre.begin(), pre.end(), is_expression_ast());
+
+			if (has_preconds) {
 				oss << next_indent << "typedef hyper::model::evaluate_conditions<";
-				oss << pre.size() << ", ability, " << pre_symbols.local_with_updater.size() << ", ";
+				oss << nb_exec_precondition << ", ability, " << pre_symbols.local_with_updater.size() << ", ";
 				oss << pre_symbols.remote_vector_type_output(u);
 				oss << " > pre_conditions;" << std::endl; 
 				oss << next_indent << "pre_conditions preds;" << std::endl;
@@ -627,11 +670,12 @@ namespace hyper {
 			
 
 			oss << next_indent << exported_name();
-			oss << "(ability& a_);" << std::endl; 
+			oss << "(ability& a_, hyper::model::task& t_);" << std::endl; 
 			oss << next_indent;
 			oss << "void async_evaluate_preconditions(model::condition_execution_callback cb);";
 			oss << std::endl;
-			oss << "size_t nb_preconditions() const { return " << pre.size() << "; }";
+			oss << "size_t nb_preconditions() const { return ";
+			oss << nb_exec_precondition << "; }";
 			oss << next_indent << "void do_execute(model::abortable_computation::cb_type cb);\n"; 
 
 			oss << indent << "};" << std::endl;
@@ -651,6 +695,7 @@ namespace hyper {
 											  boost::ref(deps)));
 		}
 
+
 		void recipe::dump(std::ostream& oss, const universe& u) const
 		{
 			const std::string indent="\t\t";
@@ -669,6 +714,7 @@ namespace hyper {
 			oss << "#include <model/compute_expression.hh>\n";
 			oss << "#include <model/compute_make_expression.hh>\n";
 			oss << "#include <model/compute_wait_expression.hh>\n";
+			oss << "#include <model/logic_layer.hh>\n";
 			oss << "#include <boost/assign/list_of.hpp>\n"; 
 
 			std::for_each(deps.fun_depends.begin(), 
@@ -760,12 +806,18 @@ namespace hyper {
 
 			namespaces n(oss, context_a.name());
 
+			boost::optional<expression_ast> last_error = extract_last_error(pre.begin(), pre.end());
 			/* Generate constructor */
 			oss << indent << exported_name() << "::" << exported_name();
-			oss << "(hyper::" << context_a.name() << "::ability & a_) :" ;
-			oss << "model::recipe(" << quoted_string(name);
-			oss << ", a_), a(a_)";
-			if (!pre.empty()) {
+			oss << "(hyper::" << context_a.name() << "::ability & a_, hyper::model::task& t_) :" ;
+			oss << "model::recipe(" << quoted_string(name) << ", a_, t_";
+			if (last_error) {
+				oss << ", hyper::logic::expression(a_.logic().generate(";
+				oss << generate_logic_expression(*last_error, context_a, u, false);
+				oss << "))";
+			}
+			oss << "), a(a_)";
+			if (has_preconds) {
 			oss << ",\n";
 			oss << indent << "preds(a_, \n";
 			oss << next_indent << "boost::assign::list_of<hyper::" << context_a.name(); 
@@ -793,7 +845,7 @@ namespace hyper {
 			oss << "::async_evaluate_preconditions(model::condition_execution_callback cb)";
 			oss << std::endl;
 			oss << indent << "{" << std::endl;
-			if (pre.empty()) 
+			if (!has_preconds) 
 				oss << next_indent << "cb(boost::system::error_code(), hyper::model::conditionV());\n";
 			else
 				oss << next_indent << "preds.async_compute(cb);\n"; 

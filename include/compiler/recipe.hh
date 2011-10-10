@@ -32,6 +32,11 @@ namespace hyper {
 				const task& context_t;
 				const typeList& tList;
 				symbolList local_symbol;
+
+				/* Compute if we have pre_condition of type expression_ast 
+				 * These one will have some associated generated code 
+				 * */
+				bool has_preconds;
 			
 			public:
 				recipe(const recipe_decl&, const recipe_context_decl&,

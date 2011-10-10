@@ -49,7 +49,7 @@ namespace {
 		void operator() (const boost::shared_ptr<recipe>& r) const
 		{
 			oss << "\t\t\tadd_recipe(boost::shared_ptr<" << r->exported_name() << ">(new ";
-			oss << r->exported_name() << "(a_)));\n";
+			oss << r->exported_name() << "(a_, *this)));\n";
 		}
 	};
 

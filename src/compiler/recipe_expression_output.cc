@@ -257,7 +257,7 @@ namespace {
 
 			oss << indent << "push_back(new hyper::model::compute_make_expression(a, ";
 			oss << quoted_string(*(r.content[0].dst)) << ", ";
-			oss << generate_logic_expression(local_expr.main, a, u);
+			oss << "a.logic().generate(" << generate_logic_expression(local_expr.main, a, u) << ")";
 			oss << ", \n" << indent_next << dump_unification(local_expr.unification_clauses);
 			oss << ", " << identifier << "));\n";
 			target = boost::none;
@@ -276,7 +276,7 @@ namespace {
 
 			oss << indent << "push_back(new hyper::model::compute_ensure_expression(a, ";
 			oss << quoted_string(*(r.content[0].dst)) << ", \n" << indent_next;
-			oss << generate_logic_expression(local_expr.main, a, u);
+			oss << "a.logic().generate(" << generate_logic_expression(local_expr.main, a, u) << ")";
 			oss << ", \n" << indent_next << dump_unification(local_expr.unification_clauses);
 			oss << ", \n" << indent_next << identifier << "));\n";
 			target = boost::none;
