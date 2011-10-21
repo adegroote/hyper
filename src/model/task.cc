@@ -48,11 +48,15 @@ namespace hyper {
 
 			a.logger(DEBUG) << "[Task " << name << "] Recipe execution finish ";
 			a.logger(DEBUG) << (res ? "with success" : "with failure") << std::endl;
-			if (!res) {
+			if (!res && !must_interrupt) {
 				error_context.push_back(*l);
 				return handle_precondition_handle(boost::system::error_code(),
 												  conditionV());
 			}
+
+			if (!res && must_interrupt) 
+				return end_execute(false);
+			
 
 			// check the post-conditions to be sure that everything is ok
 			return async_evaluate_postconditions(boost::bind(

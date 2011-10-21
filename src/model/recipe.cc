@@ -36,7 +36,7 @@ void recipe::end_execute(bool res_)
 {
 	is_running = false;
 	boost::optional<logic::expression> res;
-	if (!res_) 
+	if (!res_ && !must_interrupt) 
 		res = computation->error();
 	if (computation != 0) {
 		delete computation;
