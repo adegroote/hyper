@@ -827,8 +827,10 @@ namespace hyper {
 
 			std::string base_type = "pre_conditions::remote_values::remote_vars_conf";
 
-			if (!pre_symbols.local_with_updater.empty())
-				oss << ", " << pre_symbols.local_list_variables_updated(next_next_indent);
+			if (!pre_symbols.local_with_updater.empty()) {
+				oss << ", boost::array<std::string, " << pre_symbols.local_with_updater.size();
+				oss <<">(" << pre_symbols.local_list_variables_updated(next_next_indent) << ")";
+			}
 			if (!pre_symbols.remote.empty()) {
 				oss << next_indent << ", " << base_type << "(\n";
 				oss << pre_symbols.remote_list_variables(next_next_indent);
