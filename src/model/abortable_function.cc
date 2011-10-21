@@ -78,10 +78,10 @@ namespace hyper {
 				error_index = idx;
 				terminaison(e);
 			} else {
+				if (index+1 == seq.size())
+					return terminaison(boost::system::error_code());
 				if (user_ask_abort) 
 					return terminaison(make_error_code(exec_layer_error::interrupted));
-				if (index+1 == seq.size())
-					terminaison(boost::system::error_code());
 				else {
 					index++;
 					seq[index]->compute(boost::bind(

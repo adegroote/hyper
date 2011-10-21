@@ -18,6 +18,7 @@ namespace hyper {
 				const model::identifier& id;
 				network::abort abort_msg;
 
+				void wait_terminaison(cb_type cb);
 				void handle_abort(const boost::system::error_code&);
 
 			public:
