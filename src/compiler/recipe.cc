@@ -684,7 +684,8 @@ namespace hyper {
 		void recipe::add_depends(depends& deps, const universe& u) const 
 		{
 			void (*f1)(const recipe_condition&, const std::string&, const universe&, depends&) = &hyper::compiler::add_depends;
-			void (*f2)(const recipe_expression&, const std::string&, const universe&, depends&) = &hyper::compiler::add_depends;
+			void (*f2)(const recipe_expression&, const std::string&, 
+					   const universe&, depends&, const symbolList&) = &hyper::compiler::add_depends;
 			std::for_each(pre.begin(), pre.end(),
 						  boost::bind(f1 ,_1, boost::cref(context_a.name()),
 											  boost::cref(u),
@@ -692,7 +693,9 @@ namespace hyper {
 			std::for_each(body.begin(), body.end(),
 						  boost::bind(f2 ,_1, boost::cref(context_a.name()),
 											  boost::cref(u),
-											  boost::ref(deps)));
+											  boost::ref(deps),
+											  boost::cref(local_symbol)
+											  ));
 		}
 
 

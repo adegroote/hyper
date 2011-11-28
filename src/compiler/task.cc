@@ -214,7 +214,9 @@ namespace hyper {
 
 			void task::add_depends(depends& deps, const universe& u) const
 			{
-				void (*f)(const expression_ast&, const std::string&, const universe& u, depends&) = &hyper::compiler::add_depends;
+				void (*f)(const expression_ast&, const std::string&, 
+						  const universe& u, depends&) = &hyper::compiler::add_depends;
+
 				std::for_each(pre.begin(), pre.end(),
 							  boost::bind(f ,_1, boost::cref(ability_context.name()),
 												 boost::cref(u),
@@ -223,6 +225,10 @@ namespace hyper {
 							  boost::bind(f ,_1, boost::cref(ability_context.name()),
 												 boost::cref(u),
 												 boost::ref(deps)));
+
+				std::for_each(recipes.begin(), recipes.end(), 
+						boost::bind(&hyper::compiler::recipe::add_depends, _1, boost::ref(deps),
+																			  boost::cref(u)));
 			}
 
 			void task::dump(std::ostream& oss, const universe& u) const

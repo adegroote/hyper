@@ -532,7 +532,7 @@ int main(int argc, char** argv)
 	{
 		std::string fileName = ".hyper/CMakeLists.txt";
 		std::ofstream oss(fileName.c_str());
-		std::set<std::string> d = current_a.get_type_depends(u.types());
+		std::set<std::string> d = current_a.get_type_depends(u.types(), u);
 		d.insert(deps.fun_depends.begin(), deps.fun_depends.end());
 
 		// remove special case, need for empty namespace (base) and current

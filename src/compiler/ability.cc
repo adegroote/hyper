@@ -341,7 +341,13 @@ ability::dump(std::ostream& oss, const universe& u) const
 	oss << "#include <" << name_ << "/ability.hh>\n";
 
 	std::set<std::string> import_depends(type_depends);
+	std::for_each(tasks.begin(), tasks.end(), 
+				  boost::bind(&hyper::compiler::task::add_depends, _1, boost::ref(deps),
+				  boost::cref(u)));
+
+	import_depends.insert(deps.type_depends.begin(), deps.type_depends.end());
 	import_depends.insert(deps.fun_depends.begin(), deps.fun_depends.end());; 
+	
 	std::for_each(import_depends.begin(), import_depends.end(), dump_depends(oss, "import.hh"));
 	oss << std::endl;
 	std::for_each(tasks.begin(), tasks.end(), add_task_header(oss, name_));
@@ -365,13 +371,14 @@ ability::dump(std::ostream& oss, const universe& u) const
 }
 
 std::set<std::string>
-ability::get_type_depends(const typeList& tList) const
+ability::get_type_depends(const typeList& tList, const universe& u) const
 {
 	std::set<std::string> type_depends;
 	compute_type_depends type_deps(type_depends, tList);
 	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
 	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
 	std::for_each(private_list.begin(), private_list.end(), type_deps);
+
 
 	return type_depends;
 }
