@@ -75,9 +75,12 @@ namespace hyper {
 					  const boost::optional<symbolList>&s = boost::none) const;
 
 				const typeList& types() const { return tList; };
+				std::vector<type> types(const std::string& ability) const;
+				bool define_opaque_type(const std::string& ability) const;
 				const functionDefList& funcs() const { return fList; };
 
 				size_t dump_ability_types(std::ostream& os, const std::string& abilityName) const;
+				void dump_ability_opaque_types(std::ostream& os, const std::string& abilityName) const;
 				void dump_ability_opaque_types_def(const std::string& directoryName,
 												   const std::string& name) const;
 				size_t dump_ability_functions_proto(std::ostream& oss, const std::string& name) const;

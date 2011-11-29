@@ -4,6 +4,7 @@
 #include <set>
 
 #include <boost/bind.hpp>
+#include <boost/lambda/lambda.hpp>
 #include <boost/make_shared.hpp>
 
 #include <compiler/ability_parser.hh>
@@ -462,16 +463,28 @@ struct add_include_opaque_type
 	}
 };
 
+std::vector<type> universe::types(const std::string& name) const
+{
+	return tList.select(select_ability_type(name));
+
+}
+bool
+universe::define_opaque_type(const std::string& name) const
+{
+	std::vector<type> a_type = types(name);
+	return hyper::utils::any(a_type.begin(), a_type.end(), boost::bind(&type::t, _1) == opaqueType);
+}
+
 size_t
 universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 {
 	// find types prefixed by name::
-	std::vector<type> types = tList.select(select_ability_type(name));
+	std::vector<type> a_types = types(name);
 
 	// compute dependances
 	std::set<std::string> depends;
 	compute_depends deps(depends, tList);
-	std::for_each(types.begin(), types.end(), deps);
+	std::for_each(a_types.begin(), a_types.end(), deps);
 
 	{
 		guards g(oss, name, "_TYPE_ABILITY_HH_");
@@ -483,17 +496,25 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
 
-		std::for_each(types.begin(), types.end(), 
-					  add_include_opaque_type(oss, tList, name));
-
 		oss << "\n\n";
 
 		namespaces n(oss, name);
-		std::for_each(types.begin(), types.end(), 
+		std::for_each(a_types.begin(), a_types.end(), 
 				boost::bind(&type::output, _1, boost::ref(oss), boost::ref(tList)));
 	}
 
-	return types.size();
+	return a_types.size();
+}
+
+void
+universe::dump_ability_opaque_types(std::ostream& oss, const std::string& name) const
+{
+	std::vector<type> a_types = types(name);
+	{
+		guards g(oss, name, "_OPAQUE_TYPE_ABILITY_HH_");
+
+		std::for_each(a_types.begin(), a_types.end(),  add_include_opaque_type(oss, tList, name));
+	}
 }
 
 struct generated_opaque_include_def
@@ -520,14 +541,14 @@ struct generated_opaque_include_def
 	}
 };
 
+
 void
 universe::dump_ability_opaque_types_def(const std::string& directoryName, 
 										const std::string& name) const
 {
-	// find types prefixed by name::
-	std::vector<type> types = tList.select(select_ability_type(name));
+	std::vector<type> a_types = types(name);
 
-	std::for_each(types.begin(), types.end(), generated_opaque_include_def(directoryName, name));
+	std::for_each(a_types.begin(), a_types.end(), generated_opaque_include_def(directoryName, name));
 }
 
 struct select_ability_funs

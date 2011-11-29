@@ -480,6 +480,12 @@ int main(int argc, char** argv)
 	}
 
 	{
+		std::string fileName = directoryName + "/opaque_types.hh";
+		std::ofstream oss(fileName.c_str());
+		u.dump_ability_opaque_types(oss, abilityName);
+	}
+
+	{
 		u.dump_ability_opaque_types_def(baseUserName, abilityName);
 	}
 

@@ -313,6 +313,9 @@ ability::dump_include(std::ostream& oss, const universe& u) const
 	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
 	std::for_each(private_list.begin(), private_list.end(), type_deps);
 	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
+	if (u.define_opaque_type(name_))
+		oss << "#include <" << name_ << "/opaque_types.hh>\n";
+
 	oss << std::endl;
 
 	namespaces n(oss, name_);
