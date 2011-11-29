@@ -84,11 +84,11 @@ functionDef::output_import(std::ostream& oss, const typeList& tList) const
 	oss << "\t\t\t\t\tboost::assign::list_of";
 	for (size_t i = 0; i < arity(); ++i) {
 		type arg = tList.get(argsType(i));
-		oss << "(" << quoted_string(arg.type_name()) << ")";
+		oss << "(" << quoted_string(arg.name) << ")";
 	}
 	if (!is_predicate) {
 		type ret = tList.get(returnType());
-		oss << "(" << quoted_string(ret.type_name()) << ")";
+		oss << "(" << quoted_string(ret.name) << ")";
 	}
 	oss << ");\n";
 }
