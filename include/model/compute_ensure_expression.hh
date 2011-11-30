@@ -20,10 +20,13 @@ namespace hyper {
 				boost::optional<network::identifier> id;
 				network::request_constraint2 rqst;
 				network::request_constraint_answer ans;
+				network::request_constraint_answer::state_ state;
+
 				network::abort abort_msg;
 
 				void handle_end_computation(const boost::system::error_code& e,  cb_type);
 				void handle_abort(const boost::system::error_code&);
+				void end(cb_type cb, const boost::system::error_code& e);
 
 			public:
 				compute_ensure_expression(ability&, const std::string&, const logic::function_call& f,

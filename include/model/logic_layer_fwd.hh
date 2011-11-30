@@ -3,7 +3,8 @@
 
 #include <boost/function/function1.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/system/error_code.hpp>
+
+#include <network/msg_constraint.hh>
 
 namespace hyper {
 	namespace model {
@@ -12,7 +13,7 @@ namespace hyper {
 
 		struct logic_layer;
 
-		typedef boost::function<void (const boost::system::error_code&)> 
+		typedef boost::function<void (network::request_constraint_answer::state_)>
 				logic_layer_cb;
 	}
 }

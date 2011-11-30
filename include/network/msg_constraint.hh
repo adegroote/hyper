@@ -51,7 +51,7 @@ namespace hyper {
 
 		struct request_constraint_answer
 		{
-			enum state_ { SUCCESS, FAILURE, INTERRUPTED };
+			enum state_ { INIT, RUNNING, PAUSED, TEMP_FAILURE, SUCCESS, FAILURE, INTERRUPTED };
 
 			template <class Archive>
 			void serialize(Archive& ar, const unsigned int version);

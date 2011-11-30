@@ -104,22 +104,25 @@ namespace {
 		}
 
 
-		void handle_async_exec_completion(const boost::system::error_code& e,
+		void handle_async_exec_completion(network::request_constraint_answer::state_ s,
 				model::logic_constraint ctr) const
 		{
 			network::request_constraint_answer* ans = new network::request_constraint_answer();
 			ans->id = ctr.id;
 			ans->src = ctr.src;
-			if (e) {
-				if (e == boost::system::errc::interrupted)
-					ans->state = network::request_constraint_answer::INTERRUPTED;
-				else
-					ans->state = network::request_constraint_answer::FAILURE;
-			} else
-				ans->state = network::request_constraint_answer::SUCCESS;
+			ans->state = s;
 
-			a.logger(DEBUG) << ctr << " Sending answer " ;
+			a.logger(DEBUG) << ctr << " Sending constraint update status " ;
 			switch(ans->state) {
+				case network::request_constraint_answer::RUNNING:
+					a.logger(DEBUG) << "running";
+					break;
+				case network::request_constraint_answer::PAUSED:
+					a.logger(DEBUG) << "paused";
+					break;
+				case network::request_constraint_answer::TEMP_FAILURE:
+					a.logger(DEBUG) << "temporary_failure";
+					break;
 				case network::request_constraint_answer::SUCCESS:
 					a.logger(DEBUG) << "success";
 					break;
@@ -131,6 +134,7 @@ namespace {
 					break;
 			}
 			a.logger(DEBUG)	<< std::endl;
+
 			a.actor->client_db[ctr.src].async_write(*ans,
 					boost::bind(&ability_visitor::handle_constraint_answer, this, 
 								 boost::asio::placeholders::error,  ans));

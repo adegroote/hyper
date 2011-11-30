@@ -24,6 +24,7 @@ namespace hyper {
 
 				void handle_end_computation(const boost::system::error_code& e,  network::identifier, cb_type);
 				void handle_abort(const boost::system::error_code&);
+				void end(cb_type, const boost::system::error_code&);
 
 			public:
 				compute_make_expression(ability&, const std::string&, const logic::function_call& f,

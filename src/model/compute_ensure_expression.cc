@@ -16,37 +16,52 @@ namespace hyper {
 			rqst.unify_list = unify_list;
 		}
 
+		void compute_ensure_expression::end(cb_type cb, const boost::system::error_code& e)
+		{
+			a.actor->db.remove(*id);
+			id = boost::none;
+			if (e)
+				return cb(e);
+		}
+
+
 		void compute_ensure_expression::handle_end_computation(
 				const boost::system::error_code& e,
 				cb_type cb)
 		{
-			// in error case, go up to the caller, otherwise, let the work continue
-			if (e || ans.state != network::request_constraint_answer::SUCCESS) {
-				a.actor->db.remove(*id);
-				id = boost::none;
-				if (e)
-					return cb(e);
+			if (e) 
+				return end(cb, e);
 
-				switch (ans.state) {
-					case network::request_constraint_answer::FAILURE:
-						return cb(make_error_code(exec_layer_error::execution_ko));
-					case network::request_constraint_answer::INTERRUPTED:
-						return cb(make_error_code(boost::system::errc::interrupted));
-					default:
-						assert(false);
-				}
+			switch (ans.state) {
+				case network::request_constraint_answer::SUCCESS:
+					return;
+				case network::request_constraint_answer::RUNNING:
+					switch (state) {
+						case network::request_constraint_answer::INIT:
+							state = ans.state;
+							return cb(boost::system::error_code());
+						default:
+							return;
+					}
+				case network::request_constraint_answer::FAILURE:
+					return end(cb, make_error_code(exec_layer_error::execution_ko));
+				case network::request_constraint_answer::INTERRUPTED:
+					return end(cb, make_error_code(boost::system::errc::interrupted));
+				default:
+					assert(false);
 			}
 		}
 
 		void compute_ensure_expression::compute(cb_type cb) 
 		{
+			state = network::request_constraint_answer::INIT;
+
 			id = a.actor->client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_ensure_expression::handle_end_computation,
 								this, boost::asio::placeholders::error, cb));
 
 			res_id.first = dst;
 			res_id.second = *id;
-			cb(boost::system::error_code());
 		}
 
 		void compute_ensure_expression::handle_abort(const boost::system::error_code&)
@@ -59,6 +74,7 @@ namespace hyper {
 
 			abort_msg.src = a.name;
 			abort_msg.id = *id;
+
 			a.actor->client_db[dst].async_write(abort_msg, 
 						boost::bind(&compute_ensure_expression::handle_abort,
 									 this, boost::asio::placeholders::error));

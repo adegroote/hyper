@@ -3,6 +3,7 @@
 
 #include <boost/function/function1.hpp>
 #include <boost/function/function2.hpp>
+#include <boost/system/error_code.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <model/eval_conditions_fwd.hh>

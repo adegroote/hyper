@@ -16,29 +16,37 @@ namespace hyper {
 			rqst.unify_list = unify_list;
 		}
 
+		void compute_make_expression::end(cb_type cb, const boost::system::error_code& e)
+		{
+			a.actor->db.remove(*id);
+			id = boost::none;
+
+			return cb(e);
+		}
+
 		void compute_make_expression::handle_end_computation(
 				const boost::system::error_code& e,
 				network::identifier id,
 				cb_type cb)
 		{
-			a.actor->db.remove(id);
-			this->id = boost::none;
-
 			if (e) 
-				return cb(e);
+				return end(cb, e);
 
 			switch (ans.state) {
 				case network::request_constraint_answer::INTERRUPTED:
 					res = false;
-					cb(make_error_code(boost::system::errc::interrupted));
+					end(cb, make_error_code(boost::system::errc::interrupted));
 					break;
 				case network::request_constraint_answer::FAILURE:
 					res = false;
-					cb(make_error_code(exec_layer_error::execution_ko));
+					end(cb, make_error_code(exec_layer_error::execution_ko));
 					break;
 				case network::request_constraint_answer::SUCCESS:
 					res = true;
-					cb(boost::system::error_code());
+					end(cb, boost::system::error_code());
+					break;
+				default:
+					/* We don't care about other state for the moment */
 					break;
 			};
 		}

@@ -145,6 +145,7 @@ namespace hyper {
 			void handle_success(logic_ctx_ptr ptr);
 			void handle_failure(logic_ctx_ptr ptr, const boost::system::error_code&);
 			void handle_timeout(const boost::system::error_code&, logic_ctx_ptr);
+			void inform_running_state(logic_ctx_ptr);
 
 			std::string make_key(const std::string& src, network::identifier id) const;
 			std::string make_key(logic_ctx_ptr ptr) const;

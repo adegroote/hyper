@@ -11,11 +11,32 @@ namespace {
 		return cb(boost::system::error_code());
 	}
 
+	void handle_call_task_terminaison(hyper::network::request_constraint_answer::state_ s,
+								 hyper::model::updater::cb_type cb)
+	{
+		switch (s) {
+			case hyper::network::request_constraint_answer::RUNNING:
+			case hyper::network::request_constraint_answer::PAUSED:
+			case hyper::network::request_constraint_answer::TEMP_FAILURE:
+				break;
+			case hyper::network::request_constraint_answer::SUCCESS:
+				cb(boost::system::error_code());
+				break;
+			case hyper::network::request_constraint_answer::FAILURE:
+				cb(make_error_code(boost::system::errc::invalid_argument)); // XXX
+				break;
+			case hyper::network::request_constraint_answer::INTERRUPTED:
+				cb(make_error_code(boost::system::errc::interrupted));
+				break;
+		}
+	}
+
 	void call_task(hyper::model::ability&a, const std::string& var,
 				   hyper::network::identifier id, const std::string& src,
 				   hyper::model::updater::cb_type cb)
 	{
-		a.logic().async_exec(var, id, src, cb);
+		a.logic().async_exec(var, id, src, 
+				boost::bind(&handle_call_task_terminaison, _1, cb));
 	}
 
 	void handle_update_var(const boost::system::error_code& e,
