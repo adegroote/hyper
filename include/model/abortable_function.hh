@@ -95,7 +95,6 @@ namespace hyper {
 				cb_type cb;
 				size_t index;
 				ssize_t error_index;
-				bool user_ask_abort;
 
 				void handle_computation(const boost::system::error_code& e, size_t index);
 

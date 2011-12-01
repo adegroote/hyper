@@ -65,6 +65,7 @@ namespace hyper {
 		{
 			if (check_is_terminated(e)) return;
 
+
 			if (e == boost::system::errc::interrupted) {
 				/* do nothing for the moment. If we are not waiting for
 				 * termaison, it is the result of an aborted ensure, and we
@@ -80,8 +81,6 @@ namespace hyper {
 			} else {
 				if (index+1 == seq.size())
 					return terminaison(boost::system::error_code());
-				if (user_ask_abort) 
-					return terminaison(make_error_code(exec_layer_error::interrupted));
 				else {
 					index++;
 					seq[index]->compute(boost::bind(
@@ -99,7 +98,6 @@ namespace hyper {
 			cb = cb_;
 			index = 0;
 			error_index = -1;
-			user_ask_abort = false;
 			wait_terminaison = false;
 
 			seq[index]->compute(boost::bind(&abortable_computation::handle_computation,
@@ -113,8 +111,7 @@ namespace hyper {
 
 		void abortable_computation::abort() 
 		{
-			seq[index]->abort();
-			user_ask_abort = true;
+			return terminaison(make_error_code(exec_layer_error::interrupted));
 		}
 	}
 }
