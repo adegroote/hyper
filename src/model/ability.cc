@@ -26,7 +26,9 @@ namespace {
 							   network::list_agents,
 							   network::inform_death_agent,
 							   network::terminate,
-							   network::abort> input_msg;
+							   network::abort,
+							   network::pause,
+							   network::resume> input_msg;
 	typedef boost::mpl::vector<network::variable_value,
 							   network::request_constraint_ack,
 							   network::request_constraint_answer,
@@ -223,6 +225,20 @@ namespace {
 		{
 			a.logger(INFORMATION) << "[" << abort.src << ", " << abort.id << "] Abort requested " << std::endl;
 			a.logic().abort(abort.src, abort.id);
+			return boost::mpl::void_();
+		}
+
+		output_variant operator() (const network::pause& pause) const
+		{
+			a.logger(INFORMATION) << "[" << pause.src << ", " << pause.id << "] Pause requested " << std::endl;
+			a.logic().pause(pause.src, pause.id);
+			return boost::mpl::void_();
+		}
+
+		output_variant operator() (const network::resume& resume) const
+		{
+			a.logger(INFORMATION) << "[" << resume.src << ", " << resume.id << "] Resume requested " << std::endl;
+			a.logic().resume(resume.src, resume.id);
 			return boost::mpl::void_();
 		}
 	};

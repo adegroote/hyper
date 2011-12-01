@@ -23,6 +23,7 @@ namespace hyper {
 				boost::optional<logic::expression> expected_error_;
 
 				bool is_running;
+				bool must_pause;
 				bool must_interrupt;
 				std::vector<recipe_execution_callback> pending_cb;
 
@@ -31,7 +32,7 @@ namespace hyper {
 
 			protected:
 				abortable_computation* computation;
-				virtual void do_execute(abortable_computation::cb_type cb) = 0;
+				virtual void do_execute(abortable_computation::cb_type cb, bool must_pause) = 0;
 
 				/* list of agents required to use this recipe */
 				std::set<std::string> required_agents;
@@ -54,6 +55,8 @@ namespace hyper {
 				{ return expected_error_; }
 
 				void abort();
+				void pause();
+				void resume();
 
 				virtual ~recipe() {};
 		};

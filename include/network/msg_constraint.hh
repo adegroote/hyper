@@ -72,6 +72,30 @@ namespace hyper {
 			abort() {};
 			abort(const std::string& src, identifier id) : src(src), id(id) {}
 		};
+
+		struct pause
+		{
+			template <class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			std::string src;
+			identifier id;
+
+			pause() {};
+			pause(const std::string& src, identifier id) : src(src), id(id) {}
+		};
+
+		struct resume
+		{
+			template <class Archive>
+			void serialize(Archive& ar, const unsigned int version);
+
+			std::string src;
+			identifier id;
+
+			resume() {};
+			resume(const std::string& src, identifier id) : src(src), id(id) {}
+		};
 	}
 }
 

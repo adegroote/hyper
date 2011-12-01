@@ -10,7 +10,7 @@ namespace hyper {
 				abortable_function_base* fun_ptr,
 				bool &res) :
 			fun_ptr(fun_ptr), io_service_(io_s), delay_(delay), deadline_(io_s),
-			res(res), user_ask_abort(false), running(false)
+			res(res), user_ask_abort(false), running(false), must_pause(false)
 		{}
 
 		bool compute_wait_expression::handle_error(const boost::system::error_code& e, cb_type cb)
@@ -47,6 +47,9 @@ namespace hyper {
 				return cb(boost::system::error_code());
 			}
 
+			if (must_pause)
+				return;
+
 			deadline_.expires_from_now(delay_);
 			deadline_.async_wait(boost::bind(&compute_wait_expression::handle_timeout, 
 						this,
@@ -57,6 +60,10 @@ namespace hyper {
 		void compute_wait_expression::compute(cb_type cb)
 		{
 			running = true;
+			cb_ = cb;
+			if (must_pause)
+				return;
+
 			fun_ptr->compute(boost::bind(&compute_wait_expression::handle_computation, 
 										 this,
 										 boost::asio::placeholders::error,
@@ -71,6 +78,19 @@ namespace hyper {
 			fun_ptr->abort();
 			user_ask_abort = true;
 			return true;
+		}
+
+		void compute_wait_expression::pause()
+		{
+			must_pause = true;
+		}
+
+		void compute_wait_expression::resume()
+		{
+			must_pause = false;
+			if (running) {
+				compute(cb_);
+			}
 		}
 	}
 }

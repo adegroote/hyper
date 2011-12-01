@@ -51,17 +51,22 @@ namespace hyper {
 				bool is_running;
 				bool executing_recipe;
 				bool must_interrupt;
+				bool must_pause;
 
 				std::vector<task_execution_callback> pending_cb;
 			public:
 				task(ability& a_, const std::string& name_) 
-					: a(a_), name(name_), is_running(false) {}
+					: a(a_), name(name_), is_running(false), executing_recipe(false),
+										  must_interrupt(false), must_pause(false) 
+				{}
 
 				void add_recipe(recipe_ptr ptr);
 				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
 				virtual void async_evaluate_postconditions(condition_execution_callback cb) = 0;
 				void execute(task_execution_callback cb);
 				void abort();
+				void pause();
+				void resume();
 				virtual ~task() {};
 
 			protected:

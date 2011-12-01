@@ -21,9 +21,15 @@ namespace hyper {
 				network::request_constraint2 rqst;
 				network::request_constraint_answer ans;
 				network::abort abort_msg;
+				network::pause pause_msg;
+				network::resume resume_msg;
+
+				bool running;
+				bool must_pause;
+				cb_type cb_;
 
 				void handle_end_computation(const boost::system::error_code& e,  network::identifier, cb_type);
-				void handle_abort(const boost::system::error_code&);
+				void handle_write(const boost::system::error_code&);
 				void end(cb_type, const boost::system::error_code&);
 
 			public:
@@ -34,6 +40,8 @@ namespace hyper {
 				void compute (cb_type cb);
 				logic::expression error() const { return f; }
 				bool abort();
+				void pause();
+				void resume();
 		};
 	}
 }

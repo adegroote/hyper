@@ -9,7 +9,7 @@ namespace hyper {
 			const network::request_constraint2::unification_list& unify_list,
 			model::identifier& res) : 
 			a(a), dst(dst), f(f),
-			res_id(res), id(boost::none) 
+			res_id(res), id(boost::none), running(false), must_pause(false) 
 		{
 			rqst.constraint =  f;
 			rqst.repeat = true;
@@ -20,6 +20,7 @@ namespace hyper {
 		{
 			a.actor->db.remove(*id);
 			id = boost::none;
+			running = false;
 			if (e)
 				return cb(e);
 		}
@@ -55,6 +56,11 @@ namespace hyper {
 		void compute_ensure_expression::compute(cb_type cb) 
 		{
 			state = network::request_constraint_answer::INIT;
+			running = true;
+			cb_ = cb;
+			
+			if (must_pause) 
+				return;
 
 			id = a.actor->client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_ensure_expression::handle_end_computation,
@@ -64,11 +70,13 @@ namespace hyper {
 			res_id.second = *id;
 		}
 
-		void compute_ensure_expression::handle_abort(const boost::system::error_code&)
+		void compute_ensure_expression::handle_write(const boost::system::error_code&)
 		{}
 
 		bool compute_ensure_expression::abort() 
 		{
+			running = false;
+
 			if (!id) 
 				return false;
 
@@ -76,9 +84,44 @@ namespace hyper {
 			abort_msg.id = *id;
 
 			a.actor->client_db[dst].async_write(abort_msg, 
-						boost::bind(&compute_ensure_expression::handle_abort,
+						boost::bind(&compute_ensure_expression::handle_write,
 									 this, boost::asio::placeholders::error));
 			return true;
+
+		}
+
+		void compute_ensure_expression::pause() 
+		{
+			must_pause = true;
+
+			if (!id) 
+				return;
+
+			pause_msg.src = a.name;
+			pause_msg.id = *id;
+
+			a.actor->client_db[dst].async_write(pause_msg, 
+						boost::bind(&compute_ensure_expression::handle_write,
+									 this, boost::asio::placeholders::error));
+
+		}
+
+		void compute_ensure_expression::resume() 
+		{
+			must_pause = false;
+
+			if (!id)
+				if (running) 
+					return compute(cb_);
+				else
+					return;
+
+			resume_msg.src = a.name;
+			resume_msg.id = *id;
+
+			a.actor->client_db[dst].async_write(resume_msg, 
+						boost::bind(&compute_ensure_expression::handle_write,
+									 this, boost::asio::placeholders::error));
 
 		}
 	}

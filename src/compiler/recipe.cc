@@ -676,7 +676,7 @@ namespace hyper {
 			oss << std::endl;
 			oss << "size_t nb_preconditions() const { return ";
 			oss << nb_exec_precondition << "; }";
-			oss << next_indent << "void do_execute(model::abortable_computation::cb_type cb);\n"; 
+			oss << next_indent << "void do_execute(model::abortable_computation::cb_type cb, bool);\n"; 
 
 			oss << indent << "};" << std::endl;
 		}
@@ -857,9 +857,10 @@ namespace hyper {
 			oss << indent << "}" << std::endl;
 
 			oss << indent << "void " << exported_name();
-			oss << "::do_execute(hyper::model::abortable_computation::cb_type cb)\n";
+			oss << "::do_execute(hyper::model::abortable_computation::cb_type cb, bool must_pause)\n";
 			oss << indent << "{\n";
 			oss << next_indent << "computation = new exec_driver(a);\n";
+			oss << next_indent << "if (must_pause) computation->pause();\n";
 			oss << next_indent << "computation->compute(cb);\n";
 			oss << indent << "}\n";
 			oss << std::endl;

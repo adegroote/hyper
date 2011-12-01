@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include <boost/bind.hpp>
 #include <boost/function/function0.hpp>
 #include <boost/function/function1.hpp>
 #include <boost/system/error_code.hpp>
@@ -20,7 +21,9 @@ namespace hyper {
 			typedef boost::function<void (const boost::system::error_code& e)> cb_type;
 			virtual void compute (cb_type cb) = 0;
 			/* Wait for cb or not */
-			virtual bool abort() = 0 ;
+			virtual bool abort() = 0;
+			virtual void pause() = 0;
+			virtual void resume() = 0;
 			virtual logic::expression error() const { return logic::empty(); };
 			virtual ~abortable_function_base() {};
 		};
@@ -58,20 +61,21 @@ namespace hyper {
 			exec_type exec_;
 			abort_type abort_;
 			logic::expression error_;
+			cb_type cb_;
+			bool running;
+			bool must_pause;
 
 			abortable_function(exec_type exec, abort_type abort = none_function, 
-							   const logic::expression &error = logic::empty()):
-				exec_(exec), abort_(abort), error_(error) {}
-
-			void compute (cb_type cb) {
-				return exec_(cb);
-			}
-
-			bool abort() {
-				return abort_();
-			}
+							   const logic::expression &error = logic::empty());
+			void compute (cb_type cb) ;
+			bool abort();
+			void pause();
+			void resume();
 
 			logic::expression error() const { return error_; }
+
+			private:
+			void handler(const boost::system::error_code& e, cb_type cb);
 		};
 
 		/* 
@@ -104,12 +108,14 @@ namespace hyper {
 				bool wait_terminaison;
 				boost::system::error_code err;
 				size_t still_pending;
+				bool must_pause;
 
 				void terminaison(const boost::system::error_code& e);
 				bool check_is_terminated(const boost::system::error_code& e);
 
 			public:
-				abortable_computation() {}
+				abortable_computation() : wait_terminaison(false), 
+					must_pause(false) {}
 
 				void push_back(abortable_function_base* fun) {
 					seq.push_back(abortable_function_ptr(fun));
@@ -118,6 +124,8 @@ namespace hyper {
 				void compute(cb_type cb_);
 				logic::expression error() const;
 				void abort();
+				void pause();
+				void resume();
 
 				void clear() { seq.clear(); }
 				virtual ~abortable_computation() {}

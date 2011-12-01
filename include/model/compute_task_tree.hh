@@ -4,6 +4,7 @@
 #include <deque>
 #include <string>
 
+#include <boost/function/function0.hpp>
 #include <boost/function/function1.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -87,6 +88,10 @@ namespace hyper {
 				std::vector<hypothesis_evaluation> hyp_eval;
 
 				bool must_interrupt;
+				bool must_pause;
+				typedef boost::function<void (void)> resume_fun;
+				boost::optional<resume_fun> resume_handler;
+
 				std::set<std::string> running_tasks;
 
 			friend struct async_eval_all_preconditions;
@@ -104,6 +109,8 @@ namespace hyper {
 
 				void async_execute(cb_type, inform_cb_type);
 				void abort();
+				void pause();
+				void resume();
 
 			private:
 				void handle_eval_all_constraints(cond_logic_evaluation&, 

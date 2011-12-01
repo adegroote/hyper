@@ -102,7 +102,7 @@ namespace hyper {
 		}
 
 		compute_task_tree::compute_task_tree(logic_layer& layer_,  logic_context& ctx_) :
-			layer(layer_), ctx(ctx_)
+			layer(layer_), ctx(ctx_), must_interrupt(false), must_pause(false), resume_handler(boost::none)
 		{}
 
 #define CHECK_INTERRUPT if (must_interrupt) return handler(false);
@@ -356,6 +356,9 @@ namespace hyper {
 					running_tasks.insert(task.name);
 					if (inform) 
 						inform_cb();
+					if (must_pause)
+						layer.tasks[task.name]->pause();
+						
 					layer.tasks[task.name]->execute(handler);
 				} else
 					handler(false);
@@ -411,9 +414,12 @@ namespace hyper {
 
 			if (task.conds.empty()) {
 				running_tasks.insert(task.name);
-				layer.tasks[task.name]->execute(handler);
 				if (inform) 
 					inform_cb();
+					if (must_pause)
+						layer.tasks[task.name]->pause();
+
+					layer.tasks[task.name]->execute(handler);
 			} else {
 				std::for_each(task.conds.begin(), task.conds.end(), 
 							  async_exec_all_conditions(*this, handler, task, inform, inform_cb));
@@ -466,27 +472,54 @@ namespace hyper {
 		compute_task_tree::async_execute(compute_task_tree::cb_type handler,
 										 compute_task_tree::inform_cb_type inform_cb)
 		{
-			must_interrupt = false;
 			running_tasks.clear();
-			bool inform = (cond_root.condition != logic::function_call());
-			async_execute_cond(cond_root, handler, inform, inform_cb);
+
+			if (must_pause) {
+				resume_handler = boost::bind(&compute_task_tree::async_execute, 
+										 this, handler, inform_cb);
+			} else {
+				must_interrupt = false;
+				bool inform = (cond_root.condition != logic::function_call());
+				async_execute_cond(cond_root, handler, inform, inform_cb);
+			}
 		}
 
-		struct abort_ {
+		struct exec_ {
+			typedef boost::function<void (task_ptr)> fun;
+
 			logic_layer& layer;
+			fun f;
 			
-			abort_(logic_layer &layer) : layer(layer) {}
+			exec_(logic_layer &layer, fun f) : layer(layer), f(f) {}
 
 			void operator() (const std::string& name) 
 			{
-				layer.tasks[name]->abort();
+				f(layer.tasks[name]);
 			}
 		};
 
 		void compute_task_tree::abort()
 		{
 			must_interrupt = true;
-			std::for_each(running_tasks.begin(), running_tasks.end(), abort_(layer));
+			std::for_each(running_tasks.begin(), running_tasks.end(), 
+					exec_(layer, boost::bind(&task::abort, _1)));
+		}
+
+		void compute_task_tree::pause()
+		{
+			must_pause = true;
+			std::for_each(running_tasks.begin(), running_tasks.end(), 
+						  exec_(layer, boost::bind(&task::pause, _1)));
+		}
+
+		void compute_task_tree::resume()
+		{
+			must_pause = false;
+			std::for_each(running_tasks.begin(), running_tasks.end(), 
+						  exec_(layer, boost::bind(&task::resume, _1)));
+			if (resume_handler) 
+				(*resume_handler)();
+			resume_handler = boost::none;
 		}
 	}
 }

@@ -61,6 +61,7 @@ namespace hyper {
 			enum state { IDLE, EXEC, LOGIC, LOGIC_EXEC, WAIT };
 
 			bool must_interrupt;
+			bool must_pause;
 			state s_;
 
 			/* More to come */
@@ -132,6 +133,8 @@ namespace hyper {
 							const std::string& src, logic_layer_cb cb);
 
 			void abort(const std::string& src, network::identifier id);
+			void pause(const std::string& src, network::identifier id);
+			void resume(const std::string& src, network::identifier id);
 
 			logic::function_call generate(const logic::function_call& f);
 

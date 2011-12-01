@@ -47,7 +47,7 @@ namespace {
 			cb(boost::system::error_code(), hyper::model::conditionV());
 		}
 
-		virtual void do_execute(abortable_computation::cb_type cb)
+		virtual void do_execute(abortable_computation::cb_type cb, bool)
 		{
 			pos.z = pos.x + pos.y;
 			cb(boost::system::error_code());
@@ -67,7 +67,7 @@ namespace {
 			cb(boost::system::error_code(), hyper::model::conditionV());
 		}
 
-		virtual void do_execute(abortable_computation::cb_type cb)
+		virtual void do_execute(abortable_computation::cb_type cb, bool)
 		{
 			pos.z = pos.x * pos.y;
 			cb(boost::system::error_code());
@@ -89,7 +89,7 @@ namespace {
 			cb(boost::system::error_code(), error);
 		}
 
-		virtual void do_execute(abortable_computation::cb_type cb)
+		virtual void do_execute(abortable_computation::cb_type cb, bool)
 		{
 			pos.z = pos.x / pos.y;
 			cb(boost::system::error_code());

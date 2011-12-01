@@ -129,6 +129,7 @@ namespace hyper {
 					new logic_context(ctr, *this));
 			ctx->cb = cb;
 			ctx->must_interrupt = false;
+			ctx->must_pause = false;
 			ctx->s_ = logic_context::IDLE;
 
 			running_ctx[make_key(ctx)] = ctx;
@@ -245,6 +246,7 @@ namespace hyper {
 			ctx->ctr.repeat = false;
 			ctx->cb = cb;
 			ctx->must_interrupt = false;
+			ctx->must_pause = false;
 			ctx->s_ = logic_context::LOGIC;
 
 			running_ctx[make_key(src, id)] = ctx;
@@ -286,11 +288,13 @@ namespace hyper {
 			if (ctx->ctr.repeat) {
 				inform_running_state(ctx);
 				ctx->s_ = logic_context::WAIT;
-				ctx->deadline_.expires_from_now(boost::posix_time::milliseconds(50));
-				a_.logger(DEBUG) << ctx->ctr << " Sleeping before verifying again the ctr " << std::endl;
-				ctx->deadline_.async_wait(boost::bind(&logic_layer::handle_timeout, this,
-													  boost::asio::placeholders::error,
-													  ctx));
+				if (! ctx->must_pause) {
+					ctx->deadline_.expires_from_now(boost::posix_time::milliseconds(50));
+					a_.logger(DEBUG) << ctx->ctr << " Sleeping before verifying again the ctr " << std::endl;
+					ctx->deadline_.async_wait(boost::bind(&logic_layer::handle_timeout, this,
+														  boost::asio::placeholders::error,
+														  ctx));
+				}
 			}
 			else {
 				running_ctx.erase(make_key(ctx));
@@ -356,7 +360,54 @@ namespace hyper {
 				default:
 					break;
 			}
+		}
 
+		void logic_layer::pause(const std::string& src, network::identifier id)
+		{
+			std::map<std::string, logic_ctx_ptr>::iterator it;
+			it = running_ctx.find(make_key(src, id));
+			if (it == running_ctx.end()) {
+				a_.logger(DEBUG) << "Don't find ctx for request [" << src << ", " << id << "]";
+				a_.logger(DEBUG) << std::endl;
+				return;
+			}
+
+			it->second->must_pause = true;
+			switch (it->second->s_) {
+				case logic_context::EXEC:
+				case logic_context::LOGIC:
+				case logic_context::LOGIC_EXEC:
+					a_.logger(DEBUG) << "Will pause logic_tree " << std::endl;
+					it->second->logic_tree.pause();
+					break;
+				default:
+					break;
+			}
+		}
+
+		void logic_layer::resume(const std::string& src, network::identifier id)
+		{
+			std::map<std::string, logic_ctx_ptr>::iterator it;
+			it = running_ctx.find(make_key(src, id));
+			if (it == running_ctx.end()) {
+				a_.logger(DEBUG) << "Don't find ctx for request [" << src << ", " << id << "]";
+				a_.logger(DEBUG) << std::endl;
+				return;
+			}
+
+			it->second->must_pause = false;
+			switch (it->second->s_) {
+				case logic_context::EXEC:
+				case logic_context::LOGIC:
+				case logic_context::LOGIC_EXEC:
+					it->second->logic_tree.resume();
+					break;
+				case logic_context::WAIT:
+					return handle_timeout(boost::system::error_code(), it->second);
+					break;
+				default:
+					break;
+			}
 		}
 
 		logic::function_call logic_layer::generate(const logic::function_call& f) {

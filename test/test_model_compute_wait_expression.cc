@@ -24,6 +24,9 @@ namespace {
 
 		bool abort() { return false; }
 
+		void pause() {}
+		void resume() {}
+
 		void reset() { res_ = false; counter = 0; }
 
 		bool& res() { return res_;}

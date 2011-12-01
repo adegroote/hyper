@@ -102,6 +102,9 @@ namespace hyper {
 			a.logger(DEBUG) << "[Task " << name << "] Choose to execute ";
 			a.logger(DEBUG) << recipes[recipe_states[0].index]->r_name() << std::endl;
 			executing_recipe = true;
+			if (must_pause) 
+				recipes[recipe_states[0].index]->pause();
+
 			return recipes[recipe_states[0].index]->execute(
 					boost::bind(&task::handle_execute, this, _1));
 		}
@@ -252,6 +255,20 @@ namespace hyper {
 			must_interrupt = true;
 			if (executing_recipe)
 				recipes[recipe_states[0].index]->abort();
+		}
+
+		void task::pause()
+		{
+			must_pause = true;
+			if (executing_recipe) 
+				recipes[recipe_states[0].index]->pause();
+		}
+
+		void task::resume()
+		{
+			must_pause = false;
+			if (executing_recipe) 
+				recipes[recipe_states[0].index]->resume();
 		}
 
 		void task::end_execute(bool res)

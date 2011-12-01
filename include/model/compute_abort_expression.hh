@@ -26,6 +26,8 @@ namespace hyper {
 
 				void compute (cb_type cb);
 				bool abort();
+				void pause() {} 
+				void resume() {}
 		};
 	}
 }

@@ -9,7 +9,7 @@ namespace hyper {
 			const network::request_constraint2::unification_list& unify_list,
 			bool& res) : 
 			a(a), dst(dst), f(f),
-			res(res), id(boost::none) 
+			res(res), id(boost::none), running(false), must_pause(false) 
 		{
 			rqst.constraint =  f;
 			rqst.repeat = false;
@@ -20,6 +20,7 @@ namespace hyper {
 		{
 			a.actor->db.remove(*id);
 			id = boost::none;
+			running = false;
 
 			return cb(e);
 		}
@@ -53,25 +54,65 @@ namespace hyper {
 
 		void compute_make_expression::compute(cb_type cb) 
 		{
+			cb_ = cb;
+			running = true;
+
+			if (must_pause)
+				return;
+			
 			id = a.actor->client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_make_expression::handle_end_computation,
 								this, boost::asio::placeholders::error, _2, cb));
 		}
 
-		void compute_make_expression::handle_abort(const boost::system::error_code&)
+		void compute_make_expression::handle_write(const boost::system::error_code&)
 		{}
 
 		bool compute_make_expression::abort() 
 		{
+			running = false;
 			if (!id)
 				return false;
 
 			abort_msg.id = *id;
 			abort_msg.src = a.name;
 			a.actor->client_db[dst].async_write(abort_msg, 
-						boost::bind(&compute_make_expression::handle_abort,
+						boost::bind(&compute_make_expression::handle_write,
 									 this, boost::asio::placeholders::error));
 			return true;
+		}
+
+		void compute_make_expression::pause() 
+		{
+			must_pause = true;
+			if (!id) 
+				return;
+
+			pause_msg.src = a.name;
+			pause_msg.id = *id;
+
+			a.actor->client_db[dst].async_write(pause_msg, 
+						boost::bind(&compute_make_expression::handle_write,
+									 this, boost::asio::placeholders::error));
+
+		}
+
+		void compute_make_expression::resume() 
+		{
+			must_pause = false;
+			if (!id)
+				if (running) 
+					return compute(cb_);
+				else
+					return;
+
+			resume_msg.src = a.name;
+			resume_msg.id = *id;
+
+			a.actor->client_db[dst].async_write(resume_msg, 
+						boost::bind(&compute_make_expression::handle_write,
+									 this, boost::asio::placeholders::error));
+
 		}
 	}
 }

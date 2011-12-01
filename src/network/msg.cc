@@ -326,6 +326,29 @@ template void abort::serialize<boost::archive::binary_iarchive>(
 template void abort::serialize<boost::archive::binary_oarchive>(
 		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 
+		template <class Archive>
+		void pause::serialize(Archive& ar, const unsigned int version)
+		{
+			(void) version;
+			ar & src & id;
+		}
+
+template void pause::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
+template void pause::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
+
+		template <class Archive>
+		void resume::serialize(Archive& ar, const unsigned int version)
+		{
+			(void) version;
+			ar & src & id;
+		}
+
+template void resume::serialize<boost::archive::binary_iarchive>(
+		    boost::archive::binary_iarchive & ar, const unsigned int file_version);
+template void resume::serialize<boost::archive::binary_oarchive>(
+		    boost::archive::binary_oarchive & ar,  const unsigned int file_version);
 #if 0
 		std::ostream& operator << (std::ostream& oss, const message_variant& m) 
 		{
