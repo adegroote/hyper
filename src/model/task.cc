@@ -253,6 +253,7 @@ namespace hyper {
 		void task::abort()
 		{
 			must_interrupt = true;
+			must_pause = false;
 			if (executing_recipe)
 				recipes[recipe_states[0].index]->abort();
 		}
@@ -274,6 +275,7 @@ namespace hyper {
 		void task::end_execute(bool res)
 		{
 			is_running = false;
+			must_pause = false;
 
 			a.logger(DEBUG) << " [Task " << name << "] Finish execution ";
 			a.logger(DEBUG) << (res ? " with success" : " with failure") << std::endl;

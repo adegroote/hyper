@@ -75,8 +75,13 @@ namespace hyper {
 			if (!running)
 				return false;
 
-			fun_ptr->abort();
+			if (must_pause) {
+				running = false;
+				return false;
+			}
+
 			user_ask_abort = true;
+			fun_ptr->abort();
 			return true;
 		}
 

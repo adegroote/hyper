@@ -27,10 +27,15 @@ namespace hyper {
 
 		abortable_function::abortable_function(exec_type exec, abort_type abort, const logic::expression& error):
 				exec_(exec), abort_(abort), error_(error), running(false),
-				must_pause(false) {}
+				must_interrupt(false), must_pause(false) {}
 
 		void abortable_function::handler(const boost::system::error_code& e, cb_type cb)
 		{
+			if (must_interrupt) {
+				running = false;
+				return cb(make_error_code(boost::system::errc::interrupted));
+			}
+
 			if (must_pause)
 				return;
 
@@ -40,19 +45,21 @@ namespace hyper {
 
 		void abortable_function::compute (cb_type cb) {
 			cb_ = cb;
+			must_interrupt = false;
 			running = true;
 			if (!must_pause)
 				return exec_(boost::bind(&abortable_function::handler, this, _1, cb));
 		}
 
 		bool abortable_function::abort() {
+			must_interrupt = true;
 			if (running)
 				return abort_();
 			else 
 				return false;
 		}
 
-		void abortable_function::pause() { must_pause = true; abort(); }
+		void abortable_function::pause() { must_pause = true; if (running) abort_(); }
 
 		void abortable_function::resume() { must_pause = false; if (running) compute(cb_); }
 
@@ -94,10 +101,6 @@ namespace hyper {
 		void abortable_computation::handle_computation(const boost::system::error_code& e, size_t idx)
 		{
 			if (check_is_terminated(e)) return;
-
-			/* if we call abort in must pause, we will have an e reported, but don't care for the moment */
-			if (must_pause)
-				return;
 
 			if (e == boost::system::errc::interrupted) {
 				/* do nothing for the moment. If we are not waiting for

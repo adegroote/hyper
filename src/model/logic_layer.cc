@@ -357,6 +357,11 @@ namespace hyper {
 				case logic_context::LOGIC_EXEC:
 					it->second->logic_tree.abort();
 					break;
+				case logic_context::WAIT:
+					if (it->second->must_pause)
+						return handle_failure(it->second, \
+								make_error_code(boost::system::errc::interrupted));
+					break;
 				default:
 					break;
 			}

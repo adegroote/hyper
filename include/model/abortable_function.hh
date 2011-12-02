@@ -63,6 +63,7 @@ namespace hyper {
 			logic::expression error_;
 			cb_type cb_;
 			bool running;
+			bool must_interrupt;
 			bool must_pause;
 
 			abortable_function(exec_type exec, abort_type abort = none_function, 

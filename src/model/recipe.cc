@@ -35,6 +35,8 @@ void recipe::handle_execute(const boost::system::error_code& e)
 void recipe::end_execute(bool res_)
 {
 	is_running = false;
+	must_pause = false;
+
 	boost::optional<logic::expression> res;
 	if (!res_ && !must_interrupt) 
 		res = computation->error();
