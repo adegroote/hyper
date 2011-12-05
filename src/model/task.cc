@@ -4,6 +4,11 @@
 #include <model/task.hh>
 #include <model/recipe.hh>
 
+#include <boost/spirit/home/phoenix.hpp>
+#include <boost/fusion/include/std_pair.hpp>
+
+namespace phx = boost::phoenix;
+
 namespace {
 	using namespace hyper::model;
 	struct callback {
@@ -12,14 +17,39 @@ namespace {
 
 		callback(ability& a, bool res) : a(a), res(res) {}	
 
-		void operator()(task_execution_callback cb) { 
-			a.io_s.post(boost::bind(cb, res));
+		void operator()(task::ctx_cb c) { 
+			a.io_s.post(boost::bind(c.second, res));
+		}
+	};
+
+	struct inform {
+		ability & a;
+
+		inform(ability&a) : a(a) {}
+
+		void operator()(task::ctx_cb c) {
+			switch (c.first.s) {
+				case hyper::network::request_constraint_answer::RUNNING:
+				case hyper::network::request_constraint_answer::TEMP_FAILURE:
+					update_ctr_status(a, c.first);
+					break;
+				default:
+					break;
+			}
 		}
 	};
 }
 
 namespace hyper {
 	namespace model {
+
+		std::ostream& operator << (std::ostream& oss, const task& t) 
+		{
+			std::for_each(t.pending_cb.begin(), t.pending_cb.end(),
+							oss << phx::at_c<0>(phx::arg_names::arg1));
+			oss << "[Task " << t.name << "] ";
+			return oss;
+		}
 
 #define CHECK_INTERRUPT if (must_interrupt) return end_execute(false);
 
@@ -31,7 +61,7 @@ namespace hyper {
 				return end_execute(false);
 
 			if (!failed.empty()) {
-				a.logger(DEBUG) << "[Task " << name << "] Still have some failed postcondition : \n";
+				a.logger(DEBUG) << *this << "Still have some failed postcondition : \n";
 				std::copy(failed.begin(), failed.end(),
 						  std::ostream_iterator<logic::function_call>(a.logger(DEBUG), "\n"));
 				a.logger(DEBUG) << std::endl;
@@ -46,7 +76,7 @@ namespace hyper {
 
 			bool res = !l;
 
-			a.logger(DEBUG) << "[Task " << name << "] Recipe execution finish ";
+			a.logger(DEBUG) << *this << "Recipe execution finish ";
 			a.logger(DEBUG) << (res ? "with success" : "with failure") << std::endl;
 			if (!res && !must_interrupt) {
 				error_context.push_back(*l);
@@ -81,7 +111,7 @@ namespace hyper {
 						electable = j;
 
 				if (electable) {
-					a.logger(DEBUG) << "[Task " << name << "] Starting to evaluate preconditions for recipe ";
+					a.logger(DEBUG) << *this << "Starting to evaluate preconditions for recipe ";
 					a.logger(DEBUG) << recipes[*electable]->r_name() << std::endl;
 					return recipes[*electable]->async_evaluate_preconditions(
 							boost::bind(&task::async_evaluate_recipe_preconditions,
@@ -89,21 +119,23 @@ namespace hyper {
 				}
 			} 
 
-			a.logger(DEBUG) << "[Task " << name << "] Finish to evaluate recipe preconditions" << std::endl;
+			a.logger(DEBUG) << *this << "Finish to evaluate recipe preconditions" << std::endl;
 
 			// time to select a recipe and execute it :)
 			std::sort(recipe_states.begin(), recipe_states.end());
 			if (! recipe_states[0].failed.empty() ||
 				! recipe_states[0].is_electable()) {
-				a.logger(DEBUG) << "[Task " << name << "] No recipe candidate found" << std::endl;
+				a.logger(DEBUG) << *this << "No recipe candidate found" << std::endl;
 				return end_execute(false);
 			}
 
-			a.logger(DEBUG) << "[Task " << name << "] Choose to execute ";
+			a.logger(DEBUG) << *this << "Choose to execute ";
 			a.logger(DEBUG) << recipes[recipe_states[0].index]->r_name() << std::endl;
 			executing_recipe = true;
 			if (must_pause) 
 				recipes[recipe_states[0].index]->pause();
+
+			std::for_each(pending_cb.begin(), pending_cb.end(), inform(a));
 
 			return recipes[recipe_states[0].index]->execute(
 					boost::bind(&task::handle_execute, this, _1));
@@ -118,13 +150,13 @@ namespace hyper {
 
 			/* If some pre-conditions are not ok, something is wrong, just
 			 * returns false */
-			a.logger(DEBUG) << "[Task " << name << "] Pre-condition evaluated" << std::endl;
+			a.logger(DEBUG) << *this << "Pre-condition evaluated" << std::endl;
 
 			if (must_interrupt)
 				return end_execute(false);
 
 			if (!failed.empty()) {
-				a.logger(DEBUG) << "[Task " << name << "] Failure of some pre-conditions ";
+				a.logger(DEBUG) << *this << "Failure of some pre-conditions ";
 				std::copy(failed.begin(), failed.end(),
 						  std::ostream_iterator<logic::function_call>(a.logger(DEBUG), ", "));
 				a.logger(DEBUG) << std::endl;
@@ -132,7 +164,7 @@ namespace hyper {
 			}
 
 			if (recipes.empty()) {
-				a.logger(DEBUG) << "[Task " << name << "] No recipe to handle it" << std::endl;
+				a.logger(DEBUG) << *this << "No recipe to handle it" << std::endl;
 				return end_execute(false);
 			}
 
@@ -141,7 +173,7 @@ namespace hyper {
 					 std::ostream_iterator<std::string>(a.logger(DEBUG), ", "));
 			a.logger(DEBUG) << std::endl;
 			
-			a.logger(DEBUG) << "[Task " << name << "] Error_context ";
+			a.logger(DEBUG) << *this << "Error_context ";
 			if (error_context.empty())
 				a.logger(DEBUG) << "empty";
 			else 
@@ -159,7 +191,7 @@ namespace hyper {
 												  recipe_states[i].missing_agents.end()));
 
 				if (!recipe_states[i].missing_agents.empty()) {
-					a.logger(DEBUG) << "[Task " << name << "] Won't evaluate " << recipes[i]->r_name();
+					a.logger(DEBUG) << *this << "Won't evaluate " << recipes[i]->r_name();
 					a.logger(DEBUG) << " because the following required agents are not available : ";
 					std::copy(recipe_states[i].missing_agents.begin(),
 							  recipe_states[i].missing_agents.end(),
@@ -173,7 +205,7 @@ namespace hyper {
 					 (expr && !error_context.empty() && error_context.back() == *expr));
 
 				if (!recipe_states[i].last_error_valid) {
-					a.logger(DEBUG) << "[Task " << name << "] Won't evaluate " << recipes[i]->r_name();
+					a.logger(DEBUG) << *this << "Won't evaluate " << recipes[i]->r_name();
 					a.logger(DEBUG) << " because the error_context is not consistent with expected error ";
 					if (!expr)
 						a.logger(DEBUG) << "none";
@@ -187,11 +219,11 @@ namespace hyper {
 			}
 
 			if (!first_electable) {// no computable recipe
-				a.logger(DEBUG) << "[Task " << name << "] No computable recipe" << std::endl;
+				a.logger(DEBUG) << *this << "No computable recipe" << std::endl;
 				return end_execute(false);
 			}
 
-			a.logger(DEBUG) << "[Task " << name << "] Starting to evaluate preconditions for recipe ";
+			a.logger(DEBUG) << *this << "Starting to evaluate preconditions for recipe ";
 			a.logger(DEBUG) << recipes[*first_electable]->r_name() << std::endl;
 			/* compute precondition for all recipe */
 			recipes[*first_electable]->async_evaluate_preconditions(
@@ -208,22 +240,26 @@ namespace hyper {
 			/* If all post-conditions are ok, no need to execute the task
 			 * anymore */
 			if (failed.empty()) {
-				a.logger(DEBUG) << "[Task " << name << "] All post-conditions already OK " << std::endl;
+				a.logger(DEBUG) << *this << "All post-conditions already OK " << std::endl;
 				return end_execute(true);
 			}
 
 			if (must_interrupt) 
 				return end_execute(false);
 
-			a.logger(DEBUG) << "[Task " << name << "] Evaluation pre-condition" << std::endl;
+			a.logger(DEBUG) << *this << "Evaluation pre-condition" << std::endl;
 			return async_evaluate_preconditions(boost::bind(
 						&task::handle_precondition_handle, 
 						this, _1, _2));
 		}
 
-		void task::execute(task_execution_callback cb)
+		void task::execute(const logic_constraint& ctr, task_execution_callback cb)
 		{
-			pending_cb.push_back(cb);
+			pending_cb.push_back(std::make_pair(ctr, cb));
+
+			if (executing_recipe && ctr.s == network::request_constraint_answer::RUNNING)
+				update_ctr_status(a, ctr);
+
 			if (is_running)
 				return;
 
@@ -232,7 +268,7 @@ namespace hyper {
 			executing_recipe = false;
 			error_context.clear();
 
-			a.logger(DEBUG) << "[Task " << name <<"] Start execution " << std::endl;
+			a.logger(DEBUG) << *this << "Start execution " << std::endl;
 
 			/* Handle correctly the special case where we don't have
 			 * postcondition.  It means that they can't be called using the
@@ -275,9 +311,10 @@ namespace hyper {
 		void task::end_execute(bool res)
 		{
 			is_running = false;
+			executing_recipe = false;
 			must_pause = false;
 
-			a.logger(DEBUG) << " [Task " << name << "] Finish execution ";
+			a.logger(DEBUG) << *this << "Finish execution ";
 			a.logger(DEBUG) << (res ? " with success" : " with failure") << std::endl;
 
 			std::for_each(pending_cb.begin(), pending_cb.end(),

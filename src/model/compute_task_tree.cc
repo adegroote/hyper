@@ -346,20 +346,19 @@ namespace hyper {
 
 		void compute_task_tree::handle_execute_cond(task_logic_evaluation& task,
 													compute_task_tree::cb_type handler,
-													bool inform,
-													compute_task_tree::inform_cb_type inform_cb)
+													bool inform)
 		{
 			CHECK_INTERRUPT
 
 			if (task.all_conds_executed()) {
 				if (task.all_conds_succesfully_executed()) {
 					running_tasks.insert(task.name);
-					if (inform) 
-						inform_cb();
 					if (must_pause)
 						layer.tasks[task.name]->pause();
-						
-					layer.tasks[task.name]->execute(handler);
+
+					if (inform)
+						ctx.ctr.s = network::request_constraint_answer::RUNNING;
+					layer.tasks[task.name]->execute(ctx.ctr, handler);
 				} else
 					handler(false);
 			}
@@ -368,7 +367,7 @@ namespace hyper {
 		void compute_task_tree::handle_execute_task(cond_logic_evaluation& cond,
 													task_logic_evaluation& task,
 													bool res,
-													compute_task_tree::cb_type handler)
+													cb_type handler)
 		{
 			CHECK_INTERRUPT
 
@@ -386,43 +385,40 @@ namespace hyper {
 			compute_task_tree::cb_type handler;
 			task_logic_evaluation& task;
 			bool inform;
-			compute_task_tree::inform_cb_type inform_cb;
 
 			async_exec_all_conditions(compute_task_tree& tree, 
 					compute_task_tree::cb_type handler,
 					task_logic_evaluation& task,
-					bool inform,
-					compute_task_tree::inform_cb_type inform_cb):
-				tree(tree), handler(handler), task(task), inform(inform),
-				inform_cb(inform_cb)
+					bool inform):
+				tree(tree), handler(handler), task(task), inform(inform)
 			{}
 
 			void operator() (cond_logic_evaluation& cond)  const
 			{
 				tree.async_execute_cond(cond, 
 						boost::bind(&compute_task_tree::handle_execute_cond, 
-							&tree, boost::ref(task), handler, inform, inform_cb), false, inform_cb);
+							&tree, boost::ref(task), handler, inform), false);
 			}
 		};
 
 		void compute_task_tree::async_execute_task(task_logic_evaluation& task,
 												   compute_task_tree::cb_type handler,
-												   bool inform,
-												   compute_task_tree::inform_cb_type inform_cb)
+												   bool inform)
 		{
 			CHECK_INTERRUPT
 
 			if (task.conds.empty()) {
 				running_tasks.insert(task.name);
-				if (inform) 
-					inform_cb();
-					if (must_pause)
-						layer.tasks[task.name]->pause();
+				if (must_pause)
+					layer.tasks[task.name]->pause();
 
-					layer.tasks[task.name]->execute(handler);
+				if (inform)
+					ctx.ctr.s = network::request_constraint_answer::RUNNING;
+
+				layer.tasks[task.name]->execute(ctx.ctr, handler);
 			} else {
 				std::for_each(task.conds.begin(), task.conds.end(), 
-							  async_exec_all_conditions(*this, handler, task, inform, inform_cb));
+							  async_exec_all_conditions(*this, handler, task, inform));
 			}
 		}
 
@@ -432,15 +428,12 @@ namespace hyper {
 			compute_task_tree::cb_type handler;
 			cond_logic_evaluation& cond;
 			bool inform;
-			compute_task_tree::inform_cb_type inform_cb;
 
 			async_exec_all_tasks(compute_task_tree& tree, 
 					compute_task_tree::cb_type handler,
 					cond_logic_evaluation& cond,
-					bool inform,
-					compute_task_tree::inform_cb_type inform_cb) :
-				tree(tree), handler(handler), cond(cond), inform(inform), 
-				inform_cb(inform_cb)
+					bool inform):
+				tree(tree), handler(handler), cond(cond), inform(inform)
 			{}
 
 			void operator() (boost::shared_ptr<task_logic_evaluation> task_eval)  const
@@ -448,15 +441,14 @@ namespace hyper {
 				tree.async_execute_task(*task_eval, 
 						boost::bind(&compute_task_tree::handle_execute_task, 
 							&tree, boost::ref(cond), boost::ref(*task_eval), 
-							_1, handler), inform, inform_cb);
+							_1, handler), inform);
 			}
 		};
 
 		void
 		compute_task_tree::async_execute_cond(cond_logic_evaluation& cond,
 											  compute_task_tree::cb_type handler,
-											  bool inform,
-											  compute_task_tree::inform_cb_type inform_cb)
+											  bool inform)
 		{
 			CHECK_INTERRUPT
 
@@ -464,23 +456,22 @@ namespace hyper {
 				handler(cond.is_succesfully_executed());
 			} else {
 				std::for_each(cond.tasks.begin(), cond.tasks.end(), 
-						async_exec_all_tasks(*this, handler, cond, inform, inform_cb));
+						async_exec_all_tasks(*this, handler, cond, inform));
 			}
 		}
 
 		void
-		compute_task_tree::async_execute(compute_task_tree::cb_type handler,
-										 compute_task_tree::inform_cb_type inform_cb)
+		compute_task_tree::async_execute(compute_task_tree::cb_type handler)
 		{
 			running_tasks.clear();
 
 			if (must_pause) {
 				resume_handler = boost::bind(&compute_task_tree::async_execute, 
-										 this, handler, inform_cb);
+										 this, handler);
 			} else {
 				must_interrupt = false;
 				bool inform = (cond_root.condition != logic::function_call());
-				async_execute_cond(cond_root, handler, inform, inform_cb);
+				async_execute_cond(cond_root, handler, inform);
 			}
 		}
 

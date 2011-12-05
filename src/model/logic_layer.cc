@@ -227,8 +227,7 @@ namespace hyper {
 				a_.logger(DEBUG) <<  ctx->ctr << " Start execution " << std::endl;
 				ctx->s_ = logic_context::LOGIC_EXEC;
 				ctx->logic_tree.async_execute(
-						boost::bind(&logic_layer::handle_exec_task_tree, this, _1, ctx),
-						boost::bind(&logic_layer::inform_running_state, this, ctx));
+						boost::bind(&logic_layer::handle_exec_task_tree, this, _1, ctx));
 			} else {
 				a_.logger(DEBUG) << ctx->ctr << " No solution found ! " << std::endl;
 				handle_failure(ctx, make_error_code(logic_layer_error::no_solution_found));
@@ -243,6 +242,7 @@ namespace hyper {
 					new logic_context(*this));
 			ctx->ctr.id = id;
 			ctx->ctr.src = src;
+			ctx->ctr.internal = true;
 			ctx->ctr.repeat = false;
 			ctx->cb = cb;
 			ctx->must_interrupt = false;
@@ -286,8 +286,10 @@ namespace hyper {
 			CHECK_INTERRUPT
 
 			if (ctx->ctr.repeat) {
-				inform_running_state(ctx);
 				ctx->s_ = logic_context::WAIT;
+				ctx->ctr.s = hyper::network::request_constraint_answer::RUNNING;
+				update_ctr_status(a_, ctx->ctr);
+
 				if (! ctx->must_pause) {
 					ctx->deadline_.expires_from_now(boost::posix_time::milliseconds(50));
 					a_.logger(DEBUG) << ctx->ctr << " Sleeping before verifying again the ctr " << std::endl;
@@ -321,12 +323,6 @@ namespace hyper {
 				boost::bind(&logic_layer::handle_exec_computation, this,
 							boost::asio::placeholders::error,
 							ctx));
-		}
-
-		void logic_layer::inform_running_state(logic_ctx_ptr ctx)
-		{
-			a_.logger(DEBUG) << ctx->ctr << " Start to REALLY handle the constraint " << std::endl;
-			return ctx->cb(network::request_constraint_answer::RUNNING);
 		}
 
 		std::string logic_layer::make_key(const std::string& src, network::identifier id) const

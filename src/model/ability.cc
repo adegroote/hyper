@@ -8,6 +8,56 @@
 #include <network/ping.hh>
 #include <network/server_tcp_impl.hh>
 
+namespace hyper { namespace model {
+	void handle_constraint_answer(hyper::model::ability &a, 
+			const boost::system::error_code&, 
+			network::request_constraint_answer* ans) 
+	{
+		delete ans;
+	}
+
+	void update_ctr_status(hyper::model::ability& a, hyper::model::logic_constraint ctr)
+	{
+		if (ctr.internal)
+			return;
+
+		network::request_constraint_answer* ans = new network::request_constraint_answer();
+		ans->id = ctr.id;
+		ans->src = ctr.src;
+		ans->state = ctr.s;
+
+		a.logger(DEBUG) << ctr << " Sending constraint update status " ;
+		switch(ans->state) {
+			case network::request_constraint_answer::INIT:
+				a.logger(DEBUG) << "init";
+				break;
+			case network::request_constraint_answer::RUNNING:
+				a.logger(DEBUG) << "running";
+				break;
+			case network::request_constraint_answer::PAUSED:
+				a.logger(DEBUG) << "paused";
+				break;
+			case network::request_constraint_answer::TEMP_FAILURE:
+				a.logger(DEBUG) << "temporary_failure";
+				break;
+			case network::request_constraint_answer::SUCCESS:
+				a.logger(DEBUG) << "success";
+				break;
+			case network::request_constraint_answer::FAILURE:
+				a.logger(DEBUG) << "failure";
+				break;
+			case network::request_constraint_answer::INTERRUPTED:
+				a.logger(DEBUG) << "interrupted";
+				break;
+		}
+		a.logger(DEBUG)	<< std::endl;
+
+		a.actor->client_db[ctr.src].async_write(*ans,
+				boost::bind(&handle_constraint_answer, boost::ref(a), 
+					boost::asio::placeholders::error,  ans));
+	}
+}}
+
 namespace {
 	using namespace hyper;
 
@@ -16,6 +66,7 @@ namespace {
 	{
 		delete ans;
 	}
+
 
 	typedef boost::mpl::vector<network::request_variable_value,
 							   network::request_constraint,
@@ -98,48 +149,14 @@ namespace {
 			return boost::mpl::void_();
 		}
 
-		void handle_constraint_answer(const boost::system::error_code&, 
-				network::request_constraint_answer* ans) const
-		{
-			a.logger(DEBUG) << " Getting answer " << std::endl;
-			delete ans;
-		}
 
 
 		void handle_async_exec_completion(network::request_constraint_answer::state_ s,
 				model::logic_constraint ctr) const
 		{
-			network::request_constraint_answer* ans = new network::request_constraint_answer();
-			ans->id = ctr.id;
-			ans->src = ctr.src;
-			ans->state = s;
-
-			a.logger(DEBUG) << ctr << " Sending constraint update status " ;
-			switch(ans->state) {
-				case network::request_constraint_answer::RUNNING:
-					a.logger(DEBUG) << "running";
-					break;
-				case network::request_constraint_answer::PAUSED:
-					a.logger(DEBUG) << "paused";
-					break;
-				case network::request_constraint_answer::TEMP_FAILURE:
-					a.logger(DEBUG) << "temporary_failure";
-					break;
-				case network::request_constraint_answer::SUCCESS:
-					a.logger(DEBUG) << "success";
-					break;
-				case network::request_constraint_answer::FAILURE:
-					a.logger(DEBUG) << "failure";
-					break;
-				case network::request_constraint_answer::INTERRUPTED:
-					a.logger(DEBUG) << "interrupted";
-					break;
-			}
-			a.logger(DEBUG)	<< std::endl;
-
-			a.actor->client_db[ctr.src].async_write(*ans,
-					boost::bind(&ability_visitor::handle_constraint_answer, this, 
-								 boost::asio::placeholders::error,  ans));
+			model::logic_constraint ctr2 = ctr;
+			ctr2.s = s;
+			update_ctr_status(a, ctr2);
 		}
 
 		output_variant operator() (const network::request_constraint& r) const
@@ -148,6 +165,8 @@ namespace {
 			ctr.id = r.id;
 			ctr.src = r.src;
 			ctr.repeat = r.repeat;
+			ctr.s = network::request_constraint_answer::INIT;
+			ctr.internal = false;
 
 			a.logger(INFORMATION) << ctr << " Handling ";
 			a.logger(INFORMATION) << r.constraint << std::endl;
@@ -165,6 +184,8 @@ namespace {
 			ctr.id = r.id;
 			ctr.src = r.src;
 			ctr.repeat = r.repeat;
+			ctr.s = network::request_constraint_answer::INIT;
+			ctr.internal = false;
 
 			a.logger(INFORMATION) << ctr << " Handling ";
 			a.logger(INFORMATION) << r.constraint << std::endl;

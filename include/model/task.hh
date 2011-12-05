@@ -17,6 +17,9 @@ namespace hyper {
 
 		class task
 		{
+			public:
+				typedef std::pair<logic_constraint, task_execution_callback> ctx_cb;
+
 			private:
 				ability& a;
 				std::string name;
@@ -53,7 +56,11 @@ namespace hyper {
 				bool must_interrupt;
 				bool must_pause;
 
-				std::vector<task_execution_callback> pending_cb;
+			private:
+				std::vector<ctx_cb> pending_cb;
+
+				friend std::ostream& operator<< (std::ostream&, const task&);
+
 			public:
 				task(ability& a_, const std::string& name_) 
 					: a(a_), name(name_), is_running(false), executing_recipe(false),
@@ -63,7 +70,7 @@ namespace hyper {
 				void add_recipe(recipe_ptr ptr);
 				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
 				virtual void async_evaluate_postconditions(condition_execution_callback cb) = 0;
-				void execute(task_execution_callback cb);
+				void execute(const logic_constraint& ctr, task_execution_callback cb);
 				void abort();
 				void pause();
 				void resume();

@@ -26,21 +26,6 @@ namespace hyper {
 		typedef std::vector<unification_pair2> unify_pair_list2;
 		typedef std::vector<unification_expr> unify_expr_list;
 
-		struct logic_constraint
-		{
-			size_t id;
-			std::string src;
-			bool repeat;
-		};
-
-		inline
-		std::ostream& operator << (std::ostream& oss, 
-								   const logic_constraint& c)
-		{
-			oss << "[" << c.src << ", " << c.id << "]";
-			return oss;
-		}
-
 		struct logic_context
 		{
 			logic_constraint ctr;	

@@ -100,14 +100,13 @@ namespace hyper {
 
 			public:
 				typedef boost::function<void (bool)> cb_type;
-				typedef boost::function<void (void)> inform_cb_type;
 
 			public:
 				compute_task_tree(logic_layer& layer_, logic_context& ctx_); 
 				void async_eval_task(const std::string& s, cb_type);
 				void async_eval_cond(const logic::function_call& f, cb_type);
 
-				void async_execute(cb_type, inform_cb_type);
+				void async_execute(cb_type);
 				void abort();
 				void pause();
 				void resume();
@@ -125,9 +124,9 @@ namespace hyper {
 				void async_evaluate_preconditions(task_logic_evaluation&, 
 												 condition_execution_callback );
 
-				void async_execute_cond(cond_logic_evaluation& cond, cb_type, bool, inform_cb_type);
-				void async_execute_task(task_logic_evaluation& task, cb_type, bool, inform_cb_type);
-				void handle_execute_cond(task_logic_evaluation& task, cb_type, bool, inform_cb_type);
+				void async_execute_cond(cond_logic_evaluation& cond, cb_type, bool);
+				void async_execute_task(task_logic_evaluation& task, cb_type, bool);
+				void handle_execute_cond(task_logic_evaluation& task, cb_type, bool);
 				void handle_execute_task(cond_logic_evaluation& cond,
 										 task_logic_evaluation& task,
 										 bool res, cb_type handler);
