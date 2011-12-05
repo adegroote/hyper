@@ -33,7 +33,9 @@ namespace hyper {
 				ok,
 				interrupted,          // aborted 
 				execution_failed,	  // fail to compute remote value, agent dies, ...
-				execution_ko		  // compute succesfully, but unexpected error
+				execution_ko,		  // compute succesfully, but unexpected error
+				temporary_failure,	  // try to recover
+				run_again			  // has recovered
 			};
 		}
 

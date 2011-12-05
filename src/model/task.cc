@@ -22,19 +22,33 @@ namespace {
 		}
 	};
 
-	struct inform {
+	struct run {
 		ability & a;
 
-		inform(ability&a) : a(a) {}
+		run(ability&a) : a(a) {}
 
-		void operator()(task::ctx_cb c) {
+		void operator()(task::ctx_cb& c) {
 			switch (c.first.s) {
 				case hyper::network::request_constraint_answer::RUNNING:
 				case hyper::network::request_constraint_answer::TEMP_FAILURE:
+					c.first.s = hyper::network::request_constraint_answer::RUNNING;
 					update_ctr_status(a, c.first);
 					break;
 				default:
 					break;
+			}
+		}
+	};
+
+	struct temp_fail {
+		ability & a;
+
+		temp_fail(ability&a) : a(a) {}
+
+		void operator()(task::ctx_cb& c) {
+			if (c.first.s == hyper::network::request_constraint_answer::RUNNING) {
+				c.first.s = hyper::network::request_constraint_answer::TEMP_FAILURE;
+				update_ctr_status(a, c.first);
 			}
 		}
 	};
@@ -80,6 +94,7 @@ namespace hyper {
 			a.logger(DEBUG) << (res ? "with success" : "with failure") << std::endl;
 			if (!res && !must_interrupt) {
 				error_context.push_back(*l);
+				std::for_each(pending_cb.begin(), pending_cb.end(), temp_fail(a));
 				return handle_precondition_handle(boost::system::error_code(),
 												  conditionV());
 			}
@@ -87,7 +102,6 @@ namespace hyper {
 			if (!res && must_interrupt) 
 				return end_execute(false);
 			
-
 			// check the post-conditions to be sure that everything is ok
 			return async_evaluate_postconditions(boost::bind(
 						&task::handle_final_postcondition_handle,
@@ -135,7 +149,7 @@ namespace hyper {
 			if (must_pause) 
 				recipes[recipe_states[0].index]->pause();
 
-			std::for_each(pending_cb.begin(), pending_cb.end(), inform(a));
+			std::for_each(pending_cb.begin(), pending_cb.end(), run(a));
 
 			return recipes[recipe_states[0].index]->execute(
 					boost::bind(&task::handle_execute, this, _1));

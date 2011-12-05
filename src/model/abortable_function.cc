@@ -19,7 +19,11 @@ namespace hyper {
 				case exec_layer_error::execution_failed:
 					return "execution_failed";
 				case exec_layer_error::execution_ko:
-					return "execution_ok";
+					return "execution_ko";
+				case exec_layer_error::temporary_failure:
+					return "temporary_failure";
+				case exec_layer_error::run_again:
+					return "run_again";
 				default:
 					return "unknow_error";
 			}
@@ -108,6 +112,18 @@ namespace hyper {
 				 * must continue. Of course, it means there is no other of
 				 * aborting in the system, which is currently true (modulo bug))
 				 */
+				return;
+			}
+
+			if (e == make_error_code(exec_layer_error::temporary_failure)) {
+				for (ssize_t i = index; i > idx; --i)
+					seq[i]->pause();
+				return;
+			}
+
+			if (e == make_error_code(exec_layer_error::run_again)) {
+				for (size_t i = idx+1; i <= index; ++i)
+					seq[i]->resume();
 				return;
 			}
 

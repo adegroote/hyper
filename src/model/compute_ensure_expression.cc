@@ -41,9 +41,15 @@ namespace hyper {
 						case network::request_constraint_answer::INIT:
 							state = ans.state;
 							return cb(boost::system::error_code());
+						case network::request_constraint_answer::TEMP_FAILURE:
+							state = ans.state;
+							return cb(make_error_code(exec_layer_error::run_again));
 						default:
 							return;
 					}
+				case network::request_constraint_answer::TEMP_FAILURE:
+					state = ans.state;
+					return cb(make_error_code(exec_layer_error::temporary_failure));
 				case network::request_constraint_answer::FAILURE:
 					return end(cb, make_error_code(exec_layer_error::execution_ko));
 				case network::request_constraint_answer::INTERRUPTED:
