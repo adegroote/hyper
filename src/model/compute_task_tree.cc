@@ -20,10 +20,24 @@ namespace {
 	};
 
 	struct generate_task_eval {
+		const cond_logic_evaluation& cond;
+
+		generate_task_eval(const cond_logic_evaluation& cond): cond(cond) {}
+
 		boost::shared_ptr<task_logic_evaluation> 
 		operator() (const std::string& name) const
 		{
-			return boost::make_shared<task_logic_evaluation>(name);
+			return boost::make_shared<task_logic_evaluation>(name, cond);
+		}
+	};
+
+	struct fill_used_task {
+		const task_logic_evaluation& task;
+
+		fill_used_task(const task_logic_evaluation& task): task(task) {}
+
+		void operator()(cond_logic_evaluation& cond) {
+			cond.task_used = task.task_used;
 		}
 	};
 
@@ -140,6 +154,7 @@ namespace hyper {
 
 			task.conds.resize(failed.size());
 			std::copy(failed.begin(), failed.end(), task.conds.begin());
+			std::for_each(task.conds.begin(), task.conds.end(), fill_used_task(task));
 			task.cond_evaluated = true;
 
 			if (!cond.all_tasks_evaluated()) {
@@ -216,7 +231,7 @@ namespace hyper {
 					return handler(false);
 				else {
 					std::transform(res.begin(), res.end(), std::back_inserter(cond.tasks),
-							generate_task_eval());
+							generate_task_eval(cond));
 
 					std::for_each(cond.tasks.begin(), cond.tasks.end(),
 							async_eval_all_preconditions(*this, handler, cond));
@@ -248,8 +263,12 @@ namespace hyper {
 			layer.a_.logger(DEBUG) << cond.condition << std::endl;
 			std::vector<std::string> res;
 			std::vector<logic::engine::plausible_hypothesis> hyps;
+
+			std::set<std::string> unusable_tasks(failed_tasks.begin(), failed_tasks.end());
+			unusable_tasks.insert(cond.task_used.begin(), cond.task_used.end());
+
 			layer.engine.infer_all_in(cond.condition, std::back_inserter(res), std::back_inserter(hyps),
-									  failed_tasks.begin(), failed_tasks.end());
+									  unusable_tasks.begin(), unusable_tasks.end());
 
 			if (res.empty() && hyps.empty())
 				return handler(false);
@@ -257,7 +276,7 @@ namespace hyper {
 			if (!res.empty()) {
 				cond.tasks.clear();
 				std::transform(res.begin(), res.end(), std::back_inserter(cond.tasks),
-						generate_task_eval());
+						generate_task_eval(cond));
 
 				std::for_each(cond.tasks.begin(), cond.tasks.end(),
 						async_eval_all_preconditions(*this, handler, cond));
@@ -276,7 +295,7 @@ namespace hyper {
 			CHECK_INTERRUPT
 
 			if (!res) {
-				layer.a_.logger(DEBUG) << ctx.ctr << " Failed to solve ";
+				layer.a_.logger(DEBUG) << ctx.ctr << " failed to solve ";
 				layer.a_.logger(DEBUG) << task.conds[i].condition << std::endl;
 				handler(false);
 			} else {
@@ -330,7 +349,7 @@ namespace hyper {
 			must_interrupt = false;
 			running_tasks.clear();
 			cond_root.condition = logic::function_call();
-			cond_root.tasks.push_back(generate_task_eval()(s));
+			cond_root.tasks.push_back(generate_task_eval(cond_root)(s));
 			async_eval_all_preconditions(*this, handler, cond_root)(cond_root.tasks[0]);
 		}
 
