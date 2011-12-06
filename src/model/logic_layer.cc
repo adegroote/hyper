@@ -215,7 +215,12 @@ namespace hyper {
 			if (success) 
 				handle_success(ctx);
 			else 
-				handle_failure(ctx, make_error_code(logic_layer_error::recipe_execution_error));
+				if (ctx->ctr.internal)
+					handle_failure(ctx, make_error_code(logic_layer_error::recipe_execution_error));
+				else
+					ctx->logic_tree.async_eval_cond(ctx->call_exec,
+							boost::bind(&logic_layer::handle_eval_task_tree, this,
+									   _1, ctx));
 		}
 
 		void logic_layer::handle_eval_task_tree(bool success, logic_ctx_ptr ctx) 

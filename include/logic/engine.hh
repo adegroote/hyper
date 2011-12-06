@@ -24,7 +24,7 @@ namespace hyper {
 				typedef std::map<std::string, expressionS> expressionM;
 				typedef std::map<rule::identifier_type, expressionM> expressionMM;
 
-				/*
+				/**
 				 * For each rule (indexed by rules::identifier_type), associate the
 				 * list of possible expression for each variable. The list of
 				 * possible expression is defined by the facts database, and the
@@ -56,10 +56,9 @@ namespace hyper {
 
 		class engine {
 			private:
-				/* A set of known function definition */
-				funcDefList funcs_;
+				funcDefList funcs_; /**< A set of known function definition */
 
-				/* 
+				/** 
 				 * A set of facts database (our post-conditions), indexed by
 				 * their context (normally task). The default context is called
 				 * "default", but must be empty outside of test 
@@ -67,28 +66,111 @@ namespace hyper {
 				typedef std::map<std::string, facts_ctx> factsMap;
 				factsMap facts_ ;
 
-				/* A set of logic rules, the same for all context */
-				rules rules_;
+				rules rules_;  /**< A set of logic rules, the same for all context */
 
 				void apply_rules(facts_ctx &);
 
+				/**
+				 * Get the fact_ctx associated to an identifier
+				 *
+				 * @param a string identifier describing the context (corresponding to task)
+				 * @return the associated fact_ctx. It is created if it does not exists.
+				 */
 				facts_ctx& get_facts(const std::string& identifier);
-				void set_facts(const std::string& identifier, 
-							   const facts_ctx&);
 
+
+				/**
+				 * Set the fact_ctx associated to an identifier
+				 *
+				 * @param a string identifier describing the context
+				 * (corresponding to task)
+				 * @param ctx 
+				 * @return nothing, facts_ is modified.
+				 */
+				void set_facts(const std::string& identifier, const facts_ctx& ctx);
+
+				/**
+				 * Infer if a fact can be decided from the facts_ctx associated
+				 * to identifier
+				 *
+				 * @param f represents the facts the system try to infer
+				 * @param identifier is a string identifier for the fact_ctx we
+				 * want to use
+				 * @return a tribool true / false / can't infer
+				 */
 				boost::logic::tribool infer_(const logic::function_call& f, const std::string& identifier);
+
+				/**
+				 * Infer if a fact can be decided from the facts_ctx associated
+				 * to identifier. If it cannot do it directly, propose some
+				 * hypothesis in hyps.
+				 *
+				 * @param f represents the facts the system try to infer
+				 * @param hyps can store some hypothesis which leads to f be true.
+				 * @param identifier is a string identifier for the fact_ctx we
+				 * want to use
+				 * @return a tribool true / false / can't infer
+				 */
 				boost::logic::tribool infer_(const logic::function_call& f,
 											std::vector<logic::function_call>& hyps,
 										    const std::string& identifier);
 
+				/**
+				 * Compute if the fact_ctx form a sound theory or if it leads to incoherencies.
+				 * In case of success, update the facts_ with facts for identifier
+				 */
 				bool generate_theory(facts_ctx& facts, const std::string& identifier);
 			
 			public:
 				engine();
-				bool add_type(const std::string&);
-				bool add_predicate(const std::string&, size_t, const std::vector<std::string>& args_type,
-															   eval_predicate* = 0);
-				bool add_func(const std::string&, size_t, const std::vector<std::string>& args_type);
+
+				/**
+				 * Add the existence of type in the engine, and associated equality predicates :
+				 * equal_${type}(X, Y) :- equal_${type}(Y, X)
+				 * equal_${type}(X, Y), equal_${type}(Y, Z) :- equal_${type}(X, Z)
+				 *
+				 * @param type represents the name of the new type
+				 * @return true. 
+				 */
+				bool add_type(const std::string& type);
+
+				/**
+				 * Add a predicate in the engine
+				 *
+				 * @param identifier is the name of predicate
+				 * @param nb is the number of arguments
+				 * @params args_types is the list of types, in order. type must exists.
+				 * @param p is an implementation of the predicate, it is optional
+				 *
+				 * @return if the predicate is valide, and has been succesfully inserted
+				 */
+				bool add_predicate(const std::string& identifier, size_t nb,
+								   const std::vector<std::string>& args_type,
+								   eval_predicate* p= 0);
+				
+				/**
+				 * Add a function in the engine, and its associated predicate
+				 *
+				 * @param identifier is the name of the function
+				 * @param arity is the number of arguments
+				 * @params args_types is the list of types, in order. type must exists.
+				 *
+				 * @return if the function is valide, and has been succesfully inserted
+				 */
+				bool add_func(const std::string& identifier, size_t arity, const std::vector<std::string>& args_type);
+
+
+				/**
+				 * Add a fact in the engine in the identifier fact_ctx. 
+				 * FactType is of kind string, or logic::function_call
+				 *
+				 * @param fact represents the fact to insert in the engine
+				 * @param identifier represents the identifier of the context
+				 * where we want to insert it. The default is "default".
+				 *
+				 * @return the success of the insertion (if the resulting
+				 * fact_ctx is coherent).
+				 */
 				template <typename FactType>
 				bool add_fact(const FactType& fact,
 							  const std::string& identifier = "default")
@@ -99,9 +181,23 @@ namespace hyper {
 
 					return generate_theory(current_facts, identifier);
 				}
+
+				/**
+				 * Add a list of facts in the context identifier.
+				 * @see add_fact
+				 */
 				bool add_fact(const std::vector<std::string>&, 
 							  const std::string& identifier = "default");
 
+				/**
+				 * Add a rule in the engine. FactType is of kind string or function_call.
+				 *
+				 * @param identifier is the identifier rule
+				 * @param cond is the list of conditions needed to trigger the rule
+				 * @param action is the list of consequences of the rule
+				 *
+				 * @return if the rule has been successfully inserted
+				 */
 				template <typename FactType>
 				bool add_rule(const std::string& identifier,
 							  const typename std::vector<FactType>& cond,
@@ -115,9 +211,19 @@ namespace hyper {
 					return res;
 				}
 
-				/* Check if goal is directly inferable in the current engine context */
-				/* GoalType can be a string representing a function_call, or
-				 * directly a function_call */
+				/**
+				 * Check if goal is directly inferable in the context defined
+				 * by identifier GoalType can be a string representing a
+				 * function_call, or directly a function_call 
+				 *
+				 * @param goal represents the facts the system try to infer
+				 * @param identifier is a string identifier for the fact_ctx we
+				 * want to use
+				 *
+				 * @return success / failure / can't deduce
+				 *
+				 * @see infer_
+				 * */
 				template <typename GoalType>
 				boost::logic::tribool infer(const GoalType& goal,
 											const std::string& identifier = "default")
@@ -126,11 +232,19 @@ namespace hyper {
 					return infer_(current_facts.f.generate(goal), identifier);
 				}
 
-				/* Check if goal is directly inferable in the current engine context.
-				 * If it is not the case, hyps may contains hypothesis. If ANY of this 
-				 * hypothesis can be prooved, we can infer goal from the current context
-				 * or in other work,
-				 *    goal is true in the current context IF ANY of hyps is true
+				/** 
+				 * Check if goal is directly inferable in the current engine
+				 * context.  If it is not the case, hyps may contains
+				 * hypothesis. If ANY of this hypothesis can be prooved, we can
+				 * infer goal from the current context or in other work, goal
+				 * is true in the current context IF ANY of hyps is true
+				 *
+				 * @param goal represents the facts the system try to infer
+				 * @param hyps will be the list of possible hypothesis.
+				 * @param identifier is a string identifier for the fact_ctx we
+				 * want to use
+				 *
+				 * @return success / failure / can't deduce
 				 */
 				template <typename GoalType>
 				boost::logic::tribool infer(const GoalType& goal,
@@ -141,9 +255,12 @@ namespace hyper {
 					return infer_(current_facts.f.generate(goal), hyps, identifier);
 				}
 
-				/*
-				 * Fill OutputIterator with the list of identifier which
-				 * matches the goal
+				/**
+				 * Fill OutputIterator with the list of identifier which matches the goal
+				 * GoalType is of kind string or function_call
+				 * OutputIterator must match the concept of std Output Iterator
+				 *
+				 * @see infer
 				 */
 				template <typename GoalType, typename OutputIterator>
 				OutputIterator infer_all(const GoalType& goal, OutputIterator out)
@@ -154,6 +271,34 @@ namespace hyper {
 						boost::logic::tribool b = infer(goal, it->first);
 						if (!boost::logic::indeterminate(b) && b)
 							*out++ = it->first;
+					}
+
+					return out;
+				}
+
+				/**
+				 * Fill OutputIterator with the list of identifier which
+				 * matches the goal, and are not in the sequence defined by
+				 * begin / end
+				 * GoalType is of kind string or function_call
+				 * OutputIterator must match the standard concept of Output Iterator
+				 * InputInterator must match the standard concept of Input Iterator 
+				 *
+				 * @see infer_all
+				 */
+
+				template <typename GoalType, typename OutputIterator, typename InputIterator>
+				OutputIterator infer_all_in(const GoalType& goal, OutputIterator out,
+											InputIterator begin, InputIterator end)
+				{
+					for (factsMap::const_iterator it = facts_.begin();
+												  it != facts_.end(); ++it)
+					{
+						if (std::find(begin, end, it->first) == end) {
+							boost::logic::tribool b = infer(goal, it->first);
+							if (!boost::logic::indeterminate(b) && b)
+								*out++ = it->first;
+						}
 					}
 
 					return out;
@@ -180,6 +325,24 @@ namespace hyper {
 					}
 				}
 
+				template <typename GoalType, typename OutputIterator1, typename OutputIterator2, typename InputIterator>
+				void infer_all_in(const GoalType& goal, OutputIterator1 out1, OutputIterator2 out2,
+								  InputIterator begin, InputIterator end)
+				{
+					for (factsMap::const_iterator it = facts_.begin();
+												  it != facts_.end(); ++it)
+					{
+						if (std::find(begin, end, it->first) == end) {
+							plausible_hypothesis h;
+							h.name = it->first;
+							boost::logic::tribool b = infer(goal, h.hyps, it->first);
+							if (!boost::logic::indeterminate(b) && b)
+								*out1++ = it->first;
+							else if (boost::logic::indeterminate(b) && !h.hyps.empty())
+								*out2++ = h;
+						}
+					}
+				}
 
 				friend std::ostream& operator << (std::ostream&, const engine&);
 

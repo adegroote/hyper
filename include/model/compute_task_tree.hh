@@ -94,6 +94,8 @@ namespace hyper {
 
 				std::set<std::string> running_tasks;
 
+				std::vector<std::string> failed_tasks;
+
 			friend struct async_eval_all_preconditions;
 			friend struct async_exec_all_tasks;
 			friend struct async_exec_all_conditions;
@@ -130,7 +132,6 @@ namespace hyper {
 				void handle_execute_task(cond_logic_evaluation& cond,
 										 task_logic_evaluation& task,
 										 bool res, cb_type handler);
-
 				void async_evaluate_hypothesis(size_t i, size_t j, cond_logic_evaluation&, cb_type);
 				void handle_evaluate_hypothesis(size_t, size_t, cond_logic_evaluation&, cb_type);
 		};

@@ -59,7 +59,6 @@ namespace {
 		}
 	};
 
-
 	struct eval_success_condition_execution 
 	{
 		bool operator()(bool b, const cond_logic_evaluation& cond)
@@ -249,7 +248,8 @@ namespace hyper {
 			layer.a_.logger(DEBUG) << cond.condition << std::endl;
 			std::vector<std::string> res;
 			std::vector<logic::engine::plausible_hypothesis> hyps;
-			layer.engine.infer_all(cond.condition, std::back_inserter(res), std::back_inserter(hyps));
+			layer.engine.infer_all_in(cond.condition, std::back_inserter(res), std::back_inserter(hyps),
+									  failed_tasks.begin(), failed_tasks.end());
 
 			if (res.empty() && hyps.empty())
 				return handler(false);
@@ -373,6 +373,9 @@ namespace hyper {
 
 			running_tasks.erase(task.name);
 			task.res_exec = res;
+
+			if (!res) 
+				failed_tasks.push_back(task.name);
 			
 			if (cond.all_tasks_executed()) {
 				handler(cond.is_succesfully_executed());
