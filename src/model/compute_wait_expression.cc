@@ -10,19 +10,19 @@ namespace hyper {
 				abortable_function_base* fun_ptr,
 				bool &res) :
 			fun_ptr(fun_ptr), io_service_(io_s), delay_(delay), deadline_(io_s),
-			res(res), user_ask_abort(false), running(false), must_pause(false)
+			res(res), user_ask_abort(false), running(false), must_pause(false), waiting(false)
 		{}
 
 		bool compute_wait_expression::handle_error(const boost::system::error_code& e, cb_type cb)
 		{
-			if (e) {
-				cb(e);
+			if (user_ask_abort) {
+				cb(make_error_code(boost::system::errc::interrupted));
 				running = false;
 				return true;
 			}
 
-			if (user_ask_abort) {
-				cb(make_error_code(boost::system::errc::interrupted));
+			if (e) {
+				cb(e);
 				running = false;
 				return true;
 			}
@@ -33,6 +33,7 @@ namespace hyper {
 		void compute_wait_expression::handle_timeout(
 				const boost::system::error_code& e, cb_type cb)
 		{
+			waiting = false;
 			if (!handle_error(e, cb))
 				compute(cb);
 		}
@@ -50,6 +51,7 @@ namespace hyper {
 			if (must_pause)
 				return;
 
+			waiting = true;
 			deadline_.expires_from_now(delay_);
 			deadline_.async_wait(boost::bind(&compute_wait_expression::handle_timeout, 
 						this,
@@ -75,13 +77,16 @@ namespace hyper {
 			if (!running)
 				return false;
 
+			user_ask_abort = true;
+
 			if (must_pause) {
 				running = false;
-				return false;
+				return waiting;
 			}
 
-			user_ask_abort = true;
-			fun_ptr->abort();
+			if (!waiting) 
+				fun_ptr->abort();
+
 			return true;
 		}
 
