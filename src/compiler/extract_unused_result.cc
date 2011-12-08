@@ -62,7 +62,7 @@ struct extract_unused_result_visitor : public boost::static_visitor<void>
 
 	void operator() (const while_decl& w)  const
 	{
-		/* w.condition is handlede automatically */
+		list.insert("bool");
 		extract_unused_result extract(list, u, a, syms);
 		std::for_each(w.body.begin(), w.body.end(), extract);
 	}

@@ -337,6 +337,13 @@ struct remove_ {
 	}
 };
 
+struct extract_expression {
+	std::vector<expression_ast>& list;
+
+	extract_expression(std::vector<expression_ast>& list) : list(list) {}
+	void operator() (const recipe_expression& r);
+};
+
 struct extract_expression_visitor : public boost::static_visitor<void>
 {
 	std::vector<expression_ast>& list;
@@ -366,18 +373,20 @@ struct extract_expression_visitor : public boost::static_visitor<void>
 	{
 		list.push_back(w.content);
 	}
-};
-
-struct extract_expression {
-	std::vector<expression_ast>& list;
-
-	extract_expression(std::vector<expression_ast>& list) : list(list) {}
-
-	void operator() (const recipe_expression& r)
+	
+	void operator() (const while_decl& w) const
 	{
-		boost::apply_visitor(extract_expression_visitor(list), r.expr);
+		list.push_back(w.condition);
+		extract_expression extract(list);
+		std::for_each(w.body.begin(), w.body.end(), extract);
 	}
 };
+
+
+void extract_expression::operator() (const recipe_expression& r)
+{
+	boost::apply_visitor(extract_expression_visitor(list), r.expr);
+}
 
 
 struct dump_eval_expression {
@@ -720,6 +729,7 @@ namespace hyper {
 			oss << "#include <model/compute_expression.hh>\n";
 			oss << "#include <model/compute_make_expression.hh>\n";
 			oss << "#include <model/compute_wait_expression.hh>\n";
+			oss << "#include <model/compute_while_expression.hh>\n";
 			oss << "#include <model/logic_layer.hh>\n";
 			oss << "#include <boost/assign/list_of.hpp>\n"; 
 

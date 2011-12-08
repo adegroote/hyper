@@ -111,10 +111,12 @@ namespace {
 		const symbolList& syms;
 		size_t& counter;
 		mutable boost::optional<std::string> target;
+		std::string ptr_object;
 
 		dump_recipe_visitor(const universe & u_, const ability& a_, const task& t_, 
-						   const symbolList& syms_, size_t& counter) : 
-			u(u_), a(a_), t(t_), syms(syms_), counter(counter), target(boost::none) {}
+						   const symbolList& syms_, size_t& counter, std::string ptr_object) : 
+			u(u_), a(a_), t(t_), syms(syms_), counter(counter), target(boost::none),
+			ptr_object(ptr_object) {}
 
 		template <typename T> 
 		std::string operator() (const T&) const { return ""; }
@@ -210,7 +212,8 @@ namespace {
 			std::string next_indent = "\t" + indent;
 
 			std::ostringstream oss;
-			oss << indent << "push_back(new hyper::model::compute_wait_expression(a.io_s, boost::posix_time::milliseconds(50), \n";
+			oss << indent << ptr_object;
+			oss << "->push_back(new hyper::model::compute_wait_expression(a.io_s, boost::posix_time::milliseconds(50), \n";
 			oss << abortable_function(identifier, w.content) << ",";
 			oss << next_indent << identifier << "));\n";
 
@@ -225,7 +228,8 @@ namespace {
 			std::string identifier = compute_target(e);
 
 			std::ostringstream oss;
-			oss << indent << "push_back(" << abortable_function(identifier, e) << indent << ");\n";
+			oss << indent << ptr_object << "->push_back(";
+			oss << abortable_function(identifier, e) << indent << ");\n";
 
 			target = boost::none;
 
@@ -240,7 +244,8 @@ namespace {
 			std::string identifier = compute_target(s.bounded.expr);
 
 			std::ostringstream oss;
-			oss << indent << "push_back(" << abortable_function(identifier, s.bounded.expr) << indent << ");\n";
+			oss << indent << ptr_object << "->push_back(";
+			oss << abortable_function(identifier, s.bounded.expr) << indent << ");\n";
 			target = boost::none;
 
 			return oss.str();
@@ -255,7 +260,7 @@ namespace {
 
 			std::ostringstream oss;
 
-			oss << indent << "push_back(new hyper::model::compute_make_expression(a, ";
+			oss << indent << ptr_object << "->push_back(new hyper::model::compute_make_expression(a, ";
 			oss << quoted_string(*(r.content[0].dst)) << ", ";
 			oss << "a.logic().generate(" << generate_logic_expression(local_expr.main, a, u) << ")";
 			oss << ", \n" << indent_next << dump_unification(local_expr.unification_clauses);
@@ -263,7 +268,6 @@ namespace {
 			target = boost::none;
 
 			return oss.str();
-
 		}
 
 		std::string operator() (const recipe_op<ENSURE>& r) const
@@ -274,7 +278,7 @@ namespace {
 			logic_expression_decl local_expr = prepare_logic_symbol(r.content[0].logic_expr, syms, t);
 			std::ostringstream oss;
 
-			oss << indent << "push_back(new hyper::model::compute_ensure_expression(a, ";
+			oss << indent << ptr_object << "->push_back(new hyper::model::compute_ensure_expression(a, ";
 			oss << quoted_string(*(r.content[0].dst)) << ", \n" << indent_next;
 			oss << "a.logic().generate(" << generate_logic_expression(local_expr.main, a, u) << ")";
 			oss << ", \n" << indent_next << dump_unification(local_expr.unification_clauses);
@@ -290,10 +294,35 @@ namespace {
 			std::string indent_next = times(5, "\t");
 			std::ostringstream oss;
 
-			oss << indent << "push_back(new hyper::model::compute_abort_expression(a, \n";
+			oss << indent << ptr_object << "->push_back(new hyper::model::compute_abort_expression(a, \n";
 			oss << indent_next << local_symbol(a.identifier) << ", \n";
 			oss << indent_next << unused_symbol("boost::mpl::void_") << "));";
 			target = boost::none;
+
+			return oss.str();
+		}
+
+		std::string operator() (const while_decl& w) const
+		{
+			std::string indent = times(4, "\t");
+			std::string indent_next = times(5, "\t");
+			std::string identifier = unused_symbol("bool");
+			std::ostringstream oss_name;
+			oss_name << "__hyper_while_computation_" << counter;
+
+			std::ostringstream oss;
+
+			oss << indent << "hyper::model::abortable_computation* " << oss_name.str();
+			oss << " = new hyper::model::abortable_computation();\n" << std::endl;
+
+			oss << indent << ptr_object << "->push_back(new hyper::model::compute_while_expression(a, \n";
+			oss << abortable_function(identifier, w.condition);
+			oss << indent << "," << identifier << ",\n";
+			oss << indent << oss_name.str() << "));\n";
+
+			dump_recipe_visitor vis(u, a, t, syms, counter, oss_name.str());
+			for (size_t i = 0; i < w.body.size(); ++i)
+				oss << boost::apply_visitor(vis, w.body[i].expr);
 
 			return oss.str();
 		}
@@ -314,7 +343,7 @@ namespace hyper {
 
 		void dump_recipe_expression::operator() (const recipe_expression& r) const
 		{
-			dump_recipe_visitor vis(u, a, t, syms, counter);
+			dump_recipe_visitor vis(u, a, t, syms, counter, "this");
 			oss << boost::apply_visitor(vis, r.expr);
 		}
 	}
