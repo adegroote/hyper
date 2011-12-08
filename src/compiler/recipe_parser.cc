@@ -131,6 +131,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(expression_ast, content)
 )
 
+BOOST_FUSION_ADAPT_STRUCT(
+	while_decl,
+	(expression_ast, condition)
+	(std::vector<recipe_expression>, body)
+)
+
 
 BOOST_FUSION_ADAPT_STRUCT(
 	letname_expression_decl,
@@ -220,6 +226,7 @@ struct body_block_grammar :
 		body_decl_list = (*body_decl	);
 
 		body_decl = (	let_decl_	
+					|   while_decl_
 					|	make_decl_
 					|   ensure_decl_
 					|   wait_decl_
@@ -266,6 +273,11 @@ struct body_block_grammar :
 				  > lit(")")
 				  ;
 
+		while_decl_ = lit("while")
+					> lit("{") > expression > lit("}")
+					> lit("{") > *body_decl > lit("}")
+					;
+
 		expression_list = logic_expression % lit("=>>");
 
 		start.name("body block");
@@ -278,6 +290,7 @@ struct body_block_grammar :
 		make_decl_.name("make declaration");
 		ensure_decl_.name("ensure declaration");
 		wait_decl_.name("wait declaration");
+		while_decl_.name("while declaration");
 
 #ifdef HYPER_DEBUG_RULES
 		debug(start);
@@ -290,6 +303,7 @@ struct body_block_grammar :
 		debug(make_decl_);
 		debug(ensure_decl_);
 		debug(wait_decl_);
+		debug(while_decl_);
 #endif
 	}
 
@@ -303,6 +317,7 @@ struct body_block_grammar :
 	qi::rule<Iterator, recipe_op<MAKE>(), white_space_> make_decl_;
 	qi::rule<Iterator, recipe_op<ENSURE>(), white_space_> ensure_decl_;
 	qi::rule<Iterator, wait_decl(), white_space_> wait_decl_;
+	qi::rule<Iterator, while_decl(), white_space_> while_decl_;
 
 	grammar_expression<Iterator> expression;
 	identifier_grammar<Iterator> identifier;

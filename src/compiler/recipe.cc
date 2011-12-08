@@ -69,16 +69,15 @@ std::string make_unused_ctx_structure(const std::set<std::string>& s)
 
 struct validate_condition
 {
-	bool &b;
 	const ability& a;
 	const universe &u;
 
-	validate_condition(bool & b_, const ability& a_, const universe& u_) : 
-		b(b_), a(a_), u(u_) {}
+	validate_condition(const ability& a_, const universe& u_) : 
+		a(a_), u(u_) {}
 
-	void operator() (const recipe_condition& e) const
+	bool operator() (const recipe_condition& e) const
 	{
-		b = e.is_valid(a, u) && b;
+		return e.is_valid(a, u);
 	}
 };
 
@@ -136,6 +135,10 @@ struct valid_unification
 		}
 	}
 };
+
+template <typename Iterator>
+bool are_valid_recipe_expressions(Iterator begin, Iterator end,
+		const ability& a, const universe& u, symbolList& local);
 
 struct validate_recipe_expression_ : public boost::static_visitor<bool>
 {
@@ -268,24 +271,31 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 
 		return true;
 	}
+
+	bool operator() (const while_decl& while_d) const {
+		bool valid = while_d.condition.is_valid_predicate(a, u, local);
+		if (!valid)
+			return valid;
+
+		return are_valid_recipe_expressions(
+				while_d.body.begin(), while_d.body.end(),
+				a, u, local);
+	}
 };
-
-
 
 struct validate_recipe_expression
 {
-	bool &b;
 	const ability& a;
 	const universe& u;
 	symbolList& local;
 
-	validate_recipe_expression(bool & b_, const ability& a_, const universe& u_, 
+	validate_recipe_expression(const ability& a_, const universe& u_, 
 							   symbolList& local_) :
-		b(b_), a(a_), u(u_), local(local_) {}
+		a(a_), u(u_), local(local_) {}
 
-	void operator() (const recipe_expression& e) const
+	bool operator() (const recipe_expression& e) const
 	{
-		b = boost::apply_visitor(validate_recipe_expression_(a, u, local), e.expr) && b;
+		return boost::apply_visitor(validate_recipe_expression_(a, u, local), e.expr);
 	}
 };
 
@@ -293,22 +303,15 @@ template <typename Iterator>
 bool are_valid_conditions(Iterator begin, Iterator end,
 						  const ability& a, const universe& u)
 {
-	bool b = true;
-	std::for_each(begin, end, validate_condition(b, a, u));
-
-	return b;
+	return hyper::utils::all(begin, end, validate_condition(a, u));
 }
 
 template <typename Iterator>
 bool are_valid_recipe_expressions(Iterator begin, Iterator end,
 		const ability& a, const universe& u, symbolList& local)
 {
-	bool b = true;
-	std::for_each(begin, end, validate_recipe_expression(b, a, u, local));
-
-	return b;
+	return hyper::utils::all(begin, end, validate_recipe_expression(a, u, local));
 }
-
 
 struct export_ {
 	std::ostream& oss;

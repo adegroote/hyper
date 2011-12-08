@@ -292,5 +292,14 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 								r34 = recipe { pre = {{ last_error?(first_ctr) }} \
 											   post = {} body = {} };", true);
 
+	check_recipe.do_build_test("letname first_ctr first::isOk == true \
+								r34 = recipe { pre = {} \
+											   post = {}					\
+											   body = {						\
+												while {first::isOk} {		\
+													let z 3.0				\
+													make(first::isOk == true where first::test_where == z) \
+												}							\
+												} };", true);
 
 }
