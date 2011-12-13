@@ -109,13 +109,17 @@ namespace hyper {
 
 				void cancel(const std::string& actor)
 				{
-					set_id& s = id_by_actor[actor];
+					/* copy the set. cancel_helper can lead directly to a call
+					 * to remove, which will invalid the current iterator, and so to an 
+					 * UB when iterating on it in the following for_each */
+					set_id s = id_by_actor[actor];
 					std::for_each(s.begin(), s.end(), 
 								  boost::bind(&callback_database::cancel_helper, this, _1));
 				}
 		};
 
-		/* Actor must have :
+		/**
+		 * Actor must have :
 		 *	- a name (std::string)
 		 *	- a boost::asio::io_service io_s, running
 		 *	- a method identifier gen_identifier()
