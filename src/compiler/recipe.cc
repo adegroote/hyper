@@ -476,6 +476,46 @@ struct dump_required_agents
 	}
 };
 
+struct constraint_domain_helper : public boost::static_visitor<std::string>
+{
+	const ability& a;
+	const universe& u;
+
+	constraint_domain_helper(const ability& a, const universe& u) : a(a), u(u) {}
+
+	template <typename T>
+	std::string operator() (const T&) const { return ""; }
+
+	template <recipe_op_kind kind>
+	std::string operator() (const recipe_op<kind>&r ) const
+	{
+		std::ostringstream oss;
+		oss << "hyper::logic::expression(a_.logic().generate(";
+		oss <<  generate_logic_expression(r.content[0].logic_expr.main, a, u, false);
+		oss << "))";
+		
+		return oss.str();
+	}
+};
+
+struct dump_constraint_domain
+{
+	std::ostream& oss;
+	const ability& a;
+	const universe& u;
+
+	dump_constraint_domain(std::ostream& oss, const ability& a,
+						   const universe& u) : oss(oss), a(a), u(u)
+	{}
+
+	void operator() (const recipe_expression& expr)
+	{
+		std::string s = boost::apply_visitor(constraint_domain_helper(a, u), expr.expr);
+		if (s != "")
+			oss << times(3, "\t") << "constraint_domain.insert(" << s << ");\n";
+	}
+};
+
 struct is_exportable_symbol
 {
 	const typeList& tList;
@@ -857,6 +897,7 @@ namespace hyper {
 			oss << indent << "{" << std::endl;
 			std::for_each(deps.var_depends.begin(), deps.var_depends.end(),
 						  dump_required_agents(oss, context_a.name()));
+			std::for_each(body.begin(), body.end(), dump_constraint_domain(oss, context_a, u));
 			oss << indent << "}\n\n";
 
 			oss << indent << "void " << exported_name();
