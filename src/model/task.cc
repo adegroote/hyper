@@ -3,6 +3,7 @@
 #include <model/ability.hh>
 #include <model/task.hh>
 #include <model/recipe.hh>
+#include <utils/algorithm.hh>
 
 #include <boost/spirit/home/phoenix.hpp>
 #include <boost/fusion/include/std_pair.hpp>
@@ -102,10 +103,13 @@ namespace hyper {
 			if (!res && must_interrupt) 
 				return end_execute(false);
 			
+			return end_execute(true);
+#if 0
 			// check the post-conditions to be sure that everything is ok
 			return async_evaluate_postconditions(boost::bind(
 						&task::handle_final_postcondition_handle,
 						this, _1, _2));
+#endif
 		}
 
 		void task::async_evaluate_recipe_preconditions(const boost::system::error_code& e, conditionV failed, size_t i)
@@ -134,6 +138,7 @@ namespace hyper {
 			} 
 
 			a.logger(DEBUG) << *this << "Finish to evaluate recipe preconditions" << std::endl;
+
 
 			// time to select a recipe and execute it :)
 			std::sort(recipe_states.begin(), recipe_states.end());
@@ -213,9 +218,16 @@ namespace hyper {
 					a.logger(DEBUG) << std::endl;
 				}
 
+				/* check if the domain of the recipe contains one of constraint
+				 * which appears in the context */
+				bool match_domain = hyper::utils::any(error_context.begin(), 
+													  error_context.end(),
+				phx::count(recipes[i]->constraint_domain, phx::arg_names::arg1) == 1);
+
 				const boost::optional<logic::expression>& expr = recipes[i]->expected_error();
 				recipe_states[i].last_error_valid = 
 					((!expr && error_context.empty()) ||
+					 (!match_domain) ||
 					 (expr && !error_context.empty() && error_context.back() == *expr));
 
 				if (!recipe_states[i].last_error_valid) {

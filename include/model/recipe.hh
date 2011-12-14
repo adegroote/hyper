@@ -14,6 +14,7 @@ namespace hyper {
 	namespace model {
 		struct ability;
 		struct abortable_computation;
+		struct task;
 
 		class recipe {
 			private:
@@ -34,11 +35,18 @@ namespace hyper {
 				abortable_computation* computation;
 				virtual void do_execute(abortable_computation::cb_type cb, bool must_pause) = 0;
 
-				/* list of agents required to use this recipe */
-				std::set<std::string> required_agents;
+				/** list of agents required to use this recipe */
+				std::set<std::string> required_agents; 
+
+				/** list of logic::expression which appears in make / ensure in the recipe */
+				std::set<logic::expression> constraint_domain;
+
+				/** allow task to access required_agents / constraint_domain*/
+				friend struct task;
 
 			public:
 				typedef std::set<std::string>::const_iterator agent_const_iterator;
+				typedef std::set<logic::expression>::const_iterator constraint_const_iterator;
 
 				recipe(const std::string& name, ability& a, task& t,
 					   boost::optional<logic::expression> expected_error = boost::none);
@@ -48,6 +56,9 @@ namespace hyper {
 
 				agent_const_iterator begin() const { return required_agents.begin(); }
 				agent_const_iterator end() const { return required_agents.end(); }
+
+				constraint_const_iterator constraint_begin() const { return constraint_domain.begin(); }
+				constraint_const_iterator constraint_end() const { return constraint_domain.end(); }
 
 				const std::string& r_name() const { return name; }
 
