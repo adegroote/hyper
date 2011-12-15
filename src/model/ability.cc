@@ -199,13 +199,25 @@ namespace {
 
 		output_variant operator() (const network::variable_value& v) const
 		{
-			a.logger(INFORMATION) << "[" << v.src << ", " << v.id << "] Answer " << std::endl;
+			a.logger(INFORMATION) << "[" << v.src << ", " << v.id << "] Final answer " << std::endl;
 			return actor_vis(v);
 		}
 
 		output_variant operator() (const network::request_constraint_answer& v) const
 		{
-			a.logger(INFORMATION) << "[" << v.src << ", " << v.id << "] Answer " << std::endl;
+			switch (v.state) {
+			case network::request_constraint_answer::INIT:
+			case network::request_constraint_answer::RUNNING:
+			case network::request_constraint_answer::PAUSED:
+			case network::request_constraint_answer::TEMP_FAILURE:
+				a.logger(INFORMATION) << "[" << v.src << ", " << v.id << "] Answer " << std::endl;
+				break;
+			case network::request_constraint_answer::SUCCESS:
+			case network::request_constraint_answer::FAILURE:
+			case network::request_constraint_answer::INTERRUPTED:
+				a.logger(INFORMATION) << "[" << v.src << ", " << v.id << "] Final answer " << std::endl;
+				break;
+			}
 			return actor_vis(v);
 		}
 
