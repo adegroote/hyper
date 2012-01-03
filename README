@@ -8,7 +8,7 @@ useful nowadays.
 Installation
 ------------
 
-You need a recent Boost-version to build hyper (boost >= 1.42) and cmake.
+You need a recent Boost-version to build hyper (boost >= 1.44) and cmake.
 It has been tested on
 	- ubuntu x86-64 (gcc 4.5.1, gcc 4.4.3, clang-current)
 	- NetBSD x86-64 (gcc 4.1.3, you need a special patch for boost, ticket 4662)
