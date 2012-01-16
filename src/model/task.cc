@@ -5,6 +5,7 @@
 #include <model/recipe.hh>
 #include <utils/algorithm.hh>
 
+#include <boost/variant/apply_visitor.hpp>
 #include <boost/spirit/home/phoenix.hpp>
 #include <boost/fusion/include/std_pair.hpp>
 
@@ -160,6 +161,20 @@ namespace hyper {
 					boost::bind(&task::handle_execute, this, _1));
 		}
 
+
+		struct is_constraint_helper : public boost::static_visitor<bool> {
+			template <typename T>
+			bool operator() (const T& ) const { return false; }
+
+			bool operator() (const logic::function_call&) const { return true; }
+		};
+
+		struct is_constraint {
+			bool operator() (const logic::expression& e) {
+				return boost::apply_visitor(is_constraint_helper(), e.expr);
+			}
+		};
+
 		void task::handle_precondition_handle(const boost::system::error_code& e, conditionV failed)
 		{
 			CHECK_INTERRUPT
@@ -218,11 +233,19 @@ namespace hyper {
 					a.logger(DEBUG) << std::endl;
 				}
 
-				/* check if the domain of the recipe contains one of constraint
-				 * which appears in the context */
-				bool match_domain = hyper::utils::any(error_context.begin(), 
-													  error_context.end(),
-				phx::count(recipes[i]->constraint_domain, phx::arg_names::arg1) == 1);
+				bool has_constraint = hyper::utils::any(error_context.begin(),
+													    error_context.end(),
+														is_constraint());
+				bool match_domain;
+				if (has_constraint) {
+					/* check if the domain of the recipe contains one of constraint
+					 * which appears in the context */
+					match_domain = hyper::utils::any(error_context.begin(), 
+												     error_context.end(),
+					phx::count(recipes[i]->constraint_domain, phx::arg_names::arg1) == 1);
+				} else {
+					match_domain = true;
+				}
 
 				const boost::optional<logic::expression>& expr = recipes[i]->expected_error();
 				recipe_states[i].last_error_valid = 
