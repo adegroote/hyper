@@ -59,6 +59,7 @@ namespace hyper {
 
 				constraint_const_iterator constraint_begin() const { return constraint_domain.begin(); }
 				constraint_const_iterator constraint_end() const { return constraint_domain.end(); }
+				size_t domain_constraint_size() const { return constraint_domain.size(); }
 
 				const std::string& r_name() const { return name; }
 

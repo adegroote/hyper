@@ -58,6 +58,20 @@ namespace {
 
 namespace hyper {
 	namespace model {
+		bool task::state::operator< (const state& s) const
+		{
+			if (missing_agents.size() != s.missing_agents.size())
+				return (missing_agents.size() < s.missing_agents.size());
+			if (last_error_valid != s.last_error_valid) 
+				return last_error_valid;
+			if (failed.size() != s.failed.size())
+				return (failed.size() < s.failed.size());
+			if (nb_preconds != s.nb_preconds)
+				return nb_preconds > s.nb_preconds;
+
+			return size_domain < s.size_domain;
+		}
+
 
 		std::ostream& operator << (std::ostream& oss, const task& t) 
 		{
@@ -218,6 +232,8 @@ namespace hyper {
 			/* Evaluate the computable recipes, depending on the availables agent */
 			for (size_t i = 0; i < recipes.size(); ++i) {
 				recipe_states[i].index = i;
+				recipe_states[i].nb_preconds = recipes[i]->nb_preconditions();
+				recipe_states[i].size_domain = recipes[i]->domain_constraint_size();
 				recipe_states[i].missing_agents.clear();
 				std::set_difference(recipes[i]->begin(), recipes[i]->end(), 
 									a.alive_agents.begin(), a.alive_agents.end(),
