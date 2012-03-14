@@ -279,6 +279,11 @@ struct are_expression_equal : public boost::static_visitor<bool>
 		return false;
 	}
 
+	bool operator() (const empty&, const empty&) const 
+	{
+		return true;
+	}
+
 	template <typename U>
 	bool operator() (const Constant<U>& u, const Constant<U>& v) const
 	{
