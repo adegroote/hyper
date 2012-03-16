@@ -94,7 +94,7 @@ namespace hyper {
 			identifier_grammar() : identifier_grammar::base_type(start)
 			{
 				using namespace qi::labels;
-				start = (qi::alpha | '_') > *(qi::alnum | '_');
+				start = qi::raw[qi::lexeme[(qi::alpha | '_') >> *(qi::alnum | '_')]];
 
 				start.name("identifier");
 				qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
