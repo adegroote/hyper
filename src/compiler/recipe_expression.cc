@@ -1,5 +1,3 @@
-#include <hyperConfig.hh>
-
 #include <compiler/scope.hh>
 #include <compiler/recipe_expression.hh>
 
@@ -89,14 +87,12 @@ struct extract_destination : public boost::static_visitor<boost::optional<std::s
 		return res;
 	}
 
-	template <unary_op_kind U>
-	boost::optional<std::string> operator() (const unary_op<U>& unary) const 
+	boost::optional<std::string> operator() (const unary_op& unary) const 
 	{
 		return boost::apply_visitor(extract_destination(), unary.subject.expr);
 	}
 
-	template <binary_op_kind U>
-	boost::optional<std::string> operator() (const binary_op<U>& binary) const 
+	boost::optional<std::string> operator() (const binary_op& binary) const 
 	{
 		boost::optional<std::string> res = boost::none;
 		res = boost::apply_visitor(extract_destination(), binary.left.expr);

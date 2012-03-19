@@ -1,5 +1,3 @@
-#include <hyperConfig.hh>
-
 #include <compiler/extension.hh>
 #include <compiler/logic_expression_output.hh>
 #include <compiler/output.hh>
@@ -41,16 +39,14 @@ namespace {
 			return boost::apply_visitor(*this, e.expr);
 		}
 
-		template <unary_op_kind T>
-		expression_ast operator() (const unary_op<T>& op) const {
-			unary_op<T> res(op);
+		expression_ast operator() (const unary_op& op) const {
+			unary_op res(op);
 			res.subject = boost::apply_visitor(*this, op.subject.expr);
 			return res;
 		}
 
-		template <binary_op_kind T>
-		expression_ast operator() (const binary_op<T>& op) const {
-			binary_op<T> res(op);
+		expression_ast operator() (const binary_op& op) const {
+			binary_op res(op);
 			res.left = boost::apply_visitor(*this, op.left.expr);
 			res.right = boost::apply_visitor(*this, op.right.expr);
 			return res;

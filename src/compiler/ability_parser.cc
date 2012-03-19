@@ -1,5 +1,3 @@
-#include <hyperConfig.hh>
-
 #include <compiler/ability_parser.hh>
 
 using namespace hyper::compiler;

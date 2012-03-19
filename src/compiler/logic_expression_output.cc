@@ -7,19 +7,37 @@
 using namespace hyper::compiler;
 
 namespace {
-	template <binary_op_kind op> struct logic_function {};
-	template <> struct logic_function<ADD> { static std::string name() { return "add";}};
-	template <> struct logic_function<SUB> { static std::string name() { return "minus";}};
-	template <> struct logic_function<MUL> { static std::string name() { return "times";}};
-	template <> struct logic_function<DIV> { static std::string name() { return "divides";}};
-	template <> struct logic_function<EQ> { static std::string name() { return "equal";}};
-	template <> struct logic_function<NEQ>{ static std::string name() { return "not_equal";}};
-	template <> struct logic_function<LT> { static std::string name() { return"less";}};
-	template <> struct logic_function<LTE>{ static std::string name() { return "less_equal";}};
-	template <> struct logic_function<GT> { static std::string name() { return"greater";}};
-	template <> struct logic_function<GTE>{ static std::string name() { return "geater_equal";}};
-	template <> struct logic_function<AND>{ static std::string name() { return "and";}};
-	template <> struct logic_function<OR> { static std::string name() { return "or";}};
+	std::string logic_function_name(binary_op_kind k)
+	{
+		switch (k) {
+			case ADD:
+				return "add";
+			case SUB:
+				return "minus";
+			case MUL:
+				return "times";
+			case DIV:
+				return "divides";
+			case EQ:
+				return "equal";
+			case NEQ:
+				return "not_equal";
+			case LT:
+				return "less";
+			case LTE:
+				return "less_equal";
+			case GT:
+				return "greater";
+			case GTE:
+				return "greater_equal";
+			case AND:
+				return "and";
+			case OR:
+				return "or";
+			default:
+				assert(false);
+		}
+	}
 
 	template <unary_op_kind op> struct logic_unary_function {};
 	template <> struct logic_unary_function<NEG> { static std::string name() { return "negate";}};
@@ -105,12 +123,11 @@ namespace {
 			return boost::apply_visitor(*this, e.expr);
 		}
 
-		template <binary_op_kind T>
-		std::string operator() (const binary_op<T> & op) const
+		std::string operator() (const binary_op & op) const
 		{
 			std::ostringstream oss;
 			oss << "logic::function_call(\"";
-			oss << logic_function<T>::name();
+			oss << logic_function_name(op.op);
 			if (u) {
 				boost::optional<typeId> tid = (*u).typeOf(a, op.left.expr);
 				if (tid) {
@@ -126,8 +143,7 @@ namespace {
 			return oss.str();
 		}
 
-		template <unary_op_kind T>
-		std::string operator() (const unary_op<T>& op) const
+		std::string operator() (const unary_op& op) const
 		{
 			std::ostringstream oss;
 			oss << "(";

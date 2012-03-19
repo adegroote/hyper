@@ -1,5 +1,3 @@
-#include <hyperConfig.hh>
-
 #include <algorithm>
 
 #include <boost/bind.hpp>

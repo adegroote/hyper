@@ -1,5 +1,3 @@
-#include <hyperConfig.hh>
-
 #include <iostream>
 #include <fstream>
 #include <set>

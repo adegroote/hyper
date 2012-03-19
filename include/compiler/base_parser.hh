@@ -234,28 +234,28 @@ namespace hyper {
 		
 				equality_expr =
 					relational_expr								[_val = _1]
-					> *(	("==" > relational_expr      [bind(&expression_ast::binary<EQ>, _val, _1)])
-						|   ("!=" > relational_expr     [bind(&expression_ast::binary<NEQ>, _val, _1)])
+					> *(	("==" > relational_expr      [bind(&expression_ast::binary, _val, EQ, _1)])
+						|   ("!=" > relational_expr     [bind(&expression_ast::binary, _val, NEQ, _1)])
 						)
 					;
 		
 				relational_expr =
 					logical_expr								[_val = _1]
-					> *(	("<=" > logical_expr        [bind(&expression_ast::binary<LTE>, _val, _1)])
-						|   ('<' > logical_expr         [bind(&expression_ast::binary<LT>, _val, _1)])
-						|   (">=" > logical_expr        [bind(&expression_ast::binary<GTE>, _val, _1)])
-						|   ('>' > logical_expr         [bind(&expression_ast::binary<GT>, _val, _1)])
+					> *(	("<=" > logical_expr        [bind(&expression_ast::binary, _val, LTE, _1)])
+						|   ('<' > logical_expr         [bind(&expression_ast::binary, _val, LT, _1)])
+						|   (">=" > logical_expr        [bind(&expression_ast::binary, _val, GTE, _1)])
+						|   ('>' > logical_expr         [bind(&expression_ast::binary, _val, GT, _1)])
 						)
 					;
 		
 				logical_and_expr =
 					additive_expr								[_val = _1]
-					> *(  "&&" > additive_expr			[bind(&expression_ast::binary<AND>, _val, _1)])
+					> *(  "&&" > additive_expr			[bind(&expression_ast::binary, _val, AND, _1)])
 					;
 		
 				logical_or_expr =
 					logical_and_expr							[_val = _1]
-					> *("||" > logical_and_expr			[bind(&expression_ast::binary<OR>, _val, _1)])
+					> *("||" > logical_and_expr			[bind(&expression_ast::binary, _val, OR, _1)])
 					;
 		
 				logical_expr = logical_or_expr.alias()
@@ -263,22 +263,22 @@ namespace hyper {
 						
 				additive_expr =
 					multiplicative_expr						[_val = _1]
-					> *(	('+' > multiplicative_expr	[bind(&expression_ast::binary<ADD>, _val, _1)])
-						|   ('-' > multiplicative_expr  [bind(&expression_ast::binary<SUB>, _val, _1)])
+					> *(	('+' > multiplicative_expr	[bind(&expression_ast::binary, _val, ADD, _1)])
+						|   ('-' > multiplicative_expr  [bind(&expression_ast::binary, _val, SUB, _1)])
 						)
 					;
 		
 				multiplicative_expr =
 					unary_expr							[_val = _1]
-					> *(	('*' > unary_expr		[bind(&expression_ast::binary<MUL>, _val, _1)])
-						|   ('/' > unary_expr       [bind(&expression_ast::binary<DIV>, _val, _1)])
+					> *(	('*' > unary_expr		[bind(&expression_ast::binary, _val, MUL, _1)])
+						|   ('/' > unary_expr       [bind(&expression_ast::binary, _val, DIV, _1)])
 						)
 					;
 		
 		
 				unary_expr =
 					primary_expr						[_val = _1]
-					|   ('-' > primary_expr             [bind(&expression_ast::unary<NEG>, _val, _1)])
+					|   ('-' > primary_expr             [bind(&expression_ast::unary, _val, NEG, _1)])
 					|   ('+' > primary_expr				[_val = _1])
 					;
 		

@@ -2,8 +2,6 @@
 #ifndef _COMPILER_ABILITY_HH
 #define _COMPILER_ABILITY_HH
 
-#include <hyperConfig.hh>
-
 #include <compiler/depends.hh>
 #include <compiler/symbols.hh>
 #include <compiler/task.hh>

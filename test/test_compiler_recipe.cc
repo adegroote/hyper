@@ -1,5 +1,3 @@
-#include <hyperConfig.hh>
-
 #include <compiler/ability.hh>
 #include <compiler/task.hh>
 #include <compiler/task_parser.hh>

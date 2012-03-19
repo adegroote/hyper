@@ -1,4 +1,3 @@
-#include <hyperConfig.hh>
 #include <compiler/depends.hh>
 #include <compiler/scope.hh>
 #include <compiler/recipe_condition.hh>
@@ -69,15 +68,13 @@ struct compute_expression_deps : public boost::static_visitor<void>
 			boost::apply_visitor(*this, f.args[i].expr);
 	}
 
-	template <binary_op_kind T>
-	void  operator() (const binary_op<T> & op) const
+	void  operator() (const binary_op& op) const
 	{
 		boost::apply_visitor(*this, op.left.expr);
 		boost::apply_visitor(*this, op.right.expr); 
 	}
 
-	template <unary_op_kind T>
-	void operator() (const unary_op<T>& op) const
+	void operator() (const unary_op& op) const
 	{
 		boost::apply_visitor(*this, op.subject.expr);
 	}

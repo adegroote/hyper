@@ -2,8 +2,6 @@
 #ifndef _COMPILER_UNIVERSE_HH_
 #define _COMPILER_UNIVERSE_HH_
 
-#include <hyperConfig.hh>
-
 #include <map>
 #include <set>
 #include <string>

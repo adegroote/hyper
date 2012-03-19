@@ -74,8 +74,7 @@ struct expression_ast_print : public boost::static_visitor<std::string>
 		return boost::apply_visitor(expression_ast_print(indent+1), e.expr);
 	}
 
-	template <binary_op_kind T>
-	std::string operator() (const binary_op<T> & op) const
+	std::string operator() (const binary_op & op) const
 	{
 		std::ostringstream oss;
 		oss << boost::apply_visitor(expression_ast_print(indent+1), op.left.expr);
@@ -86,8 +85,7 @@ struct expression_ast_print : public boost::static_visitor<std::string>
 		return oss.str();
 	}
 
-	template <unary_op_kind T>
-	std::string operator() (const unary_op<T>& op) const
+	std::string operator() (const unary_op& op) const
 	{
 		std::ostringstream oss;
 		add_indent(oss);
@@ -164,8 +162,6 @@ std::ostream& hyper::compiler::operator << (std::ostream& os, const unary_op_kin
 	return os;
 }
 
-enum kind_of_op { NONE, NUMERICAL, LOGICAL, RELATIONAL, EQUALABLE };
-
 template <typename T> struct is_numerical { enum {value = false}; };
 template <> struct is_numerical<int> { enum { value = true }; };
 template <> struct is_numerical<double> { enum { value = true }; };
@@ -178,349 +174,145 @@ template <> struct is_comparable<int> { enum { value = true}; };
 template <> struct is_comparable<double> { enum { value = true}; };
 template <> struct is_comparable<std::string> { enum { value = true}; };
 
-template <binary_op_kind T> struct TypeOp { enum { value = NONE }; };
-template <> struct TypeOp<ADD> { enum { value = NUMERICAL }; };
-template <> struct TypeOp<SUB> { enum { value = NUMERICAL }; };
-template <> struct TypeOp<MUL> { enum { value = NUMERICAL }; };
-template <> struct TypeOp<DIV> { enum { value = NUMERICAL }; };
-template <> struct TypeOp<AND> { enum { value = LOGICAL }; };
-template <> struct TypeOp<OR> { enum { value = LOGICAL }; };
-template <> struct TypeOp<GT> { enum { value = RELATIONAL }; };
-template <> struct TypeOp<GTE> { enum { value = RELATIONAL }; };
-template <> struct TypeOp<LT> { enum { value = RELATIONAL }; };
-template <> struct TypeOp<LTE> { enum { value = RELATIONAL }; };
-template <> struct TypeOp<EQ> { enum { value = EQUALABLE }; };
-template <> struct TypeOp<NEQ> { enum { value = EQUALABLE }; };
+expression_ast unary_apply(unary_op_kind k, const Constant<bool>& u)
+{
+	assert(false);
+	return empty();
+}
 
-
-template <typename U, bool is_numerical> struct apply_negate {};
-
-template <typename U> 
-struct apply_negate<U, false> {
-	expression_ast operator () (const Constant<U>& u) 
-	{
-		expression_ast res = unary_op<NEG>(u);
-		std::cerr << "Invalid expression near " << res << std::endl;
-		return res;
-	}
-};
+expression_ast unary_apply(unary_op_kind k, const Constant<std::string>& u)
+{
+	assert(false);
+	return empty();
+}
 
 template <typename U>
-struct apply_negate<U, true> {
-	expression_ast operator() (const Constant<U>& u)
-	{
-		return Constant<U>( - u.value );
-	}
-};
-
-
-template <unary_op_kind T, typename U> struct apply_unary 
+expression_ast unary_apply(unary_op_kind k, const Constant<U>& u)
 {
-	expression_ast operator() (const Constant<U>& u)
-	{
-		std::cerr << "apply_unary is not implemented for " << T << std::endl;
-		return empty();
-	};
-};
-
-template <typename U> 
-struct apply_unary<NEG, U> 
-{
-	expression_ast operator() (const Constant<U>& u)
-	{
-		return apply_negate<U, is_numerical<U>::value >() (u);
+	switch(k) {
+		case PLUS:
+			return Constant<U> (u.value);
+		case NEG:
+			return Constant<U> (-u.value);
 	}
-};
+}
 
-template <unary_op_kind T>
 struct ast_unary_reduce : public boost::static_visitor<expression_ast>
 {
+	unary_op_kind k;
+
+
+	ast_unary_reduce(unary_op_kind k_) : k(k_) {}
+
 	template <typename U>
 	expression_ast operator() (const U& u) const
 	{
-		return unary_op<T>(u);
+		return unary_op(k, u);
 	}
 
 	template <typename U>
 	expression_ast operator() (const Constant<U>& u) const
 	{
-		return apply_unary<T, U>()(u);
+		unary_op res(k, u);
+		switch (k) {
+			case NEG:
+				if ( is_numerical<U>::value )  {
+					std::cerr << "Invalid expression near " << res << std::endl;
+					return unary_apply(k, u);
+				} else 
+					return res;
+			default:
+				assert(false);
+				return res;
+		}
 	}
 };
 
-/*
- * Binary visitation stuff
- * binary_apply<T, U> looks for the operation kind of T, and dispatch it to
- * binary_apply_dispatch<T, U, kind>
- *
- * binary_apply_dispatch<T, U, kind> checks that the type of U is compatible
- * with the kind of operation selected, and dispatch to the specialized version
- * binary_apply_equalable<T, U, bool>, binary_apply_numerical_op<T, U, bool>,
- * ...
- *
- * binary_apply_equalable<T,U, bool> prints some error message if the type
- * mismatch the requierement, otherwise, it calls binary_real_apply<T, U>
- *
- * binary_real_apply<T,U> does the real computation \o/
- *
- * Side note : pattern matching is cool, but it is a pain to write in C++
- * and this code take "hours" to compile (binary visitor is not a good idea)
- */
-template <binary_op_kind T, typename U>
-struct binary_apply_equalable {};
+expression_ast real_apply(binary_op_kind k, const Constant<bool>& u, const Constant<bool>& v)
+{
+	switch(k) {
+		case AND:
+			return Constant<bool> (u.value && v.value);
+		case OR:
+			return Constant<bool> (u.value || v.value);
+		case EQ:
+			return Constant<bool> (u.value == v.value);
+		case NEQ:
+			return Constant<bool> (u.value != v.value);
+		default:
+			assert(false);
+			return empty();
+	}
+}
+
+expression_ast real_apply(binary_op_kind k, const Constant<std::string>& u, const Constant<std::string> &v)
+{
+	switch(k) {
+		case EQ:
+			return Constant<bool> (u.value == v.value);
+		case NEQ:
+			return Constant<bool> (u.value != v.value);
+		case LT:
+			return Constant<bool> (u.value < v.value);
+		case LTE:
+			return Constant<bool> (u.value <= v.value);
+		case GT:
+			return Constant<bool> (u.value > v.value);
+		case GTE:
+			return Constant<bool> (u.value >= v.value);
+		default:
+			assert(false);
+			return empty();
+	}
+}
+
 
 template <typename U>
-struct binary_apply_equalable<EQ, U>
+expression_ast real_apply(binary_op_kind k, const Constant<U>& u, const Constant<U>& v)
 {
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<bool>( u.value == v.value );
+	switch(k) {
+		case ADD:
+			return Constant<U> (u.value + v.value);
+		case SUB:
+			return Constant<U> (u.value - v.value);
+		case MUL:
+			return Constant<U> (u.value * v.value);
+		case DIV:
+			return Constant<U> (u.value / v.value);
+		case EQ:
+			return Constant<bool> (u.value == v.value);
+		case NEQ:
+			return Constant<bool> (u.value != v.value);
+		case LT:
+			return Constant<bool> (u.value < v.value);
+		case LTE:
+			return Constant<bool> (u.value <= v.value);
+		case GT:
+			return Constant<bool> (u.value > v.value);
+		case GTE:
+			return Constant<bool> (u.value >= v.value);
+		default:
+			assert(false);
+			return empty();
 	}
-};
+}
 
-template <typename U>
-struct binary_apply_equalable<NEQ, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<bool>( u.value != v.value );
-	}
-};
-
-template <binary_op_kind T, typename U, bool is_numerical>
-struct binary_apply_numerical_op {};
-
-template <binary_op_kind T, typename U>
-struct binary_apply_numerical_op<T, U, false>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		expression_ast res = binary_op<T>(u,v);
-		std::cerr << "Error near : " << res << " : expected numerical " << std::endl;
-		return res;
-	}
-};
-
-template <binary_op_kind T, typename U>
-struct binary_real_apply
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		std::cerr << "binary_real_apply not implemented for " << T << std::endl;
-		return empty();
-	}
-};
-
-template < typename U>
-struct binary_real_apply<ADD, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<U>( u.value + v.value );
-	}
-};
-
-template < typename U>
-struct binary_real_apply<SUB, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<U>( u.value - v.value );
-	}
-};
-
-template < typename U>
-struct binary_real_apply<MUL, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<U>( u.value * v.value );
-	}
-};
-
-template < typename U>
-struct binary_real_apply<DIV, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<U>( u.value / v.value );
-	}
-};
-
-template <binary_op_kind T, typename U>
-struct binary_apply_numerical_op<T, U, true>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return binary_real_apply<T, U>() (u,v);
-	}	
-};
-
-template <binary_op_kind T, typename U, bool is_bool> struct binary_apply_logical {};
-template <binary_op_kind T, typename U>
-struct binary_apply_logical<T, U, false> 
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		expression_ast res = binary_op<T>(u, v);
-		std::cerr << " Invalid expression near " << res << " expected bool ! " << std::endl;
-		return res;
-	}
-};
-
-template <typename U>
-struct binary_real_apply<AND, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<bool> (u.value && v.value);
-	}
-};
-
-template <typename U>
-struct binary_real_apply<OR, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<bool> (u.value && v.value);
-	}
-};
-
-template <binary_op_kind T, typename U>
-struct binary_apply_logical<T, U, true>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return binary_real_apply<T, U>() (u, v);
-	}
-};
-
-template <binary_op_kind T, typename U, bool is_comparable> struct binary_apply_relational {};
-template <binary_op_kind T, typename U>
-struct binary_apply_relational<T, U, false>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		expression_ast res = binary_op<T>(u, v);
-		std::cerr << " Invalid expression near " << res << " expected comparable ! " << std::endl;
-		return res;
-	}
-};
-
-template <typename U>
-struct binary_real_apply<LT, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<bool> (u.value < v.value);
-	}
-};
-
-template <typename U>
-struct binary_real_apply<LTE, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<bool> (u.value <= v.value);
-	}
-};
-
-template <typename U>
-struct binary_real_apply<GT, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<bool> (u.value > v.value);
-	}
-};
-
-template <typename U>
-struct binary_real_apply<GTE, U>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return Constant<bool> (u.value >= v.value);
-	}
-};
-
-template <binary_op_kind T, typename U>
-struct binary_apply_relational<T, U, true>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return binary_real_apply<T, U>() (u,v);
-	}
-};
-
-template <binary_op_kind T, typename U, int kind>
-struct binary_apply_dispatch
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		std::cerr << T << " has no kind identified " << std::endl;
-		return empty();
-	}
-};
-
-template <binary_op_kind T, typename U>
-struct binary_apply_dispatch<T, U, EQUALABLE>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return binary_apply_equalable<T, U>() (u, v);
-	}
-};
-
-template <binary_op_kind T , typename U>
-struct binary_apply_dispatch<T, U, NUMERICAL>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return binary_apply_numerical_op<T, U, is_numerical<U>::value> () (u, v);
-	}
-};
-
-template <binary_op_kind T, typename U>
-struct binary_apply_dispatch<T, U, LOGICAL>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return binary_apply_logical<T, U, is_bool<U>::value> () (u, v);
-	}
-};
-
-template <binary_op_kind T, typename U>
-struct binary_apply_dispatch<T, U, RELATIONAL>
-{
-	expression_ast operator() (const Constant<U>& u, const Constant<U>& v)
-	{
-		return binary_apply_relational< T, U, is_comparable<U>::value> () (u, v);
-	}
-};
-
-
-template <binary_op_kind T, typename U>
-struct binary_apply
-{
-	expression_ast operator () (const Constant<U>& u, const Constant<U>& v)
-	{
-		return binary_apply_dispatch< T, U, TypeOp<T>::value> () (u, v);
-	}
-};
-
-template <binary_op_kind T>
 struct ast_binary_reduce : public boost::static_visitor<expression_ast>
 {
+	binary_op_kind k;
+
+	ast_binary_reduce(binary_op_kind k_) : k(k_) {}
+
 	template <typename U, typename V>
 	expression_ast operator() ( const U& u, const V& v) const
 	{
-		return binary_op<T>(u, v);
+		return binary_op(k, u, v);
 	}
 
 	template <typename U, typename V>
 	expression_ast operator() (const Constant<U>& u, const Constant<V>& v) const
 	{
-		expression_ast res = binary_op<T>(u,v);
+		expression_ast res = binary_op(k, u,v);
 		std::cerr << "types mismatch near " << res << std::endl;
 		return res;
 	}
@@ -528,7 +320,44 @@ struct ast_binary_reduce : public boost::static_visitor<expression_ast>
 	template <typename U>
 	expression_ast operator() (const Constant<U>& u, const Constant<U>& v) const
 	{
-		return binary_apply<T, U>() (u,v);
+		expression_ast res = binary_op(k, u, v);
+
+		switch (k) {
+			case ADD:
+			case SUB:
+			case MUL:
+			case DIV:
+				if (! is_numerical<U>::value ) {
+					std::cerr << "Error near : " << res << " : expected numerical " << std::endl;
+					return res;
+				} else
+					return real_apply(k, u, v);
+
+			case AND:
+			case OR:
+				if (! is_bool<U>::value ) {
+					std::cerr << " Invalid expression near " << res << " expected bool ! " << std::endl;
+					return res;
+				} else
+					return real_apply(k, u, v);
+
+			case GT:
+			case GTE:
+			case LT:
+			case LTE:
+				if (! is_comparable<U>::value ) {
+					std::cerr << " Invalid expression near " << res << " expected comparable ! " << std::endl;
+					return res;
+				}
+					return real_apply(k, u, v);
+
+			case EQ:
+			case NEQ:
+					return real_apply(k, u, v);
+			default:
+					assert(false);
+					return res;
+		}
 	}
 };
 
@@ -559,20 +388,18 @@ struct ast_reduce : public boost::static_visitor<expression_ast>
 		return f_res;
 	}
 
-	template<binary_op_kind T>
-	expression_ast operator() (const binary_op<T>& b) const
+	expression_ast operator() (const binary_op& b) const
 	{
 		expression_ast left, right;
 		left = boost::apply_visitor(ast_reduce(), b.left.expr);
 		right = boost::apply_visitor(ast_reduce(), b.right.expr);
-		return boost::apply_visitor(ast_binary_reduce<T>(), left.expr, right.expr);
+		return boost::apply_visitor(ast_binary_reduce(b.op), left.expr, right.expr);
 	}
 
-	template<unary_op_kind T>
-	expression_ast operator() (const unary_op<T>& u) const
+	expression_ast operator() (const unary_op& u) const
 	{
 		expression_ast subject = boost::apply_visitor(ast_reduce(), u.subject.expr);
-		return boost::apply_visitor(ast_unary_reduce<T>(), subject.expr);
+		return boost::apply_visitor(ast_unary_reduce(u.op), subject.expr);
 	}
 };
 

@@ -111,8 +111,7 @@ namespace {
 			return oss.str();
 		}
 
-		template <binary_op_kind T>
-		std::string operator() (const binary_op<T> & op) const
+		std::string operator() (const binary_op & op) const
 		{
 			std::ostringstream oss;
 			oss << "( ";
@@ -127,8 +126,7 @@ namespace {
 			return oss.str();
 		}
 
-		template <unary_op_kind T>
-		std::string operator() (const unary_op<T>& op) const
+		std::string operator() (const unary_op& op) const
 		{
 			std::ostringstream oss;
 			oss << "( ";

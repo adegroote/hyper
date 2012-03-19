@@ -74,18 +74,16 @@ struct remap_symbol_vis : public boost::static_visitor<expression_ast>
 		return res;
 	}
 
-	template <unary_op_kind K>
-	expression_ast operator() (const unary_op<K>& op) const
+	expression_ast operator() (const unary_op& op) const
 	{
-		unary_op<K> res(op);
+		unary_op res(op);
 		res.subject = boost::apply_visitor(*this, op.subject.expr);
 		return res;
 	}
 
-	template <binary_op_kind K>
-	expression_ast operator() (const binary_op<K>& op) const
+	expression_ast operator() (const binary_op& op) const
 	{
-		binary_op<K> res(op);
+		binary_op res(op);
 		res.left = boost::apply_visitor(*this, op.left.expr);
 		res.right = boost::apply_visitor(*this, op.right.expr);
 		return res;
@@ -203,16 +201,14 @@ struct adapt_expression_to_context_helper : public boost::static_visitor<express
 		return res;
 	}
 
-	template <unary_op_kind K>
-	expression_ast operator() (const unary_op<K>& op) const {
-		unary_op<K> res(op);
+	expression_ast operator() (const unary_op& op) const {
+		unary_op res(op);
 		res.subject = boost::apply_visitor(*this, op.subject.expr);
 		return res;
 	}
 
-	template <binary_op_kind K>
-	expression_ast operator() (const binary_op<K>& op) const {
-		binary_op<K> res(op);
+	expression_ast operator() (const binary_op& op) const {
+		binary_op res(op);
 		res.left = boost::apply_visitor(*this, op.left.expr);
 		res.right = boost::apply_visitor(*this, op.right.expr);
 		return res;

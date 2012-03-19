@@ -1,5 +1,3 @@
-#include <hyperConfig.hh>
-
 #include <sstream>
 
 #include <compiler/types_parser.hh>

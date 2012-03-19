@@ -7,59 +7,6 @@
 using namespace hyper::compiler;
 
 /*
- * Classify the binary_op into two kind
- *   - logical, returns a bool
- *   - numerical, the return type depends on the left operand (left and right
- *   operand must be the same)
- *   XXX : use "typeclass" to check that the operation has "sense"
- */
-
-enum kind_of_op { NONE, NUMERICAL, LOGICAL};
-template <binary_op_kind T> struct TypeOp { enum { value = NONE }; };
-template <> struct TypeOp<ADD> { enum { value = NUMERICAL }; };
-template <> struct TypeOp<SUB> { enum { value = NUMERICAL }; };
-template <> struct TypeOp<MUL> { enum { value = NUMERICAL }; };
-template <> struct TypeOp<DIV> { enum { value = NUMERICAL }; };
-template <> struct TypeOp<AND> { enum { value = LOGICAL }; };
-template <> struct TypeOp<OR> { enum { value = LOGICAL }; };
-template <> struct TypeOp<GT> { enum { value = LOGICAL }; };
-template <> struct TypeOp<GTE> { enum { value = LOGICAL }; };
-template <> struct TypeOp<LT> { enum { value = LOGICAL }; };
-template <> struct TypeOp<LTE> { enum { value = LOGICAL }; };
-template <> struct TypeOp<EQ> { enum { value = LOGICAL }; };
-template <> struct TypeOp<NEQ> { enum { value = LOGICAL }; };
-
-template <binary_op_kind T, int k>
-struct binary_type {
-	const universe& u;
-	boost::optional<typeId> id;	
-	
-	binary_type(const universe& u_, boost::optional<typeId> id_) : u(u_), id(id_) {};
-
-	boost::optional<typeId> operator() () const { return boost::none; };
-};
-
-template <binary_op_kind T>
-struct binary_type<T, NUMERICAL> {
-	const universe& u;
-	boost::optional<typeId> id;	
-	
-	binary_type(const universe& u_, boost::optional<typeId> id_) : u(u_), id(id_) {};
-
-	boost::optional<typeId> operator() () const { return id; };
-};
-
-template <binary_op_kind T>
-struct binary_type<T, LOGICAL> {
-	const universe& u;
-	boost::optional<typeId> id;	
-	
-	binary_type(const universe& u_, boost::optional<typeId> id_) : u(u_), id(id_) {};
-
-	boost::optional<typeId> operator() () const { return u.types().getId("bool").second; };
-};
-
-/*
  * Compute the type of an expression
  * We assume that the expression is valid
  */
@@ -128,14 +75,30 @@ struct ast_type : public boost::static_visitor<boost::optional<typeId> > {
 		return boost::apply_visitor(ast_type(ab, u, local_context), e.expr);
 	}
 
-	template<binary_op_kind T>
-	boost::optional<typeId> operator() (const binary_op<T>& b) const
+	boost::optional<typeId> operator() (const binary_op& b) const
 	{
 		boost::optional<typeId> leftId = boost::apply_visitor(ast_type(ab, u, local_context), b.left.expr);
-		return binary_type<T, TypeOp<T>::value> (u, leftId) ();
+		switch(b.op) {
+			case ADD:
+			case SUB:
+			case MUL:
+			case DIV:
+				return leftId;
+			case AND:
+			case OR:
+			case GT:
+			case GTE:
+			case LT:
+			case LTE:
+			case EQ:
+			case NEQ:
+				return u.types().getId("bool").second; 
+			default:
+				return boost::none;
+		}
 	}
 
-	boost::optional<typeId> operator() (const unary_op<NEG>& op) const
+	boost::optional<typeId> operator() (const unary_op& op) const
 	{
 		return boost::apply_visitor(ast_type(ab, u, local_context), op.subject.expr);
 	}

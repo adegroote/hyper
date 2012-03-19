@@ -56,15 +56,13 @@ namespace {
 				boost::apply_visitor(extract_syms_helper(syms), f.args[i].expr);
 		}
 	
-		template <binary_op_kind T>
-		void  operator() (const binary_op<T> & op) const
+		void  operator() (const binary_op& op) const
 		{
 			boost::apply_visitor(extract_syms_helper(syms), op.left.expr);
 			boost::apply_visitor(extract_syms_helper(syms), op.right.expr); 
 		}
 	
-		template <unary_op_kind T>
-		void operator() (const unary_op<T>& op) const
+		void operator() (const unary_op& op) const
 		{
 			boost::apply_visitor(extract_syms_helper(syms), op.subject.expr);
 		}
