@@ -138,7 +138,7 @@ namespace hyper {
 				typename boost::mpl::at<seqReturn, boost::mpl::int_<i> >::type
 				at_c() const
 				{
-					return remote.at_c<i>();
+					return remote.template at_c<i>();
 				}
 		};
 
@@ -194,7 +194,7 @@ namespace hyper {
 				typename boost::mpl::at<seqReturn, boost::mpl::int_<i> >::type
 				at_c() const
 				{
-					return remote_update_status.at_c<i>();
+					return remote_update_status.template at_c<i>();
 				}
 		};
 	}
