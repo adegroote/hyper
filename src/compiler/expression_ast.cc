@@ -174,13 +174,13 @@ template <> struct is_comparable<int> { enum { value = true}; };
 template <> struct is_comparable<double> { enum { value = true}; };
 template <> struct is_comparable<std::string> { enum { value = true}; };
 
-expression_ast unary_apply(unary_op_kind k, const Constant<bool>& u)
+expression_ast unary_apply(unary_op_kind , const Constant<bool>& )
 {
 	assert(false);
 	return empty();
 }
 
-expression_ast unary_apply(unary_op_kind k, const Constant<std::string>& u)
+expression_ast unary_apply(unary_op_kind , const Constant<std::string>& )
 {
 	assert(false);
 	return empty();
@@ -195,6 +195,7 @@ expression_ast unary_apply(unary_op_kind k, const Constant<U>& u)
 		case NEG:
 			return Constant<U> (-u.value);
 	}
+	return empty();
 }
 
 struct ast_unary_reduce : public boost::static_visitor<expression_ast>
@@ -225,6 +226,7 @@ struct ast_unary_reduce : public boost::static_visitor<expression_ast>
 				assert(false);
 				return res;
 		}
+		return res; // calm compiler
 	}
 };
 

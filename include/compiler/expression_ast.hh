@@ -64,7 +64,7 @@ namespace hyper {
 			 * variant, not sure it is really part of the interface */
 			template <typename Expr>
 			expression_ast(const Expr& expr,
-						   typename boost::enable_if<boost::mpl::contains<type::types, Expr> >::type* dummy = 0) 
+						   typename boost::enable_if<boost::mpl::contains<type::types, Expr> >::type* = 0) 
 				: expr(expr) {}
 
 			expression_ast(type expr) : expr(expr) {}

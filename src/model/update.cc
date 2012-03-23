@@ -15,6 +15,7 @@ namespace {
 								 hyper::model::updater::cb_type cb)
 	{
 		switch (s) {
+			case hyper::network::request_constraint_answer::INIT:
 			case hyper::network::request_constraint_answer::RUNNING:
 			case hyper::network::request_constraint_answer::PAUSED:
 			case hyper::network::request_constraint_answer::TEMP_FAILURE:

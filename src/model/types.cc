@@ -9,6 +9,7 @@ namespace hyper {
 		template<class Archive>
 		void identifier::serialize(Archive & ar, const unsigned int version)
 		{
+			(void) version;
 			ar & first & second;
 		}
 

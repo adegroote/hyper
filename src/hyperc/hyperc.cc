@@ -178,7 +178,7 @@ struct generate_recipe
 					depends& deps,
 					bool& success,
 					const recipe_context_decl& context) :
-		u(u_), ab(u_.get_ability(abilityName)), tList(u.types()), 
+		u(u_), tList(u.types()), ab(u_.get_ability(abilityName)),  
 		t(ab.get_task(taskName)), deps(deps),
 		success(success), context(context), directoryName(directoryName_) 
 	{}
@@ -487,7 +487,6 @@ int main(int argc, char** argv)
 		u.dump_ability_opaque_types_def(baseUserName, abilityName);
 	}
 
-	bool define_func = false;
 	{
 		std::string fileName = directoryName + "/funcs.hh";
 		std::ofstream oss(fileName.c_str());
@@ -495,12 +494,10 @@ int main(int argc, char** argv)
 		size_t tagged_funcs = u.dump_ability_tagged_functions_proto(baseUserName, abilityName);
 		if ((basic_funcs + tagged_funcs)  == 0) {
 			remove(fileName);
-			define_func = false;
 		} else {
 			std::string directoryNameImpl = baseUserName + "/funcs/";
 			create_directories(directoryNameImpl);
 			u.dump_ability_functions_impl(directoryNameImpl, abilityName);
-			define_func = true;
 			{
 				std::string fileName = directoryName + "/import.hh";
 				std::ofstream oss(fileName.c_str());

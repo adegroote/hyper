@@ -4,7 +4,7 @@
 
 using namespace hyper::model;
 
-void dont_care(const boost::system::error_code& e)
+void dont_care(const boost::system::error_code&)
 {}
 
 void ability_test::handle_send_constraint(const boost::system::error_code& e,

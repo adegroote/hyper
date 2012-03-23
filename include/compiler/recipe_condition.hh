@@ -34,7 +34,7 @@ namespace hyper {
 
 			template <typename Expr>
 			recipe_condition(const Expr& expr,
-							  typename boost::enable_if<boost::mpl::contains<type::types, Expr> >::type* dummy = 0) 
+							  typename boost::enable_if<boost::mpl::contains<type::types, Expr> >::type* = 0) 
 				: expr(expr) {}
 
 			recipe_condition(const type& expr) : expr(expr) {}

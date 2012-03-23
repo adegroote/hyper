@@ -71,7 +71,7 @@ namespace hyper {
 				 * care about the lifetime of it
 				 */
 				compute_while_expression(ability& a, abortable_function_base* cond, bool &res, abortable_computation* fun):
-					a(a), fun_cond_ptr(cond), res_condition(res), fun_body_ptr(fun),
+					a(a), fun_cond_ptr(cond),  fun_body_ptr(fun), res_condition(res),
 					running(false), testing(false), must_interrupt(false), must_pause(false)
 				{}
 

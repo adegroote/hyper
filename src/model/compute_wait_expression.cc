@@ -10,7 +10,7 @@ namespace hyper {
 				abortable_function_base* fun_ptr,
 				bool &res) :
 			fun_ptr(fun_ptr), io_service_(io_s), delay_(delay), deadline_(io_s),
-			res(res), user_ask_abort(false), running(false), must_pause(false), waiting(false)
+			res(res), user_ask_abort(false), must_pause(false), running(false), waiting(false)
 		{}
 
 		bool compute_wait_expression::handle_error(const boost::system::error_code& e, cb_type cb)

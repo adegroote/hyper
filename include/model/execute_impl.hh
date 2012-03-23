@@ -58,8 +58,8 @@ namespace hyper {
 			template <typename T>
 			struct evaluate_logic_expression : public boost::static_visitor<void>
 			{
-				model::ability& a;
 				boost::asio::io_service& io_s; 
+				model::ability& a;
 				T& res;
 				fun_cb cb;
 				

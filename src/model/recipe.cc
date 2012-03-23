@@ -22,8 +22,8 @@ namespace {
 
 recipe::recipe(const std::string& name, ability& a, task& t, 
 			   boost::optional<logic::expression> error):
-	name(name), a(a), t(t), computation(0), is_running(false),
-	must_interrupt(false), must_pause(false), expected_error_(error)
+	name(name), a(a), t(t), expected_error_(error), is_running(false),
+	must_pause(false), must_interrupt(false), computation(0) 
 {}
 
 void recipe::handle_execute(const boost::system::error_code& e)

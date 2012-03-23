@@ -237,7 +237,7 @@ namespace hyper {
 						init(endpoint);
 					}
 
-					server(int port, 
+					server(short unsigned int port, 
 						   const Answer& ans, boost::asio::io_service& io_s) :
 						io_service_(io_s),
 						acceptor_(io_service_),

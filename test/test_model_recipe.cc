@@ -29,9 +29,9 @@ namespace {
 			hyper::model::task(a, "my_task") {}
 
 		// uselesss for this test, only need the error_context
-		void async_evaluate_preconditions(hyper::model::condition_execution_callback cb)
+		void async_evaluate_preconditions(hyper::model::condition_execution_callback )
 		{}
-		void async_evaluate_postconditions(hyper::model::condition_execution_callback cb)
+		void async_evaluate_postconditions(hyper::model::condition_execution_callback )
 		{}
 		bool has_postconditions() const { return false; } 
 	};

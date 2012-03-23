@@ -9,7 +9,7 @@
 #include <network/server_tcp_impl.hh>
 
 namespace hyper { namespace model {
-	void handle_constraint_answer(hyper::model::ability &a, 
+	void handle_constraint_answer(hyper::model::ability &, 
 			const boost::system::error_code&, 
 			network::request_constraint_answer* ans) 
 	{
@@ -298,7 +298,7 @@ namespace hyper {
 			network::ping_process ping;
 			model::logic_layer logic;
 
-			ability_impl(ability& a_, int level) :
+			ability_impl(ability& a_):
 				a(a_), 
 				vis(a_),
 				serv(vis, a.io_s),
@@ -324,7 +324,7 @@ namespace hyper {
 			updater(*this),
 			setter(*this),
 			name(name_),
-			impl(new ability_impl(*this, level))
+			impl(new ability_impl(*this))
 		{};
 
 		void ability::start()

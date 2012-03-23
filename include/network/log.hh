@@ -104,7 +104,7 @@ namespace hyper {
 					typedef char	char_type;
 					typedef io::sink_tag category;
 
-					std::streamsize write(const char* s, std::streamsize n)
+					std::streamsize write(const char*, std::streamsize n)
 					{
 						return n;
 					}

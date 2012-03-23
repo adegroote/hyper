@@ -130,7 +130,7 @@ namespace {
 		unified_helper(const logic_var_db& db) : db(db) {}
 
 		template <typename T, typename U>
-		tribool operator() (const T& t, const U& u) const {
+		tribool operator() (const T&, const U&) const {
 			return indeterminate;
 		}
 

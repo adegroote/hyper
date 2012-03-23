@@ -42,7 +42,7 @@ namespace hyper {
 
 				template <typename U>
 				void operator() (const logic::Constant<U>& c, 
-								 typename boost::enable_if<boost::is_same<U, T> >::type* dummy = 0) const 
+								 typename boost::enable_if<boost::is_same<U, T> >::type* = 0) const 
 				{
 					var = c.value;
 					cb(boost::system::error_code());

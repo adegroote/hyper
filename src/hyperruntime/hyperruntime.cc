@@ -60,16 +60,18 @@ namespace details {
 
 	typedef hyper::network::actor_client_database<runtime_actor> client_db;
 
-	void handle_new_agent_write(const boost::system::error_code& e,
+	void handle_new_agent_write(const boost::system::error_code&,
 							    boost::shared_ptr<network::inform_new_agent> ptr)
 	{
 		// let the system release the last reference on ptr
+		(void) ptr;
 	}
 
-	void handle_list_agents(const boost::system::error_code& e,
+	void handle_list_agents(const boost::system::error_code&,
 							boost::shared_ptr<network::list_agents> ptr)
 	{
 		// let the system release the last reference on ptr
+		(void) ptr;
 	}
 
 	struct broadcast_inform  {
@@ -213,6 +215,7 @@ namespace details {
 		{
 			// do nothing, decrement ptr ref, so it will be released correctly
 			// when all write are finished
+			(void) ptr;
 		}
 
 		struct inform_survivor {

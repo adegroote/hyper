@@ -60,9 +60,9 @@ template <typename T>
 struct correct_type : boost::static_visitor<bool>
 {
 	template <typename U>
-	bool operator() (const U& u) const { return false; }
+	bool operator() (const U&) const { return false; }
 
-	bool operator() (const T& t) const { return true; }
+	bool operator() (const T&) const { return true; }
 };
 
 template <typename T>

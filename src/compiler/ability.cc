@@ -374,7 +374,7 @@ ability::dump(std::ostream& oss, const universe& u) const
 }
 
 std::set<std::string>
-ability::get_type_depends(const typeList& tList, const universe& u) const
+ability::get_type_depends(const typeList& tList, const universe&) const
 {
 	std::set<std::string> type_depends;
 	compute_type_depends type_deps(type_depends, tList);

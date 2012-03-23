@@ -58,7 +58,7 @@ namespace boost {
 		template <class Archive>
 		void serialize(Archive& ar, hyper::logic::empty& e, const unsigned int version)
 		{
-			(void) version; (void) e;
+			(void) version; (void) e; (void) ar;
 		}
 
 		template <typename Archive, typename T>

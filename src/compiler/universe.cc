@@ -675,7 +675,7 @@ universe::dump_ability_functions_impl(const std::string& directoryName, const st
 }
 
 
-struct truth { bool operator() (const functionDef& fun) { return true; }};
+struct truth { bool operator() (const functionDef&) { return true; }};
 
 struct extract_tags {
 	std::set<std::string>& tag_list;

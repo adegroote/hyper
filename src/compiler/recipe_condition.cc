@@ -13,7 +13,7 @@ namespace {
 		valid_helper(const ability& a, const universe& u) : a(a), u(u) {}
 
 		template <typename T>
-		bool operator() (const T& t) const { return false; }
+		bool operator() (const T&) const { return false; }
 
 		bool operator() (const last_error& e) const {
 			return e.error.is_valid_predicate(a, u, boost::none);

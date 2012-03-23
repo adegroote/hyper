@@ -70,7 +70,7 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const recipe_expres
 struct extract_destination : public boost::static_visitor<boost::optional<std::string> >
 {
 	template <typename T>
-	boost::optional<std::string> operator() (const T& t) const { return boost::none;}
+	boost::optional<std::string> operator() (const T& ) const { return boost::none;}
 
 	boost::optional<std::string> operator() (const std::string& sym) const
 	{

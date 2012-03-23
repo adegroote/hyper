@@ -22,7 +22,7 @@ namespace hyper {
 			generate_condition(std::ostream& oss_, const std::string& base_,
 							   const ability& a, 
 							   boost::optional<const universe&> u = boost::none) : 
-				oss(oss_), base(base_), counter(0), a(a), u(u) {}
+				oss(oss_), base(base_), a(a), u(u), counter(0){}
 
 			void operator() (const expression_ast& e) const;
 		};

@@ -27,8 +27,8 @@ namespace hyper {
 		template <typename Actor>
 		struct proxy_visitor : public boost::static_visitor<proxy_output_variant>
 		{
-			proxy_serializer& s;
 			Actor &actor;
+			proxy_serializer& s;
 
 			proxy_visitor(Actor& actor_, proxy_serializer& s_) : 
 				actor(actor_), s(s_) {};

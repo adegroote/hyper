@@ -28,10 +28,9 @@ namespace {
 			const std::string* s1 = boost::get<std::string>(& first.expr);
 			const std::string* s2 = boost::get<std::string>(& second.expr);
 
-			/* by construction b1 ^ b2 == true, see src/compiler/recipe.cc */
 			bool b1 = (s1 && compiler::scope::get_scope(*s1) == name);
-			bool b2 = (s2 && compiler::scope::get_scope(*s2) == name);
 
+			/* by construction b1 ^ b2 == true, see src/compiler/recipe.cc */
 			if (b1) 
 				return std::make_pair(*s1, second);
 			else

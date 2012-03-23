@@ -423,9 +423,8 @@ namespace hyper {
 					(void) socket;
 				};
 
-				void operator() (msg_variant& m, size_t size, boost::tuple<Handler> handler) 
+				void operator() (msg_variant&, size_t, boost::tuple<Handler> handler) 
 				{
-					(void) m;
 					std::cerr << "Not acceptable msg : " << index << std::endl;
 					boost::system::error_code error(boost::asio::error::invalid_argument);
 					boost::get<0>(handler)(error);

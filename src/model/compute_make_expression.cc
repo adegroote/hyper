@@ -8,8 +8,8 @@ namespace hyper {
 			ability& a, const std::string& dst, const logic::function_call& f, 
 			const network::request_constraint2::unification_list& unify_list,
 			bool& res) : 
-			a(a), dst(dst), f(f),
-			res(res), id(boost::none), running(false), must_pause(false) 
+			a(a), res(res), dst(dst), f(f),
+			id(boost::none), running(false), must_pause(false) 
 		{
 			rqst.constraint =  f;
 			rqst.repeat = false;
@@ -100,11 +100,13 @@ namespace hyper {
 		void compute_make_expression::resume() 
 		{
 			must_pause = false;
-			if (!id)
-				if (running) 
+			if (!id) {
+				if (running) {
 					return compute(cb_);
-				else
+				} else {
 					return;
+				}
+			}
 
 			resume_msg.src = a.name;
 			resume_msg.id = *id;

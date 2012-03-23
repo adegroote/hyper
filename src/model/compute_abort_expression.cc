@@ -6,7 +6,7 @@ namespace hyper {
 	namespace model {
 		compute_abort_expression::compute_abort_expression(
 			ability& a, const model::identifier& id,
-			boost::mpl::void_& res) : 
+			boost::mpl::void_& ) : 
 			a(a), id(id) {}
 
 		void compute_abort_expression::wait_terminaison(cb_type cb) {

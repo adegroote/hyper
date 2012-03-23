@@ -77,7 +77,7 @@ namespace {
 		{}
 
 		template <typename T>
-		void operator() (const T& t) const {}
+		void operator() (const T& ) const {}
 
 		void operator() (const expression_ast& e) const 
 		{

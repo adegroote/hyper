@@ -199,7 +199,7 @@ namespace {
 		}
 
 		template <typename U, typename V>
-		bool operator() ( const U& u, const V& v) const
+		bool operator() ( const U&, const V&) const
 		{
 			return false;
 		}
