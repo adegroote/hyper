@@ -28,7 +28,7 @@ namespace hyper {
 				bool must_pause;
 				cb_type cb_;
 
-				void handle_end_computation(const boost::system::error_code& e,  network::identifier, cb_type);
+				void handle_end_computation(const boost::system::error_code& e,  cb_type);
 				void handle_write(const boost::system::error_code&);
 				void end(cb_type, const boost::system::error_code&);
 

@@ -27,7 +27,6 @@ namespace hyper {
 
 		void compute_make_expression::handle_end_computation(
 				const boost::system::error_code& e,
-				network::identifier id,
 				cb_type cb)
 		{
 			if (e) 
@@ -62,7 +61,7 @@ namespace hyper {
 			
 			id = a.actor->client_db[dst].async_request(rqst, ans, 
 					boost::bind(&compute_make_expression::handle_end_computation,
-								this, boost::asio::placeholders::error, _2, cb));
+								this, boost::asio::placeholders::error, cb));
 		}
 
 		void compute_make_expression::handle_write(const boost::system::error_code&)
