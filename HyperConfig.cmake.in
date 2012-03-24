@@ -3,14 +3,23 @@
 #
 #	* Do not modify !!
 # 
-#	- HYPER_LIBS	: the list of hyper librairies
+#	- HYPERC		: the path to the hyper compiler
+#	- HYPER_LIBS	: the list of hyper librairies 
 #   - HYPER_LIB_DIR : the directory where lib files are
+#   - HYPER_LIBRARIES : the list of hyper librairies (full path)
 #   - HYPER_INCLUDE_DIRS : the Hyper include directories
 # =============================================================================
+
+set(HYPERC @CMAKE_INSTALL_PREFIX@/bin/hyperc)
 
 set(HYPER_LIBS hyper_compiler;hyper_logic;hyper_model;hyper_network)
 
 set(HYPER_LIB_DIR @CMAKE_INSTALL_PREFIX@/lib)
+
+foreach(lib ${HYPER_LIBS})
+	find_library(${lib}_LIBRARY ${lib} ${HYPER_LIB_DIR})
+	list(APPEND HYPER_LIBRARIES ${${lib}_LIBRARY})
+endforeach(lib)
 
 set(HYPER_INCLUDE_DIRS @CMAKE_INSTALL_PREFIX@/include/hyper)
 

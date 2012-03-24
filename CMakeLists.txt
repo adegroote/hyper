@@ -96,6 +96,7 @@ install(DIRECTORY include/
 configure_file(
 	${CMAKE_CURRENT_SOURCE_DIR}/HyperConfig.cmake.in
 	${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake
+	@ONLY
 	)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/HyperConfig.cmake share/HyperNode.cmake config/FindBoost.cmake
