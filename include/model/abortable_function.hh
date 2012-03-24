@@ -6,6 +6,7 @@
 #include <boost/bind.hpp>
 #include <boost/function/function0.hpp>
 #include <boost/function/function1.hpp>
+#include <boost/optional.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -100,8 +101,13 @@ namespace hyper {
 
 				computation_seq seq;
 				cb_type cb;
+				/* index represents the currently executing primitive */
 				size_t index;
-				ssize_t error_index;
+
+				/* If the computation fails, error_index contains the index of
+				 * the primitive which fails.  Otherwise, it is none
+				 */
+				boost::optional<size_t> error_index;
 
 				void handle_computation(const boost::system::error_code& e, size_t index);
 

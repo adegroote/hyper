@@ -115,9 +115,20 @@ namespace hyper {
 				return;
 			}
 
+			/* 
+			 * If we get a temporary failure, we need to pause each primitive
+			 * between the currently executed one (represented by index  and
+			 * the one which fails (represented by idx). If we get the continue
+			 * message, we need to do the contrary.  In both case, don't care
+			 * about idx one.  pause() and resume() must do nothing if the
+			 * action has already terminated
+			 *
+			 * idx is guarantee to be <= to index so (index - idx) >= 0
+			 * so the size_t is valid 
+			 */
 			if (e == make_error_code(exec_layer_error::temporary_failure)) {
-				for (ssize_t i = index; i > idx; --i)
-					seq[i]->pause();
+				for (size_t i = 0; i < (size_t)(index - idx); ++i)
+					seq[index - i]->pause();
 				return;
 			}
 
@@ -131,6 +142,7 @@ namespace hyper {
 				error_index = idx;
 				terminaison(e);
 			} else {
+				/* just execute the next instruction, if any */
 				if (index+1 == seq.size())
 					return terminaison(boost::system::error_code());
 				else {
@@ -151,7 +163,7 @@ namespace hyper {
 
 			cb = cb_;
 			index = 0;
-			error_index = -1;
+			error_index = boost::none;
 			wait_terminaison = false;
 
 			if (must_pause)
@@ -161,8 +173,8 @@ namespace hyper {
 		}
 
 		logic::expression abortable_computation::error() const {
-			assert(error_index != -1);
-			return seq[error_index]->error();
+			assert(error_index);
+			return seq[*error_index]->error();
 		}
 
 		void abortable_computation::abort() 
