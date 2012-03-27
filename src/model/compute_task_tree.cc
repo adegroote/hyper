@@ -69,7 +69,7 @@ namespace {
 	{
 		bool operator()(bool b, const cond_logic_evaluation& cond)
 		{
-			return (b && cond.all_tasks_evaluated());
+			return (b && cond.all_tasks_executed());
 		}
 	};
 
