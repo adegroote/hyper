@@ -56,6 +56,18 @@ namespace hyper {
 			}
 
 			template <typename T>
+			void handle_local_update(const boost::system::error_code& e, model::ability& a, T& res, std::string s, fun_cb cb)
+			{
+				if (e)
+					return cb(e);
+				res = a.proxy.eval<typename T::value_type>(s);
+				if (res)
+					cb(boost::system::error_code());
+				else
+					cb(boost::asio::error::invalid_argument);
+			}
+
+			template <typename T>
 			struct evaluate_logic_expression : public boost::static_visitor<void>
 			{
 				boost::asio::io_service& io_s; 
@@ -79,12 +91,24 @@ namespace hyper {
 				void operator() (const std::string& s) const
 				{
 					if (!compiler::scope::is_scoped_identifier(s)) {
-						res = a.proxy.eval<typename T::value_type>(s);
+
+						fun_cb local_cb = boost::bind(
+								&handle_local_update<T>,
+								boost::asio::placeholders::error, 
+								boost::ref(a),
+								boost::ref(res), s, cb);
+						a.updater.async_update(s, 0, a.name, local_cb);
 					} else {
 						std::pair<std::string, std::string> p =
 							compiler::scope::decompose(s);
 						if (p.first == a.name) {
-							res = a.proxy.eval<typename T::value_type>(p.second);
+
+							fun_cb local_cb = boost::bind(
+									&handle_local_update<T>,
+									boost::asio::placeholders::error, 
+									boost::ref(a), boost::ref(res), p.second, cb);
+
+							a.updater.async_update(p.second, 0, a.name, local_cb);
 						} else {
 							remote_proxy* proxy (new remote_proxy(a));
 
@@ -96,10 +120,6 @@ namespace hyper {
 							return proxy->async_get(p.first, p.second, res, local_cb);
 						}
 					}
-					if (res)
-						cb(boost::system::error_code());
-					else
-						cb(boost::asio::error::invalid_argument);
 				}
 
 				void operator() (const logic::function_call& f) const
