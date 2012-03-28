@@ -231,6 +231,27 @@ struct add_proxy_symbol
 	}
 };
 
+struct add_private_symbol
+{
+	std::ostream& oss;
+
+	add_private_symbol(std::ostream& oss_) : oss(oss_) {};
+
+	void operator () (const std::pair<std::string, symbol>& p) const
+	{
+		std::string updater = 
+			boost::apply_visitor(compute_updater(), p.second.initializer.expr);
+		oss << "\t\t\t\t\tupdater.add(" << quoted_string(p.second.name);
+		if (updater == "") 
+			oss << ");" << std::endl;
+		else 
+			oss << ", " << updater << ");\n";
+		oss << "\t\t\t\t\tproxy.register_variable(";
+		oss << quoted_string(p.second.name) << ", " << p.second.name;
+		oss << ");\n";
+	}
+};
+
 struct add_setter_symbol
 {
 	std::ostream& oss;
@@ -366,6 +387,7 @@ ability::dump(std::ostream& oss, const universe& u) const
 	oss << "{\n" ;
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy_symbol(oss));
 	std::for_each(readable_list.begin(), readable_list.end(), add_proxy_symbol(oss));
+	std::for_each(private_list.begin(), private_list.end(), add_private_symbol(oss));
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_setter_symbol(oss));
 	std::for_each(import_depends.begin(), import_depends.end(), add_import_funcs(oss));
 	std::for_each(tasks.begin(), tasks.end(), add_task_declaration(oss));
