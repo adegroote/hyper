@@ -127,6 +127,12 @@ namespace hyper {
 			CHECK_INTERRUPT
 
 			if (res) {
+				/* 
+				 * remove the not evaluated task tree, if it fails, we just
+				 * recompute it without the offending task, so it won't change
+				 * too much the behaviour 
+				 */
+				cond.tasks.erase(cond.tasks.begin() + 1, cond.tasks.end());
 				return handler(res);
 			} else {
 				cond.tasks.pop_front();
