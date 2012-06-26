@@ -22,7 +22,12 @@ namespace hyper {
 				bool bg;
 				parse_options(argc, argv, name, bg, level);
 				// XXX NON PORTABLE IMPLEMENTATION
-				if (bg) { daemon(1, 1); }
+				if (bg) { 
+					if (daemon(1, 1) < 0) 
+						throw boost::system::system_error(
+								boost::system::error_code(errno, boost::system::system_category()));
+								  
+				}
 				Agent agent(level);
 				agent.run();
 			} catch (boost::system::system_error& e) {
