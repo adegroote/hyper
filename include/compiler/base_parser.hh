@@ -151,7 +151,7 @@ namespace hyper {
 
 			constant_grammar() : constant_grammar::base_type(start)
 			{
-				qi::real_parser<double, qi::strict_ureal_policies<double> > strict_double;
+				qi::real_parser<double, qi::strict_real_policies<double> > strict_double;
 				using namespace qi::labels;
 				using phoenix::at_c;
 
