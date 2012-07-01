@@ -486,6 +486,11 @@ struct constraint_domain_helper : public boost::static_visitor<std::string>
 	template <typename T>
 	std::string operator() (const T&) const { return ""; }
 
+	std::string operator() (const let_decl& l) const
+	{
+		return boost::apply_visitor(*this, l.bounded.expr);
+	}
+
 	template <recipe_op_kind kind>
 	std::string operator() (const recipe_op<kind>&r ) const
 	{
