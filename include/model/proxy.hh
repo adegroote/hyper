@@ -4,6 +4,7 @@
 #include <network/msg_proxy.hh>
 #include <network/proxy_container.hh>
 #include <network/utils.hh>
+#include <network/log_level.hh>
 
 #include <boost/asio/placeholders.hpp>
 #include <boost/array.hpp>
@@ -109,6 +110,23 @@ namespace hyper {
 					}
 				};
 
+				template <typename tupleT>
+				struct remote_values_is_valid
+				{
+					tupleT& t;
+					bool &res;
+
+					remote_values_is_valid(tupleT& t, bool& res) :
+						t(t), res(res) 
+					{}
+
+					template <typename U>
+					void operator() (U)
+					{
+						res = res && boost::get<U::value>(t).value;
+					}
+				};
+
 				template <typename tupleT, typename Handler>
 				struct remote_value_async_get;
 			}
@@ -152,6 +170,14 @@ namespace hyper {
 					return res;
 				}
 
+				bool is_valid()
+				{
+					bool res = true;
+					details::remote_values_is_valid<tupleT> is_valid_(values, res);
+					boost::mpl::for_each<range> (is_valid_);
+					return res;
+				}
+
 				template <size_t i>
 				typename boost::mpl::at<seqReturn, boost::mpl::int_<i> >::type at_c() const
 				{
@@ -182,10 +208,12 @@ namespace hyper {
 								    T& output,
 									boost::tuple<Handler> handler)
 					{
-						if (e || ans.success == false ) 
+						if (e || ans.success == false ) {
 							output = boost::none;
-						else
+							a.logger(WARNING) << "Failed to get the value of " << ans.var_name << std::endl;
+						} else {
 							output = network::deserialize_value<typename T::value_type>(ans.value);
+						}
 
 						clean_up(id);
 						boost::get<0>(handler)(e);
@@ -196,8 +224,13 @@ namespace hyper {
 									remote_values<vectorT>& values,
 									boost::tuple<Handler> handler)
 					{
-						if (values.is_terminated())
-							boost::get<0>(handler)(e);
+						if (values.is_terminated()) {
+							if (values.is_valid())
+								boost::get<0>(handler)(e);
+							else
+								boost::get<0>(handler)(
+									make_error_code(boost::system::errc::invalid_argument));
+						}
 					}
 
 					template <typename T, typename Handler>
@@ -208,10 +241,12 @@ namespace hyper {
 					{
 						value.terminated = true;
 
-						if (e || value.ans.success == false) 
+						if (e || value.ans.success == false) {
 							value.value = boost::none;
-						else 
+							a.logger(WARNING) << "Failed to get the value of " << value.ans.var_name << std::endl;
+						} else { 
 							value.value = network::deserialize_value<T>(value.ans.value);
+						}
 
 						clean_up(id);
 						boost::get<0>(handler)(e);

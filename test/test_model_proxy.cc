@@ -75,8 +75,9 @@ namespace {
 
 		void handle_eight_test(const boost::system::error_code &e)
 		{
-			BOOST_CHECK(!e);
+			BOOST_CHECK(e);
 			BOOST_CHECK(r_error.is_terminated());
+			BOOST_CHECK(!r_error.is_valid());
 			BOOST_CHECK(r_error.at_c<0>());
 			BOOST_CHECK(!r_error.at_c<1>());
 			BOOST_CHECK(!r_error.at_c<2>());

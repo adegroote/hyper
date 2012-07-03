@@ -161,8 +161,13 @@ namespace hyper {
 								   boost::tuple<Handler> handler)
 				{
 					if (local_update_status.is_terminated() && 
-						remote_update_status.is_terminated())
-						boost::get<0>(handler)(e);
+						remote_update_status.is_terminated()) {
+						if (remote_update_status.is_valid()) 
+							boost::get<0>(handler)(e);
+						else
+							boost::get<0>(handler)(
+								make_error_code(boost::system::errc::invalid_argument));
+					}
 				}
 
 			public:
