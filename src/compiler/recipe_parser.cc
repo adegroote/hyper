@@ -94,6 +94,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 	(std::string, name)
 	(recipe_cond_block_decl, conds)
 	(body_block_decl, body)
+	(boost::optional<body_block_decl>, end)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -206,6 +207,70 @@ struct logic_expression_grammar :
 };
 
 template <typename Iterator>
+struct set_decl_grammar : 
+	qi::grammar<Iterator, set_decl(), white_space<Iterator> >
+{
+	typedef white_space<Iterator> white_space_;
+
+	set_decl_grammar():
+		set_decl_grammar::base_type(start)
+	{
+		start = qi::lit("set")
+				 > scoped_identifier
+				 > expression
+				 ;
+		start.name("set declaration");
+
+#ifdef HYPER_DEBUG_RULES
+		debug(start);
+#endif
+	}
+
+	grammar_expression<Iterator> expression;
+	scoped_identifier_grammar<Iterator> scoped_identifier;
+	qi::rule<Iterator, set_decl(), white_space_> start;
+};
+
+template <typename Iterator>
+struct end_block_grammar :
+	qi::grammar<Iterator, body_block_decl(), white_space<Iterator> >
+{
+	typedef white_space<Iterator> white_space_;
+
+	end_block_grammar() : end_block_grammar::base_type(start)
+	{
+		using qi::lit;
+
+		start = lit('{') >> end_decl_list >>  lit('}') >> -lit(';');
+
+		end_decl_list = (*end_decl);
+
+		end_decl = ( set_decl_
+				   | expression
+				   )
+				   > -lit(';')
+				   ;
+
+		start.name("end block");
+		end_decl_list.name("end declaration list");
+		end_decl.name("end declaration");
+
+#ifdef HYPER_DEBUG_RULES
+		debug(start);
+		debug(end_decl_list);
+		debug(end_decl);
+#endif
+	}
+	
+	qi::rule<Iterator, body_block_decl(), white_space_> start;
+	qi::rule<Iterator, std::vector<recipe_expression>(), white_space_> end_decl_list;
+	qi::rule<Iterator, recipe_expression(), white_space_> end_decl;
+
+	grammar_expression<Iterator> expression;
+	set_decl_grammar<Iterator> set_decl_;
+};
+
+template <typename Iterator>
 struct body_block_grammar :
 	qi::grammar<Iterator, body_block_decl(), white_space<Iterator> >
 {
@@ -252,10 +317,6 @@ struct body_block_grammar :
 				  > lit(")")
 				  ;
 
-		set_decl_ = lit("set")
-				 > scoped_identifier
-				 > expression
-				 ;
 
 		ensure_decl_ = lit("ensure")
 				  > lit("(")
@@ -285,7 +346,6 @@ struct body_block_grammar :
 		body_decl.name("recipe expression");
 		expression_list.name("expression list");
 		let_decl_.name("let declaration");
-		set_decl_.name("set declaration");
 		abort_decl_.name("abort declaration");
 		make_decl_.name("make declaration");
 		ensure_decl_.name("ensure declaration");
@@ -298,7 +358,6 @@ struct body_block_grammar :
 		debug(body_decl);
 		debug(expression_list);
 		debug(let_decl_);
-		debug(set_decl_);
 		debug(abort_decl_);
 		debug(make_decl_);
 		debug(ensure_decl_);
@@ -312,7 +371,6 @@ struct body_block_grammar :
 	qi::rule<Iterator, recipe_expression(), white_space_> body_decl;
 	qi::rule<Iterator, std::vector<logic_expression_decl>(), white_space_> expression_list;
 	qi::rule<Iterator, let_decl(), white_space_> let_decl_;
-	qi::rule<Iterator, set_decl(), white_space_> set_decl_;
 	qi::rule<Iterator, abort_decl(), white_space_> abort_decl_;
 	qi::rule<Iterator, recipe_op<MAKE>(), white_space_> make_decl_;
 	qi::rule<Iterator, recipe_op<ENSURE>(), white_space_> ensure_decl_;
@@ -323,6 +381,7 @@ struct body_block_grammar :
 	identifier_grammar<Iterator> identifier;
 	logic_expression_grammar<Iterator> logic_expression;
 	scoped_identifier_grammar<Iterator> scoped_identifier;
+	set_decl_grammar<Iterator> set_decl_;
 };
 
 template <typename Iterator>
@@ -455,6 +514,11 @@ struct  grammar_recipe :
 
 		start = import_list > recipe_context_ > recipe_list;
 
+		end_block_decl = lit("end") >
+						 lit("=") > 
+						 end_block [_val = _1]
+					   ;
+
 		recipe_list = (*recipe);
 
 		recipe = scoped_identifier
@@ -464,10 +528,12 @@ struct  grammar_recipe :
 			 > cond_block
 			 > lit("body") 
 			 > lit('=')
-			 > body_block
+			 > body_block 
+			 > -end_block_decl
 			 > lit('}')
 			 > -lit(';')
 			 ;
+
 
 		start.name("recipe list");
 		recipe_list.name("recipe list helper");
@@ -485,10 +551,13 @@ struct  grammar_recipe :
 	qi::rule<Iterator, recipe_decl_list(), white_space_> start;
 	qi::rule<Iterator, std::vector<recipe_decl>(), white_space_> recipe_list;
 	qi::rule<Iterator, recipe_decl(), white_space_> recipe;
+	qi::rule<Iterator, body_block_decl(), white_space_> pipo2;
+	qi::rule<Iterator, body_block_decl(), white_space_> end_block_decl;
 
 	scoped_identifier_grammar<Iterator> scoped_identifier;
 	recipe_cond_block_grammar<Iterator> cond_block;
 	body_block_grammar<Iterator> body_block;
+	end_block_grammar<Iterator> end_block;
 	import_grammar<Iterator> import_list;
 	recipe_context_grammar<Iterator> recipe_context_;
 };

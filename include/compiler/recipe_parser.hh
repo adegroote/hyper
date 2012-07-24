@@ -29,6 +29,7 @@ namespace hyper {
 			std::string name;
 			recipe_cond_block_decl conds;
 			body_block_decl body;
+			boost::optional<body_block_decl> end;
 		};
 
 		std::ostream& operator<< (std::ostream&, const recipe_decl&);

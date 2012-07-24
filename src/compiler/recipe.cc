@@ -677,6 +677,13 @@ namespace hyper {
 						   adapt_recipe_expression_to_context(map));
 
 			has_preconds = (std::count_if(pre.begin(), pre.end(), is_expression_ast()) != 0);
+
+			if (r_parser.end) {
+				end = r_parser.end->list;
+				apply_fun_body(*end, map_fun);
+				std::transform(end->begin(), end->end(), end->begin(),
+							  adapt_recipe_expression_to_context(map));
+			}
 		}
 
 		bool recipe::validate(const universe& u) 
@@ -684,7 +691,8 @@ namespace hyper {
 		{
 			return are_valid_conditions(pre.begin(), pre.end(), context_a, u) &&
 				   are_valid_conditions(post.begin(), post.end(), context_a, u) &&
-				   are_valid_recipe_expressions(body.begin(), body.end(), context_a, u, local_symbol);
+				   are_valid_recipe_expressions(body.begin(), body.end(), context_a, u, local_symbol) &&
+				   (end ? are_valid_recipe_expressions(end->begin(), end->end(), context_a, u, local_symbol) : true);
 		}
 
 		void recipe::dump_include(std::ostream& oss, const universe& u) const
