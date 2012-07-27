@@ -41,7 +41,10 @@ namespace {
 	{
 		pos_ability& pos;
 
-		add_recipe(pos_ability& pos, my_task& t) : recipe("add", pos, t), pos(pos) {}
+		add_recipe(pos_ability& pos, my_task& t) : recipe("add", pos, t), pos(pos) {
+			nb_preconditions_ = 0;
+			has_end_handler = false;
+		}
 
 		virtual void async_evaluate_preconditions(condition_execution_callback cb) 
 		{
@@ -59,16 +62,16 @@ namespace {
 			pos.end_handler_called = true;
 			cb(boost::system::error_code());
 		}
-
-		virtual size_t nb_preconditions() const { return 0; }
-		virtual bool has_end_handler() const { return false; }
 	};
 
 	struct mult_recipe : public hyper::model::recipe
 	{
 		pos_ability& pos;
 
-		mult_recipe(pos_ability& pos, my_task& t) : recipe("mult", pos, t), pos(pos) {}
+		mult_recipe(pos_ability& pos, my_task& t) : recipe("mult", pos, t), pos(pos) {
+			nb_preconditions_ = 0;
+			has_end_handler = true;
+		}
 
 		virtual void async_evaluate_preconditions(condition_execution_callback cb) 
 		{
@@ -86,9 +89,6 @@ namespace {
 			pos.end_handler_called = true;
 			cb(boost::system::error_code());
 		}
-
-		virtual size_t nb_preconditions() const { return 0; }
-		virtual bool has_end_handler() const { return true; }
 	};
 
 	struct recipe_test {

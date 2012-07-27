@@ -36,8 +36,10 @@ namespace hyper {
 				abortable_computation* computation;
 				abortable_computation* end_handler;
 
+				bool has_end_handler;
+				size_t nb_preconditions_;
+
 				virtual void do_execute(abortable_computation::cb_type cb, bool must_pause) = 0;
-				virtual bool has_end_handler() const = 0;
 
 				virtual void do_end(abortable_computation::cb_type cb) = 0;
 
@@ -58,7 +60,7 @@ namespace hyper {
 					   boost::optional<logic::expression> expected_error = boost::none);
 				void execute(recipe_execution_callback cb);
 				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
-				virtual size_t nb_preconditions() const = 0;
+				size_t nb_preconditions() const { return nb_preconditions_; }
 
 				agent_const_iterator begin() const { return required_agents.begin(); }
 				agent_const_iterator end() const { return required_agents.end(); }

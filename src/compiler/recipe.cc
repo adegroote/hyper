@@ -739,10 +739,6 @@ namespace hyper {
 			oss << next_indent;
 			oss << "void async_evaluate_preconditions(model::condition_execution_callback cb);";
 			oss << std::endl;
-			oss << next_indent << "size_t nb_preconditions() const { return ";
-			oss << nb_exec_precondition << "; }\n";
-			oss << next_indent << "bool has_end_handler() const { return ";
-			oss << (end.empty() ? "false" : "true") << "; }\n";
 			oss << next_indent << "void do_execute(model::abortable_computation::cb_type cb, bool);\n"; 
 			oss << next_indent << "void do_end(model::abortable_computation::cb_type cb);\n"; 
 
@@ -955,6 +951,10 @@ namespace hyper {
 			oss << indent << ")" << std::endl;
 			}
 			oss << indent << "{" << std::endl;
+
+			size_t nb_exec_precondition = std::count_if(pre.begin(), pre.end(), is_expression_ast());
+			oss << next_indent << "nb_preconditions_ = " << nb_exec_precondition << ";\n";
+			oss << next_indent << "has_end_handler = " << (end.empty() ? "false" : "true") << ";\n";
 			std::for_each(deps.var_depends.begin(), deps.var_depends.end(),
 						  dump_required_agents(oss, context_a.name()));
 			std::for_each(body.begin(), body.end(), dump_constraint_domain(oss, context_a, u));

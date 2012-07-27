@@ -36,7 +36,7 @@ void recipe::handle_execute(const boost::system::error_code& e)
 {
 	a.logger(DEBUG) << "[Recipe " << name <<"] End real execution " << e << std::endl;
 
-	if (has_end_handler()) {
+	if (has_end_handler) {
 		a.logger(DEBUG) << "[Recipe " << name << "] Start end handler execution " << e << std::endl;
 		do_end(boost::bind(&recipe::handle_end, this, _1, e));
 	} else {
