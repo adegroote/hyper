@@ -14,8 +14,9 @@ namespace {
 	struct pos_ability : public hyper::model::ability 
 	{
 		int x, y, z;
+		bool end_handler_called;
 
-		pos_ability() : hyper::model::ability("pos")
+		pos_ability() : hyper::model::ability("pos"), end_handler_called(false)
 		{
 			export_variable("x", x);
 			export_variable("y", y);
@@ -53,7 +54,14 @@ namespace {
 			cb(boost::system::error_code());
 		}
 
+		virtual void do_end(abortable_computation::cb_type cb)
+		{
+			pos.end_handler_called = true;
+			cb(boost::system::error_code());
+		}
+
 		virtual size_t nb_preconditions() const { return 0; }
+		virtual bool has_end_handler() const { return false; }
 	};
 
 	struct mult_recipe : public hyper::model::recipe
@@ -73,28 +81,14 @@ namespace {
 			cb(boost::system::error_code());
 		}
 
-		virtual size_t nb_preconditions() const { return 0; }
-	};
-
-	struct div_recipe : public hyper::model::recipe
-	{
-		pos_ability& pos;
-
-		div_recipe(pos_ability& pos, my_task& t) : recipe("div", pos, t), pos(pos) {}
-
-		virtual void async_evaluate_preconditions(condition_execution_callback cb) 
+		virtual void do_end(abortable_computation::cb_type cb)
 		{
-			hyper::model::conditionV error;
-			error.push_back(hyper::logic::function_call());
-			cb(boost::system::error_code(), error);
-		}
-
-		virtual void do_execute(abortable_computation::cb_type cb, bool)
-		{
-			pos.z = pos.x / pos.y;
+			pos.end_handler_called = true;
 			cb(boost::system::error_code());
 		}
+
 		virtual size_t nb_preconditions() const { return 0; }
+		virtual bool has_end_handler() const { return true; }
 	};
 
 	struct recipe_test {
@@ -103,11 +97,10 @@ namespace {
 		size_t valid_test;
 		add_recipe add_;
 		mult_recipe mult_;
-		div_recipe div_;
 
 		recipe_test(pos_ability& pos):
 			pos(pos), t(pos), valid_test(0),
-			add_(pos, t), mult_(pos, t), div_(pos, t)
+			add_(pos, t), mult_(pos, t)
 		{
 		};
 
@@ -117,6 +110,7 @@ namespace {
 			BOOST_CHECK(pos.x == 42);
 			BOOST_CHECK(pos.y == 3);
 			BOOST_CHECK(pos.z == 42 * 3);
+			BOOST_CHECK(pos.end_handler_called == true);
 			valid_test++;
 		}
 
@@ -126,6 +120,7 @@ namespace {
 			BOOST_CHECK(pos.x == 42);
 			BOOST_CHECK(pos.y == 3);
 			BOOST_CHECK(pos.z == 45);
+			BOOST_CHECK(pos.end_handler_called == false);
 			valid_test++;
 
 			mult_.execute(boost::bind(&recipe_test::handle_second_test, this, _1));

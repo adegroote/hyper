@@ -23,13 +23,25 @@ namespace {
 recipe::recipe(const std::string& name, ability& a, task& t, 
 			   boost::optional<logic::expression> error):
 	name(name), a(a), t(t), expected_error_(error), is_running(false),
-	must_pause(false), must_interrupt(false), computation(0) 
+	must_pause(false), must_interrupt(false), computation(0), end_handler(0)
 {}
+
+void recipe::handle_end(const boost::system::error_code& e, const boost::system::error_code& e_exec) 
+{
+	a.logger(DEBUG) << "[Recipe " << name << "] End end handler execution " << e << std::endl;
+	end_execute(!e_exec);
+}
 
 void recipe::handle_execute(const boost::system::error_code& e)
 {
 	a.logger(DEBUG) << "[Recipe " << name <<"] End real execution " << e << std::endl;
-	end_execute(!e);
+
+	if (has_end_handler()) {
+		a.logger(DEBUG) << "[Recipe " << name << "] Start end handler execution " << e << std::endl;
+		do_end(boost::bind(&recipe::handle_end, this, _1, e));
+	} else {
+		end_execute(!e);
+	}
 }
 
 void recipe::end_execute(bool res_)
@@ -43,6 +55,10 @@ void recipe::end_execute(bool res_)
 	if (computation != 0) {
 		delete computation;
 		computation = 0;
+	}
+	if (end_handler != 0) {
+		delete end_handler;
+		end_handler = 0;
 	}
 
 	std::for_each(pending_cb.begin(), pending_cb.end(),

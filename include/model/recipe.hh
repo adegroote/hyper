@@ -29,11 +29,17 @@ namespace hyper {
 				std::vector<recipe_execution_callback> pending_cb;
 
 				void handle_execute(const boost::system::error_code& e);
+				void handle_end(const boost::system::error_code& e, const boost::system::error_code& e_exec);
 				void end_execute(bool res);
 
 			protected:
 				abortable_computation* computation;
+				abortable_computation* end_handler;
+
 				virtual void do_execute(abortable_computation::cb_type cb, bool must_pause) = 0;
+				virtual bool has_end_handler() const = 0;
+
+				virtual void do_end(abortable_computation::cb_type cb) = 0;
 
 				/** list of agents required to use this recipe */
 				std::set<std::string> required_agents; 
