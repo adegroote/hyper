@@ -680,8 +680,8 @@ namespace hyper {
 
 			if (r_parser.end) {
 				end = r_parser.end->list;
-				apply_fun_body(*end, map_fun);
-				std::transform(end->begin(), end->end(), end->begin(),
+				apply_fun_body(end, map_fun);
+				std::transform(end.begin(), end.end(), end.begin(),
 							  adapt_recipe_expression_to_context(map));
 			}
 		}
@@ -692,7 +692,7 @@ namespace hyper {
 			return are_valid_conditions(pre.begin(), pre.end(), context_a, u) &&
 				   are_valid_conditions(post.begin(), post.end(), context_a, u) &&
 				   are_valid_recipe_expressions(body.begin(), body.end(), context_a, u, local_symbol) &&
-				   (end ? are_valid_recipe_expressions(end->begin(), end->end(), context_a, u, local_symbol) : true);
+				   are_valid_recipe_expressions(end.begin(), end.end(), context_a, u, local_symbol);
 		}
 
 		void recipe::dump_include(std::ostream& oss, const universe& u) const
@@ -739,9 +739,12 @@ namespace hyper {
 			oss << next_indent;
 			oss << "void async_evaluate_preconditions(model::condition_execution_callback cb);";
 			oss << std::endl;
-			oss << "size_t nb_preconditions() const { return ";
-			oss << nb_exec_precondition << "; }";
+			oss << next_indent << "size_t nb_preconditions() const { return ";
+			oss << nb_exec_precondition << "; }\n";
+			oss << next_indent << "bool has_end_handler() const { return ";
+			oss << (end.empty() ? "false" : "true") << "; }\n";
 			oss << next_indent << "void do_execute(model::abortable_computation::cb_type cb, bool);\n"; 
+			oss << next_indent << "void do_end(model::abortable_computation::cb_type cb);\n"; 
 
 			oss << indent << "};" << std::endl;
 		}
@@ -812,10 +815,14 @@ namespace hyper {
 			/* Extract expression_ast to execute from the body */
 			std::vector<expression_ast> expression_list;
 			std::for_each(body.begin(), body.end(), extract_expression(expression_list));
+			size_t nb_expr_body = expression_list.size();
+
+			std::for_each(end.begin(), end.end(), extract_expression(expression_list));
 
 			/* Get the list of instruction executed but not catched by a set or a let */
 			std::set<std::string> unused_result_set;
 			std::for_each(body.begin(), body.end(), extract_unused_result(unused_result_set, u, context_a, local_symbol));
+			std::for_each(end.begin(), end.end(), extract_unused_result(unused_result_set, u, context_a, local_symbol));
 			{ 
 				anonymous_namespaces n(oss);
 				oss << indent << "using namespace hyper;\n";
@@ -831,7 +838,7 @@ namespace hyper {
 				oss << indent << "\tability& a;\n";
 				oss << indent << "\tlocal_context local_vars;\n";
 				oss << indent << "\tunused_context unused_res;\n";
-				for (size_t i = 0; i < expression_list.size(); ++i) {
+				for (size_t i = 0; i < nb_expr_body; ++i) {
 					std::pair<bool, std::string> p;
 					p = is_tagged_func_call(expression_list[i], context_a.name(), u);
 					if (!p.first) {
@@ -843,7 +850,7 @@ namespace hyper {
 					}
 				}
 				oss << indent << "\texec_driver(ability &a) : a(a)";
-				for (size_t i = 0; i < expression_list.size(); ++i) {
+				for (size_t i = 0; i < nb_expr_body; ++i) {
 					extract_symbols syms(context_a);
 					syms.extract(expression_list[i]);
 					if (syms.empty()) {
@@ -869,7 +876,47 @@ namespace hyper {
 				oss << indent << "\t~exec_driver() {\n";
 				std::for_each(exportable_symbol.begin(), exportable_symbol.end(), remove_(oss, context_t));
 				oss << indent << "\t}\n";
+				oss << indent << "};\n";
+
+
+				oss << indent << "struct end_driver : public hyper::model::abortable_computation {\n";
+				oss << indent << "\tability& a;\n";
+				oss << indent << "\tlocal_context local_vars;\n";
+				oss << indent << "\tunused_context unused_res;\n";
+				for (size_t i = nb_expr_body; i < expression_list.size(); ++i) {
+					std::pair<bool, std::string> p;
+					p = is_tagged_func_call(expression_list[i], context_a.name(), u);
+					if (!p.first) {
+						oss << indent << "\texpression_" << i << "::updater_type updater" << i << ";\n";
+						oss << indent << "\thyper::model::compute_expression<expression_" << i ;
+						oss << "> expression_exec" << i << ";\n";
+					} else {
+						u.get_extension(p.second).generate_expression_caller(oss, i);
+					}
+				}
+				oss << indent << "\tend_driver(ability &a) : a(a)";
+				for (size_t i = nb_expr_body; i < expression_list.size(); ++i) {
+					extract_symbols syms(context_a);
+					syms.extract(expression_list[i]);
+					if (syms.empty()) {
+						oss << ",\n";
+					} else {
+						oss << ",\n" << indent << "\t\tupdater" << i << "(a";
+						if (!syms.local_with_updater.empty())
+							oss << ",\n\t" << syms.local_list_variables_updated(next_indent);
+						if (!syms.remote.empty())
+							oss << ",\n\t" << syms.remote_list_variables(next_indent);
+						oss << indent << "\t\t),\n";
+					}
+					oss << indent << "\t\texpression_exec" << i << "(updater" << i << ")";
+				}
+				oss << "\n" << indent << "\t{\n";
+				std::for_each(end.begin(), end.end(), 
+						dump_recipe_expression(oss, u, context_a, context_t, local_symbol, nb_expr_body));
+				oss << indent << "\t}\n";
+				oss << indent << "\t~end_driver() {}\n";
 				oss << indent << "};";
+
 
 			}
 
@@ -929,6 +976,14 @@ namespace hyper {
 			oss << next_indent << "computation = new exec_driver(a);\n";
 			oss << next_indent << "if (must_pause) computation->pause();\n";
 			oss << next_indent << "computation->compute(cb);\n";
+			oss << indent << "}\n";
+			oss << std::endl;
+
+			oss << indent << "void " << exported_name();
+			oss << "::do_end(hyper::model::abortable_computation::cb_type cb)\n";
+			oss << indent << "{\n";
+			oss << next_indent << "end_handler = new end_driver(a);\n";
+			oss << next_indent << "end_handler->compute(cb);\n";
 			oss << indent << "}\n";
 			oss << std::endl;
 		}

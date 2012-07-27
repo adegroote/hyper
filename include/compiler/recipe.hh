@@ -27,7 +27,7 @@ namespace hyper {
 				std::vector<recipe_condition> pre;
 				std::vector<recipe_condition> post;
 				std::vector<recipe_expression> body;
-				boost::optional<std::vector<recipe_expression> > end;
+				std::vector<recipe_expression> end;
 
 				const ability& context_a;
 				const task& context_t;
