@@ -30,6 +30,7 @@ namespace hyper {
 					size_t index; // index in vect_recipes
 					size_t nb_preconds; // nb of preconditions
 					size_t size_domain;
+					unsigned int preference; // user defined preference, bigger is greater
 					std::set<std::string> missing_agents; // missing agent to execute the recipe
 					bool last_error_valid; // last_error context coherent with error_context ?
 					conditionV failed; // failed precondition

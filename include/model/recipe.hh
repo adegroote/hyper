@@ -38,6 +38,7 @@ namespace hyper {
 
 				bool has_end_handler;
 				size_t nb_preconditions_;
+				unsigned int prefer_;
 
 				virtual void do_execute(abortable_computation::cb_type cb, bool must_pause) = 0;
 
@@ -61,6 +62,7 @@ namespace hyper {
 				void execute(recipe_execution_callback cb);
 				virtual void async_evaluate_preconditions(condition_execution_callback cb) = 0;
 				size_t nb_preconditions() const { return nb_preconditions_; }
+				unsigned int prefer() const { return prefer_; }
 
 				agent_const_iterator begin() const { return required_agents.begin(); }
 				agent_const_iterator end() const { return required_agents.end(); }

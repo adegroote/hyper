@@ -66,6 +66,8 @@ namespace hyper {
 				return last_error_valid;
 			if (failed.size() != s.failed.size())
 				return (failed.size() < s.failed.size());
+			if (preference != s.preference)
+				return (preference > s.preference);
 			if (nb_preconds != s.nb_preconds)
 				return nb_preconds > s.nb_preconds;
 
@@ -234,6 +236,7 @@ namespace hyper {
 				recipe_states[i].index = i;
 				recipe_states[i].nb_preconds = recipes[i]->nb_preconditions();
 				recipe_states[i].size_domain = recipes[i]->domain_constraint_size();
+				recipe_states[i].preference = recipes[i]->prefer();
 				recipe_states[i].missing_agents.clear();
 				std::set_difference(recipes[i]->begin(), recipes[i]->end(), 
 									a.alive_agents.begin(), a.alive_agents.end(),
