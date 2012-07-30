@@ -28,6 +28,7 @@ namespace hyper {
 				std::vector<recipe_condition> post;
 				std::vector<recipe_expression> body;
 				std::vector<recipe_expression> end;
+				unsigned int prefer;
 
 				const ability& context_a;
 				const task& context_t;

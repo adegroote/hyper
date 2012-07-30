@@ -662,6 +662,7 @@ namespace hyper {
 			pre(r_parser.conds.pre),
 			post(r_parser.conds.post),
 			body(r_parser.body.list),
+			prefer((r_parser.preference_level ? *r_parser.preference_level : 0)),
 			context_a(a), context_t(t), tList(tList_), local_symbol(tList) 
 		{
 			recipe_context_decl::map_type map = make_name_expression_map(context);

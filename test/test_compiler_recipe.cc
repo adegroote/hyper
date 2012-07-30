@@ -304,4 +304,7 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 	check_recipe.do_build_test("r36 = recipe { pre = {}; post = {}; body = {}; end = {} };", true);
 	check_recipe.do_build_test("r37 = recipe { pre = {}; post = {}; body = {}; end = { set first::isOk false} };", true);
 	check_recipe.do_build_test("r37 = recipe { pre = {}; post = {}; body = {}; end = { set first::isOk 22.0 } };", false);
+
+	/* Test the parsing of preference parameter */
+	check_recipe.do_build_test("r38 = recipe { pre = {}; post = {}; prefer = 25; body = {}; };", true);
 }

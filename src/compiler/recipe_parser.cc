@@ -93,6 +93,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 	recipe_decl,
 	(std::string, name)
 	(recipe_cond_block_decl, conds)
+	(boost::optional<unsigned int>, preference_level)
 	(body_block_decl, body)
 	(boost::optional<body_block_decl>, end)
 )
@@ -526,6 +527,7 @@ struct  grammar_recipe :
 			 > lit("recipe")
 			 > lit("{")
 			 > cond_block
+			 > -prefer_decl
 			 > lit("body") 
 			 > lit('=')
 			 > body_block 
@@ -534,15 +536,23 @@ struct  grammar_recipe :
 			 > -lit(';')
 			 ;
 
+		prefer_decl = lit("prefer")
+			   > lit('=')
+			   > qi::uint_
+			   > -lit(';')
+			   ;
+
 
 		start.name("recipe list");
 		recipe_list.name("recipe list helper");
 		recipe.name("recipe");
+		prefer_decl.name("preference declaration");
 
 #ifdef HYPER_DEBUG_RULES
 		debug(start);
 		debug(recipe);
 		debug(recipe_list);
+		debug(prefer_decl);
 #endif
 
 		qi::on_error<qi::fail> (start, error_handler(_4, _3, _2));
@@ -551,7 +561,7 @@ struct  grammar_recipe :
 	qi::rule<Iterator, recipe_decl_list(), white_space_> start;
 	qi::rule<Iterator, std::vector<recipe_decl>(), white_space_> recipe_list;
 	qi::rule<Iterator, recipe_decl(), white_space_> recipe;
-	qi::rule<Iterator, body_block_decl(), white_space_> pipo2;
+	qi::rule<Iterator, uint(), white_space_> prefer_decl;
 	qi::rule<Iterator, body_block_decl(), white_space_> end_block_decl;
 
 	scoped_identifier_grammar<Iterator> scoped_identifier;

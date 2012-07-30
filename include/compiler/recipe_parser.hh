@@ -28,6 +28,7 @@ namespace hyper {
 		struct recipe_decl {
 			std::string name;
 			recipe_cond_block_decl conds;
+			boost::optional<unsigned int> preference_level;
 			body_block_decl body;
 			boost::optional<body_block_decl> end;
 		};
