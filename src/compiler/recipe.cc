@@ -956,6 +956,7 @@ namespace hyper {
 			size_t nb_exec_precondition = std::count_if(pre.begin(), pre.end(), is_expression_ast());
 			oss << next_indent << "nb_preconditions_ = " << nb_exec_precondition << ";\n";
 			oss << next_indent << "has_end_handler = " << (end.empty() ? "false" : "true") << ";\n";
+			oss << next_indent << "prefer_ = " << prefer << ";\n";
 			std::for_each(deps.var_depends.begin(), deps.var_depends.end(),
 						  dump_required_agents(oss, context_a.name()));
 			std::for_each(body.begin(), body.end(), dump_constraint_domain(oss, context_a, u));
