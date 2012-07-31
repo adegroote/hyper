@@ -530,7 +530,7 @@ struct is_exportable_symbol
 	bool operator() (const std::pair<std::string, symbol>& p) const
 	{
 		type t = tList.get(p.second.t);
-		return (t.t != opaqueType);
+		return (t.t != opaqueType and t.t != noType);
 	}
 };
 
