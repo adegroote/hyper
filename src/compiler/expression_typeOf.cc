@@ -164,6 +164,11 @@ struct recipe_ast_type : public boost::static_visitor<boost::optional<typeId> > 
 	}
 
 	boost::optional<typeId>
+	operator() (const assert_decl&) const {
+		return u.types().getId("identifier").second;
+	}
+
+	boost::optional<typeId>
 	operator() (const while_decl&) const {
 		return u.types().getId("void").second;
 	}

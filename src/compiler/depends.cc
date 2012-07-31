@@ -157,6 +157,11 @@ struct compute_recipe_expression_deps : public boost::static_visitor<void>
 		details::add_depends(op.content, name, u, d, s);
 	}
 
+	void operator() (const assert_decl& op) const 
+	{
+		details::add_depends(op.content, name, u, d, s);
+	}
+
 	template <recipe_op_kind kind>
 	void operator() (const recipe_op<kind>& op) const
 	{

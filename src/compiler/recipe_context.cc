@@ -152,6 +152,10 @@ struct remap_symbol_recipe_vis : public boost::static_visitor<recipe_expression>
 	recipe_expression operator() (const wait_decl& w) const {
 		return wait_decl(remap_symbol(w.content, map));
 	}
+
+	recipe_expression operator() (const assert_decl& w) const {
+		return assert_decl(remap_symbol(w.content, map));
+	}
 	
 	recipe_expression operator() (const expression_ast& ast) const {
 		return remap_symbol(ast, map);
@@ -265,6 +269,12 @@ struct adapt_recipe_expression_to_context_helper : public boost::static_visitor<
 
 	recipe_expression operator() (const wait_decl& w) const {
 		wait_decl res(w);
+		res.content = adapt_expression_to_context(map)(res.content.expr);
+		return res;
+	}
+
+	recipe_expression operator() (const assert_decl& w) const {
+		assert_decl res(w);
 		res.content = adapt_expression_to_context(map)(res.content.expr);
 		return res;
 	}

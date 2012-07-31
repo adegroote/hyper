@@ -156,6 +156,10 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 		return w.content.is_valid_predicate(a, u, local);
 	}
 
+	bool operator() (const assert_decl& w) const {
+		return w.content.is_valid_predicate(a, u, local);
+	}
+
 	template <recipe_op_kind kind>
 	bool operator() (const recipe_op<kind>& op) const {
 		std::vector<remote_constraint>::const_iterator it;
@@ -370,6 +374,11 @@ struct extract_expression_visitor : public boost::static_visitor<void>
 	}
 
 	void operator() (const wait_decl& w) const
+	{
+		list.push_back(w.content);
+	}
+
+	void operator() (const assert_decl& w) const
 	{
 		list.push_back(w.content);
 	}

@@ -46,6 +46,12 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const wait_decl& w)
 	return os;
 }
 
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const assert_decl& w)
+{
+	os << "assert (" << w.content << ") ";
+	return os;
+}
+
 struct recipe_expression_print : public boost::static_visitor<void>
 {
 	std::ostream& os;

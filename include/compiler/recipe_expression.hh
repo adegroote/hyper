@@ -43,6 +43,15 @@ namespace hyper {
 
 		std::ostream& operator << (std::ostream& os, const wait_decl&);
 
+		struct assert_decl {
+			expression_ast content;
+
+			assert_decl() {}
+			assert_decl(const expression_ast& content) : content(content) {}
+		};
+
+		std::ostream& operator << (std::ostream& os, const assert_decl&);
+
 		enum recipe_op_kind { MAKE, ENSURE };
 
 		std::ostream& operator<< (std::ostream& os, recipe_op_kind kind);
@@ -106,6 +115,7 @@ namespace hyper {
 				abort_decl, 
 				set_decl,
 				wait_decl,
+				assert_decl,
 				recipe_op<MAKE>,
 				recipe_op<ENSURE>,
 				expression_ast

@@ -307,4 +307,19 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 
 	/* Test the parsing of preference parameter */
 	check_recipe.do_build_test("r38 = recipe { pre = {}; post = {}; prefer = 25; body = {}; };", true);
+
+	/* assert tests */
+	/* assert takes a boolean expression in input */
+	check_recipe.do_build_test("r39 = recipe { pre = {}; post = {};  \
+										body = {  assert ( square(2.0) ); }; };",
+								false);
+
+	check_recipe.do_build_test("r40 = recipe { pre = {}; post = {};  \
+										body = { assert ( square(2.0) < 2.0 ); }; };",
+								true);
+
+	/* assert returns an identifier, so is assignable */
+	check_recipe.do_build_test("r41 = recipe { pre = {}; post = {};  \
+										body = { let X assert ( square(2.0) < 2.0 ); }; };",
+								true);
 }
