@@ -278,7 +278,7 @@ namespace {
 			oss << quoted_string(*(r.content[0].dst)) << ", \n" << indent_next;
 			oss << "a.logic().generate(" << generate_logic_expression(local_expr.main, a, u) << ")";
 			oss << ", \n" << indent_next << dump_unification(local_expr.unification_clauses);
-			oss << ", \n" << indent_next << identifier << "));\n";
+			oss << ", \n" << indent_next << identifier << ", size()));\n";
 			target = boost::none;
 
 			return oss.str();
@@ -290,7 +290,7 @@ namespace {
 			std::string indent_next = times(5, "\t");
 			std::ostringstream oss;
 
-			oss << indent << ptr_object << "->push_back(new hyper::model::compute_abort_expression(a, \n";
+			oss << indent << ptr_object << "->push_back(new hyper::model::compute_abort_expression(a, *this,\n";
 			oss << indent_next << local_symbol(a.identifier) << ", \n";
 			oss << indent_next << unused_symbol("boost::mpl::void_") << "));";
 			target = boost::none;
