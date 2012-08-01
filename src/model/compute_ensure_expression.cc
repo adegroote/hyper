@@ -7,9 +7,9 @@ namespace hyper {
 		compute_ensure_expression::compute_ensure_expression(
 			ability& a, const std::string& dst, const logic::function_call& f, 
 			const network::request_constraint2::unification_list& unify_list,
-			model::identifier& res) : 
+			model::identifier& res, size_t idx) : 
 			a(a), res_id(res), dst(dst), f(f),
-			id(boost::none), running(false), must_pause(false) 
+			id(boost::none), running(false), must_pause(false), idx_(idx)
 		{
 			rqst.constraint =  f;
 			rqst.repeat = true;
@@ -72,8 +72,7 @@ namespace hyper {
 					boost::bind(&compute_ensure_expression::handle_end_computation,
 								this, boost::asio::placeholders::error, cb));
 
-			res_id.first = dst;
-			res_id.second = *id;
+			res_id.idx = idx_;
 		}
 
 		void compute_ensure_expression::handle_write(const boost::system::error_code&)

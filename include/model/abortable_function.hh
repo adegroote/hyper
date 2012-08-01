@@ -104,6 +104,13 @@ namespace hyper {
 				/* index represents the currently executing primitive */
 				size_t index;
 
+				/* 
+				 * Each time someone call abort(size_t, cb_type), reference an entry here.
+				 * When we get final answer, we can explicitly call the callback
+				 */
+				typedef std::map<size_t, cb_type> interrupt_map;
+				interrupt_map requested_abort;
+
 				/* If the computation fails, error_index contains the index of
 				 * the primitive which fails.  Otherwise, it is none
 				 */
@@ -136,7 +143,15 @@ namespace hyper {
 				void pause();
 				void resume();
 
+				/*
+				 * Aborting the function at the index idx in the computation.
+				 * Call cb_ when we are sure the function is correctly
+				 * terminated
+				 */
+				void abort(size_t idx, cb_type cb_);
+
 				void clear() { seq.clear(); }
+				std::size_t size() const { return seq.size(); }
 				virtual ~abortable_computation() {}
 		};
 	};

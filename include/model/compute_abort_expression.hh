@@ -15,14 +15,13 @@ namespace hyper {
 
 		class compute_abort_expression : public abortable_function_base {
 				ability& a;
+				abortable_computation& computation_;
 				const model::identifier& id;
-				network::abort abort_msg;
 
 				void wait_terminaison(cb_type cb);
-				void handle_abort(const boost::system::error_code&);
 
 			public:
-				compute_abort_expression(ability&, const model::identifier&, boost::mpl::void_&);
+				compute_abort_expression(ability&, abortable_computation&, const model::identifier&, boost::mpl::void_&);
 
 				void compute (cb_type cb);
 				bool abort();

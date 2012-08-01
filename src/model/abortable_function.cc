@@ -107,11 +107,15 @@ namespace hyper {
 			if (check_is_terminated(e)) return;
 
 			if (e == boost::system::errc::interrupted) {
-				/* do nothing for the moment. If we are not waiting for
-				 * termaison, it is the result of an aborted ensure, and we
-				 * must continue. Of course, it means there is no other of
-				 * aborting in the system, which is currently true (modulo bug))
+				/* Check if idx is in the requested_abort. If it is not the
+				 * case, just notice that something wrong happen. Otherwise,
+				 * call the associated callback then erase the entry.
 				 */
+				interrupt_map::iterator it = requested_abort.find(idx);
+				if (it != requested_abort.end()) {
+					it->second(e);
+					requested_abort.erase(it);
+				}
 				return;
 			}
 
@@ -180,6 +184,12 @@ namespace hyper {
 		void abortable_computation::abort() 
 		{
 			return terminaison(make_error_code(exec_layer_error::interrupted));
+		}
+
+		void abortable_computation::abort(size_t idx, cb_type cb_)
+		{
+			requested_abort[idx] = cb_;
+			seq[idx]->abort();
 		}
 
 		void abortable_computation::pause()
