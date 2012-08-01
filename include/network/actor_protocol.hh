@@ -41,7 +41,6 @@ namespace hyper {
 				typedef std::set<identifier> set_id;
 
 				std::map<identifier, cb_info> map_cb;
-				std::map<identifier, cb_end> map_end_cb;
 				std::map<std::string, set_id> id_by_actor;
 
 				void cancel_helper(identifier id)
@@ -52,13 +51,6 @@ namespace hyper {
 				void remove_helper(identifier id)
 				{
 					map_cb.erase(id);
-
-					typename std::map<identifier, cb_end>::iterator it;
-					it = map_end_cb.find(id);
-					if (it != map_end_cb.end()) {
-						(it->second)();
-						map_end_cb.erase(it);
-					}
 				}
 
 			public:
@@ -83,11 +75,6 @@ namespace hyper {
 					cb_info& info = map_cb[id];
 					info.input = input;
 					info.cb(boost::system::error_code());
-				}
-
-				void add_finalizer_cb(identifier id, cb_end cb)
-				{
-					map_end_cb[id] = cb;
 				}
 
 				template <typename T>
@@ -333,10 +320,6 @@ namespace hyper {
 												 input.id, boost::make_tuple(handler)));
 
 					return input.id;
-				}
-
-				void add_finalizer_cb(identifier id, boost::function<void (void)> cb) {
-					actor.db.add_finalizer_cb(id, cb);
 				}
 
 				void close() {
