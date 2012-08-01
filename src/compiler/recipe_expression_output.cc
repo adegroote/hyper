@@ -106,12 +106,16 @@ namespace {
 		const task& t;
 		const symbolList& syms;
 		size_t& counter;
+		size_t& inner_var_counter;
 		mutable boost::optional<std::string> target;
 		std::string ptr_object;
 
 		dump_recipe_visitor(const universe & u_, const ability& a_, const task& t_, 
-						   const symbolList& syms_, size_t& counter, std::string ptr_object) : 
-			u(u_), a(a_), t(t_), syms(syms_), counter(counter), target(boost::none),
+						   const symbolList& syms_, size_t& counter, 
+						   size_t& inner_var_counter, std::string ptr_object) : 
+			u(u_), a(a_), t(t_), syms(syms_), counter(counter), 
+			inner_var_counter(inner_var_counter),
+			target(boost::none),
 			ptr_object(ptr_object) {}
 
 		template <typename T> 
@@ -218,6 +222,28 @@ namespace {
 			return oss.str();
 		}
 
+		std::string operator() (const assert_decl& w) const
+		{
+			std::string indent = times(4, "\t");
+			// XXX Hackish, but correct at this point
+			std::string identifier = compute_ensure_target(); 
+			std::string next_indent = "\t" + indent;
+			std::ostringstream inner_var_;
+			inner_var_ << "__hyper_assert_" << inner_var_counter++;
+			std::string inner_var = local_symbol(inner_var_.str());
+
+			std::ostringstream oss;
+			oss << indent << ptr_object;
+			oss << "->push_back(new hyper::model::compute_assert_expression(a.io_s, boost::posix_time::milliseconds(50), \n";
+			oss << abortable_function(inner_var, w.content);
+			oss << next_indent << ", a.logic().generate(" << generate_logic_expression(w.content, a, u) << "), \n";
+			oss << next_indent << identifier << ", " << inner_var << ", size()));\n";
+
+			target = boost::none;
+
+			return oss.str();
+		}
+
 		std::string operator() (const expression_ast& e) const
 		{
 			std::string indent = times(4, "\t");
@@ -316,7 +342,7 @@ namespace {
 			oss << indent << "," << identifier << ",\n";
 			oss << indent << oss_name.str() << "));\n";
 
-			dump_recipe_visitor vis(u, a, t, syms, counter, oss_name.str());
+			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, oss_name.str());
 			for (size_t i = 0; i < w.body.size(); ++i)
 				oss << boost::apply_visitor(vis, w.body[i].expr);
 
@@ -339,7 +365,7 @@ namespace hyper {
 
 		void dump_recipe_expression::operator() (const recipe_expression& r) const
 		{
-			dump_recipe_visitor vis(u, a, t, syms, counter, "this");
+			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, "this");
 			oss << boost::apply_visitor(vis, r.expr);
 		}
 	}

@@ -397,6 +397,39 @@ void extract_expression::operator() (const recipe_expression& r)
 	boost::apply_visitor(extract_expression_visitor(list), r.expr);
 }
 
+struct add_inner_var_visitor : public boost::static_visitor<void>
+{
+	symbolList& local; 
+	size_t& counter;
+
+	add_inner_var_visitor(symbolList& local, size_t& counter) :
+		local(local), counter(counter)
+	{}
+
+	template <typename T>
+	void operator() (const T&) const {}
+
+	void operator() (const assert_decl&) const 
+	{
+		std::ostringstream oss; 
+		oss << "__hyper_assert_" << counter;
+		local.add(oss.str(), "bool");
+	}
+};
+
+struct add_inner_var {
+	symbolList& local; 
+	size_t& counter;
+
+	add_inner_var(symbolList& local, size_t& counter) :
+		local(local), counter(counter)
+	{}
+	
+	void operator() (const recipe_expression& r)
+	{
+		boost::apply_visitor(add_inner_var_visitor(local, counter), r.expr);
+	}
+};
 
 struct dump_eval_expression {
 	std::ostream& oss;
@@ -773,7 +806,7 @@ namespace hyper {
 		}
 
 
-		void recipe::dump(std::ostream& oss, const universe& u) const
+		void recipe::dump(std::ostream& oss, const universe& u) 
 		{
 			const std::string indent="\t\t";
 			const std::string next_indent = indent + "\t";
@@ -789,6 +822,7 @@ namespace hyper {
 			oss << "#include <model/compute_abort_expression.hh>\n";
 			oss << "#include <model/compute_ensure_expression.hh>\n";
 			oss << "#include <model/compute_expression.hh>\n";
+			oss << "#include <model/compute_assert_expression.hh>\n";
 			oss << "#include <model/compute_make_expression.hh>\n";
 			oss << "#include <model/compute_wait_expression.hh>\n";
 			oss << "#include <model/compute_while_expression.hh>\n";
@@ -817,6 +851,10 @@ namespace hyper {
 										  pre_symbols.remote, symbolList(u.types()));
 			std::for_each(pre.begin(), pre.end(), e_dump);
 			} 
+
+			/* add variable necessary for computation in local_vars */
+			size_t var_count = 0;
+			std::for_each(body.begin(), body.end(), add_inner_var(local_symbol, var_count));
 
 			/* Extract expression_ast to execute from the body */
 			std::vector<expression_ast> expression_list;

@@ -49,7 +49,13 @@ namespace hyper {
 				 */
 				bool validate(const universe&) ;
 				void dump_include(std::ostream& oss, const universe&) const;
-				void dump(std::ostream& oss, const universe&) const;
+
+				/* 
+				 * This method is not const, because for simplicity reason, we
+				 * add inner variable (variable need for the generated code in
+				 * local_symbol too
+				 */
+				void dump(std::ostream& oss, const universe&); 
 				void add_depends(depends& deps, const universe& u) const;
 
 				const std::string& get_name() const { return name; }
