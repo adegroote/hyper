@@ -291,7 +291,184 @@ struct adapt_recipe_expression_to_context_helper : public boost::static_visitor<
 	}
 };
 
+struct apply_fun_body_visitor2 : public boost::static_visitor<std::list<recipe_expression> >
+{
+	size_t& counter;
+	const map_fun_def& map;
 
+	typedef std::list<recipe_expression> list;
+
+	apply_fun_body_visitor2(size_t& counter, const map_fun_def& map): 
+		counter(counter), map(map)
+	{}
+
+	bool is_fun_call(const expression_ast& e) const
+	{
+		const function_call* f = boost::get<function_call>(& e.expr);
+		if (f) {
+			map_fun_def::const_iterator it = map.find(f->fName);
+			return (it != map.end());
+		}
+		return false;
+	}
+
+	template <typename T>
+	list operator()(const T& ) const { return list(); }
+
+	list operator() (const expression_ast& e) const { 
+		return boost::apply_visitor(*this, e.expr);
+	}
+
+	list operator() (const function_call& f) const {
+		map_fun_def::const_iterator it = map.find(f.fName);
+		if (it != map.end()) 
+		{
+			list body;
+			assert(f.args.size() == it->second.args.size());
+			symbol_mapping map;
+			for (size_t i = 0; i < f.args.size(); ++i) {
+				std::ostringstream arg_name;
+				arg_name << "__fn" << counter << "_arg" << i; 
+				body.push_back(let_decl(arg_name.str(), f.args[i]));
+				map[it->second.args[i]] = arg_name.str();
+			}
+			for (size_t i = 0; i < it->second.local_vars.size(); ++i) {
+				const std::string& s = it->second.local_vars[i];
+				std::ostringstream remapped_name;
+				remapped_name << "__fn" << counter << "_" << s;
+				map[s] = remapped_name.str();
+			}
+			std::transform(it->second.impl.begin(), it->second.impl.end(),
+						   std::back_inserter(body),
+						   boost::bind(remap_symbol_recipe, _1, boost::cref(map)));
+			++counter;
+			return body;
+		} else {
+			/* 
+			 * Explore the different arguments of the function call, if we have
+			 * some recipe function in it, need to extract the computation
+			 * using some let instruction, which will be replacted furthermore
+			 */
+			list body;
+			function_call f_call(f);
+			for (size_t i = 0; i < f.args.size(); ++i) {
+				const expression_ast& e = f.args[i];
+				if (is_fun_call(e)) {
+					std::ostringstream arg_name;
+					arg_name << "__fn" << counter << "_arg" << i; 
+					body.push_back(let_decl(arg_name.str(), e));
+					f_call.args[i] = arg_name.str();
+				}
+			}
+			if (!body.empty()) {
+				++counter;
+				body.push_back(expression_ast(f_call));
+			}
+
+			return body;
+		}
+	}
+
+	list operator() (const binary_op& op) const {
+		list body;
+		binary_op res(op);
+
+		if (is_fun_call(op.left)) {
+			std::ostringstream arg_name;
+			arg_name << "__fn" << counter << "_arg0";
+			body.push_back(let_decl(arg_name.str(), op.left));
+			res.left = arg_name.str();
+		}
+
+		if (is_fun_call(op.right)) {
+			std::ostringstream arg_name;
+			arg_name << "__fn" << counter << "_arg1"; 
+			body.push_back(let_decl(arg_name.str(), op.right));
+			res.right = arg_name.str();
+		}
+
+		if (!body.empty()) {
+			++counter;
+			body.push_back(expression_ast(res));
+		}
+		return body;
+	}
+
+	list operator() (const unary_op& op) const {
+		list body;
+		unary_op res(op);
+
+		if (is_fun_call(op.subject)) {
+			std::ostringstream arg_name;
+			arg_name << "__fn" << counter << "_arg0";
+			body.push_back(let_decl(arg_name.str(), op.subject));
+			res.subject = arg_name.str();
+		}
+
+		if (!body.empty()) {
+			++counter;
+			body.push_back(expression_ast(res));
+		}
+		return body;
+	}
+};
+
+struct apply_fun_body_visitor : public boost::static_visitor<std::list<recipe_expression> >
+{
+	size_t& counter;
+	const map_fun_def& map;
+
+	typedef std::list<recipe_expression> list;
+
+	apply_fun_body_visitor(size_t& counter, const map_fun_def& map): 
+		counter(counter), map(map)
+	{}
+
+
+	template <typename T>
+	list operator()(const T& ) const { return list(); }
+
+	list operator() (const expression_ast& e) const {
+		return boost::apply_visitor(apply_fun_body_visitor2(counter, map), e.expr);
+	}
+
+	list operator() (const let_decl& l) const {
+		list res = boost::apply_visitor(*this, l.bounded.expr);
+		if (res.empty()) {
+			return res;
+		} else {
+			// the last expression is the result of the function, so catch it
+			// in the let expression
+			const recipe_expression& last = res.back();
+			let_decl to_insert(l.identifier, last);
+			res.pop_back();
+			res.push_back(to_insert);
+			return res;
+		}
+	}
+
+	list operator() (const set_decl& s) const {
+		list res = this->operator()(s.bounded);
+		if (res.empty()) {
+			return res;
+		} else {
+			// the last expression is the result of the function, so catch it
+			// in the set expression
+			const recipe_expression& last = res.back();
+			const expression_ast* e = boost::get<expression_ast>(& last.expr);
+			if (e) {
+				set_decl to_insert(s.identifier, *e);
+				res.pop_back();
+				res.push_back(to_insert);
+				return res;
+			} else {
+				// if the last expression is not an expression_ast, do nothing, 
+				// the error will be notice further in the compiler
+				return list();
+			}
+		}
+	}
+};
 }
 
 namespace hyper {
@@ -320,39 +497,17 @@ namespace hyper {
 			begin = body.begin();
 			end = body.end();
 			size_t counter = 0;
+			apply_fun_body_visitor vis(counter, map);
+
 			while (begin != end) {
-				expression_ast* e = boost::get<expression_ast>(& begin->expr);
-				if (e) {
-					function_call* f = boost::get<function_call>(& e->expr);
-					if (f) {
-						map_fun_def::const_iterator it = map.find(f->fName);
-						if (it != map.end()) 
-						{
-							assert(f->args.size() == it->second.args.size());
-							symbol_mapping map;
-							for (size_t i = 0; i < f->args.size(); ++i) {
-								std::ostringstream arg_name;
-								arg_name << "__fn" << counter << "_arg" << i; 
-								body.insert(begin, let_decl(arg_name.str(), f->args[i]));
-								map[it->second.args[i]] = arg_name.str();
-							}
-							for (size_t i = 0; i < it->second.local_vars.size(); ++i) {
-								const std::string& s = it->second.local_vars[i];
-								std::ostringstream remapped_name;
-								remapped_name << "__fn" << counter << "_" << s;
-								map[s] = remapped_name.str();
-							}
-							std::transform(it->second.impl.begin(), it->second.impl.end(),
-										   std::inserter(body, begin),
-										   boost::bind(remap_symbol_recipe, _1, boost::cref(map)));
-							body.erase(begin);
-							begin = body.begin();
-							++counter;
-							continue;
-						}
-					}
+				std::list<recipe_expression> tmp = boost::apply_visitor(vis, begin->expr);
+				if (tmp.empty()) 
+					++ begin;
+				else {
+					body.insert(begin, tmp.begin(), tmp.end());
+					body.erase(begin);
+					begin = body.begin();
 				}
-				++begin;
 			}
 
 			body_.clear();
