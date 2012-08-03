@@ -469,6 +469,166 @@ struct apply_fun_body_visitor : public boost::static_visitor<std::list<recipe_ex
 		}
 	}
 };
+
+struct is_constant_vis : public boost::static_visitor<bool>
+{
+
+	template <typename T>
+	bool operator() (const T&) const { return false; }
+
+	template <typename T>
+	bool operator() (const Constant<T>&) const { return true; }
+
+	bool operator() (const std::string& s) const {
+		return s[0] == '_' && s[1] == '_' &&
+			   s[2] == 'f' && s[3] == 'n';
+	}
+
+	bool operator() (const expression_ast& e) const { return boost::apply_visitor(*this, e.expr); }
+};
+
+boost::optional< std::pair<std::string, expression_ast> >
+is_constant_let(const recipe_expression& r)
+{
+	const let_decl* l= boost::get<let_decl>(& r.expr);
+	if (!l)
+		return boost::none;
+
+	// now check if content is a constant expression_ast
+	const expression_ast* e = boost::get<expression_ast>(& l->bounded.expr);
+	if (!e)
+		return boost::none;
+
+
+	expression_ast reduced(*e); reduced.reduce();
+	if (boost::apply_visitor(is_constant_vis(), reduced.expr)) {
+		return std::make_pair(l->identifier, reduced);
+	}
+
+	return boost::none;
+}
+
+struct replace_constant_vis2 : public boost::static_visitor<expression_ast>
+{
+	std::string name;
+	expression_ast e;
+	
+	replace_constant_vis2(const std::string& name, const expression_ast& e) :
+		name(name), e(e)
+	{}
+
+	template <typename T>
+	expression_ast operator() (const T& t) const { return t; }
+
+	expression_ast operator() (const std::string& s) const {
+		if (s == name) 
+			return e;
+		else
+			return s;
+	}
+
+	expression_ast operator() (const binary_op& op) const {
+		binary_op res(op);
+		res.left = boost::apply_visitor(*this, op.left.expr);
+		res.right = boost::apply_visitor(*this, op.right.expr);
+		return res;
+	}
+
+	expression_ast operator() (const unary_op& op) const {
+		unary_op res(op);
+		res.subject = boost::apply_visitor(*this, op.subject.expr);
+		return res;
+	}
+
+	expression_ast operator() (const function_call& f) const {
+		function_call res(f);
+		for (size_t i = 0; i < res.args.size(); ++i)
+			res.args[i] = boost::apply_visitor(*this, f.args[i].expr);
+		return res;
+	}
+};
+
+struct replace_constant_vis : public boost::static_visitor<recipe_expression>
+{
+	std::string name;
+	expression_ast e;
+	replace_constant_vis2 vis;
+
+	replace_constant_vis(const std::string& name, const expression_ast& e) :
+		name(name), e(e), vis(name, e)
+	{}
+
+	recipe_expression operator() (const let_decl& l) const {
+		let_decl res(l);
+		res.bounded = boost::apply_visitor(*this, l.bounded.expr);
+		return res;
+	}
+
+	recipe_expression operator() (const set_decl& s) const {
+		set_decl res(s);
+		res.bounded = boost::apply_visitor(vis, s.bounded.expr);
+		return res;
+	}
+
+	recipe_expression operator() (const expression_ast& e) const {
+		return boost::apply_visitor(vis, e.expr);
+	}
+
+	recipe_expression operator() (const wait_decl& w) const {
+		wait_decl res(w);
+		res.content = boost::apply_visitor(vis, w.content.expr);
+		return res;
+	}
+
+	recipe_expression operator() (const assert_decl& w) const {
+		assert_decl res(w);
+		res.content = boost::apply_visitor(vis, w.content.expr);
+		return res;
+	}
+
+	recipe_expression operator() (const abort_decl& a) const {
+		return a;
+	}
+
+	recipe_expression operator() (const while_decl& w) const {
+		while_decl res(w);
+		res.condition = boost::apply_visitor(vis, w.condition.expr);
+		for (size_t i = 0; i < res.body.size(); ++i)
+			res.body[i] = boost::apply_visitor(*this, w.body[i].expr);
+		return res;
+	}
+
+	template <recipe_op_kind k>
+	recipe_expression operator() (const recipe_op<k>& r) const {
+		recipe_op<k> res(r);
+		for (size_t i = 0; i < res.content.size(); ++i) {
+			logic_expression_decl& decl = res.content[i].logic_expr;
+			decl.main = boost::apply_visitor(vis, decl.main.expr);
+			for (size_t j = 0; j < decl.unification_clauses.size(); ++j)
+			{
+				decl.unification_clauses[j].first = 
+					boost::apply_visitor(vis, decl.unification_clauses[j].first.expr);
+				decl.unification_clauses[j].second = 
+					boost::apply_visitor(vis, decl.unification_clauses[j].second.expr);
+			}
+		}
+		return res;
+	}
+};
+
+struct replace_constant {
+	std::string name;
+	expression_ast e;
+
+	replace_constant(const std::pair<std::string, expression_ast>& p) :
+		name(p.first), e(p.second)
+	{}
+
+	recipe_expression operator() (const recipe_expression& rec)
+	{
+		return boost::apply_visitor(replace_constant_vis(name, e), rec.expr);
+	}
+};
 }
 
 namespace hyper {
@@ -507,6 +667,17 @@ namespace hyper {
 					body.insert(begin, tmp.begin(), tmp.end());
 					body.erase(begin);
 					begin = body.begin();
+				}
+			}
+
+			begin = body.begin();
+			while (begin != end) {
+				boost::optional<std::pair<std::string, expression_ast> > p = is_constant_let(*begin);
+				if (p) {
+					std::transform(begin, end, begin, replace_constant(*p));
+					begin = body.erase(begin);
+				} else {
+					++begin;
 				}
 			}
 
