@@ -109,13 +109,13 @@ namespace hyper {
 			if (e == boost::system::errc::interrupted) {
 				/* Check if idx is in the requested_abort. If it is not the
 				 * case, just notice that something wrong happen. Otherwise,
-				 * call the associated callback then erase the entry.
+				 * call the associated callback. Don't erase the entry now,
+				 * because we don't know exactly when the callback is
+				 * terminated, and so it can produce weird things
 				 */
 				interrupt_map::iterator it = requested_abort.find(idx);
-				if (it != requested_abort.end()) {
+				if (it != requested_abort.end()) 
 					it->second(e);
-					requested_abort.erase(it);
-				}
 				return;
 			}
 
