@@ -340,6 +340,7 @@ int main(int argc, char** argv)
 		("extension,e", po::value <std::vector<std::string> >(),
 		 "extension")
 		("initial,i", "initial files for user_defined function / type")
+		("output,o", po::value<std::string>(), "output generated file")
 		("input-file", po::value< std::string >(), "input file")
 		;
 
@@ -377,8 +378,13 @@ int main(int argc, char** argv)
 		return clean_ability(abilityName);
 	}
 
-	std::string baseName = ".hyper/src/";
-	std::string baseUserName = ".hyper/user_defined";
+	std::string outputName = "./";
+	if (vm.count("output")) 
+		outputName = vm["output"].as < std::string > () + "/";
+
+	std::string hyperName = outputName + ".hyper";
+	std::string baseName = hyperName + "/src/";
+	std::string baseUserName = hyperName + "/user_defined/";
 	std::string directoryName = baseName + abilityName;
 	std::string directoryTaskName = directoryName + "/tasks";
 	std::string directoryRecipeName = directoryName + "/recipes";
@@ -395,7 +401,7 @@ int main(int argc, char** argv)
 
 	parser P(u, include_dir_path);
 
-	create_directory(".hyper");
+	create_directory(hyperName);
 	create_directory(baseName);
 	create_directory(baseUserName);
 	create_directory(directoryName);	
@@ -531,7 +537,7 @@ int main(int argc, char** argv)
 	}
 
 	{
-		std::string fileName = ".hyper/CMakeLists.txt";
+		std::string fileName = hyperName + "/CMakeLists.txt";
 		std::ofstream oss(fileName.c_str());
 		std::set<std::string> d = current_a.get_type_depends(u.types(), u);
 		d.insert(deps.fun_depends.begin(), deps.fun_depends.end());
@@ -561,25 +567,32 @@ int main(int argc, char** argv)
 	}
 
 	/* Now for all files in .hyper/src, copy different one into real src */
-	copy_if_different(baseName, "src", "");
+	copy_if_different(baseName, outputName + "/src", "");
 
 	/* Copy CMakeLists.txt */
-	copy_if_different(".hyper/CMakeLists.txt", "CMakeLists.txt");
+	copy_if_different(hyperName + "/CMakeLists.txt", outputName + "CMakeLists.txt");
 
 	/* Copy user_defined template */
 	directory_iterator end_itr; 
 	if (exists(baseUserName) && initial) {
 		if (exists("user_defined/")) {
 			std::cerr << "Won't copy user_defined template, directory already existing!\n";
-			std::cerr << "You can grab additional definition from .hyper/user_defined\n";
+			std::cerr << "You can grab additional definition from " << baseUserName << "user_defined\n";
 		} else {
-			copy_if_different(baseUserName, "user_defined", "");
+			copy_if_different(baseUserName, "/user_defined", "");
 		}
 	}
 
 	/* Symlink between user_defined files and real impl */
 	if (exists("user_defined"))
-		symlink_all("user_defined/", "src/" + abilityName);
+		symlink_all("user_defined/", outputName + "src/" + abilityName);
+
+	if (outputName != "./") {
+		path src_file(abilityName + ".ability");
+		path dst_file(outputName + abilityName + ".ability");
+		if (!exists(dst_file))
+			create_symlink(complete(src_file), complete(dst_file));
+	}
 
 	} catch (std::exception &e) { 
 		std::cerr << e.what() << std::endl;
