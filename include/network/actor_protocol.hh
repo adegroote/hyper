@@ -42,6 +42,7 @@ namespace hyper {
 
 				std::map<identifier, cb_info> map_cb;
 				std::map<std::string, set_id> id_by_actor;
+				typedef typename std::map<identifier, cb_info>::iterator iterator;
 
 				void cancel_helper(identifier id)
 				{
@@ -72,26 +73,43 @@ namespace hyper {
 					typedef typename end<InputM>::type index_end;
 					BOOST_MPL_ASSERT_NOT(( boost::is_same< index, index_end > ));
 
-					cb_info& info = map_cb[id];
-					info.input = input;
-					info.cb(boost::system::error_code());
+					iterator it = map_cb.find(id);
+					if (it != map_cb.end()) {
+						it->second.input = input;
+						it->second.cb(boost::system::error_code());
+					} else {
+						std::ostringstream oss; 
+						oss << "Identifier " << id << " does not exist in actor_db\n";
+						throw std::runtime_error(oss.str());
+					}
 				}
 
 				template <typename T>
 				T get_input(identifier id)
 				{
-					cb_info& info = map_cb[id];
-					return boost::get<T>(info.input);
+					iterator it = map_cb.find(id);
+					if (it != map_cb.end()) {
+						return boost::get<T>(it->second.input);
+					} else {
+						std::ostringstream oss; 
+						oss << "Identifier " << id << " does not exist in actor_db\n";
+						throw std::runtime_error(oss.str());
+					}
 				}
 
 				void remove(identifier id)
 				{
-					typename std::map<identifier, cb_info>::iterator it;
-					it = map_cb.find(id);
+					iterator it = map_cb.find(id);
 					assert(it != map_cb.end());
 
-					id_by_actor[it->second.actor_dst].erase(id);
-					remove_helper(id);
+					if (it != map_cb.end()) {
+						id_by_actor[it->second.actor_dst].erase(id);
+						remove_helper(id);
+					} else {
+						std::ostringstream oss; 
+						oss << "Identifier " << id << " does not exist in actor_db\n";
+						throw std::runtime_error(oss.str());
+					}
 				}
 
 				void cancel(const std::string& actor)
