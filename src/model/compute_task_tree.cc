@@ -354,7 +354,7 @@ namespace hyper {
 		{
 			must_interrupt = false;
 			running_tasks.clear();
-			cond_root.condition = logic::function_call();
+			cond_root = cond_logic_evaluation(logic::function_call());
 			cond_root.tasks.push_back(generate_task_eval(cond_root)(s));
 			async_eval_all_preconditions(*this, handler, cond_root)(cond_root.tasks[0]);
 		}
@@ -365,7 +365,7 @@ namespace hyper {
 		{
 			must_interrupt = false;
 			running_tasks.clear();
-			cond_root.condition = f;
+			cond_root = cond_logic_evaluation(f);
 			async_eval_constraint(cond_root, handler);
 		}
 
