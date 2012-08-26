@@ -80,10 +80,10 @@ namespace hyper {
 
 		bool compute_ensure_expression::abort() 
 		{
-			running = false;
-
-			if (!id) 
+			if (!running or !id)
 				return false;
+
+			running = false;
 
 			abort_msg.src = a.name;
 			abort_msg.id = *id;
@@ -92,7 +92,6 @@ namespace hyper {
 						boost::bind(&compute_ensure_expression::handle_write,
 									 this, boost::asio::placeholders::error));
 			return true;
-
 		}
 
 		void compute_ensure_expression::pause() 

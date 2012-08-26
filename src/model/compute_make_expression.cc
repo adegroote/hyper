@@ -69,9 +69,10 @@ namespace hyper {
 
 		bool compute_make_expression::abort() 
 		{
-			running = false;
-			if (!id)
+			if (!running or !id) 
 				return false;
+
+			running = false;
 
 			abort_msg.id = *id;
 			abort_msg.src = a.name;
