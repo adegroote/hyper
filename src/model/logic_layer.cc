@@ -319,6 +319,8 @@ namespace hyper {
 
 		void logic_layer::handle_timeout(const boost::system::error_code& e, logic_ctx_ptr ctx)
 		{
+			if (ctx->must_pause) return;
+
 			CHECK_INTERRUPT
 
 			a_.logger(DEBUG) << ctx->ctr << " Computation of the state " << std::endl;
@@ -384,6 +386,9 @@ namespace hyper {
 				case logic_context::LOGIC_EXEC:
 					a_.logger(DEBUG) << "Will pause logic_tree " << std::endl;
 					it->second->logic_tree.pause();
+					break;
+				case logic_context::WAIT:
+					it->second->deadline_.cancel();
 					break;
 				default:
 					break;
