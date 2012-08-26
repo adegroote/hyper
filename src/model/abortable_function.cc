@@ -183,7 +183,8 @@ namespace hyper {
 
 		void abortable_computation::abort() 
 		{
-			return terminaison(make_error_code(exec_layer_error::interrupted));
+			if (!wait_terminaison)
+				return terminaison(make_error_code(exec_layer_error::interrupted));
 		}
 
 		void abortable_computation::abort(size_t idx, cb_type cb_)
