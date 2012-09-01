@@ -579,7 +579,7 @@ int main(int argc, char** argv)
 			std::cerr << "Won't copy user_defined template, directory already existing!\n";
 			std::cerr << "You can grab additional definition from " << baseUserName << "user_defined\n";
 		} else {
-			copy_if_different(baseUserName, "/user_defined", "");
+			copy_if_different(baseUserName, outputName + "/user_defined", "");
 		}
 	}
 
