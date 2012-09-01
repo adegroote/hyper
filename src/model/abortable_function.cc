@@ -76,6 +76,8 @@ namespace hyper {
 
 		void abortable_computation::terminaison(const boost::system::error_code& e)
 		{
+			if (wait_terminaison) return;
+
 			std::vector<bool> b;
 			std::transform(seq.begin(), seq.end(), std::back_inserter(b),
 						   boost::bind(&abortable_function_base::abort, _1));
@@ -183,8 +185,7 @@ namespace hyper {
 
 		void abortable_computation::abort() 
 		{
-			if (!wait_terminaison)
-				return terminaison(make_error_code(exec_layer_error::interrupted));
+			return terminaison(make_error_code(exec_layer_error::interrupted));
 		}
 
 		void abortable_computation::abort(size_t idx, cb_type cb_)
