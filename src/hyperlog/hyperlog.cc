@@ -155,7 +155,12 @@ int main()
 	hyper::network::ping_process ping(io_s, boost::posix_time::milliseconds(100),
 									  "logger", discover.root_addr(), discover.root_port());
 
-	ping.run();
-	check.run();
-	io_s.run();
+	try {
+		ping.run();
+		check.run();
+		io_s.run();
+	} catch(const boost::system::error_code& e) {
+		std::cerr << " Catched exception " << e << std::endl;
+		return -1;
+	}
 }
