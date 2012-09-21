@@ -36,18 +36,22 @@ namespace hyper {
 		
 		struct wait_decl {
 			expression_ast content;
+			boost::optional<double> delay;
 
 			wait_decl() {}
-			wait_decl(const expression_ast& content) : content(content) {}
+			wait_decl(const expression_ast& content, boost::optional<double> delay) : 
+				content(content), delay(delay) {}
 		};
 
 		std::ostream& operator << (std::ostream& os, const wait_decl&);
 
 		struct assert_decl {
 			expression_ast content;
+			boost::optional<double> delay;
 
 			assert_decl() {}
-			assert_decl(const expression_ast& content) : content(content) {}
+			assert_decl(const expression_ast& content, boost::optional<double> delay) : 
+				content(content), delay(delay) {}
 		};
 
 		std::ostream& operator << (std::ostream& os, const assert_decl&);
@@ -75,12 +79,14 @@ namespace hyper {
 			std::vector<remote_constraint> content;
 
 			recipe_op() {}
-			recipe_op(const std::vector<expression_ast>& content_) {
+			recipe_op(const std::vector<expression_ast>& content_)
+			{
 				std::copy(content_.begin(), content_.end(),
 						  std::back_inserter(content));
 			}
 			
-			recipe_op(const std::vector<logic_expression_decl>& content_) {
+			recipe_op(const std::vector<logic_expression_decl>& content_)
+			{
 				std::copy(content_.begin(), content_.end(),
 						  std::back_inserter(content));
 			}

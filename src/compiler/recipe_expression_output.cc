@@ -213,7 +213,8 @@ namespace {
 
 			std::ostringstream oss;
 			oss << indent << ptr_object;
-			oss << "->push_back(new hyper::model::compute_wait_expression(a.io_s, boost::posix_time::milliseconds(50), \n";
+			oss << "->push_back(new hyper::model::compute_wait_expression(a.io_s, boost::posix_time::milliseconds(";
+			oss << (w.delay ? *(w.delay) : 50) << "), \n";
 			oss << abortable_function(identifier, w.content) << ",";
 			oss << next_indent << identifier << "));\n";
 
@@ -234,7 +235,8 @@ namespace {
 
 			std::ostringstream oss;
 			oss << indent << ptr_object;
-			oss << "->push_back(new hyper::model::compute_assert_expression(a.io_s, boost::posix_time::milliseconds(50), \n";
+			oss << "->push_back(new hyper::model::compute_assert_expression(a.io_s, boost::posix_time::milliseconds(";
+			oss << (w.delay ? *(w.delay) : 50) << "), \n";
 			oss << abortable_function(inner_var, w.content);
 			oss << next_indent << ", a.logic().generate(" << generate_logic_expression(w.content, a, u) << "), \n";
 			oss << next_indent << identifier << ", " << inner_var << ", size()));\n";
