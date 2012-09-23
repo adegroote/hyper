@@ -234,7 +234,7 @@ template void variable_value::serialize<boost::archive::binary_oarchive>(
 		void request_constraint::serialize(Archive& ar, const unsigned int version)
 		{
 			(void) version;
-			ar & id & src & unify_list & constraint & repeat; 
+			ar & id & src & unify_list & constraint & repeat & delay; 
 		}
 
 template void request_constraint::serialize<boost::archive::binary_iarchive>(
@@ -247,7 +247,7 @@ template void request_constraint::serialize<boost::archive::binary_oarchive>(
 		void request_constraint2::serialize(Archive& ar, const unsigned int version)
 		{
 			(void) version;
-			ar & id & src & unify_list & constraint & repeat; 
+			ar & id & src & unify_list & constraint & repeat & delay; 
 		}
 
 template void request_constraint2::serialize<boost::archive::binary_iarchive>(

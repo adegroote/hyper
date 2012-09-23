@@ -26,6 +26,7 @@ namespace hyper {
 			std::string src;
 			bool repeat;  /**< mark difference btw make and ensure */
 			bool internal; /**< internal (value update) or external */
+			double delay; /** < time between test, if repeat. Unused otherwise */
 
 			network::request_constraint_answer::state_ s; /**< current state */
 		};

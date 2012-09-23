@@ -23,6 +23,7 @@ namespace hyper {
 			std::string constraint;
 			unification_list  unify_list;
 			bool repeat;
+			double delay;
 		};
 
 		struct request_constraint2
@@ -37,6 +38,7 @@ namespace hyper {
 			logic::function_call constraint;
 			unification_list  unify_list;
 			bool repeat;
+			double delay;
 		};
 
 		struct request_constraint_ack

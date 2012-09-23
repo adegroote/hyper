@@ -14,6 +14,7 @@ namespace hyper {
 			rqst.constraint =  f;
 			rqst.repeat = true;
 			rqst.unify_list = unify_list;
+			rqst.delay = 50.0;
 		}
 
 		void compute_ensure_expression::end(cb_type cb, const boost::system::error_code& e)

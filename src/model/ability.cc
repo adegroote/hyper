@@ -167,6 +167,7 @@ namespace {
 			ctr.repeat = r.repeat;
 			ctr.s = network::request_constraint_answer::INIT;
 			ctr.internal = false;
+			ctr.delay = r.delay;
 
 			a.logger(INFORMATION) << ctr << " Handling ";
 			a.logger(INFORMATION) << r.constraint << std::endl;
@@ -186,6 +187,7 @@ namespace {
 			ctr.repeat = r.repeat;
 			ctr.s = network::request_constraint_answer::INIT;
 			ctr.internal = false;
+			ctr.delay = r.delay;
 
 			a.logger(INFORMATION) << ctr << " Handling ";
 			a.logger(INFORMATION) << r.constraint << std::endl;
