@@ -38,7 +38,7 @@ namespace hyper {
 			public:
 				compute_ensure_expression(ability&, const std::string&, const logic::function_call& f,
 										 const network::request_constraint2::unification_list&,
-										 model::identifier &, size_t idx);
+										 double delay, model::identifier &, size_t idx);
 
 				void compute (cb_type cb);
 				logic::expression error() const { return f; }
