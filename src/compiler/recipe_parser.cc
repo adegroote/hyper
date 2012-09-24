@@ -8,6 +8,7 @@
 #include <boost/fusion/include/std_pair.hpp>
 
 using namespace hyper::compiler;
+using boost::phoenix::function;
 
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
@@ -50,6 +51,12 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const letname_expre
 	return os;
 }
 
+std::ostream& hyper::compiler::operator<< (std::ostream& os, const ensure_decl& l)
+{
+	std::copy(l.content.begin(), l.content.end(), std::ostream_iterator<logic_expression_decl>(os));
+	return os;
+}
+
 std::ostream& hyper::compiler::operator<< (std::ostream& os, const recipe_context_decl& decl)
 {
 	std::copy(decl.expression_names.begin(), decl.expression_names.end(), 
@@ -83,6 +90,19 @@ hyper::compiler::make_name_expression_map(const recipe_context_decl& decl)
 	return res;
 }
 
+struct ensure_decl_adaptor {
+	template <typename>
+    struct result { typedef recipe_op<ENSURE> type; };
+
+	recipe_op<ENSURE> operator()(const ensure_decl& decl) const
+	{
+		recipe_op<ENSURE> res;
+		std::copy(decl.content.begin(), decl.content.end(),
+						  std::back_inserter(res.content));
+		res.delay = decl.delay;
+		return res;
+	}
+};
 
 BOOST_FUSION_ADAPT_STRUCT(
 	body_block_decl,
@@ -156,6 +176,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 	fun_decl,
 	(std::vector<std::string>, args)
 	(body_block_decl, impl)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+	ensure_decl,
+	(std::vector<logic_expression_decl>, content)
+	(boost::optional<double>, delay)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -287,6 +313,7 @@ struct body_block_grammar :
 		body_block_grammar::base_type(start)
 	{
 		using qi::lit;
+		using namespace qi::labels;
 
 		start = 
 			lit('{')
@@ -325,10 +352,13 @@ struct body_block_grammar :
 				  > lit(")")
 				  ;
 
+		ensure_decl_ = ensure_decl__ [_val = ensure_decl_adapt(_1)];
 
-		ensure_decl_ = lit("ensure")
+
+		ensure_decl__ = lit("ensure")
 				  > lit("(")
 				  > expression_list
+				  > -(lit(",") > qi::double_)
 				  > lit(")")
 				  ;
 
@@ -364,7 +394,8 @@ struct body_block_grammar :
 		let_decl_.name("let declaration");
 		abort_decl_.name("abort declaration");
 		make_decl_.name("make declaration");
-		ensure_decl_.name("ensure declaration");
+		ensure_decl_.name("ensure declaration proxy");
+		ensure_decl__.name("ensure declaration");
 		wait_decl_.name("wait declaration");
 		assert_decl_.name("assert declaration");
 		while_decl_.name("while declaration");
@@ -378,6 +409,7 @@ struct body_block_grammar :
 		debug(abort_decl_);
 		debug(make_decl_);
 		debug(ensure_decl_);
+		debug(ensure_decl__);
 		debug(wait_decl_);
 		debug(assert_decl_);
 		debug(while_decl_);
@@ -392,6 +424,7 @@ struct body_block_grammar :
 	qi::rule<Iterator, abort_decl(), white_space_> abort_decl_;
 	qi::rule<Iterator, recipe_op<MAKE>(), white_space_> make_decl_;
 	qi::rule<Iterator, recipe_op<ENSURE>(), white_space_> ensure_decl_;
+	qi::rule<Iterator, ensure_decl(), white_space_> ensure_decl__;
 	qi::rule<Iterator, wait_decl(), white_space_> wait_decl_;
 	qi::rule<Iterator, assert_decl(), white_space_> assert_decl_;
 	qi::rule<Iterator, while_decl(), white_space_> while_decl_;
@@ -401,6 +434,7 @@ struct body_block_grammar :
 	logic_expression_grammar<Iterator> logic_expression;
 	scoped_identifier_grammar<Iterator> scoped_identifier;
 	set_decl_grammar<Iterator> set_decl_;
+	function<ensure_decl_adaptor> ensure_decl_adapt;
 };
 
 template <typename Iterator>

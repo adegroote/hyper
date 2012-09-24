@@ -12,6 +12,7 @@ namespace hyper {
 	namespace compiler {
 		struct let_decl;
 		struct while_decl;
+		struct ensure_decl;
 
 		typedef std::pair<expression_ast, expression_ast> unification_expression;
 
@@ -77,15 +78,18 @@ namespace hyper {
 		struct recipe_op 
 		{
 			std::vector<remote_constraint> content;
+			boost::optional<double> delay;
 
 			recipe_op() {}
-			recipe_op(const std::vector<expression_ast>& content_)
+			recipe_op(const std::vector<expression_ast>& content_) :
+				delay(boost::none)
 			{
 				std::copy(content_.begin(), content_.end(),
 						  std::back_inserter(content));
 			}
 			
-			recipe_op(const std::vector<logic_expression_decl>& content_)
+			recipe_op(const std::vector<logic_expression_decl>& content_) :
+				delay(boost::none)
 			{
 				std::copy(content_.begin(), content_.end(),
 						  std::back_inserter(content));

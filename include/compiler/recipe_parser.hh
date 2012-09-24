@@ -66,6 +66,13 @@ namespace hyper {
 		};
 
 		std::ostream& operator<< (std::ostream&, const recipe_decl_list &);
+
+		struct ensure_decl {
+			std::vector<logic_expression_decl> content;
+			boost::optional<double> delay;
+		};
+
+		std::ostream& operator<< (std::ostream&, const ensure_decl&);
 	}
 }
 
