@@ -268,8 +268,7 @@ namespace hyper {
 
 				const boost::optional<logic::expression>& expr = recipes[i]->expected_error();
 				recipe_states[i].last_error_valid = 
-					((!expr && error_context.empty()) ||
-					 (!match_domain) ||
+					((!expr && (error_context.empty() || !match_domain)) ||
 					 (expr && !error_context.empty() && error_context.back() == *expr));
 
 				if (!recipe_states[i].last_error_valid) {
