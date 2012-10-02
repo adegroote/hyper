@@ -28,7 +28,7 @@ endif()
 
 include(CheckIncludeFile)
 
-find_package(Boost 1.42 REQUIRED COMPONENTS unit_test_framework date_time filesystem system thread serialization program_options)
+find_package(Boost 1.46.1 REQUIRED COMPONENTS unit_test_framework date_time filesystem system thread serialization program_options)
 include_directories(${Boost_INCLUDE_DIRS})
 message(STATUS "boost libraries "${Boost_LIBRARIES})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})

@@ -5,7 +5,7 @@ The Hyper project is an implementation of a supervision framework. It is a
 Installation
 ------------
 
-You need a recent Boost-version to build hyper (boost >= 1.44) and cmake.
+You need a recent Boost-version to build hyper (boost >= 1.46.1) and cmake.
 It has been tested on
 	- Ubuntu x86-64 (gcc 4.6, gcc 4.5.1, gcc 4.4.3, clang-current)
 	- NetBSD x86-64 
