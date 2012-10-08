@@ -16,7 +16,7 @@ namespace hyper {
 	namespace model {
 
 		static inline
-		bool none_function() { return false; }
+		bool none_function() { return true; }
 
 		struct abortable_function_base {
 			typedef boost::function<void (const boost::system::error_code& e)> cb_type;
