@@ -28,7 +28,7 @@ timeout.
 Status
 ------
 
-Hyper is used on a daily basis to control LAAS UGV, with more than 30 agents.
+Hyper is used on a daily basis to control LAAS UGV, with more than 20 agents.
 The programming language associated can be considered as relatively stable.
 Unit-test should all pass. 
 

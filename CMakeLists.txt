@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 2.6.4 FATAL_ERROR)
 
 project(HYPER CXX)
 
+set(PACKAGE_NAME hyper)
+set(PACKAGE_VERSION "0.9") 
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/config/)
 
 #set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Byuilding type, choose either Debug or Release")

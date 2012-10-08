@@ -1,0 +1,45 @@
+TODO
+
+
+
+Bugs:
+- When parsing a file which depends of genom, we need the genom extension, it's
+  a bit boring
+
+Optimization:
+
+Improvements:
+
+- Add a way to describe enum, or in a more general way Non recursive sum type
+- Don't encode the precedence in the grammar, but use the shunting-yard algorithm
+  on the flat ast tree.
+- Allow parametrization of tasks. 
+  Something like that
+		task go_to {
+			depends Pts
+			pre = {}
+			post = { localisation::distance(pos::current, Pts)  < 2.0 }
+		}
+
+  instead of enforcing that it pass by pos::goal and an unification on pos::goal.
+  It would be easier to write constraint (no more where clause), but a bit more hard to select
+  the right task (a first step could be to evaluate go_to(x) for all x known in
+  the context, but it may have some better strategies). Moreover, to do that, we must deal correctly 
+  with multiples instanciation of the same task (which is not possible for the moment).
+
+- Allow to access member of a structure using .
+
+- Add some end handler of the same kind than body. Will change the state of the
+  agent at the end of the recipe, even if it is interrupted.
+
+- Implement maintain 
+
+- Fix the terminaison value of remote_values<>.async_get. Don't return the last error_code, but
+  search in the whole computation if some errors occurs, and return this particular error_code.
+  Add an error_code to denote that the request finish, but that we do not get some value
+
+- Correct CMakeLists to search correctly the dependencies
+
+- Write some user documentation + man pages
+
+- Improve error management at the compiler level
