@@ -2,6 +2,8 @@
 #include <network/log.hh>
 #include <network/nameserver.hh>
 
+#include <hyperConfig.hh>
+
 using namespace hyper;
 
 #define HYPERRUNTIME_NAME "root"
@@ -298,7 +300,7 @@ int main()
 	root_endpoints = runtime.local_endpoints();
 
 	details::periodic_check check( actor.io_s, 
-								   boost::posix_time::milliseconds(100), 
+								   boost::posix_time::milliseconds(AGENT_TIMEOUT), 
 								   map, db);
 						 
 	check.run();

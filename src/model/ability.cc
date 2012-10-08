@@ -8,6 +8,8 @@
 #include <network/ping.hh>
 #include <network/server_tcp_impl.hh>
 
+#include <hyperConfig.hh>
+
 namespace hyper { namespace model {
 	void handle_constraint_answer(hyper::model::ability &, 
 			const boost::system::error_code&, 
@@ -304,7 +306,7 @@ namespace hyper {
 				a(a_), 
 				vis(a_),
 				serv(vis, a.io_s),
-				ping(a.io_s, boost::posix_time::milliseconds(100), a.name, 
+				ping(a.io_s, boost::posix_time::milliseconds(AGENT_TIMEOUT), a.name, 
 					 a.discover.root_addr(), a.discover.root_port()),
 				logic(a_)
 			{
