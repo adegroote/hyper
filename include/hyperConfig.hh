@@ -5,4 +5,11 @@
 #define AGENT_TIMEOUT 500.0 /* ms */
 #endif 
 
+#define BINARY_ARCHIVE 0
+#define TEXT_ARCHIVE 1
+
+#ifndef HYPER_SERIALIZATION
+#define HYPER_SERIALIZATION BINARY_ARCHIVE
+#endif
+
 #endif /* HYPER_CONFIG_HH_ */

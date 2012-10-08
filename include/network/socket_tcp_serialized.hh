@@ -7,8 +7,6 @@
 
 #define FUSION_MAX_VECTOR_SIZE 20
 
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/asio/placeholders.hpp>
@@ -27,6 +25,7 @@
 #include <boost/variant.hpp>
 
 #include <network/msg.hh>
+#include <network/select_serialization.hh>
 
 namespace hyper {
 	namespace network {
@@ -110,7 +109,7 @@ namespace hyper {
 
 						/* Compute the size archive */
 						std::ostringstream archive_stream;
-						boost::archive::binary_oarchive archive(archive_stream);
+						HYPER_OUTPUT_ARCHIVE archive(archive_stream);
 						archive << t;
 						outbound_data_ = archive_stream.str();
 						head.size = (uint32_t) outbound_data_.size();
@@ -229,7 +228,7 @@ namespace hyper {
 						{
 							std::string archive_data(&inbound_data_[0], head.size);
 							std::istringstream archive_stream(archive_data);
-							boost::archive::binary_iarchive archive(archive_stream);
+							HYPER_INPUT_ARCHIVE archive(archive_stream);
 							archive >> t;
 						}
 						catch (std::exception&)
@@ -348,7 +347,7 @@ namespace hyper {
 							{
 								std::string archive_data(&inbound_data_[0], size);
 								std::istringstream archive_stream(archive_data);
-								boost::archive::binary_iarchive archive(archive_stream);
+								HYPER_INPUT_ARCHIVE archive(archive_stream);
 								archive >> t;
 							}
 							catch (std::exception&)

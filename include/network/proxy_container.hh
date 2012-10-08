@@ -6,11 +6,11 @@
 #include <string>
 
 #include <boost/any.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
 #include <boost/bind.hpp>
 #include <boost/function/function0.hpp>
 #include <boost/optional/optional.hpp>
+
+#include <network/select_serialization.hh>
 
 namespace hyper {
 	namespace network {
@@ -29,7 +29,7 @@ namespace hyper {
 		std::string serialize_value(const T& value)
 		{
 			std::ostringstream archive_stream;
-			boost::archive::binary_oarchive archive(archive_stream);
+			HYPER_OUTPUT_ARCHIVE archive(archive_stream);
 			archive << value;
 			return archive_stream.str();
 		}
@@ -40,7 +40,7 @@ namespace hyper {
 			T res;
 			try {
 				std::istringstream archive_stream(value);
-				boost::archive::binary_iarchive archive(archive_stream);
+				HYPER_INPUT_ARCHIVE archive(archive_stream);
 				archive >> res;
 				return res;
 			} catch (std::exception& ) {
