@@ -13,6 +13,13 @@
 #include <network/socket_tcp_serialized.hh>
 #include <utils/algorithm.hh>
 
+// XXX Not portable approach
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
 namespace hyper {
 	namespace network {
 		namespace tcp {
@@ -282,16 +289,6 @@ namespace hyper {
 					  io_service_.post(boost::bind(&server::handle_stop, this));
 				  }
 
-				  struct is_v4 {
-					  typedef boost::asio::ip::tcp::endpoint argument_type;
-					  typedef bool result_type;
-
-					  bool operator() (const boost::asio::ip::tcp::endpoint& end) const
-					  {
-						  return end.address().is_v4();
-					  }
-				  };
-
 				  std::vector<boost::asio::ip::tcp::endpoint>
 				  local_endpoints() { 
 					  using namespace boost::asio;
@@ -299,12 +296,29 @@ namespace hyper {
 					  ip::tcp::resolver resolver(io_service_);
 					  std::ostringstream oss;
 					  oss << endpoint.port();
-					  ip::tcp::resolver::query query(ip::host_name(), oss.str());
-					  ip::tcp::resolver::iterator it = resolver.resolve(query);
-					  ip::tcp::resolver::iterator end;
+
+					  struct ifaddrs * ifAddrStruct;
+					  struct ifaddrs * ifa;
+					  void * tmpAddrPtr;
+
+					  getifaddrs(&ifAddrStruct);
 
 					  std::vector<ip::tcp::endpoint> res;
-					  hyper::utils::copy_if(it, end, std::back_inserter(res), is_v4());
+
+					  /* XXX non-portable + non-exception safe approach */
+					  for (ifa = ifAddrStruct; ifa != 0; ifa = ifa->ifa_next) {
+						  if (ifa ->ifa_addr->sa_family==AF_INET) { // only deal with ipv4
+							  // is a valid IP4 Address
+							  tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+							  char addressBuffer[INET_ADDRSTRLEN];
+							  inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+							  ip::tcp::endpoint endp(ip::address_v4::from_string(addressBuffer),
+									endpoint.port());
+							  res.push_back(endp);
+						  }
+					  }
+					  if (ifAddrStruct!=0) freeifaddrs(ifAddrStruct);
+
 					  return res;
 				  }
 
