@@ -144,7 +144,8 @@ struct print_initializer_helpers : boost::static_visitor<std::string>
 	std::string operator () (const Constant<T>& c) const
 	{
 		std::ostringstream oss;
-		oss << ", " << var_name << "(" << c.value << ")";
+		oss.precision(9);
+		oss << ", " << var_name << "(" << std::fixed << c.value << ")";
 		return oss.str();
 	}
 
