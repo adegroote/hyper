@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <boost/system/system_error.hpp>
