@@ -7,27 +7,18 @@ project(HYPER CXX)
 set(PACKAGE_NAME hyper)
 set(PACKAGE_VERSION "0.9") 
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/config/)
+option(BUILD_DOC "Build and install documentation (Require Sphinx)" OFF)
 
-#set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Byuilding type, choose either Debug or Release")
-#set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE LIST)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/config/)
 
 enable_testing()
 
 enable_language(C)
 
-# ----------------------------------------------------------------------------
-# Indicate CMake 2.7 and above that we don't want to mix relative
-#  and absolute paths in linker lib lists.
-# Run "cmake --help-policy CMP0003" for more information.
-# ----------------------------------------------------------------------------
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif()
 
-#------------------------------------------------------------------------------
-# External dependencies: 
-#------------------------------------------------------------------------------
 
 include(CheckIncludeFile)
 
@@ -125,3 +116,54 @@ file(GLOB hyperlog_sources ${HYPER_SOURCE_DIR}/src/hyperlog/*.cc)
 add_executable(hyperlog ${hyperlog_sources})
 target_link_libraries(hyperlog ${HYPER_LIBS} ${Boost_LIBRARIES})
 install(TARGETS hyperlog DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+
+######################################################################
+# Documentation
+######################################################################
+
+IF (BUILD_DOC)
+
+FIND_PROGRAM(SPHINX_BUILD NAMES sphinx-build)
+IF (NOT SPHINX_BUILD)
+	MESSAGE(FATAL_ERROR "Can't find sphinx-build : will not build the documentation")
+ELSE()
+	SET (CMAKE_DOC_OUT ${CMAKE_CURRENT_BINARY_DIR}/doc)
+	SET (SPHINX_OUTPUT ${CMAKE_DOC_OUT}/html)
+	SET (SPHINX_SRC ${CMAKE_CURRENT_SOURCE_DIR}/doc)
+	SET (SPHINX_LATEX_OUTPUT ${CMAKE_DOC_OUT}/tex)
+	SET (SPHINX_MAN_OUTPUT ${CMAKE_DOC_OUT}/man)
+
+	ADD_CUSTOM_TARGET(
+		doc ALL
+		COMMAND ${SPHINX_BUILD} -b html
+								-c ${SPHINX_SRC}
+								${SPHINX_SRC}/hyper
+							    ${SPHINX_OUTPUT}
+	)
+
+	FIND_PROGRAM(GZIP NAMES gzip)
+	IF (NOT GZIP)
+		MESSAGE(STATUS "Can't find gzip : will not build man pages")
+	ELSE()
+		ADD_CUSTOM_TARGET(man ALL COMMAND ${SPHINX_BUILD} -b man
+										   -c ${SPHINX_SRC}
+										   ${SPHINX_SRC}/man
+        								   ${SPHINX_MAN_OUTPUT} &&
+						  ${GZIP} -f ${SPHINX_MAN_OUTPUT}/*.1)
+
+		INSTALL(FILES ${SPHINX_MAN_OUTPUT}/hyperc.1.gz 
+				DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
+		)
+	ENDIF()
+
+	INSTALL(DIRECTORY ${SPHINX_OUTPUT}
+			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/morse
+			REGEX .doctrees.* EXCLUDE
+			REGEX _sources.* EXCLUDE
+			REGEX .*.inv EXCLUDE
+			REGEX .buildinfo EXCLUDE
+			)
+ENDIF()
+ENDIF()
+
