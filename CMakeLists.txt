@@ -117,6 +117,13 @@ add_executable(hyperlog ${hyperlog_sources})
 target_link_libraries(hyperlog ${HYPER_LIBS} ${Boost_LIBRARIES})
 install(TARGETS hyperlog DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
+# Create a symlink test files
+ADD_CUSTOM_TARGET(
+	link_test ALL
+	COMMAND ${CMAKE_COMMAND} -E create_symlink ${HYPER_SOURCE_DIR}/test/example.ability ${HYPER_BINARY_DIR}/example.ability
+	COMMAND ${CMAKE_COMMAND} -E create_symlink ${HYPER_SOURCE_DIR}/test/other.ability ${HYPER_BINARY_DIR}/other.ability
+)
+
 
 ######################################################################
 # Documentation
