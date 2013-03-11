@@ -1,0 +1,16 @@
+language: cpp
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libboost-serialization-dev libboost-thread-dev libboost-date-time-dev libboost-test-dev libboost-system-dev libboost-program-options-dev libboost-filesystem-dev 
+#  - sudo apt-get install -qq gdb
+compiler:
+  - clang
+  - gcc
+script:
+  - mkdir _build
+  - cd _build
+  - cmake .. -DCMAKE_INSTALL_PREFIX=../_install
+  - make
+#  - gdb -batch -ex run -ex bt -ex quit --args /home/travis/build/adegroote/hyper/_build/hyper_test_network_nameserver
+  - env HYPER_ROOT_ADDR="localhost:4242" ctest -V .
+
