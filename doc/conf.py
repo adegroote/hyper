@@ -42,7 +42,7 @@ master_doc = 'hyper'
 
 # General information about the project.
 project = 'hyper'
-copyright = '2013, Arnaud Degroote'
+copyright = '2013, Arnaud Degroote, LAAS-CNRS'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
