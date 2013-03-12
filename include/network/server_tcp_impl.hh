@@ -301,13 +301,17 @@ namespace hyper {
 					  struct ifaddrs * ifa;
 					  void * tmpAddrPtr;
 
-					  getifaddrs(&ifAddrStruct);
-
 					  std::vector<ip::tcp::endpoint> res;
+
+					  int err = getifaddrs(&ifAddrStruct);
+					  if (err < 0)
+						  return res;
 
 					  /* XXX non-portable + non-exception safe approach */
 					  for (ifa = ifAddrStruct; ifa != 0; ifa = ifa->ifa_next) {
-						  if (ifa ->ifa_addr->sa_family==AF_INET) { // only deal with ipv4
+						  if (ifa -> ifa_addr == 0)
+							  continue;
+						  if (ifa -> ifa_addr->sa_family==AF_INET) { // only deal with ipv4
 							  // is a valid IP4 Address
 							  tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
 							  char addressBuffer[INET_ADDRSTRLEN];
