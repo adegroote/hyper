@@ -85,6 +85,7 @@ endforeach(lib)
 # install rules for include
 install(DIRECTORY include/
 		DESTINATION ${CMAKE_INSTALL_PREFIX}/include/hyper
+		FILES_MATCHING PATTERN "*.hh"
 		)
 
 configure_file(
