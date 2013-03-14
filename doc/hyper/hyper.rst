@@ -10,6 +10,8 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+
+   what_is_hyper.rst
    installation.rst
 
 
