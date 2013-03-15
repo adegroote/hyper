@@ -13,6 +13,7 @@ Contents:
 
    what_is_hyper.rst
    installation.rst
+   first_agent.rst
 
 
 
