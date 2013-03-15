@@ -14,7 +14,7 @@ Contents:
    what_is_hyper.rst
    installation.rst
    first_agent.rst
-
+   more_realist_first_agent.rst
 
 
 Indices and tables
