@@ -7,15 +7,9 @@
 #include <network/proxy_container.hh>
 #include <network/utils.hh>
 
-#include <boost/any.hpp>
-#include <boost/array.hpp>
-#include <boost/function/function1.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/mpl/at.hpp>
-#include <boost/mpl/for_each.hpp>
-#include <boost/mpl/range_c.hpp>
-#include <boost/mpl/size.hpp>
-#include <boost/mpl/transform.hpp>
+#include <boost/mpl/vector.hpp>
+#include <boost/mpl/void.hpp>
+#include <boost/optional/optional.hpp>
 
 namespace hyper {
 	namespace network {
@@ -42,14 +36,15 @@ namespace hyper {
 
 			proxy_output_variant operator() (const request_variable_value& r) const
 			{
-				std::pair<bool, std::string> p = s.eval(r.var_name);
+				boost::optional<std::string> p = s.eval(r.var_name);
 
 				variable_value* res(new variable_value);
 				res->id = r.id;
 				res->src = r.src;
 				res->var_name = r.var_name;
-				res->success = p.first;
-				res->value = p.second;
+				res->success = p;
+				if (p)
+					res->value = *p;
 				
 				actor.client_db[r.src].async_write(*res, 
 						boost::bind(&proxy_visitor::handle_proxy_output,

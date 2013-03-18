@@ -72,13 +72,13 @@ namespace hyper {
 					return p.second;
 				}
 
-				std::pair<bool, std::string> eval(const std::string& name) const
+				boost::optional<std::string> eval(const std::string& name) const
 				{
 					serializer::const_iterator it;
 					it = s.find(name);
 					if (it == s.end()) 
-						return std::make_pair(false, "");
-					return std::make_pair(true, it->second());
+						return boost::none;
+					return it->second();
 				}
 
 				bool remove_variable(const std::string& name)
