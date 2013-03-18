@@ -1,33 +1,3 @@
-macro(HYPER_NODE_RUBY_CLIENT node)
-	find_package(SWIG)
-	find_package(Ruby)
-	include(${SWIG_USE_FILE})
-
-	set(base_directory src/${node})
-
-	include_directories(${RUBY_INCLUDE_PATH})
-	execute_process(COMMAND ${RUBY_EXECUTABLE} -r rbconfig -e "print Config::CONFIG['sitearch']"
-				OUTPUT_VARIABLE RUBY_SITEARCH)
-	string(REGEX MATCH "[0-9]+\\.[0-9]+" RUBY_VERSION "${RUBY_VERSION}")
-
-	add_custom_command(
-		OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${node}_wrap.cpp
-		COMMAND ${SWIG_EXECUTABLE}
-		ARGS -c++ -Wall -v -ruby -prefix "hyper::" -I${HYPER_INCLUDE_DIRS} -I${Boost_INCLUDE_DIRS} -I${RUBY_INCLUDE_DIR} -o ${CMAKE_CURRENT_BINARY_DIR}/${node}_wrap.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${node}.i
-		MAIN_DEPENDENCY src/${node}.i
-		DEPENDS ${base_directory}/export.hh
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	)
-	add_library(${node}_ruby_wrap SHARED ${CMAKE_CURRENT_BINARY_DIR}/${node}_wrap.cpp ${base_directory}/export.cc)
-	target_link_libraries(${node}_ruby_wrap stdc++ ${RUBY_LIBRARY})
-	target_link_libraries(${node}_ruby_wrap ${HYPER_LIBS})
-	set_target_properties(${node}_ruby_wrap 
-						  PROPERTIES OUTPUT_NAME ${node}
-						  PREFIX "")
-	install(TARGETS ${node}_ruby_wrap
-			DESTINATION lib/ruby/${RUBY_VERSION}/${RUBY_SITEARCH}/hyper)
-endmacro(HYPER_NODE_RUBY_CLIENT)
-
 macro(HYPER_NODE node)
 	project(HYPER_ABILITY_${node} CXX)
 	enable_language(C)
@@ -97,7 +67,4 @@ macro(HYPER_NODE node)
 	target_link_libraries(${node} ${Boost_LIBRARIES})
 	target_link_libraries(${node} ${HYPER_LIBS})
 	target_link_libraries(${node} ${REQUIRED_LIBS})
-
-	#	hyper_node_ruby_client(${node})
 endmacro(HYPER_NODE)
-

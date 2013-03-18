@@ -45,29 +45,6 @@ void build_main(std::ostream& oss, const std::string& name)
 	oss << hyper::compiler::replace_by(main, "@NAME@", name);
 }
 
-void build_swig(std::ostream& oss, const std::string& name)
-{
-	std::string swig = 
-		"%module @NAME@\n"
-		"%include \"typemaps.i\"\n"
-		"%{\n"
-		"	#include <string>\n"
-		"	#include \"@NAME@/export.hh\"\n"
-		"	#include \"@NAME@/types.hh\"\n"
-		"	#include <model/future.hh>\n"
-		"	using namespace hyper::@NAME@;\n"
-		"%}\n"
-		"%include \"std_string.i\"\n"
-		"%include \"@NAME@/types.hh\"\n"
-		"%include <model/future.hh>\n"
-		"%include \"@NAME@/export.hh\"\n"
-		"%template(Future_bool) hyper::model::future_value<bool>;\n"
-		;
-
-	oss << hyper::compiler::replace_by(swig, "@NAME@", name);
-
-}
-
 void build_base_cmake(std::ostream& oss, const std::string& name,
 					  const std::set<std::string>& depends)
 {
@@ -558,12 +535,6 @@ int main(int argc, char** argv)
 		std::string fileName = directoryName + "/export.cc";
 		std::ofstream oss(fileName.c_str());
 		current_a.agent_export_implementation(oss, u.types());
-	}
-	{ 
-		std::string fileName = baseName + abilityName + ".i";
-		std::ofstream oss(fileName.c_str());
-		build_swig(oss, abilityName);
-		current_a.dump_swig_ability_types(oss, u.types());
 	}
 
 	/* Now for all files in .hyper/src, copy different one into real src */

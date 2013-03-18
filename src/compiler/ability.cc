@@ -500,30 +500,6 @@ ability::agent_export_implementation(std::ostream& oss, const typeList& tList) c
 	std::for_each(readable_list.begin(), readable_list.end(), print);
 }
 
-struct dump_swig {
-	std::ostream& oss;
-
-	dump_swig(std::ostream& oss) : oss(oss) {}
-
-	void operator() (const type& t) const {
-		std::string type_name;
-		if (scope::is_scoped_identifier(t.name)) {
-			std::pair<std::string, std::string> p;
-			p = scope::decompose(t.name);
-			type_name = p.second;
-		} else {
-			type_name = t.name;
-		}
-		oss << "%template(Future_" << type_name << ") ";
-		oss << "hyper::model::future_value<";
-		if (scope::is_basic_identifier(t.name)) 
-			oss << t.type_name();
-		else 
-			oss << "hyper::" << t.type_name();
-		oss << ">;\n";
-	}
-};
-
 struct extract_types
 {
 	std::set<type> &s;
@@ -537,27 +513,3 @@ struct extract_types
 		s.insert(tList.get(p.second.t));
 	}
 };
-
-void
-ability::dump_swig_ability_types(std::ostream& oss, const typeList& tList) const
-{
-	{
-		// search the list of ability we depends on
-		std::set<std::string> type_depends;
-		compute_type_depends type_deps(type_depends, tList);
-		std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
-		std::for_each(readable_list.begin(), readable_list.end(), type_deps);
-
-		std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh", '%'));
-	}
-
-	{
-		// search the list of type used in the variable 
-		std::set<type> types;
-		extract_types type_deps(types, tList);
-		std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
-		std::for_each(readable_list.begin(), readable_list.end(), type_deps);
-	
-		std::for_each(types.begin(), types.end(), dump_swig(oss));
-	}
-}
