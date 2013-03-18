@@ -278,7 +278,13 @@ struct end_block_grammar :
 
 		end_decl_list = (*end_decl);
 
+		let_decl_ = lit("let")
+				 > identifier
+				 > expression
+				 ;
+
 		end_decl = ( set_decl_
+				   | let_decl_
 				   | expression
 				   )
 				   > -lit(';')
@@ -287,19 +293,23 @@ struct end_block_grammar :
 		start.name("end block");
 		end_decl_list.name("end declaration list");
 		end_decl.name("end declaration");
+		let_decl_.name("let declaration");
 
 #ifdef HYPER_DEBUG_RULES
 		debug(start);
 		debug(end_decl_list);
 		debug(end_decl);
+		debug(let_decl_);
 #endif
 	}
 	
 	qi::rule<Iterator, body_block_decl(), white_space_> start;
 	qi::rule<Iterator, std::vector<recipe_expression>(), white_space_> end_decl_list;
 	qi::rule<Iterator, recipe_expression(), white_space_> end_decl;
+	qi::rule<Iterator, let_decl(), white_space_> let_decl_;
 
 	grammar_expression<Iterator> expression;
+	identifier_grammar<Iterator> identifier;
 	set_decl_grammar<Iterator> set_decl_;
 };
 

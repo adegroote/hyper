@@ -258,8 +258,6 @@ in the recipe **init_r** recipe. The only interesting change is in the
         }
     }
 
-TODO make it compile :D
-
 Whoot! It seems a lot more complex!
 
 One new block appears: the **end** block, which is called at the end of the

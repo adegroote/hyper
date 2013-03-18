@@ -1,0 +1,4 @@
+Changes since 0.9
+=================
+
+- Allow to pass let expression in end block
