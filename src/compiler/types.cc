@@ -33,7 +33,7 @@ struct dump_serialize_struct
 
 	void operator() (const std::pair<std::string, symbol>& p)
 	{
-		oss << " & " << p.first;
+		oss << " & BOOST_SERIALIZATION_NVP(" << p.first << ")";
 	}
 };
 

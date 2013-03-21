@@ -491,6 +491,7 @@ universe::dump_ability_types(std::ostream& oss, const std::string& name) const
 
 		oss << "#include <string>\n#include<vector>\n" << std::endl;
 		oss << "#include <boost/serialization/serialization.hpp>\n" << std::endl;
+		oss << "#include <boost/serialization/nvp.hpp>\n" << std::endl;
 
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
 
