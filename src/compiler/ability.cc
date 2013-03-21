@@ -421,21 +421,51 @@ struct agent_export_symbol
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
 		type t = tList.get(p.second.t);
-		oss << "\t\t\thyper::model::future_value<";
+		oss << "\t\t\thyper::model::remote_value<";
 		oss << t.type_name();
-		oss << "> " << p.second.name << "();" << std::endl;
+		oss << "> " << p.second.name << ";" << std::endl;
+	}
+};
+
+struct agent_export_ctor_symbol
+{
+	std::ostream& oss;
+	const typeList& tList;
+	const std::string& name;
+	
+	agent_export_ctor_symbol(std::ostream& oss_, const typeList& tList_, const std::string& name_) :
+		oss(oss_), tList(tList_), name(name_) {};
+
+	void operator () (const std::pair<std::string, symbol>& p) const
+	{
+		oss << "\t\t\t\t\t" << p.second.name << " (" << quoted_string(name);
+		oss << ", " <<  quoted_string(p.second.name) << "), \n";
+	}
+};
+
+struct agent_export_getter
+{
+	std::ostream& oss;
+	
+	agent_export_getter(std::ostream& oss_): oss(oss_) {}
+
+	void operator () (const std::pair<std::string, symbol>& p) const
+	{
+		oss << "\t\t\t\t\tregister_get (" << quoted_string(p.second.name);
+		oss << ", " <<  p.second.name << ");\n";
 	}
 };
 
 void
-ability::agent_export_declaration(std::ostream& oss, const typeList& tList) const
+ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 {
 	std::set<std::string> type_depends;
 	compute_type_depends type_deps(type_depends, tList);
 	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
 	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
+	std::for_each(private_list.begin(), private_list.end(), type_deps);
 
-	guards g(oss, name_, "_EXPORT_AGENT_HH_");
+	guards g(oss, name_, "_ABILITY_TEST_HH_");
 
 	oss << "#include <model/ability_test.hh>\n\n";
 
@@ -444,20 +474,33 @@ ability::agent_export_declaration(std::ostream& oss, const typeList& tList) cons
 
 	namespaces n(oss, name_);
 
-
-	agent_export_symbol print(oss, tList, name_);
+	agent_export_symbol print_variable(oss, tList, name_);
 	
 	oss << "\t\tstruct ability_test : public model::ability_test {\n" ;
+
+
+	std::for_each(controlable_list.begin(), controlable_list.end(), print_variable);
+	std::for_each(readable_list.begin(), readable_list.end(), print_variable);
+	std::for_each(private_list.begin(), private_list.end(), print_variable);
+	oss << "\t\t\tint dummy;\n\n";
+
 	oss << "\t\t\tability_test() : model::ability_test(" << quoted_string(name_);
-	oss << ") {} \n" << std::endl;
-	std::for_each(controlable_list.begin(), controlable_list.end(), print);
-	std::for_each(readable_list.begin(), readable_list.end(), print);
-	oss << "\t\t\thyper::model::future_value<bool> enforce(const std::string& ctr, bool repeat) {\n";
-	oss << "\t\t\t\treturn send_constraint(ctr, repeat);\n";
-	oss << "\t\t\t}\n";
-	oss << "\t\t\tvoid exit(const std::string& msg) {\n";
-	oss << "\t\t\t\treturn abort(msg);\n";
-	oss << "\t\t\t}\n";
+	oss << "),\n";
+
+	agent_export_ctor_symbol print_ctor_variable(oss, tList, name_);
+	std::for_each(controlable_list.begin(), controlable_list.end(), print_ctor_variable);
+	std::for_each(readable_list.begin(), readable_list.end(), print_ctor_variable);
+	std::for_each(private_list.begin(), private_list.end(), print_ctor_variable);
+
+	oss << "\t\t\t\tdummy(0)\n";
+	oss << "\t\t\t{\n";
+
+	agent_export_getter print_export_getter(oss);
+	std::for_each(controlable_list.begin(), controlable_list.end(), print_export_getter);
+	std::for_each(readable_list.begin(), readable_list.end(), print_export_getter);
+	std::for_each(private_list.begin(), private_list.end(), print_export_getter);
+
+	oss << "\t\t\t} \n" << std::endl;
 	oss << "\t\t};" << std::endl;
 }
 
@@ -483,22 +526,6 @@ struct agent_export_impl
 		oss << "}" << std::endl;
 	}
 };
-
-void 
-ability::agent_export_implementation(std::ostream& oss, const typeList& tList) const
-{
-	oss << "#include <network/rpc.hh>" << std::endl;
-	oss << "#include <network/msg.hh>" << std::endl;
-	oss << "#include <model/get_value.hh>" << std::endl;
-	oss << "#include <" << name_ << "/export.hh>" << std::endl;
-	oss << "using namespace hyper;" << std::endl;
-	oss << "using namespace hyper::" << name_ << ";" << std::endl;
-	oss << std::endl;
-
-	agent_export_impl print(oss, tList, name_);
-	std::for_each(controlable_list.begin(), controlable_list.end(), print);
-	std::for_each(readable_list.begin(), readable_list.end(), print);
-}
 
 struct extract_types
 {

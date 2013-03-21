@@ -45,6 +45,21 @@ void build_main(std::ostream& oss, const std::string& name)
 	oss << hyper::compiler::replace_by(main, "@NAME@", name);
 }
 
+void build_main_test(std::ostream& oss, const std::string& name)
+{
+	std::string main = 
+		"#include <iostream>\n"
+		"#include <@NAME@/ability_test.hh>\n"
+		"\n"
+		"int main(int argc, char** argv)\n"
+		"{\n"
+		"    hyper::@NAME@::ability_test a;\n"
+		"    return a.main(argc, argv);\n"
+		"}\n"
+	;
+	oss << hyper::compiler::replace_by(main, "@NAME@", name);
+}
+
 void build_base_cmake(std::ostream& oss, const std::string& name,
 					  const std::set<std::string>& depends)
 {
@@ -514,6 +529,12 @@ int main(int argc, char** argv)
 	}
 
 	{
+		std::string fileName = baseName + "test_main.cc";
+		std::ofstream oss(fileName.c_str());
+		build_main_test(oss, abilityName);
+	}
+
+	{
 		std::string fileName = hyperName + "/CMakeLists.txt";
 		std::ofstream oss(fileName.c_str());
 		std::set<std::string> d = current_a.get_type_depends(u.types(), u);
@@ -527,14 +548,9 @@ int main(int argc, char** argv)
 	}
 
 	{
-		std::string fileName = directoryName + "/export.hh";
+		std::string fileName = directoryName + "/ability_test.hh";
 		std::ofstream oss(fileName.c_str());
-		current_a.agent_export_declaration(oss, u.types());
-	}
-	{
-		std::string fileName = directoryName + "/export.cc";
-		std::ofstream oss(fileName.c_str());
-		current_a.agent_export_implementation(oss, u.types());
+		current_a.agent_test_declaration(oss, u.types());
 	}
 
 	/* Now for all files in .hyper/src, copy different one into real src */

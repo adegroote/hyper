@@ -80,8 +80,7 @@ namespace hyper {
 
 				void dump_include(std::ostream& oss, const universe& u) const;
 				void dump(std::ostream& oss, const universe& u) const;
-				void agent_export_declaration(std::ostream& oss, const typeList& tList) const;
-				void agent_export_implementation(std::ostream& oss, const typeList& tList) const;
+				void agent_test_declaration(std::ostream& oss, const typeList& tList) const;
 
 				depends get_function_depends(const universe& u) const;
 				std::set<std::string> get_type_depends(const typeList& tList, const universe& u) const;
