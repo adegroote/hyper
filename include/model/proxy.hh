@@ -31,6 +31,13 @@ namespace hyper {
 
 				boost::optional<T> value;
 				bool terminated;
+
+				remote_value() {}
+				remote_value(const std::string& src, const std::string& var_name) : 
+					src(src), value(boost::none), terminated(false)
+				{
+					msg.var_name = var_name;
+				}
 			};
 
 			namespace details {
