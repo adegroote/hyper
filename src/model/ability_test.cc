@@ -4,9 +4,6 @@
 
 using namespace hyper::model;
 
-void dont_care(const boost::system::error_code&)
-{}
-
 void ability_test::handle_send_constraint(const boost::system::error_code& e,
 		network::identifier id,
 		future_value<bool> res,
@@ -30,6 +27,8 @@ void ability_test::handle_send_constraint(const boost::system::error_code& e,
 
 	delete msg;
 	delete ans;
+
+	stop();
 }
 
 
@@ -51,8 +50,51 @@ future_value<bool> ability_test::send_constraint(const std::string& constraint, 
 	return res;
 }
 
-void ability_test::abort(const std::string& msg)
+int usage(const std::string& name)
 {
-	network::terminate term(msg);
-	actor->client_db[target].async_write(term, &dont_care);
+	std::string prog_name = "hyper_" + name + "_test";
+	std::cerr << "Usage :\n";
+	std::cerr << prog_name << " get <var_name>\n";
+	std::cerr << prog_name << " make <request>\n";
+	std::cerr << prog_name << " ensure <request>\n";
+	return -1;
+}
+
+int ability_test::main(int argc, char ** argv)
+{
+	std::vector<std::string> arguments(argv + 1, argv + argc);
+	boost::function<void ()> to_execute;
+
+	if (argc != 3)
+		return usage(target);
+
+	if (arguments[0] != "get" &&
+		arguments[0] != "make" &&
+		arguments[0] != "ensure")
+		return usage(target);
+
+	if (arguments[0] == "get") {
+		getter_map::const_iterator it;
+		it = gmap.find(arguments[1]);
+		if (it != gmap.end()) {
+			to_execute = it->second;
+		} else
+			std::cerr << target << " does not have such variable: " << arguments[1] << std::endl;
+	}
+
+	if (arguments[0] == "make") {
+		to_execute = boost::bind(&ability_test::send_constraint, this,
+									boost::cref(arguments[1]), false);
+	}
+
+	if (arguments[0] == "ensure") {
+		to_execute = boost::bind(&ability_test::send_constraint, this,
+									boost::cref(arguments[1]), true);
+	}
+
+	register_name();
+	to_execute();
+	run();
+
+	return 0;
 }
