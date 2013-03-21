@@ -7,6 +7,7 @@
 #include <model/future.hh>
 #include <model/proxy.hh>
 #include <network/log_level.hh>
+#include <network/json_archive.hh>
 #include <network/msg_constraint.hh>
 
 #include <boost/function/function0.hpp>
@@ -32,7 +33,11 @@ namespace hyper {
 				if (e) {
 					std::cerr << "Failed to get the value of " << value.msg.var_name << std::endl;
 				} else {
-					std::cerr << "Successful get the value of " << value.msg.var_name << std::endl;
+					std::ostringstream oss;
+					hyper::network::json_oarchive oa(oss);
+					oa << value.value;
+
+					std::cerr << "Get \"" << value.msg.var_name << "\": "<< oss.str() << std::endl;
 				}
 				this->stop();
 			}
