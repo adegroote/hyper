@@ -331,7 +331,7 @@ namespace hyper {
 			impl(new ability_impl(*this))
 		{};
 
-		void ability::start()
+		void ability::register_name()
 		{
 			const std::vector<boost::asio::ip::tcp::endpoint>& addrs = impl->serv.local_endpoints();
 			bool res = actor->name_client.register_name(name, addrs);
@@ -343,6 +343,11 @@ namespace hyper {
 			}
 			else
 				std::cout << "failed to register " << name << std::endl;
+		}
+
+		void ability::start()
+		{
+			register_name();
 
 			boost::shared_ptr<get_list_agents> ptr = boost::make_shared<get_list_agents>();
 			actor->client_db["root"].async_request(ptr->first, ptr->second,

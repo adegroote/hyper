@@ -74,6 +74,7 @@ namespace hyper {
 			}
 
 			protected:
+			void register_name();
 			void start();
 
 			private:
