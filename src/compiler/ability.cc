@@ -216,11 +216,16 @@ struct compute_updater : public boost::static_visitor<std::string>
 struct add_proxy_symbol
 {
 	std::ostream& oss;
-
-	add_proxy_symbol(std::ostream& oss_) : oss(oss_) {};
+	const typeList& tList;
+	
+	add_proxy_symbol(std::ostream& oss_, const typeList& tList_) : 
+		oss(oss_), tList(tList_) {};
 
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
+		type t = tList.get(p.second.t);
+		if (t.t == noType or t.t == opaqueType) return;
+
 		std::string updater = 
 			boost::apply_visitor(compute_updater(), p.second.initializer.expr);
 		oss << "\t\t\t\t\texport_variable(" << quoted_string(p.second.name) << ", ";
@@ -388,9 +393,12 @@ ability::dump(std::ostream& oss, const universe& u) const
 	std::for_each(readable_list.begin(), readable_list.end(), initialize);
 	std::for_each(private_list.begin(), private_list.end(), initialize);
 	oss << "{\n" ;
-	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy_symbol(oss));
-	std::for_each(readable_list.begin(), readable_list.end(), add_proxy_symbol(oss));
-	std::for_each(private_list.begin(), private_list.end(), add_proxy_symbol(oss));
+
+
+	add_proxy_symbol add_proxy(oss, u.types());
+	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy);
+	std::for_each(readable_list.begin(), readable_list.end(), add_proxy);
+	std::for_each(private_list.begin(), private_list.end(), add_proxy);
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_setter_symbol(oss));
 	std::for_each(import_depends.begin(), import_depends.end(), add_import_funcs(oss));
 	std::for_each(tasks.begin(), tasks.end(), add_task_declaration(oss));
@@ -415,14 +423,14 @@ struct agent_export_symbol
 {
 	std::ostream& oss;
 	const typeList& tList;
-	const std::string& name;
 	
-	agent_export_symbol(std::ostream& oss_, const typeList& tList_, const std::string& name_) :
-		oss(oss_), tList(tList_), name(name_) {};
+	agent_export_symbol(std::ostream& oss_, const typeList& tList_) :
+		oss(oss_), tList(tList_) {};
 
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
 		type t = tList.get(p.second.t);
+		if (t.t == noType or t.t == opaqueType) return;
 		oss << "\t\t\thyper::model::remote_value<";
 		oss << t.type_name();
 		oss << "> " << p.second.name << ";" << std::endl;
@@ -440,6 +448,9 @@ struct agent_export_ctor_symbol
 
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
+		type t = tList.get(p.second.t);
+		if (t.t == noType or t.t == opaqueType) return;
+
 		oss << "\t\t\t\t\t" << p.second.name << " (" << quoted_string(name);
 		oss << ", " <<  quoted_string(p.second.name) << "), \n";
 	}
@@ -448,11 +459,15 @@ struct agent_export_ctor_symbol
 struct agent_export_getter
 {
 	std::ostream& oss;
+	const typeList& tList;
 	
-	agent_export_getter(std::ostream& oss_): oss(oss_) {}
+	agent_export_getter(std::ostream& oss_, const typeList& tList_): 
+		oss(oss_), tList(tList_) {}
 
 	void operator () (const std::pair<std::string, symbol>& p) const
 	{
+		type t = tList.get(p.second.t);
+		if (t.t == noType or t.t == opaqueType) return;
 		oss << "\t\t\t\t\tregister_get (" << quoted_string(p.second.name);
 		oss << ", " <<  p.second.name << ");\n";
 	}
@@ -476,7 +491,7 @@ ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 
 	namespaces n(oss, name_);
 
-	agent_export_symbol print_variable(oss, tList, name_);
+	agent_export_symbol print_variable(oss, tList);
 	
 	oss << "\t\tstruct ability_test : public model::ability_test {\n" ;
 
@@ -497,7 +512,7 @@ ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 	oss << "\t\t\t\tdummy(0)\n";
 	oss << "\t\t\t{\n";
 
-	agent_export_getter print_export_getter(oss);
+	agent_export_getter print_export_getter(oss, tList);
 	std::for_each(controlable_list.begin(), controlable_list.end(), print_export_getter);
 	std::for_each(readable_list.begin(), readable_list.end(), print_export_getter);
 	std::for_each(private_list.begin(), private_list.end(), print_export_getter);
