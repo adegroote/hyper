@@ -93,6 +93,11 @@ BOOST_AUTO_TEST_CASE ( network_archive_json_test )
 	try_archive_interface(od, "null");
 	od = 1.618;
 	try_archive_interface(od, "1.618");
+
+	boost::optional<bool> ob = boost::none;
+	try_archive_interface(ob, "null");
+	ob = false;
+	try_archive_interface(ob, "false");
 }
 
 
