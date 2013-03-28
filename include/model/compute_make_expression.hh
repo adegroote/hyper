@@ -26,6 +26,7 @@ namespace hyper {
 
 				bool running;
 				bool must_pause;
+				bool must_interrupt;
 				cb_type cb_;
 
 				void handle_end_computation(const boost::system::error_code& e,  cb_type);

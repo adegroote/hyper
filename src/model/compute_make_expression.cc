@@ -9,7 +9,8 @@ namespace hyper {
 			const network::request_constraint2::unification_list& unify_list,
 			bool& res) : 
 			a(a), res(res), dst(dst), f(f),
-			id(boost::none), running(false), must_pause(false) 
+			id(boost::none), running(false),
+			must_interrupt(false), must_pause(false)
 		{
 			rqst.constraint =  f;
 			rqst.repeat = false;
@@ -40,11 +41,19 @@ namespace hyper {
 					break;
 				case network::request_constraint_answer::FAILURE:
 					res = false;
-					end(cb, make_error_code(exec_layer_error::execution_ko));
+					if (must_interrupt)
+						end(cb, make_error_code(boost::system::errc::interrupted));
+					else
+						end(cb, make_error_code(exec_layer_error::execution_ko));
 					break;
 				case network::request_constraint_answer::SUCCESS:
-					res = true;
-					end(cb, boost::system::error_code());
+					if (must_interrupt) {
+						res = false;
+						end(cb, make_error_code(boost::system::errc::interrupted));
+					} else {
+						res = true;
+						end(cb, boost::system::error_code());
+					}
 					break;
 				default:
 					/* We don't care about other state for the moment */
@@ -74,6 +83,7 @@ namespace hyper {
 				return false;
 
 			running = false;
+			must_interrupt = true;
 
 			abort_msg.id = *id;
 			abort_msg.src = a.name;
