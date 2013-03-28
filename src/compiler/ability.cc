@@ -237,29 +237,6 @@ struct add_proxy_symbol
 	}
 };
 
-#if 0
-struct add_private_symbol
-{
-	std::ostream& oss;
-
-	add_private_symbol(std::ostream& oss_) : oss(oss_) {};
-
-	void operator () (const std::pair<std::string, symbol>& p) const
-	{
-		std::string updater = 
-			boost::apply_visitor(compute_updater(), p.second.initializer.expr);
-		oss << "\t\t\t\t\tupdater.add(" << quoted_string(p.second.name);
-		if (updater == "") 
-			oss << ");" << std::endl;
-		else 
-			oss << ", " << updater << ");\n";
-		oss << "\t\t\t\t\tproxy.register_variable(";
-		oss << quoted_string(p.second.name) << ", " << p.second.name;
-		oss << ");\n";
-	}
-};
-#endif
-
 struct add_setter_symbol
 {
 	std::ostream& oss;
@@ -520,40 +497,3 @@ ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 	oss << "\t\t\t} \n" << std::endl;
 	oss << "\t\t};" << std::endl;
 }
-
-struct agent_export_impl
-{
-	std::ostream& oss;
-	const typeList& tList;
-	const std::string& name;
-	
-	agent_export_impl(std::ostream& oss_, const typeList& tList_, const std::string& name_) :
-		oss(oss_), tList(tList_), name(name_) {};
-
-	void operator () (const std::pair<std::string, symbol>& p) const
-	{
-		type t = tList.get(p.second.t);
-		oss << "hyper::model::future_value<" << t.type_name();
-		oss << "> ability_test::"  << p.second.name << "()" << std::endl;
-		oss << "{" << std::endl;
-		oss << "\treturn get_value<";
-		oss << t.type_name();
-		oss << ">(" << quoted_string(p.second.name) << ");";
-		oss << std::endl;
-		oss << "}" << std::endl;
-	}
-};
-
-struct extract_types
-{
-	std::set<type> &s;
-	const typeList& tList;
-
-	extract_types(std::set<type>& s_, const typeList& tlist_) :
-		s(s_), tList(tlist_) {};
-
-	void operator() (const std::pair<std::string, symbol>& p) const
-	{
-		s.insert(tList.get(p.second.t));
-	}
-};
