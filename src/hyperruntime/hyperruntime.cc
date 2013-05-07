@@ -4,7 +4,11 @@
 
 #include <hyperConfig.hh>
 
+#include <boost/program_options.hpp>
+
 using namespace hyper;
+
+namespace po = boost::program_options;
 
 #define HYPERRUNTIME_NAME "root"
 
@@ -282,9 +286,39 @@ namespace details {
 
 }
 
-
-int main()
+void usage(const po::options_description& desc, const std::string& name)
 {
+	std::cout << "Usage: " << name << "[options]\n";
+	std::cout << desc;
+}
+
+int main(int argc, char** argv)
+{
+	int port;
+
+	po::options_description desc("Allowed options");
+	desc.add_options()
+		("help,h", "produce help message")
+		("port,p", po::value<int>(&port)->default_value(4242),
+				   "select the port where hyperruntime listen")
+	;
+
+	po::variables_map vm;
+	po::store(po::command_line_parser(argc, argv).
+			options(desc).run(), vm);
+	po::notify(vm);
+
+	if (vm.count("help")) {
+		usage(desc, "hyperruntime");
+		exit(0);
+	}
+
+	if (port < 0 || port > 65535) {
+		std::cerr << "Invalid port number " << port << std::endl;
+		exit(-1);
+	}
+
+
 	std::vector<boost::asio::ip::tcp::endpoint> root_endpoints;
 	details::runtime_map map;
 	details::runtime_actor actor(map);
@@ -296,7 +330,7 @@ int main()
 								  details::output_msg, 
 								  details::runtime_visitor
 								> tcp_runtime_impl;
-	tcp_runtime_impl runtime(4242, runtime_vis, actor.io_s);
+	tcp_runtime_impl runtime(port, runtime_vis, actor.io_s);
 	root_endpoints = runtime.local_endpoints();
 
 	details::periodic_check check( actor.io_s, 
