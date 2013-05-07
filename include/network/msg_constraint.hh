@@ -11,6 +11,8 @@
 
 namespace hyper {
 	namespace network {
+		typedef std::vector<logic::expression> error_context;
+
 		struct request_constraint
 		{
 			template <class Archive>
@@ -22,6 +24,7 @@ namespace hyper {
 			mutable std::string src;
 			std::string constraint;
 			unification_list  unify_list;
+			error_context err_ctx;
 			bool repeat;
 			double delay;
 		};
@@ -37,6 +40,7 @@ namespace hyper {
 			mutable std::string src;
 			logic::function_call constraint;
 			unification_list  unify_list;
+			error_context err_ctx;
 			bool repeat;
 			double delay;
 		};
@@ -51,6 +55,7 @@ namespace hyper {
 			bool acked;
 		};
 
+
 		struct request_constraint_answer
 		{
 			enum state_ { INIT, RUNNING, PAUSED, TEMP_FAILURE, SUCCESS, FAILURE, INTERRUPTED };
@@ -61,6 +66,7 @@ namespace hyper {
 			mutable identifier id;
 			mutable std::string src;
 			state_ state;
+			error_context err_ctx;
 		};
 
 		struct abort 

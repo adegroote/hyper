@@ -201,7 +201,7 @@ namespace hyper {
 		void request_constraint::serialize(Archive& ar, const unsigned int version)
 		{
 			(void) version;
-			ar & id & src & unify_list & constraint & repeat & delay; 
+			ar & id & src & unify_list & constraint & err_ctx & repeat & delay; 
 		}
 
 		REGISTER_SERIALIZE(request_constraint)
@@ -210,7 +210,7 @@ namespace hyper {
 		void request_constraint2::serialize(Archive& ar, const unsigned int version)
 		{
 			(void) version;
-			ar & id & src & unify_list & constraint & repeat & delay; 
+			ar & id & src & unify_list & constraint & err_ctx & repeat & delay; 
 		}
 
 		REGISTER_SERIALIZE(request_constraint2)
@@ -228,7 +228,7 @@ namespace hyper {
 		void request_constraint_answer::serialize(Archive& ar, const unsigned int version)
 		{
 			(void) version;
-			ar & id & src & state;
+			ar & id & src & state & err_ctx;
 		}
 
 		REGISTER_SERIALIZE(request_constraint_answer)
