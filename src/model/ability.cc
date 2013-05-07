@@ -83,7 +83,6 @@ namespace {
 							   network::pause,
 							   network::resume> input_msg;
 	typedef boost::mpl::vector<network::variable_value,
-							   network::request_constraint_ack,
 							   network::request_constraint_answer,
 							   boost::mpl::void_> output_msg;
 

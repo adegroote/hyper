@@ -45,17 +45,6 @@ namespace hyper {
 			double delay;
 		};
 
-		struct request_constraint_ack
-		{
-			template <class Archive>
-			void serialize(Archive& ar, const unsigned int version);
-
-			mutable identifier id;
-			mutable std::string src;
-			bool acked;
-		};
-
-
 		struct request_constraint_answer
 		{
 			enum state_ { INIT, RUNNING, PAUSED, TEMP_FAILURE, SUCCESS, FAILURE, INTERRUPTED };

@@ -75,7 +75,7 @@ namespace hyper {
 			terminate(const std::string& src) : reason(src) {}
 		};
 
-		typedef boost::mpl::vector20<
+		typedef boost::mpl::vector19<
 			request_name,
 			request_name_answer,
 			register_name,
@@ -89,7 +89,6 @@ namespace hyper {
 			variable_value,
 			request_constraint,
 			request_constraint2,
-			request_constraint_ack,
 			request_constraint_answer,
 			log_msg,
 			terminate,
@@ -98,7 +97,7 @@ namespace hyper {
 			resume
 		> message_types;
 
-#define MESSAGE_TYPE_MAX 20
+#define MESSAGE_TYPE_MAX 19
 
 	}
 }

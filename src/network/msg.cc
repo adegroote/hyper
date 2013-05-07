@@ -216,15 +216,6 @@ namespace hyper {
 		REGISTER_SERIALIZE(request_constraint2)
 
 		template <class Archive>
-		void request_constraint_ack::serialize(Archive& ar, const unsigned int version)
-		{
-			(void) version;
-			ar & id & src & acked; 
-		}
-
-		REGISTER_SERIALIZE(request_constraint_ack)
-
-		template <class Archive>
 		void request_constraint_answer::serialize(Archive& ar, const unsigned int version)
 		{
 			(void) version;
