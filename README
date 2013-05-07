@@ -6,10 +6,10 @@ Installation
 ------------
 
 You need a recent Boost-version to build hyper (boost >= 1.46.1) and cmake.
-It has been tested on
-	- Ubuntu x86-64 (gcc 4.6, gcc 4.5.1, gcc 4.4.3, clang-current)
+
+It has been tested on:
+	- Ubuntu x86-64 
 	- NetBSD x86-64 
-	- Windows 7 x86-64 ( visual studio 2010, boost 1.44)
 
 To build it :
   cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} .
@@ -40,4 +40,5 @@ It must be done before first stable version.
 
 Contact
 -------
+
 Drops a mail to arnaud.degroote@laas.fr
