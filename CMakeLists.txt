@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.6.4 FATAL_ERROR)
 project(HYPER CXX)
 
 set(PACKAGE_NAME hyper)
-set(PACKAGE_VERSION "0.9") 
+set(PACKAGE_VERSION "0.10") 
 
 option(BUILD_DOC "Build and install documentation (Require Sphinx)" OFF)
 
