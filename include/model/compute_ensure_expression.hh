@@ -41,7 +41,9 @@ namespace hyper {
 										 double delay, model::identifier &, size_t idx);
 
 				void compute (cb_type cb);
-				logic::expression error() const { return f; }
+				network::runtime_failure error() const { 
+					return network::constraint_failure(f);
+				}
 				bool abort();
 				void pause();
 				void resume();

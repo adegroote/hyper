@@ -104,7 +104,7 @@ namespace {
 		{
 		};
 
-		void handle_second_test(boost::optional<hyper::logic::expression> e)
+		void handle_second_test(boost::optional<hyper::network::runtime_failure> e)
 		{
 			BOOST_CHECK(!e);
 			BOOST_CHECK(pos.x == 42);
@@ -114,7 +114,7 @@ namespace {
 			valid_test++;
 		}
 
-		void handle_first_test(boost::optional<hyper::logic::expression> e)
+		void handle_first_test(boost::optional<hyper::network::runtime_failure> e)
 		{
 			BOOST_CHECK(!e);
 			BOOST_CHECK(pos.x == 42);

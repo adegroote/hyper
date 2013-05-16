@@ -29,7 +29,8 @@ namespace hyper {
 			}
 		}
 
-		abortable_function::abortable_function(exec_type exec, abort_type abort, const logic::expression& error):
+		abortable_function::abortable_function(exec_type exec, abort_type abort, 
+				const hyper::network::runtime_failure & error):
 				exec_(exec), abort_(abort), error_(error), running(false),
 				must_interrupt(false), must_pause(false) {}
 
@@ -178,7 +179,7 @@ namespace hyper {
 						this, boost::asio::placeholders::error, index));
 		}
 
-		logic::expression abortable_computation::error() const {
+		network::runtime_failure abortable_computation::error() const {
 			assert(error_index);
 			return seq[*error_index]->error();
 		}

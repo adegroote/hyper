@@ -4,11 +4,13 @@
 #include <set>
 #include <string>
 
+#include <network/runtime_error.hh>
 #include <model/logic_layer_fwd.hh>
 #include <model/task_fwd.hh>
 #include <model/recipe_fwd.hh>
 
 #include <boost/shared_ptr.hpp>
+
 
 namespace hyper {
 	namespace model {
@@ -70,13 +72,18 @@ namespace hyper {
 				virtual ~task() {};
 
 			protected:
-				std::vector<logic::expression> error_context;
+				// the full error context 
+				std::vector<network::runtime_failure> error_context;
+
+				// the constraint errorc_context, used to not reuse recipe
+				// which use the same kind of constraint
+				std::vector<logic::expression> constraint_error_context;
 				virtual bool has_postconditions() const = 0;
 
 			private:
 				void handle_initial_postcondition_handle(const boost::system::error_code&, conditionV failed);
 				void handle_precondition_handle(const boost::system::error_code&, conditionV failed);
-				void handle_execute(boost::optional<hyper::logic::expression>);
+				void handle_execute(boost::optional<hyper::network::runtime_failure>);
 				void handle_final_postcondition_handle(const boost::system::error_code&, conditionV failed);
 				void async_evaluate_recipe_preconditions(const boost::system::error_code&, conditionV, size_t i);
 				void end_execute(bool res);

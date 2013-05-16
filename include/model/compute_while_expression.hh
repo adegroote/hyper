@@ -86,7 +86,7 @@ namespace hyper {
 				 * Retrieve the error associated to this computation. It is
 				 * valid only the last computation fails.
 				 */
-				logic::expression error() const { return fun_body_ptr->error(); }
+				network::runtime_failure error() const { return fun_body_ptr->error(); }
 
 
 				/**

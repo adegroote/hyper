@@ -54,6 +54,24 @@ namespace {
 			}
 		}
 	};
+
+	struct add_constraint_context : public boost::static_visitor<void> {
+		std::vector<hyper::logic::expression>& constraint_error_context;
+
+		add_constraint_context(std::vector<hyper::logic::expression>& ctx):
+			constraint_error_context(ctx)
+		{}
+
+		template <typename T>
+		void operator() (const T&) const {
+			constraint_error_context.push_back(hyper::logic::empty());
+		} 
+
+		void operator() (const hyper::network::constraint_failure& f) const
+		{
+			constraint_error_context.push_back(f.what);
+		}
+	};
 }
 
 namespace hyper {
@@ -102,20 +120,28 @@ namespace hyper {
 			end_execute(failed.empty());
 		}
 
-		void task::handle_execute(boost::optional<hyper::logic::expression> l)
+		void task::handle_execute(boost::optional<hyper::network::runtime_failure> l)
 		{
 			CHECK_INTERRUPT
 
 			bool res = !l;
 
 			a.logger(DEBUG) << *this << "Recipe execution finish ";
-			a.logger(DEBUG) << (res ? "with success" : "with failure") << std::endl;
+			a.logger(DEBUG) << (res ? "with success" : "with failure");
 			if (!res && !must_interrupt) {
+				a.logger(DEBUG) << " : " << *l << std::endl;
 				error_context.push_back(*l);
+				error_context.back().recipe_name = 
+						recipes[recipe_states[0].index]->name;
+				boost::apply_visitor(
+						add_constraint_context(constraint_error_context), 
+						(*l).error);
 				std::for_each(pending_cb.begin(), pending_cb.end(), temp_fail(a));
 				return handle_precondition_handle(boost::system::error_code(),
 												  conditionV());
 			}
+
+			a.logger(DEBUG) << std::endl;
 
 			if (!res && must_interrupt) 
 				return end_execute(false);
@@ -224,10 +250,10 @@ namespace hyper {
 			a.logger(DEBUG) << std::endl;
 			
 			a.logger(DEBUG) << *this << "Error_context ";
-			if (error_context.empty())
+			if (constraint_error_context.empty())
 				a.logger(DEBUG) << "empty";
 			else 
-				a.logger(DEBUG) << error_context.back();
+				a.logger(DEBUG) << constraint_error_context.back();
 			a.logger(DEBUG) << std::endl;
 
 			boost::optional<size_t> first_electable;
@@ -252,15 +278,15 @@ namespace hyper {
 					a.logger(DEBUG) << std::endl;
 				}
 
-				bool has_constraint = hyper::utils::any(error_context.begin(),
-													    error_context.end(),
+				bool has_constraint = hyper::utils::any(constraint_error_context.begin(),
+													    constraint_error_context.end(),
 														is_constraint());
 				bool match_domain;
 				if (has_constraint) {
 					/* check if the domain of the recipe contains one of constraint
 					 * which appears in the context */
-					match_domain = hyper::utils::any(error_context.begin(), 
-												     error_context.end(),
+					match_domain = hyper::utils::any(constraint_error_context.begin(), 
+												     constraint_error_context.end(),
 					phx::count(recipes[i]->constraint_domain, phx::arg_names::arg1) == 1);
 				} else {
 					match_domain = true;
@@ -268,8 +294,8 @@ namespace hyper {
 
 				const boost::optional<logic::expression>& expr = recipes[i]->expected_error();
 				recipe_states[i].last_error_valid = 
-					((!expr && (error_context.empty() || !match_domain)) ||
-					 (expr && !error_context.empty() && error_context.back() == *expr));
+					((!expr && (constraint_error_context.empty() || !match_domain)) ||
+					 (expr && !constraint_error_context.empty() && constraint_error_context.back() == *expr));
 
 				if (!recipe_states[i].last_error_valid) {
 					a.logger(DEBUG) << *this << "Won't evaluate " << recipes[i]->r_name();
@@ -334,6 +360,7 @@ namespace hyper {
 			must_interrupt = false;
 			executing_recipe = false;
 			error_context.clear();
+			constraint_error_context.clear();
 
 			a.logger(DEBUG) << *this << "Start execution " << std::endl;
 

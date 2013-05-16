@@ -10,7 +10,7 @@
 #include <boost/system/error_code.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <logic/expression.hh>
+#include <network/runtime_error.hh>
 
 namespace hyper {
 	namespace model {
@@ -25,7 +25,7 @@ namespace hyper {
 			virtual bool abort() = 0;
 			virtual void pause() = 0;
 			virtual void resume() = 0;
-			virtual logic::expression error() const { return logic::empty(); };
+			virtual network::runtime_failure error() const { return network::success(); };
 			virtual ~abortable_function_base() {};
 		};
 
@@ -63,20 +63,20 @@ namespace hyper {
 
 			exec_type exec_;
 			abort_type abort_;
-			logic::expression error_;
+			network::runtime_failure error_;
 			cb_type cb_;
 			bool running;
 			bool must_interrupt;
 			bool must_pause;
 
 			abortable_function(exec_type exec, abort_type abort = none_function, 
-							   const logic::expression &error = logic::empty());
+							   const network::runtime_failure &error = network::success());
 			void compute (cb_type cb) ;
 			bool abort();
 			void pause();
 			void resume();
 
-			logic::expression error() const { return error_; }
+			network::runtime_failure error() const { return error_; }
 
 			private:
 			void handler(const boost::system::error_code& e, cb_type cb);
@@ -138,7 +138,7 @@ namespace hyper {
 				}
 
 				void compute(cb_type cb_);
-				logic::expression error() const;
+				network::runtime_failure error() const;
 				void abort();
 				void pause();
 				void resume();

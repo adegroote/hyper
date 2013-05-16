@@ -105,7 +105,7 @@ namespace hyper {
 				 */
 				void resume();
 
-				logic::expression error() const { return f; }
+				network::runtime_failure error() const { return network::assertion_failure(f); }
 		};
 	}
 }
