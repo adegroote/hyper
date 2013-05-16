@@ -69,6 +69,48 @@ namespace boost {
 			(void) version; 
 			ar & c.value;
 		}
+
+		template <class Archive>
+		void serialize(Archive& ar, hyper::network::success&, const unsigned int version)
+		{
+			(void) version; (void) ar;
+		}
+
+
+		template <class Archive>
+		void serialize(Archive& ar, hyper::network::assertion_failure &a, const unsigned int version)
+		{
+			(void) version;
+			ar  & a.what;
+		}
+
+		template <class Archive>
+		void serialize(Archive& ar, hyper::network::constraint_failure &c, const unsigned int version)
+		{
+			(void) version;
+			ar  & c.what;
+		}
+
+		template <class Archive>
+		void serialize(Archive& ar, hyper::network::read_failure &r, const unsigned int version)
+		{
+			(void) version;
+			ar  & r.symbol;
+		}
+
+		template <class Archive>
+		void serialize(Archive& ar, hyper::network::execution_failure &e, const unsigned int version)
+		{
+			(void) version;
+			ar & e.what;
+		}
+
+		template <class Archive>
+		void serialize(Archive& ar, hyper::network::runtime_failure& r, const unsigned int version)
+		{
+			(void) version;
+			ar & r.error & r.recipe_name;
+		}
 	}
 }
 

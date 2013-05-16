@@ -7,11 +7,12 @@
 
 #include <network/types.hh>
 #include <logic/expression.hh>
+#include <network/runtime_error.hh>
 
 
 namespace hyper {
 	namespace network {
-		typedef std::vector<logic::expression> error_context;
+		typedef std::vector<network::runtime_failure> error_context;
 
 		struct request_constraint
 		{
