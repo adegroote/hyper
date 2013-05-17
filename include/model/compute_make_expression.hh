@@ -40,7 +40,10 @@ namespace hyper {
 
 				void compute (cb_type cb);
 				network::runtime_failure error() const { 
-					return network::constraint_failure(f); 
+					network::runtime_failure failure = 
+						network::constraint_failure(f);
+					failure.error_cause = ans.err_ctx;
+					return failure;
 				}
 				bool abort();
 				void pause();

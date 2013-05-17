@@ -44,7 +44,6 @@ namespace hyper {
 		};
 
 		struct runtime_failure {
-
 			typedef
 				boost::variant<
 				  success 
@@ -64,7 +63,10 @@ namespace hyper {
 
 			type error;
 			std::string recipe_name;
+
+			std::vector<runtime_failure> error_cause;
 		};
+
 
 		std::ostream& operator<< (std::ostream& os, const runtime_failure& r);
 
