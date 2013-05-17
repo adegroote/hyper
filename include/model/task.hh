@@ -56,6 +56,15 @@ namespace hyper {
 
 				friend std::ostream& operator<< (std::ostream&, const task&);
 
+			protected:
+				// the full error context 
+				std::vector<network::runtime_failure> error_context;
+
+				// the constraint errorc_context, used to not reuse recipe
+				// which use the same kind of constraint
+				std::vector<logic::expression> constraint_error_context;
+				virtual bool has_postconditions() const = 0;
+
 			public:
 				task(ability& a_, const std::string& name_) 
 					: a(a_), name(name_), is_running(false), executing_recipe(false),
@@ -71,14 +80,10 @@ namespace hyper {
 				void resume();
 				virtual ~task() {};
 
-			protected:
-				// the full error context 
-				std::vector<network::runtime_failure> error_context;
-
-				// the constraint errorc_context, used to not reuse recipe
-				// which use the same kind of constraint
-				std::vector<logic::expression> constraint_error_context;
-				virtual bool has_postconditions() const = 0;
+				const std::vector<network::runtime_failure>& 
+				get_error_context() const {
+					return this->error_context;
+				}
 
 			private:
 				void handle_initial_postcondition_handle(const boost::system::error_code&, conditionV failed);

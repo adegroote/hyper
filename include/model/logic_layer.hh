@@ -41,6 +41,9 @@ namespace hyper {
 			/* Logic layer evaluation */
 			compute_task_tree logic_tree;
 
+			/* error context associated to the whole computation */
+			hyper::network::error_context err_ctx;
+
 			boost::asio::deadline_timer deadline_;
 
 			enum state { IDLE, EXEC, LOGIC, LOGIC_EXEC, WAIT };

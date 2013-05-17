@@ -396,6 +396,13 @@ namespace hyper {
 		{
 			CHECK_INTERRUPT
 
+			/* copy the error context from the task into the main logic_layer
+			 * error context */
+			const hyper::network::error_context& task_err_ctx =
+				layer.tasks[task.name]->get_error_context();
+			ctx.err_ctx.insert(ctx.err_ctx.end(), 
+					task_err_ctx.begin(), task_err_ctx.end());
+
 			running_tasks.erase(task.name);
 			task.res_exec = res;
 

@@ -292,7 +292,7 @@ namespace hyper {
 			if (ctx->ctr.repeat) {
 				ctx->s_ = logic_context::WAIT;
 				ctx->ctr.s = hyper::network::request_constraint_answer::RUNNING;
-				update_ctr_status(a_, ctx->ctr);
+				update_ctr_status(a_, ctx->ctr, hyper::network::empty_error_context);
 
 				if (! ctx->must_pause) {
 					ctx->deadline_.expires_from_now(boost::posix_time::milliseconds(ctx->ctr.delay));
@@ -305,7 +305,7 @@ namespace hyper {
 			}
 			else {
 				running_ctx.erase(make_key(ctx));
-				return ctx->cb(network::request_constraint_answer::SUCCESS);
+				return ctx->cb(network::request_constraint_answer::SUCCESS, ctx->err_ctx);
 			}
 		}
 
@@ -313,9 +313,9 @@ namespace hyper {
 		{
 			running_ctx.erase(make_key(ctx));
 			if (e == boost::system::errc::interrupted)
-				return ctx->cb(network::request_constraint_answer::INTERRUPTED);
+				return ctx->cb(network::request_constraint_answer::INTERRUPTED, ctx->err_ctx);
 			else
-				return ctx->cb(network::request_constraint_answer::FAILURE);
+				return ctx->cb(network::request_constraint_answer::FAILURE, ctx->err_ctx);
 		}
 
 		void logic_layer::handle_timeout(const boost::system::error_code& e, logic_ctx_ptr ctx)

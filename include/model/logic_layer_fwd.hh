@@ -17,8 +17,10 @@ namespace hyper {
 
 		struct logic_layer;
 
-		typedef boost::function<void (network::request_constraint_answer::state_)>
-				logic_layer_cb;
+		typedef boost::function<void (
+				network::request_constraint_answer::state_, 
+				const network::error_context&)>
+		logic_layer_cb;
 
 		struct logic_constraint
 		{
@@ -38,7 +40,8 @@ namespace hyper {
 		 * @param a the agent context
 		 * @param ctr the constraint subject
 		 */
-		void update_ctr_status(hyper::model::ability& a, hyper::model::logic_constraint ctr);
+		void update_ctr_status(hyper::model::ability& a, hyper::model::logic_constraint ctr,
+														 const hyper::network::error_context&);
 
 		inline
 		std::ostream& operator << (std::ostream& oss, const logic_constraint& c)

@@ -34,7 +34,7 @@ namespace {
 				case hyper::network::request_constraint_answer::RUNNING:
 				case hyper::network::request_constraint_answer::TEMP_FAILURE:
 					c.first.s = hyper::network::request_constraint_answer::RUNNING;
-					update_ctr_status(a, c.first);
+					update_ctr_status(a, c.first, hyper::network::empty_error_context);
 					break;
 				default:
 					break;
@@ -50,7 +50,7 @@ namespace {
 		void operator()(task::ctx_cb& c) {
 			if (c.first.s == hyper::network::request_constraint_answer::RUNNING) {
 				c.first.s = hyper::network::request_constraint_answer::TEMP_FAILURE;
-				update_ctr_status(a, c.first);
+				update_ctr_status(a, c.first, hyper::network::empty_error_context);
 			}
 		}
 	};
@@ -351,7 +351,7 @@ namespace hyper {
 			pending_cb.push_back(std::make_pair(ctr, cb));
 
 			if (executing_recipe && ctr.s == network::request_constraint_answer::RUNNING)
-				update_ctr_status(a, ctr);
+				update_ctr_status(a, ctr, hyper::network::empty_error_context);
 
 			if (is_running)
 				return;

@@ -18,7 +18,8 @@ namespace hyper { namespace model {
 		delete ans;
 	}
 
-	void update_ctr_status(hyper::model::ability& a, hyper::model::logic_constraint ctr)
+	void update_ctr_status(hyper::model::ability& a, hyper::model::logic_constraint ctr, 
+						   const hyper::network::error_context& err_ctx)
 	{
 		if (ctr.internal)
 			return;
@@ -27,6 +28,7 @@ namespace hyper { namespace model {
 		ans->id = ctr.id;
 		ans->src = ctr.src;
 		ans->state = ctr.s;
+		ans->err_ctx = err_ctx;
 
 		a.logger(DEBUG) << ctr << " Sending constraint update status " ;
 		switch(ans->state) {
@@ -153,11 +155,12 @@ namespace {
 
 
 		void handle_async_exec_completion(network::request_constraint_answer::state_ s,
+				const network::error_context& err_ctx,
 				model::logic_constraint ctr) const
 		{
 			model::logic_constraint ctr2 = ctr;
 			ctr2.s = s;
-			update_ctr_status(a, ctr2);
+			update_ctr_status(a, ctr2, err_ctx);
 		}
 
 		output_variant operator() (const network::request_constraint& r) const
@@ -175,7 +178,7 @@ namespace {
 
 			a.logic().async_exec(ctr, r.constraint, r.unify_list, 
 					boost::bind(&ability_visitor::handle_async_exec_completion, this,
-								boost::asio::placeholders::error, ctr));
+								boost::asio::placeholders::error, _2, ctr));
 
 			return boost::mpl::void_();
 		}
@@ -195,7 +198,7 @@ namespace {
 
 			a.logic().async_exec(ctr, r.constraint, r.unify_list,
 					boost::bind(&ability_visitor::handle_async_exec_completion, this,
-								boost::asio::placeholders::error, ctr));
+								boost::asio::placeholders::error, _2, ctr));
 
 			return boost::mpl::void_();
 		}
