@@ -56,13 +56,14 @@ namespace hyper {
 
 				friend std::ostream& operator<< (std::ostream&, const task&);
 
-			protected:
 				// the full error context 
-				std::vector<network::runtime_failure> error_context;
+				hyper::network::error_context err_ctx;
 
 				// the constraint errorc_context, used to not reuse recipe
 				// which use the same kind of constraint
 				std::vector<logic::expression> constraint_error_context;
+
+			protected:
 				virtual bool has_postconditions() const = 0;
 
 			public:
@@ -82,7 +83,7 @@ namespace hyper {
 
 				const std::vector<network::runtime_failure>& 
 				get_error_context() const {
-					return this->error_context;
+					return this->err_ctx;
 				}
 
 			private:

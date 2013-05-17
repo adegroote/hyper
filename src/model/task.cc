@@ -130,8 +130,8 @@ namespace hyper {
 			a.logger(DEBUG) << (res ? "with success" : "with failure");
 			if (!res && !must_interrupt) {
 				a.logger(DEBUG) << " : " << *l << std::endl;
-				error_context.push_back(*l);
-				error_context.back().recipe_name = 
+				err_ctx.push_back(*l);
+				err_ctx.back().recipe_name = 
 						recipes[recipe_states[0].index]->name;
 				boost::apply_visitor(
 						add_constraint_context(constraint_error_context), 
@@ -359,7 +359,7 @@ namespace hyper {
 			is_running = true;
 			must_interrupt = false;
 			executing_recipe = false;
-			error_context.clear();
+			err_ctx.clear();
 			constraint_error_context.clear();
 
 			a.logger(DEBUG) << *this << "Start execution " << std::endl;
