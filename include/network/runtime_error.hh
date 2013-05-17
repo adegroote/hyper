@@ -65,6 +65,8 @@ namespace hyper {
 			std::string recipe_name;
 
 			std::vector<runtime_failure> error_cause;
+
+			void pretty_print(std::ostream& os, int indent = 0) const;
 		};
 
 

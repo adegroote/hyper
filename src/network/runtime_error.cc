@@ -1,6 +1,8 @@
 #include <iostream>
+#include <algorithm>
 
 #include <boost/variant/apply_visitor.hpp>
+#include <boost/bind.hpp>
 
 #include <network/runtime_error.hh>
 
@@ -39,6 +41,18 @@ namespace hyper {
 		{
 			boost::apply_visitor(print(oss), r.error);
 			return oss;
+		}
+
+		void
+		runtime_failure::pretty_print(std::ostream& oss, int indent) const
+		{
+			for (int i; i < indent; i++) oss << '\t';
+
+			oss << error << " in " << recipe_name << std::endl; 
+
+			std::for_each(error_cause.begin(), error_cause.end(),
+						  boost::bind(&runtime_failure::pretty_print,
+									  _1, boost::ref(oss), indent + 1));
 		}
 	}
 }
