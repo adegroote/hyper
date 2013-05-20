@@ -1,4 +1,4 @@
-#include <iostream>
+#include <sstream>
 #include <algorithm>
 
 #include <boost/variant/apply_visitor.hpp>
@@ -35,7 +35,23 @@ namespace {
 				oss << " with " << f.extra_information;
 			oss << " >";
 		}
+
 	};
+
+	std::string compute_place(const hyper::network::runtime_failure& f) {
+		std::ostringstream oss;
+
+		if (f.agent_name != "")
+			oss << f.agent_name << "#";
+
+		if (f.task_name != "")
+			oss << f.task_name << "#";
+
+		if (f.recipe_name != "")
+			oss << f.recipe_name;
+
+		return oss.str();
+	}
 }
 
 namespace hyper {
@@ -52,8 +68,10 @@ namespace hyper {
 			for (int i; i < indent; i++) oss << '\t';
 
 			oss << error;
-			if (recipe_name != "") 
-				oss << " in " << recipe_name << std::endl; 
+
+			std::string place = compute_place(*this);
+			if (place != "") 
+				oss << " in " << place << std::endl; 
 			else
 				oss << std::endl;
 

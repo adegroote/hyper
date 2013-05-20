@@ -109,7 +109,7 @@ namespace boost {
 		void serialize(Archive& ar, hyper::network::runtime_failure& r, const unsigned int version)
 		{
 			(void) version;
-			ar & r.error & r.recipe_name & r.error_cause;
+			ar & r.error & r.agent_name & r.task_name & r.recipe_name & r.error_cause;
 		}
 	}
 }

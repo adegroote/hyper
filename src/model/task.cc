@@ -131,8 +131,13 @@ namespace hyper {
 			if (!res && !must_interrupt) {
 				a.logger(DEBUG) << " : " << *l << std::endl;
 				err_ctx.push_back(*l);
-				err_ctx.back().recipe_name = 
-						recipes[recipe_states[0].index]->name;
+
+				// fill extra information
+				network::runtime_failure& f = err_ctx.back();
+				f.agent_name = a.name;
+				f.task_name = name;
+				f.recipe_name = recipes[recipe_states[0].index]->name;
+
 				boost::apply_visitor(
 						add_constraint_context(constraint_error_context), 
 						(*l).error);

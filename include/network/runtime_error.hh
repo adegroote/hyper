@@ -69,6 +69,9 @@ namespace hyper {
 				: error(error) {}
 
 			type error;
+
+			std::string agent_name;
+			std::string task_name;
 			std::string recipe_name;
 
 			std::vector<runtime_failure> error_cause;
