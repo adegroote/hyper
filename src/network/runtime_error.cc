@@ -13,8 +13,8 @@ namespace {
 
 		print(std::ostream& oss) : oss(oss) {}
 
-		void operator() (const hyper::network::success& ) const {
-			oss << "<success>";
+		void operator() (const hyper::network::unknown_error& ) const {
+			oss << "<unknown_error>";
 		}
 
 		void operator() (const hyper::network::assertion_failure& f) const {

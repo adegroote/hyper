@@ -9,7 +9,7 @@
 namespace hyper {
 	namespace network {
 
-		struct success {};
+		struct unknown_error {};
 
 		struct assertion_failure {
 			logic::expression what;
@@ -46,7 +46,7 @@ namespace hyper {
 		struct runtime_failure {
 			typedef
 				boost::variant<
-				  success 
+				  unknown_error 
 				, assertion_failure
 				, constraint_failure
 				, read_failure
@@ -55,7 +55,7 @@ namespace hyper {
 				type;
 
 			runtime_failure()
-				: error(success()) {}
+				: error(unknown_error()) {}
 
 			template <typename Error>
 			runtime_failure(Error const& error)

@@ -25,7 +25,7 @@ namespace hyper {
 			virtual bool abort() = 0;
 			virtual void pause() = 0;
 			virtual void resume() = 0;
-			virtual network::runtime_failure error() const { return network::success(); };
+			virtual network::runtime_failure error() const { return network::unknown_error(); };
 			virtual ~abortable_function_base() {};
 		};
 
@@ -70,7 +70,7 @@ namespace hyper {
 			bool must_pause;
 
 			abortable_function(exec_type exec, abort_type abort = none_function, 
-							   const network::runtime_failure &error = network::success());
+							   const network::runtime_failure &error = network::unknown_error());
 			void compute (cb_type cb) ;
 			bool abort();
 			void pause();
