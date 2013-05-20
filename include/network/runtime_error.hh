@@ -38,10 +38,16 @@ namespace hyper {
 
 		struct execution_failure {
 			logic::expression what;
+			std::string extra_information;
 
 			execution_failure() {}
 			explicit execution_failure(const logic::expression& what_):
-				what(what_) {}
+				what(what_), extra_information("") {}
+
+			execution_failure(const logic::expression& what_,
+				const std::string& extra_information_):
+				what(what_), extra_information(extra_information_)
+			{}
 		};
 
 		struct runtime_failure {

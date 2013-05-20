@@ -102,7 +102,7 @@ namespace boost {
 		void serialize(Archive& ar, hyper::network::execution_failure &e, const unsigned int version)
 		{
 			(void) version;
-			ar & e.what;
+			ar & e.what & e.extra_information;
 		}
 
 		template <class Archive>

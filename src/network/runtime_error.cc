@@ -30,7 +30,10 @@ namespace {
 		}
 
 		void operator() (const hyper::network::execution_failure& f) const {
-			oss << "<execution_failure " << f.what << " >";
+			oss << "<execution_failure " << f.what;
+			if (f.extra_information != "")
+				oss << " with " << f.extra_information;
+			oss << " >";
 		}
 	};
 }
@@ -48,7 +51,11 @@ namespace hyper {
 		{
 			for (int i; i < indent; i++) oss << '\t';
 
-			oss << error << " in " << recipe_name << std::endl; 
+			oss << error;
+			if (recipe_name != "") 
+				oss << " in " << recipe_name << std::endl; 
+			else
+				oss << std::endl;
 
 			std::for_each(error_cause.begin(), error_cause.end(),
 						  boost::bind(&runtime_failure::pretty_print,
