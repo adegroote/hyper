@@ -78,7 +78,7 @@ namespace hyper {
 
 #define NEW_PARAMS_ARGS(z, n, _) ,const expression& arg ## n
 #define PUSH_BACK_ARGS(z, n, _) args.push_back(arg ## n);
-#define EVAL_MAX_ARGS 10
+#define EVAL_MAX_ARGS 20
 
 #define NEW_CTR_DECL(z, n, _) \
 	function_call(const std::string& name BOOST_PP_REPEAT(n, NEW_PARAMS_ARGS, _) )\
