@@ -29,8 +29,8 @@ namespace hyper {
 			}
 		}
 
-		abortable_function::abortable_function(exec_type exec, abort_type abort, 
-				const hyper::network::runtime_failure & error):
+		abortable_function::abortable_function(exec_type exec, 
+				abort_type abort,  err_type error):
 				exec_(exec), abort_(abort), error_(error), running(false),
 				must_interrupt(false), must_pause(false) {}
 

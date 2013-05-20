@@ -18,6 +18,12 @@ namespace hyper {
 		static inline
 		bool none_function() { return true; }
 
+		static inline
+		hyper::network::runtime_failure default_error() 
+		{
+			return hyper::network::default_error;
+		}
+
 		struct abortable_function_base {
 			typedef boost::function<void (const boost::system::error_code& e)> cb_type;
 			virtual void compute (cb_type cb) = 0;
@@ -25,7 +31,7 @@ namespace hyper {
 			virtual bool abort() = 0;
 			virtual void pause() = 0;
 			virtual void resume() = 0;
-			virtual network::runtime_failure error() const { return network::unknown_error(); };
+			virtual network::runtime_failure error() const { return network::default_error; };
 			virtual ~abortable_function_base() {};
 		};
 
@@ -60,23 +66,24 @@ namespace hyper {
 		struct abortable_function : public abortable_function_base {
 			typedef boost::function<void (cb_type)> exec_type;
 			typedef boost::function<bool (void)> abort_type;
+			typedef boost::function<network::runtime_failure (void)> err_type;
 
 			exec_type exec_;
 			abort_type abort_;
-			network::runtime_failure error_;
+			err_type error_;
 			cb_type cb_;
 			bool running;
 			bool must_interrupt;
 			bool must_pause;
 
 			abortable_function(exec_type exec, abort_type abort = none_function, 
-							   const network::runtime_failure &error = network::unknown_error());
+							   err_type error = default_error);
 			void compute (cb_type cb) ;
 			bool abort();
 			void pause();
 			void resume();
 
-			network::runtime_failure error() const { return error_; }
+			network::runtime_failure error() const { return error_(); }
 
 			private:
 			void handler(const boost::system::error_code& e, cb_type cb);

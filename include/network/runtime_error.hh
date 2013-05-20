@@ -9,6 +9,7 @@
 namespace hyper {
 	namespace network {
 
+
 		struct unknown_error {};
 
 		struct assertion_failure {
@@ -72,6 +73,7 @@ namespace hyper {
 
 		std::ostream& operator<< (std::ostream& os, const runtime_failure& r);
 
+		static const runtime_failure default_error = network::runtime_failure();
 	}
 }
 
