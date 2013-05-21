@@ -5,7 +5,11 @@ cmake_minimum_required(VERSION 2.6.4 FATAL_ERROR)
 project(HYPER CXX)
 
 set(PACKAGE_NAME hyper)
-set(PACKAGE_VERSION "0.10") 
+set(HYPER_MAJOR_VERSION 0)
+set(HYPER_MINOR_VERSION 10)
+set(HYPER_PATCH_VERSION 0)
+set(HYPER_VERSION "${HYPER_MAJOR_VERSION}.${HYPER_MINOR_VERSION}.${HYPER_PATCH_VERSION}")
+set(PACKAGE_VERSION "${HYPER_VERSION}") 
 
 option(BUILD_DOC "Build and install documentation (Require Sphinx)" OFF)
 
@@ -27,8 +31,17 @@ include_directories(${Boost_INCLUDE_DIRS})
 message(STATUS "boost libraries "${Boost_LIBRARIES})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
 
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/include/version.hh.in
+	${CMAKE_CURRENT_BINARY_DIR}/version.hh
+	@ONLY
+	)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.hh DESTINATION include/hyper)
+
 # add_subdirectory(include)
 include_directories(${HYPER_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 set(network_test_ADDITIONAL_LIBS "hyper_logic")
 
