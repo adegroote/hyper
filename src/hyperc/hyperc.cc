@@ -16,6 +16,8 @@
 #include <compiler/recipe.hh>
 #include <compiler/recipe_parser.hh>
 
+#include <version.hh>
+
 #include <dlfcn.h>
 
 using namespace hyper::compiler;
@@ -333,6 +335,7 @@ int main(int argc, char** argv)
 		 "extension")
 		("initial,i", "initial files for user_defined function / type")
 		("output,o", po::value<std::string>(), "output generated file")
+		("version", "print the version of the hyper compiler")
 		("input-file", po::value< std::string >(), "input file")
 		;
 
@@ -346,6 +349,11 @@ int main(int argc, char** argv)
 
 	if (vm.count("help")) {
 		usage(desc);
+		return 0;
+	}
+
+	if (vm.count("version")) {
+		std::cout << HYPER_VERSION << std::endl;
 		return 0;
 	}
 
