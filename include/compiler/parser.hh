@@ -11,6 +11,7 @@
 namespace hyper {
 	namespace compiler {
 		class universe;
+		struct logic_expression_decl;
 		struct recipe_decl_list;
 		struct task_decl_list;
 
@@ -30,6 +31,7 @@ namespace hyper {
 				bool parse_ability_file(const std::string&);
 				bool parse_expression(const std::string&);
 				bool parse_logic_expression(const std::string&);
+				bool parse_logic_expression(const std::string&, logic_expression_decl&);
 				bool parse_task(const std::string&);
 				bool parse_task(const std::string&, task_decl_list&);
 				bool parse_task_file(const std::string&);

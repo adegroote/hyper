@@ -622,10 +622,15 @@ struct  grammar_recipe :
 bool parser::parse_logic_expression(const std::string& expr)
 {
 	logic_expression_decl decl;
+	return parse_logic_expression(expr, decl);
+}
+
+bool parser::parse_logic_expression(const std::string& expr, logic_expression_decl& res)
+{
 	logic_expression_grammar<std::string::const_iterator> g;
 	bool r;
 	try {
-		r = parse(g, expr, decl);
+		r = parse(g, expr, res);
 	} catch (hyper::compiler::import_exception &e) 
 	{
 		std::cerr << e.what() << std::endl;
