@@ -40,18 +40,6 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, const set_decl& s)
 	return os;
 }
 
-std::ostream& hyper::compiler::operator<< (std::ostream& os, const wait_decl& w)
-{
-	os << "wait (" << w.content << ") ";
-	return os;
-}
-
-std::ostream& hyper::compiler::operator<< (std::ostream& os, const assert_decl& w)
-{
-	os << "assert (" << w.content << ") ";
-	return os;
-}
-
 struct recipe_expression_print : public boost::static_visitor<void>
 {
 	std::ostream& os;
@@ -139,6 +127,23 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, recipe_op_kind kind
 			break;
 		case ENSURE:
 			os << "ensure";
+			break;
+		default:
+			assert(false);
+	}
+
+	return os;
+}
+
+std::ostream& hyper::compiler::operator<< (std::ostream& os, observer_op_kind kind)
+{
+	switch (kind)
+	{
+		case WAIT:
+			os << "wait";
+			break;
+		case ASSERT:
+			os << "assert";
 			break;
 		default:
 			assert(false);

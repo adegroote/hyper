@@ -35,27 +35,26 @@ namespace hyper {
 
 		std::ostream& operator<< (std::ostream&, const abort_decl&);
 		
-		struct wait_decl {
+		enum observer_op_kind { WAIT, ASSERT };
+
+		std::ostream& operator<< (std::ostream& os, observer_op_kind);
+
+		template <observer_op_kind kind> 
+		struct observer_op {
 			expression_ast content;
 			boost::optional<double> delay;
 
-			wait_decl() {}
-			wait_decl(const expression_ast& content, boost::optional<double> delay) : 
+			observer_op() {}
+			observer_op(const expression_ast& content, boost::optional<double> delay) : 
 				content(content), delay(delay) {}
 		};
 
-		std::ostream& operator << (std::ostream& os, const wait_decl&);
-
-		struct assert_decl {
-			expression_ast content;
-			boost::optional<double> delay;
-
-			assert_decl() {}
-			assert_decl(const expression_ast& content, boost::optional<double> delay) : 
-				content(content), delay(delay) {}
-		};
-
-		std::ostream& operator << (std::ostream& os, const assert_decl&);
+		template <observer_op_kind kind>
+		std::ostream& operator << (std::ostream& os, const observer_op<kind>& op)
+		{
+			os << kind << "(" << op.content << ")";
+			return os;
+		}
 
 		enum recipe_op_kind { MAKE, ENSURE };
 
@@ -124,8 +123,8 @@ namespace hyper {
 				boost::recursive_wrapper<while_decl>,
 				abort_decl, 
 				set_decl,
-				wait_decl,
-				assert_decl,
+				observer_op<WAIT>,
+				observer_op<ASSERT>,
 				recipe_op<MAKE>,
 				recipe_op<ENSURE>,
 				expression_ast

@@ -152,12 +152,8 @@ struct compute_recipe_expression_deps : public boost::static_visitor<void>
 										 boost::ref(d), boost::cref(s)));
 	}
 
-	void operator() (const wait_decl& op) const 
-	{
-		details::add_depends(op.content, name, u, d, s);
-	}
-
-	void operator() (const assert_decl& op) const 
+	template <observer_op_kind K>
+	void operator() (const observer_op<K>& op) const 
 	{
 		details::add_depends(op.content, name, u, d, s);
 	}

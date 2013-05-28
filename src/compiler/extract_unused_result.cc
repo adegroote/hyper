@@ -36,10 +36,16 @@ struct extract_unused_result_visitor : public boost::static_visitor<void>
 		}
 	}
 
-	void operator() (const wait_decl&) const
+	void operator() (const observer_op<WAIT>&) const
 	{
 		if (!catched) 
 			list.insert("bool");
+	}
+
+	void operator() (const observer_op<ASSERT>&) const
+	{
+		if (!catched)
+			list.insert("hyper::model::identifier");
 	}
 
 	void operator() (const recipe_op<MAKE>&) const

@@ -149,13 +149,13 @@ BOOST_FUSION_ADAPT_STRUCT(
 )	
 
 BOOST_FUSION_ADAPT_STRUCT(
-	wait_decl,
+	observer_op<WAIT>,
 	(expression_ast, content)
 	(boost::optional<double>, delay)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-	assert_decl,
+	observer_op<ASSERT>,
 	(expression_ast, content)
 	(boost::optional<double>, delay)
 )
@@ -435,8 +435,8 @@ struct body_block_grammar :
 	qi::rule<Iterator, recipe_op<MAKE>(), white_space_> make_decl_;
 	qi::rule<Iterator, recipe_op<ENSURE>(), white_space_> ensure_decl_;
 	qi::rule<Iterator, ensure_decl(), white_space_> ensure_decl__;
-	qi::rule<Iterator, wait_decl(), white_space_> wait_decl_;
-	qi::rule<Iterator, assert_decl(), white_space_> assert_decl_;
+	qi::rule<Iterator, observer_op<WAIT>(), white_space_> wait_decl_;
+	qi::rule<Iterator, observer_op<ASSERT>(), white_space_> assert_decl_;
 	qi::rule<Iterator, while_decl(), white_space_> while_decl_;
 
 	grammar_expression<Iterator> expression;

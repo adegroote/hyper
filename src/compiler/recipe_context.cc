@@ -149,12 +149,9 @@ struct remap_symbol_recipe_vis : public boost::static_visitor<recipe_expression>
 		return res;
 	}
 
-	recipe_expression operator() (const wait_decl& w) const {
-		return wait_decl(remap_symbol(w.content, map), w.delay);
-	}
-
-	recipe_expression operator() (const assert_decl& w) const {
-		return assert_decl(remap_symbol(w.content, map), w.delay);
+	template <observer_op_kind kind>
+	recipe_expression operator() (const observer_op<kind>& w) const {
+		return observer_op<kind>(remap_symbol(w.content, map), w.delay);
 	}
 	
 	recipe_expression operator() (const expression_ast& ast) const {
@@ -267,14 +264,9 @@ struct adapt_recipe_expression_to_context_helper : public boost::static_visitor<
 		return adapt_expression_to_context(map)(e.expr);
 	}
 
-	recipe_expression operator() (const wait_decl& w) const {
-		wait_decl res(w);
-		res.content = adapt_expression_to_context(map)(res.content.expr);
-		return res;
-	}
-
-	recipe_expression operator() (const assert_decl& w) const {
-		assert_decl res(w);
+	template <observer_op_kind K>
+	recipe_expression operator() (const observer_op<K>& w) const {
+		observer_op<K> res(w);
 		res.content = adapt_expression_to_context(map)(res.content.expr);
 		return res;
 	}
@@ -574,14 +566,9 @@ struct replace_constant_vis : public boost::static_visitor<recipe_expression>
 		return boost::apply_visitor(vis, e.expr);
 	}
 
-	recipe_expression operator() (const wait_decl& w) const {
-		wait_decl res(w);
-		res.content = boost::apply_visitor(vis, w.content.expr);
-		return res;
-	}
-
-	recipe_expression operator() (const assert_decl& w) const {
-		assert_decl res(w);
+	template <observer_op_kind K>
+	recipe_expression operator() (const observer_op<K>& w) const {
+		observer_op<K> res(w);
 		res.content = boost::apply_visitor(vis, w.content.expr);
 		return res;
 	}

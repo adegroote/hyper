@@ -205,7 +205,7 @@ namespace {
 			return oss.str();
 		}
 
-		std::string operator() (const wait_decl& w) const
+		std::string operator() (const observer_op<WAIT>& w) const
 		{
 			std::string indent = times(4, "\t");
 			std::string identifier = compute_target(w.content);
@@ -223,7 +223,7 @@ namespace {
 			return oss.str();
 		}
 
-		std::string operator() (const assert_decl& w) const
+		std::string operator() (const observer_op<ASSERT>& w) const
 		{
 			std::string indent = times(4, "\t");
 			// XXX Hackish, but correct at this point

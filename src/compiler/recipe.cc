@@ -152,11 +152,8 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 
 	bool operator() (empty) const { assert(false); return false; }
 
-	bool operator() (const wait_decl& w) const {
-		return w.content.is_valid_predicate(a, u, local);
-	}
-
-	bool operator() (const assert_decl& w) const {
+	template <observer_op_kind K>
+	bool operator() (const observer_op<K>& w) const {
 		return w.content.is_valid_predicate(a, u, local);
 	}
 
@@ -373,16 +370,12 @@ struct extract_expression_visitor : public boost::static_visitor<void>
 		list.push_back(s.bounded);
 	}
 
-	void operator() (const wait_decl& w) const
+	template <observer_op_kind K>
+	void operator() (const observer_op<K>& w) const
 	{
 		list.push_back(w.content);
 	}
 
-	void operator() (const assert_decl& w) const
-	{
-		list.push_back(w.content);
-	}
-	
 	void operator() (const while_decl& w) const
 	{
 		list.push_back(w.condition);
@@ -409,7 +402,7 @@ struct add_inner_var_visitor : public boost::static_visitor<void>
 	template <typename T>
 	void operator() (const T&) const {}
 
-	void operator() (const assert_decl&) const 
+	void operator() (const observer_op<ASSERT>&) const 
 	{
 		std::ostringstream oss; 
 		oss << "__hyper_assert_" << counter;
