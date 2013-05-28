@@ -25,6 +25,7 @@ namespace hyper {
 			}
 
 			if (e) {
+				failure = fun_ptr->error();
 				cb(e);
 				running = false;
 				return true;
@@ -48,6 +49,7 @@ namespace hyper {
 
 			if (!res_fun) { 
 				running = false;
+				failure = hyper::network::assertion_failure(f);
 				return cb(make_error_code(exec_layer_error::execution_ko));
 			}
 

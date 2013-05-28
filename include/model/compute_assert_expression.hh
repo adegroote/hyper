@@ -35,6 +35,7 @@ namespace hyper {
 				cb_type cb_; /**< store the final callback */
 				size_t idx_; /** < store the index of the assert, in the englobing computation */
 				bool first_call;
+				hyper::network::runtime_failure failure;
 
 				typedef boost::function<void (const boost::system::error_code&)> cb_type;
 
@@ -105,7 +106,7 @@ namespace hyper {
 				 */
 				void resume();
 
-//				network::runtime_failure error() const { return network::assertion_failure(f->back().error()); }
+				network::runtime_failure error() const { return failure; }
 		};
 	}
 }

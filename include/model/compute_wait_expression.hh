@@ -69,6 +69,12 @@ namespace hyper {
 						bool& res);
 
 				/**
+				 * Retrieve the error associated to this computation. It is
+				 * valid only the last computation fails.
+				 */
+				network::runtime_failure error() const { return fun_ptr->error(); }
+
+				/**
 				 * Launch the loop compute - wait
 				 * @param cb is the callback call when the action finishes
 				 */
