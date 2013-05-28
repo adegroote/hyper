@@ -33,16 +33,19 @@ namespace {
 	};
 
 	struct test_compute_wait_expression {
-		test_function* ptr; // owned by wait
+		test_function *fun_ptr;
+		hyper::model::abortable_computation* ptr; // owned by wait
 		hyper::model::compute_wait_expression wait;
 		boost::asio::deadline_timer deadline;
 		int handled_test;
 
 		test_compute_wait_expression(boost::asio::io_service& io_s):
-			ptr(new test_function()), 
-			wait(io_s, boost::posix_time::milliseconds(20), ptr, ptr->res()),
+			fun_ptr(new test_function()), 
+			ptr(new hyper::model::abortable_computation()),
+			wait(io_s, boost::posix_time::milliseconds(20), ptr, fun_ptr->res()),
 			deadline(io_s)
 		{
+			ptr->push_back(fun_ptr);
 		}
 
 		void handle_timeout(const boost::system::error_code& e)
@@ -55,7 +58,7 @@ namespace {
 		{
 			BOOST_CHECK(e);
 			BOOST_CHECK(e == boost::system::errc::interrupted);
-			BOOST_CHECK(ptr->res() == false);
+			BOOST_CHECK(fun_ptr->res() == false);
 
 			handled_test++;
 		}
@@ -63,12 +66,12 @@ namespace {
 		void handle_first_test(const boost::system::error_code& e)
 		{
 			BOOST_CHECK(!e);
-			BOOST_CHECK(ptr->res() == true);
-			BOOST_CHECK(ptr->counter == 42);
+			BOOST_CHECK(fun_ptr->res() == true);
+			BOOST_CHECK(fun_ptr->counter == 42);
 
 			handled_test++;
 
-			ptr->reset();
+			fun_ptr->reset();
 			/* Start the computing, but abort before its end */
 			wait.compute(boost::bind(&test_compute_wait_expression::handle_second_test,
 									 this, _1));

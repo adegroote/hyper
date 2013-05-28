@@ -7,7 +7,7 @@ namespace hyper {
 	namespace model {
 		compute_assert_expression::compute_assert_expression(boost::asio::io_service& io_s,
 				boost::posix_time::time_duration delay,
-				abortable_function_base* fun_ptr,
+				abortable_computation* fun_ptr,
 				const logic::function_call& f,
 				model::identifier &res, bool& res_fun, size_t idx) :
 			fun_ptr(fun_ptr), f(f), io_service_(io_s), delay_(delay), deadline_(io_s),

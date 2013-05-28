@@ -17,8 +17,7 @@ namespace hyper {
 		 */
 		class compute_wait_expression : public abortable_function_base {
 			private:
-				boost::scoped_ptr<abortable_function_base> fun_ptr; /**< 
-					function code to execute at each wait step */
+				boost::scoped_ptr<abortable_computation> fun_ptr; 
 				boost::asio::io_service& io_service_; /**< ref to io_service */
 				boost::posix_time::time_duration delay_; /**< wait time between two call of fun_ptr */
 				boost::asio::deadline_timer deadline_; /**< timer to wait #delay_ */
@@ -66,7 +65,7 @@ namespace hyper {
 				 */
 				compute_wait_expression(boost::asio::io_service& io_s,
 						boost::posix_time::time_duration delay,
-						abortable_function_base* fun_ptr,
+						abortable_computation* fun_ptr,
 						bool& res);
 
 				/**

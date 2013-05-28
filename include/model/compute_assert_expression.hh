@@ -18,7 +18,7 @@ namespace hyper {
 		 */
 		class compute_assert_expression : public abortable_function_base {
 			private:
-				boost::scoped_ptr<abortable_function_base> fun_ptr; /**< 
+				boost::scoped_ptr<abortable_computation> fun_ptr; /**< 
 					function code to execute at each assert step */
 				logic::function_call f;
 
@@ -79,7 +79,7 @@ namespace hyper {
 				 */
 				compute_assert_expression(boost::asio::io_service& io_s,
 						boost::posix_time::time_duration delay,
-						abortable_function_base* fun_ptr,
+						abortable_computation* fun_ptr,
 						const logic::function_call& f,
 						model::identifier& res, bool& res_fun, size_t idx);
 
@@ -105,7 +105,7 @@ namespace hyper {
 				 */
 				void resume();
 
-				network::runtime_failure error() const { return network::assertion_failure(f); }
+//				network::runtime_failure error() const { return network::assertion_failure(f->back().error()); }
 		};
 	}
 }

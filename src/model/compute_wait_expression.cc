@@ -7,7 +7,7 @@ namespace hyper {
 	namespace model {
 		compute_wait_expression::compute_wait_expression(boost::asio::io_service& io_s,
 				boost::posix_time::time_duration delay,
-				abortable_function_base* fun_ptr,
+				abortable_computation* fun_ptr,
 				bool &res) :
 			fun_ptr(fun_ptr), io_service_(io_s), delay_(delay), deadline_(io_s),
 			res(res), user_ask_abort(false), must_pause(false), running(false), waiting(false)
