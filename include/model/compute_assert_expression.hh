@@ -11,10 +11,17 @@
 namespace hyper {
 	namespace model {
 		/** compute_assert_expression represents a computation represented by
-		 * #fun_ptry which waits until a certain predicate is true.
+		 * #fun_ptry which verify that a certain predicate is true during the
+		 * whole execution
 		 * 
 		 * It is implemented as a loop test -> wait -> test -> wait ..., with a
 		 * configurable wait #delay_.
+		 *
+		 * The passed callback is called once with error::ok to signal that it
+		 * is started to its caller. It is then called only in case of error,
+		 * or interruption, with exec_layer_error::execution_ko in the first
+		 * case, and system::interrupted in the second case. In the first case,
+		 * failure is filled properly.
 		 */
 		class compute_assert_expression : public abortable_function_base {
 			private:
@@ -25,7 +32,7 @@ namespace hyper {
 				boost::asio::io_service& io_service_; /**< ref to io_service */
 				boost::posix_time::time_duration delay_; /**< wait time between two call of fun_ptr */
 				boost::asio::deadline_timer deadline_; /**< timer to wait #delay_ */
-				model::identifier& res;
+				model::identifier& res; /**< the identifier filled with the reference to this computation */
 				bool& res_fun; /**< modified by a call to fun_ptr */
 
 				bool user_ask_abort; /**< true if abort has been called */
@@ -34,8 +41,8 @@ namespace hyper {
 				bool waiting; /**< true if in the wait phase */
 				cb_type cb_; /**< store the final callback */
 				size_t idx_; /** < store the index of the assert, in the englobing computation */
-				bool first_call;
-				hyper::network::runtime_failure failure;
+				bool first_call; /** < check if it is the first call */
+				hyper::network::runtime_failure failure; /** store the failure, if any */
 
 				typedef boost::function<void (const boost::system::error_code&)> cb_type;
 
