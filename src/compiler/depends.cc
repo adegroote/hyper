@@ -155,7 +155,12 @@ struct compute_recipe_expression_deps : public boost::static_visitor<void>
 	template <observer_op_kind K>
 	void operator() (const observer_op<K>& op) const 
 	{
-		details::add_depends(op.content, name, u, d, s);
+		void (*f)(const recipe_expression& e, const std::string& context, 
+				  const universe& u, depends& d, const symbolList& s) = &add_depends;
+
+		std::for_each(op.content.begin(), op.content.end(),
+					  boost::bind(f, _1, boost::cref(name), boost::cref(u),
+										 boost::ref(d), boost::cref(s)));
 	}
 
 	template <recipe_op_kind kind>

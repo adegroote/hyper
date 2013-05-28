@@ -39,22 +39,8 @@ namespace hyper {
 
 		std::ostream& operator<< (std::ostream& os, observer_op_kind);
 
-		template <observer_op_kind kind> 
-		struct observer_op {
-			expression_ast content;
-			boost::optional<double> delay;
-
-			observer_op() {}
-			observer_op(const expression_ast& content, boost::optional<double> delay) : 
-				content(content), delay(delay) {}
-		};
-
-		template <observer_op_kind kind>
-		std::ostream& operator << (std::ostream& os, const observer_op<kind>& op)
-		{
-			os << kind << "(" << op.content << ")";
-			return os;
-		}
+		// fwd declaration
+		template <observer_op_kind kind>  struct observer_op;
 
 		enum recipe_op_kind { MAKE, ENSURE };
 
@@ -123,8 +109,8 @@ namespace hyper {
 				boost::recursive_wrapper<while_decl>,
 				abort_decl, 
 				set_decl,
-				observer_op<WAIT>,
-				observer_op<ASSERT>,
+				boost::recursive_wrapper<observer_op<WAIT> >,
+				boost::recursive_wrapper<observer_op<ASSERT> >,
 				recipe_op<MAKE>,
 				recipe_op<ENSURE>,
 				expression_ast
@@ -168,6 +154,27 @@ namespace hyper {
 		};
 
 		std::ostream& operator<< (std::ostream&, const while_decl&);
+
+		template <observer_op_kind kind> 
+		struct observer_op
+		{
+			std::vector<recipe_expression> content;
+			boost::optional<double> delay;
+
+			observer_op() {}
+			observer_op(const std::vector<recipe_expression>& content, boost::optional<double> delay) : 
+				content(content), delay(delay) {}
+		};
+
+		template <observer_op_kind kind>
+		std::ostream& operator << (std::ostream& os, const observer_op<kind>& op)
+		{
+			os << kind << "(";
+			std::copy(op.content.begin(), op.content.end(), 
+					std::ostream_iterator<recipe_expression>(os, "\n"));
+			os << ")";
+			return os;
+		}
 
 
 	}

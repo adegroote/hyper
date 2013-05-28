@@ -207,6 +207,7 @@ namespace {
 
 		std::string operator() (const observer_op<WAIT>& w) const
 		{
+#ifdef notyet
 			std::string indent = times(4, "\t");
 			std::string identifier = compute_target(w.content);
 			std::string next_indent = "\t" + indent;
@@ -221,10 +222,12 @@ namespace {
 			target = boost::none;
 
 			return oss.str();
+#endif
 		}
 
 		std::string operator() (const observer_op<ASSERT>& w) const
 		{
+#ifdef notyet
 			std::string indent = times(4, "\t");
 			// XXX Hackish, but correct at this point
 			std::string identifier = compute_ensure_target(); 
@@ -244,6 +247,7 @@ namespace {
 			target = boost::none;
 
 			return oss.str();
+#endif
 		}
 
 		std::string operator() (const expression_ast& e) const

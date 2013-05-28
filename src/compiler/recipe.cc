@@ -152,9 +152,19 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 
 	bool operator() (empty) const { assert(false); return false; }
 
+	// check there is a least one element, that all element are valid, and that
+	// the last part is really a predicate.
 	template <observer_op_kind K>
 	bool operator() (const observer_op<K>& w) const {
-		return w.content.is_valid_predicate(a, u, local);
+		if (w.content.size() == 0) return false;
+
+		if (!are_valid_recipe_expressions(
+				w.content.begin(), w.content.end(),
+				a, u, local))
+			return false;
+
+		const expression_ast* e= boost::get<expression_ast>(& w.content.back().expr);
+		return (e && e->is_valid_predicate(a, u, local));
 	}
 
 	template <recipe_op_kind kind>
@@ -373,7 +383,8 @@ struct extract_expression_visitor : public boost::static_visitor<void>
 	template <observer_op_kind K>
 	void operator() (const observer_op<K>& w) const
 	{
-		list.push_back(w.content);
+		extract_expression extract(list);
+		std::for_each(w.content.begin(), w.content.end(), extract);
 	}
 
 	void operator() (const while_decl& w) const

@@ -36,16 +36,21 @@ struct extract_unused_result_visitor : public boost::static_visitor<void>
 		}
 	}
 
-	void operator() (const observer_op<WAIT>&) const
+	void operator() (const observer_op<WAIT>& w) const
 	{
 		if (!catched) 
 			list.insert("bool");
+		extract_unused_result extract(list, u, a, syms);
+		std::for_each(w.content.begin(), w.content.end(), extract);
 	}
 
-	void operator() (const observer_op<ASSERT>&) const
+	void operator() (const observer_op<ASSERT>& w) const
 	{
 		if (!catched)
 			list.insert("hyper::model::identifier");
+
+		extract_unused_result extract(list, u, a, syms);
+		std::for_each(w.content.begin(), w.content.end(), extract);
 	}
 
 	void operator() (const recipe_op<MAKE>&) const

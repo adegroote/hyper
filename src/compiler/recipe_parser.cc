@@ -150,13 +150,13 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 BOOST_FUSION_ADAPT_STRUCT(
 	observer_op<WAIT>,
-	(expression_ast, content)
+	(std::vector<recipe_expression>, content)
 	(boost::optional<double>, delay)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
 	observer_op<ASSERT>,
-	(expression_ast, content)
+	(std::vector<recipe_expression>, content)
 	(boost::optional<double>, delay)
 )
 
@@ -378,14 +378,14 @@ struct body_block_grammar :
 
 		wait_decl_ = lit("wait")
 				  > lit("(")
-				  > expression
+				  > *body_decl
 				  > -(lit(",") > qi::double_)
 				  > lit(")")
 				  ;
 
 		assert_decl_ = lit("assert")
 				  > lit("(")
-				  > expression
+				  > *body_decl
 				  > -(lit(",") > qi::double_)
 				  > lit(")")
 				  ;

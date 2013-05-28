@@ -9,6 +9,15 @@
 namespace {
 using namespace hyper::compiler;
 
+template <observer_op_kind kind, typename Vis>
+observer_op<kind> recursively_adapt(const observer_op<kind>& op, Vis& vis)
+{
+	observer_op<kind> res(op);
+	for (size_t i = 0; i < res.content.size(); ++i)
+		res.content[i] = boost::apply_visitor(vis, op.content[i].expr);
+	return res;
+}
+
 struct extract_local_vars_vis : public boost::static_visitor<void>
 {
 	std::vector<std::string>& local_vars;
@@ -151,7 +160,7 @@ struct remap_symbol_recipe_vis : public boost::static_visitor<recipe_expression>
 
 	template <observer_op_kind kind>
 	recipe_expression operator() (const observer_op<kind>& w) const {
-		return observer_op<kind>(remap_symbol(w.content, map), w.delay);
+		return recursively_adapt(w, *this);
 	}
 	
 	recipe_expression operator() (const expression_ast& ast) const {
@@ -266,9 +275,7 @@ struct adapt_recipe_expression_to_context_helper : public boost::static_visitor<
 
 	template <observer_op_kind K>
 	recipe_expression operator() (const observer_op<K>& w) const {
-		observer_op<K> res(w);
-		res.content = adapt_expression_to_context(map)(res.content.expr);
-		return res;
+		return recursively_adapt(w, *this);
 	}
 
 	template <recipe_op_kind K>
@@ -568,9 +575,7 @@ struct replace_constant_vis : public boost::static_visitor<recipe_expression>
 
 	template <observer_op_kind K>
 	recipe_expression operator() (const observer_op<K>& w) const {
-		observer_op<K> res(w);
-		res.content = boost::apply_visitor(vis, w.content.expr);
-		return res;
+		return recursively_adapt(w, *this);
 	}
 
 	recipe_expression operator() (const abort_decl& a) const {
