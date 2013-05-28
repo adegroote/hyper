@@ -313,4 +313,14 @@ BOOST_AUTO_TEST_CASE ( compiler_recipe_test )
 	check_recipe.do_build_test("r42 = recipe { pre = {}; post = {};  \
 										body = { let X assert ( square(2.0) < 2.0 ); }; };",
 								true);
+
+	/* wait with multiple instructions */
+	check_recipe.do_build_test("r43 = recipe { pre = {}; post = {}; \
+									  body = { let d 100.0; wait(set d square(d); d < 0.2, 200.0) }; };",
+									  true);
+
+	/* assert with multiple instructions */
+	check_recipe.do_build_test("r44 = recipe { pre = {}; post = {}; \
+									  body = { let d 1.2; assert(set d d * d; d < 100.0, 200.0) }; };",
+									  true);
 }
