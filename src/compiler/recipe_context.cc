@@ -493,6 +493,10 @@ is_constant_let(const recipe_expression& r)
 	if (!l)
 		return boost::none;
 
+	if (l->identifier.size() <= 2 or 
+	   (l->identifier[0] == '_' and l->identifier[1] == '_'))
+		return boost::none;
+
 	// now check if content is a constant expression_ast
 	const expression_ast* e = boost::get<expression_ast>(& l->bounded.expr);
 	if (!e)
