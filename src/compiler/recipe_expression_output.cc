@@ -352,31 +352,6 @@ namespace {
 
 			return oss.str();
 		}
-
-		std::string operator() (const while_decl& w) const
-		{
-			std::string indent = times(4, "\t");
-			std::string indent_next = times(5, "\t");
-			std::string identifier = unused_symbol("bool");
-			std::ostringstream oss_name;
-			oss_name << "__hyper_while_computation_" << counter;
-
-			std::ostringstream oss;
-
-			oss << indent << "hyper::model::abortable_computation* " << oss_name.str();
-			oss << " = new hyper::model::abortable_computation();\n" << std::endl;
-
-			oss << indent << ptr_object << "->push_back(new hyper::model::compute_while_expression(a, \n";
-			oss << abortable_function(identifier, w.condition);
-			oss << indent << "," << identifier << ",\n";
-			oss << indent << oss_name.str() << "));\n";
-
-			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, oss_name.str());
-			for (size_t i = 0; i < w.body.size(); ++i)
-				oss << boost::apply_visitor(vis, w.body[i].expr);
-
-			return oss.str();
-		}
 	};
 }
 

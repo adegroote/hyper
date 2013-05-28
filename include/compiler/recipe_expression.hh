@@ -11,7 +11,6 @@
 namespace hyper {
 	namespace compiler {
 		struct let_decl;
-		struct while_decl;
 		struct ensure_decl;
 
 		typedef std::pair<expression_ast, expression_ast> unification_expression;
@@ -106,7 +105,6 @@ namespace hyper {
 			typedef boost::variant<
 				empty,
 				boost::recursive_wrapper<let_decl>,
-				boost::recursive_wrapper<while_decl>,
 				abort_decl, 
 				set_decl,
 				boost::recursive_wrapper<observer_op<WAIT> >,
@@ -142,18 +140,6 @@ namespace hyper {
 		};
 
 		std::ostream& operator<< (std::ostream&, const let_decl&);
-
-		struct while_decl {
-			expression_ast condition;
-			std::vector<recipe_expression> body;
-
-			while_decl() {}
-			while_decl(const expression_ast& condition, const std::vector<recipe_expression>& body):
-				condition(condition), body(body)
-			{}
-		};
-
-		std::ostream& operator<< (std::ostream&, const while_decl&);
 
 		template <observer_op_kind kind> 
 		struct observer_op

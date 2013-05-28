@@ -282,16 +282,6 @@ struct validate_recipe_expression_ : public boost::static_visitor<bool>
 
 		return true;
 	}
-
-	bool operator() (const while_decl& while_d) const {
-		bool valid = while_d.condition.is_valid_predicate(a, u, local);
-		if (!valid)
-			return valid;
-
-		return are_valid_recipe_expressions(
-				while_d.body.begin(), while_d.body.end(),
-				a, u, local);
-	}
 };
 
 struct validate_recipe_expression
@@ -385,13 +375,6 @@ struct extract_expression_visitor : public boost::static_visitor<void>
 	{
 		extract_expression extract(list);
 		std::for_each(w.content.begin(), w.content.end(), extract);
-	}
-
-	void operator() (const while_decl& w) const
-	{
-		list.push_back(w.condition);
-		extract_expression extract(list);
-		std::for_each(w.body.begin(), w.body.end(), extract);
 	}
 };
 
@@ -829,7 +812,6 @@ namespace hyper {
 			oss << "#include <model/compute_assert_expression.hh>\n";
 			oss << "#include <model/compute_make_expression.hh>\n";
 			oss << "#include <model/compute_wait_expression.hh>\n";
-			oss << "#include <model/compute_while_expression.hh>\n";
 			oss << "#include <model/logic_layer.hh>\n";
 			oss << "#include <boost/assign/list_of.hpp>\n"; 
 

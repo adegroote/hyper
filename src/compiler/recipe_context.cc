@@ -586,14 +586,6 @@ struct replace_constant_vis : public boost::static_visitor<recipe_expression>
 		return a;
 	}
 
-	recipe_expression operator() (const while_decl& w) const {
-		while_decl res(w);
-		res.condition = boost::apply_visitor(vis, w.condition.expr);
-		for (size_t i = 0; i < res.body.size(); ++i)
-			res.body[i] = boost::apply_visitor(*this, w.body[i].expr);
-		return res;
-	}
-
 	template <recipe_op_kind k>
 	recipe_expression operator() (const recipe_op<k>& r) const {
 		recipe_op<k> res(r);

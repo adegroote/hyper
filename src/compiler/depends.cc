@@ -140,18 +140,6 @@ struct compute_recipe_expression_deps : public boost::static_visitor<void>
 		boost::apply_visitor(*this, l.bounded.expr);
 	}
 
-	void operator() (const while_decl& while_d) const
-	{
-		details::add_depends(while_d.condition, name, u, d, s);
-
-		void (*f)(const recipe_expression& e, const std::string& context, 
-				  const universe& u, depends& d, const symbolList& s) = &add_depends;
-
-		std::for_each(while_d.body.begin(), while_d.body.end(),
-					  boost::bind(f, _1, boost::cref(name), boost::cref(u),
-										 boost::ref(d), boost::cref(s)));
-	}
-
 	template <observer_op_kind K>
 	void operator() (const observer_op<K>& op) const 
 	{

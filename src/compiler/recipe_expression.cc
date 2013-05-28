@@ -151,11 +151,3 @@ std::ostream& hyper::compiler::operator<< (std::ostream& os, observer_op_kind ki
 
 	return os;
 }
-
-std::ostream& hyper::compiler::operator<< (std::ostream& os, const while_decl& w)
-{
-	os << " while { " << w.condition << " } { ";
-	std::copy(w.body.begin(), w.body.end(), std::ostream_iterator<recipe_expression>(os, "\n"));
-	os << "}\n";
-	return os;
-}
