@@ -112,10 +112,11 @@ namespace {
 
 		dump_recipe_visitor(const universe & u_, const ability& a_, const task& t_, 
 						   const symbolList& syms_, size_t& counter, 
-						   size_t& inner_var_counter, std::string ptr_object) : 
+						   size_t& inner_var_counter, std::string ptr_object, 
+						   boost::optional<std::string> target = boost::none) : 
 			u(u_), a(a_), t(t_), syms(syms_), counter(counter), 
 			inner_var_counter(inner_var_counter),
-			target(boost::none),
+			target(target),
 			ptr_object(ptr_object) {}
 
 		template <typename T> 
@@ -207,27 +208,35 @@ namespace {
 
 		std::string operator() (const observer_op<WAIT>& w) const
 		{
-#ifdef notyet
 			std::string indent = times(4, "\t");
-			std::string identifier = compute_target(w.content);
-			std::string next_indent = "\t" + indent;
+			std::string indent_next = times(5, "\t");
+			expression_ast predicate = boost::get<expression_ast>(w.content.back().expr);
+			std::string identifier = compute_target(predicate);
+			std::ostringstream oss_name;
+			oss_name << "__hyper_wait_computation_" << counter;
 
 			std::ostringstream oss;
+
+			oss << indent << "hyper::model::abortable_computation* " << oss_name.str();
+			oss << " = new hyper::model::abortable_computation();\n" << std::endl;
+
 			oss << indent << ptr_object;
 			oss << "->push_back(new hyper::model::compute_wait_expression(a.io_s, boost::posix_time::milliseconds(";
 			oss << (w.delay ? *(w.delay) : 50) << "), \n";
-			oss << abortable_function(identifier, w.content) << ",";
-			oss << next_indent << identifier << "));\n";
+			oss << indent_next <<  oss_name.str() << ",\n";
+			oss << indent_next << identifier << "));\n";
 
 			target = boost::none;
 
+			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, oss_name.str());
+			for (size_t i = 0; i < w.content.size(); ++i)
+				oss << boost::apply_visitor(vis, w.content[i].expr);
+
 			return oss.str();
-#endif
 		}
 
 		std::string operator() (const observer_op<ASSERT>& w) const
 		{
-#ifdef notyet
 			std::string indent = times(4, "\t");
 			// XXX Hackish, but correct at this point
 			std::string identifier = compute_ensure_target(); 
@@ -235,19 +244,33 @@ namespace {
 			std::ostringstream inner_var_;
 			inner_var_ << "__hyper_assert_" << inner_var_counter++;
 			std::string inner_var = local_symbol(inner_var_.str());
+			std::ostringstream oss_name;
+			oss_name << "__hyper_assert_computation_" << counter;
+
+			// guaranted by compiler process
+			expression_ast e = boost::get<expression_ast>(w.content.back().expr);
 
 			std::ostringstream oss;
+			oss << indent << "hyper::model::abortable_computation* " << oss_name.str();
+			oss << " = new hyper::model::abortable_computation();\n" << std::endl;
+
 			oss << indent << ptr_object;
 			oss << "->push_back(new hyper::model::compute_assert_expression(a.io_s, boost::posix_time::milliseconds(";
 			oss << (w.delay ? *(w.delay) : 50) << "), \n";
-			oss << abortable_function(inner_var, w.content);
-			oss << next_indent << ", a.logic().generate(" << generate_logic_expression(w.content, a, u) << "), \n";
+			oss << next_indent << oss_name.str() << ",\n";
+			oss << next_indent << generate_logic_expression(e, a, u) << ", \n";
 			oss << next_indent << identifier << ", " << inner_var << ", size()));\n";
 
 			target = boost::none;
 
+			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, oss_name.str());
+			for (size_t i = 0; i < w.content.size() - 1; ++i)
+				oss << boost::apply_visitor(vis, w.content[i].expr);
+
+			dump_recipe_visitor vis2(u, a, t, syms, counter, inner_var_counter, oss_name.str(), inner_var_.str());
+			oss << boost::apply_visitor(vis2, w.content.back().expr);
+
 			return oss.str();
-#endif
 		}
 
 		std::string operator() (const expression_ast& e) const
