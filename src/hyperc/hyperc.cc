@@ -5,6 +5,9 @@
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/erase.hpp>
+
 
 #include <compiler/depends.hh>
 #include <compiler/extension.hh>
@@ -382,6 +385,14 @@ int main(int argc, char** argv)
 	if (vm.count("output")) 
 		outputName = vm["output"].as < std::string > () + "/";
 
+	std::string filename;
+	if (boost::ends_with(abilityName, ".ability")) {
+		filename = abilityName;
+		boost::erase_last(abilityName, ".ability");
+	} else {
+		filename = abilityName + ".ability";
+	}
+
 	std::string hyperName = outputName + ".hyper";
 	std::string baseName = hyperName + "/src/";
 	std::string baseUserName = hyperName + "/user_defined/";
@@ -408,7 +419,8 @@ int main(int argc, char** argv)
 	create_directory(directoryTaskName);
 	create_directory(directoryRecipeName);
 
-	bool res = P.parse_ability_file(abilityName + ".ability");
+
+	bool res = P.parse_ability_file(filename);
 	if (res == false)
 		return -1;
 
