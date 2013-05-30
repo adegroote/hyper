@@ -163,7 +163,7 @@ namespace hyper {
 						| cst_bool
 						);
 
-				cst_int = qi::uint_;
+				cst_int = qi::int_;
 				cst_double = strict_double;
 				cst_string = constant_string;
 				cst_bool = qi::bool_;
