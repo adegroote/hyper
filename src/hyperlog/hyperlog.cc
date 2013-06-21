@@ -159,7 +159,7 @@ int main()
 		ping.run();
 		check.run();
 		io_s.run();
-	} catch(const boost::system::error_code& e) {
+	} catch(const boost::system::system_error& e) {
 		std::cerr << " Catched exception " << e << std::endl;
 		return -1;
 	}
