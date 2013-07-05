@@ -160,7 +160,7 @@ int main()
 		check.run();
 		io_s.run();
 	} catch(const boost::system::system_error& e) {
-		std::cerr << " Catched exception " << e << std::endl;
+		std::cerr << " Catched exception " << e.what() << std::endl;
 		return -1;
 	}
 }
