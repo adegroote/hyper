@@ -3,6 +3,8 @@
 
 #include <map>
 
+#include <compiler/universe.hh>
+#include <compiler/parser.hh>
 #include <model/ability.hh>
 #include <model/future.hh>
 #include <model/proxy.hh>
@@ -19,10 +21,13 @@ namespace hyper {
 			remote_proxy proxy;
 			typedef std::map<std::string, boost::function<void ()> > getter_map;
 			getter_map gmap;
+			hyper::compiler::universe u;
+			hyper::compiler::parser p;
 			
 			ability_test(const std::string& name_) : 
 				ability(name_ +  "_test", DEBUG_ALL), target(name_),
-				proxy(*this)
+				proxy(*this),
+				p(u)
 			{}
 
 			private:
@@ -45,10 +50,10 @@ namespace hyper {
 			void handle_send_constraint(const boost::system::error_code& e,
 										network::identifier id,
 										future_value<bool>, 
-									    network::request_constraint* msg,
+									    network::request_constraint2* msg,
 										network::request_constraint_answer* ans);
 
-			future_value<bool> send_constraint(const std::string& constraint, bool repeat);
+			future_value<bool> send_constraint(const compiler::recipe_expression& expr, bool repeat);
 
 			template <typename T>
 			void get(remote_value<T>& value)
