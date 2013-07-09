@@ -126,6 +126,8 @@ namespace hyper {
 
 			recipe_expression(const type& expr) : expr(expr) {}
 
+			/* Can change symbolList to add some new variables, introduced by let */
+			bool is_valid(const ability&, const universe&, symbolList& s) const;
 		};
 
 		std::ostream& operator<< (std::ostream& os, const recipe_expression&);
