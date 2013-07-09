@@ -78,6 +78,12 @@ namespace hyper {
 				std::copy(content_.begin(), content_.end(),
 						  std::back_inserter(content));
 			}
+
+			recipe_op(const logic_expression_decl& content_) :
+				delay(boost::none)
+			{
+				content.push_back(content_);
+			}
 		};
 
 		template <recipe_op_kind kind>
