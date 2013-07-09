@@ -7,37 +7,6 @@
 using namespace hyper::compiler;
 
 namespace {
-	std::string logic_function_name(binary_op_kind k)
-	{
-		switch (k) {
-			case ADD:
-				return "add";
-			case SUB:
-				return "minus";
-			case MUL:
-				return "times";
-			case DIV:
-				return "divides";
-			case EQ:
-				return "equal";
-			case NEQ:
-				return "not_equal";
-			case LT:
-				return "less";
-			case LTE:
-				return "less_equal";
-			case GT:
-				return "greater";
-			case GTE:
-				return "greater_equal";
-			case AND:
-				return "and";
-			case OR:
-				return "or";
-			default:
-				assert(false);
-		}
-	}
 
 	template <unary_op_kind op> struct logic_unary_function {};
 	template <> struct logic_unary_function<NEG> { static std::string name() { return "negate";}};
@@ -156,6 +125,38 @@ namespace {
 
 namespace hyper {
 	namespace compiler {
+		std::string logic_function_name(binary_op_kind k)
+		{
+			switch (k) {
+				case ADD:
+					return "add";
+				case SUB:
+					return "minus";
+				case MUL:
+					return "times";
+				case DIV:
+					return "divides";
+				case EQ:
+					return "equal";
+				case NEQ:
+					return "not_equal";
+				case LT:
+					return "less";
+				case LTE:
+					return "less_equal";
+				case GT:
+					return "greater";
+				case GTE:
+					return "greater_equal";
+				case AND:
+					return "and";
+				case OR:
+					return "or";
+				default:
+					assert(false);
+			}
+		}
+
 		std::string generate_logic_expression(const expression_ast& e, const ability& a, 
 				boost::optional<const universe&> u, bool is_rule)
 		{

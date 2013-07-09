@@ -34,6 +34,8 @@ namespace hyper {
 
 		std::ostream& operator << (std::ostream& os, const binary_op_kind& k);
 
+		std::string logic_function_name(binary_op_kind k);
+
 		enum unary_op_kind { PLUS, NEG };
 		
 		struct unary_op;
