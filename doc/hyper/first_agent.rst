@@ -264,6 +264,45 @@ robot ``simu_pos`` to the ``goal``.
 Using the agent
 +++++++++++++++
 
-TODO, needing a script interface
+In addition of the ``hyper_demo_loco`` agent, the build generates a test
+program called ``hyper_demo_loco_test``. This test program allows to access to
+the different values of agent variables (including private one), and permits
+to add some constraint on this agent.
+
+We now restart the ``demo_loco`` agent::
+    
+    hyper_demo_loco
+
+and then try to access the ``init`` value of it::
+
+    hyper_demo_loco_test init
+
+It normally answers::
+
+    Get "init": false
+
+We can now try to get the value of ``pos`` using::
+
+    hyper_demo_loco_test pos
+
+It normally answers 0. But lot of things happen in fact. If you check the
+value of the variable ``init`` again, you will discover that it is now true,
+meaning that the recipe ``init_r`` has been called (and ``get_pos_r`` too).
+
+Let's try to give some goal to the agent::
+
+    hyper_demo_loco_test make "demo_loco::pos == demo_loco::goal where demo_loco::goal == 5"
+
+Basically, we ask the agent to make ``pos`` equivalent to ``goal`` after
+assigning to ``goal`` the value 5. The contrary is not possible because of the
+permission on these two variables.
+
+Almost instantaneously, the program returns::
+
+    "Successfully enforcing equal_int(demo_loco::pos,demo_loco::goal)"
+    
+If you ask for the ``pos`` of the agent, it must be 5 now.
+
+
 
 
