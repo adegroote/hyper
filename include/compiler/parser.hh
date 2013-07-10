@@ -23,11 +23,17 @@ namespace hyper {
 				universe &u;
 				std::vector <boost::filesystem::path> parsed_files;
 				std::vector<boost::filesystem::path> include_path;
+				
+				void get_include_path_from_env();
 
 			public:
-				parser(universe & u_) : u(u_) {};
+				parser(universe & u_) : u(u_) {
+					get_include_path_from_env();
+				}
 				parser(universe & u_, const std::vector<boost::filesystem::path>& includes):
-					u(u_), include_path(includes) {};
+					u(u_), include_path(includes) {
+					get_include_path_from_env();
+				}
 				bool parse_ability_file(const std::string&);
 				bool parse_expression(const std::string&);
 				bool parse_logic_expression(const std::string&);

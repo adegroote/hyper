@@ -1,5 +1,8 @@
 #include <iostream>
 
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+
 #include <compiler/ability_parser.hh>
 #include <compiler/base_parser.hh>
 #include <compiler/import_parser.hh>
@@ -430,4 +433,24 @@ bool parser::parse_ability_file(const std::string & filename)
 	if (r) 
 		parsed_files.push_back(full);
 	return r;
+}
+
+void parser::get_include_path_from_env()
+{
+	using namespace boost::filesystem;
+
+	const char* paths_ = std::getenv("HYPER_INCLUDE_PATH");
+	if (paths_ != 0) {
+		std::string paths__(paths_);
+		std::vector<std::string> paths;
+		boost::split(paths, paths__, boost::is_any_of(":"), boost::token_compress_on);
+		include_path.insert(include_path.end(), paths.begin(), paths.end());
+	}
+
+	const char* root_ = std::getenv("HYPER_ROOT");
+	if (root_) {
+		path root(root_);
+		root = root / path("share") / path("hyper");
+		include_path.push_back(root);
+	}
 }
