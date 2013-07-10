@@ -37,6 +37,7 @@ namespace hyper {
 				typeList tList;
 				functionDefList fList;
 				rule_decl_list rList;
+				bool verbose;
 
 				/*
 				 * Check if is part of native identifier
@@ -53,7 +54,7 @@ namespace hyper {
 				bool add_rules(const std::string&, const rule_decl_list& decl);
 
 			public:
-				universe();
+				universe(bool verbose = false);
 
 				bool add(const ability_decl& decl);
 
@@ -95,6 +96,8 @@ namespace hyper {
 
 				void add_extension(const std::string&, extension*);
 				const extension& get_extension(const std::string&) const;
+
+				bool is_verbose() const { return verbose; }
 		};
 	}
 }

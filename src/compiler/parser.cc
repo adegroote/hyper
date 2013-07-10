@@ -397,7 +397,8 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 
 bool parser::parse_ability_file(const std::string & filename) 
 {
-	std::cout << "parsing " << filename << std::endl;
+	if (u.is_verbose())
+		std::cout << "parsing " << filename << std::endl;
 	// Avoid to parse twice or more the same files
 	using namespace boost::filesystem;
 
@@ -407,7 +408,8 @@ bool parser::parse_ability_file(const std::string & filename)
 	std::vector<path>::const_iterator it_parsed;
 	it_parsed = std::find(parsed_files.begin(), parsed_files.end(), full);
 	if (it_parsed != parsed_files.end()) {
-		std::cout << "already parsed " << filename << " : skip it !!! " << std::endl;
+		if (u.is_verbose())
+			std::cout << "already parsed " << filename << " : skip it !!! " << std::endl;
 		return true; // already parsed
 	}
 

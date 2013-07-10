@@ -330,8 +330,7 @@ int main(int argc, char** argv)
 	desc.add_options()
 		("clean,c", "clean generated files")
 		("help,h", "produce help message")
-		("verbose,v", po::value<int>()->implicit_value(1),
-		 "enable verbosity (optionally specify level)")
+		("verbose,v", "enable verbosity")
 		("include-path,I", po::value< std::vector<std::string> >(), 
 		 "include path")
 		("extension,e", po::value <std::vector<std::string> >(),
@@ -401,7 +400,7 @@ int main(int argc, char** argv)
 	std::string directoryRecipeName = directoryName + "/recipes";
 	std::string taskDirectory = abilityName;
 
-	universe u;
+	universe u(vm.count("verbose") != 0);
 	extension_manager manager(u);
 
 	if (vm.count("extension")) {
