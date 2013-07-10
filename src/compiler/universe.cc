@@ -728,6 +728,12 @@ universe::dump_ability_tagged_functions_proto(const std::string& directoryName, 
 
 		std::for_each(depends.begin(), depends.end(), dump_depends(oss, "types.hh"));
 
+		if (define_opaque_type(name)) 
+			oss << "#include <" << name << "/opaque_types.hh>\n";
+
+		oss << "\n";
+		get_extension(tag).function_proto_additional_includes(oss, name);
+
 		namespaces n(oss, name);
 		std::for_each(funcs.begin(), funcs.end(), output_proto_helper(oss, *this));
 	}

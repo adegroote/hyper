@@ -17,6 +17,10 @@ namespace hyper {
 
 			virtual void function_proto(std::ostream& oss, const functionDef& f,
 												   const typeList& tList) const = 0;
+
+			virtual void function_proto_additional_includes(std::ostream& oss, 
+													const std::string& name) const = 0;
+
 			virtual void function_impl(std::ostream& oss, const functionDef& f,
 												   const typeList& tList) const = 0;
 
