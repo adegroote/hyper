@@ -25,7 +25,7 @@ namespace hyper {
 			hyper::compiler::parser p;
 			
 			ability_test(const std::string& name_) : 
-				ability(name_ +  "_test", DEBUG_ALL), target(name_),
+				ability(name_ +  "_test", INFORMATION), target(name_),
 				proxy(*this),
 				p(u)
 			{}
