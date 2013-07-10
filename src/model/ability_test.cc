@@ -8,20 +8,30 @@
 #include <model/future.hh>
 
 #include <boost/random/mersenne_twister.hpp>
+#include <boost/version.hpp>
+#if BOOST_VERSION < 104700
+#include <boost/random/uniform_int.hpp>
+#else
 #include <boost/random/uniform_int_distribution.hpp>
+#endif
 
 
 template <int N>
 std::string make_random_name()
 {
-	char name[N];
+	char name[N+1];
 
-	boost::random::mt19937 gen(std::time(0));
 	std::string chars(
 		"abcdefghijklmnopqrstuvwxyz"
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		"1234567890");
+#if BOOST_VERSION < 104700
+	boost::uniform_int<> index_dist(0, chars.size() - 1);
+	boost::mt19937 gen(std::time(0));
+#else
 	boost::random::uniform_int_distribution<> index_dist(0, chars.size() - 1);
+	boost::random::mt19937 gen(std::time(0));
+#endif
 	for (size_t i = 0; i < N; ++i)
 		name[i] = chars[index_dist(gen)];
 	name[N] = 0;
