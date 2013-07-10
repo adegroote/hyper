@@ -24,11 +24,7 @@ namespace hyper {
 			hyper::compiler::universe u;
 			hyper::compiler::parser p;
 			
-			ability_test(const std::string& name_) : 
-				ability(name_ +  "_test", INFORMATION), target(name_),
-				proxy(*this),
-				p(u)
-			{}
+			ability_test(const std::string& name_);
 
 			private:
 			template <typename T>

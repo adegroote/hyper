@@ -7,9 +7,36 @@
 #include <model/actor_impl.hh>
 #include <model/future.hh>
 
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
+
+template <int N>
+std::string make_random_name()
+{
+	char name[N];
+
+	boost::random::mt19937 gen(std::time(0));
+	std::string chars(
+		"abcdefghijklmnopqrstuvwxyz"
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		"1234567890");
+	boost::random::uniform_int_distribution<> index_dist(0, chars.size() - 1);
+	for (size_t i = 0; i < N; ++i)
+		name[i] = chars[index_dist(gen)];
+	name[N] = 0;
+
+	return name;
+}
 
 using namespace hyper::model;
+
+ability_test::ability_test(const std::string& name_) : 
+	ability(name_ +  "_test_" + make_random_name<4>(), INFORMATION), 
+	target(name_),
+	proxy(*this),
+	p(u)
+{}
 
 void ability_test::handle_send_constraint(const boost::system::error_code& e,
 		network::identifier id,
