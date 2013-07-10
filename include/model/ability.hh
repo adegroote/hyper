@@ -32,6 +32,8 @@ namespace hyper {
 			std::string name;
 			model::functions_map f_map;
 
+			int log_level;
+
 			/* our knoweldge about alive agents */
 			std::set<std::string> alive_agents;
 

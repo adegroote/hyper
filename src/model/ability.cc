@@ -312,7 +312,8 @@ namespace hyper {
 					 a.discover.root_addr(), a.discover.root_port()),
 				logic(a_)
 			{
-				std::cout << "discover " << a.discover.root_addr() << " " << a.discover.root_port() << std::endl;
+				if (a.log_level >= DEBUG)
+					std::cout << "discover " << a.discover.root_addr() << " " << a.discover.root_port() << std::endl;
 			}
 		};
 		actor_impl::actor_impl(boost::asio::io_service& io_s, const std::string& name, int level, 
@@ -330,6 +331,7 @@ namespace hyper {
 			updater(*this),
 			setter(*this),
 			name(name_),
+			log_level(level),
 			impl(new ability_impl(*this))
 		{};
 
@@ -338,13 +340,17 @@ namespace hyper {
 			const std::vector<boost::asio::ip::tcp::endpoint>& addrs = impl->serv.local_endpoints();
 			bool res = actor->name_client.register_name(name, addrs);
 			if (res) {
-				std::cout << "Succesfully registring " << name << " on " ;
-				std::copy(addrs.begin(), addrs.end(), 
-						std::ostream_iterator<boost::asio::ip::tcp::endpoint>(std::cout, " "));
-				std::cout << std::endl;
+				if (log_level >= DEBUG) {
+					std::cout << "Successfully registring " << name << " on " ;
+					std::copy(addrs.begin(), addrs.end(), 
+							std::ostream_iterator<boost::asio::ip::tcp::endpoint>(std::cout, " "));
+					std::cout << std::endl;
+				}
 			}
-			else
-				std::cout << "failed to register " << name << std::endl;
+			else {
+				std::cerr << "Failed to register " << name << std::endl;
+				exit(-1);
+			}
 		}
 
 		void ability::start()
