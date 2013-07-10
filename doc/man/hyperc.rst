@@ -4,7 +4,7 @@ Hyperc man page
 Synopsis
 --------
 
-**hyperc** [-c] [-h] [-v <level>] [-I <input_path>] [-e <extension>] \
+**hyperc** [-c] [-h] [-v] [-I <input_path>] [-e <extension>] \
 		   [-i] [-o <output_directory>] agent.
 
 
@@ -42,12 +42,12 @@ Options
         Remove any generated files.
 :-h, --help:
 		Displays information about **hyperc** use.
-:-v <level>:
+:-v:
         Increases the verbosity of the **hyperc** compiler.
 :-I, --include-path <input_path>:
 		Add *input_dir* in the list of paths **hyperc** searches agent
-		description. By default, it only searches in the
-		${PREFIX}/share/hyper directory.
+		description. By default, it searches in paths specified in
+        HYPER_INCLUDE_PATH and in the ${HYPER_ROOT}/share/hyper directory.
 :-e, --extension  <extension>:
 		Loads the compiler extension *<extension>* before starting the real
 		compilation phase. It allows to parse properly tagged functions, and
@@ -59,6 +59,21 @@ Options
 :-o, --output <directory>:
 		Generates C++ files and CMakeFiles in the directory *<directory>*. If
 		not present, **hyperc** generates the code in the source directory.
+
+Environment
+-----------
+
+:HYPER_ROOT:
+    This variable determines the root directory of hyper. It is used for
+    several tasks, in particular in the build process of the agent (through cmake(1)).
+    It is also used to compute the default place to search for ability
+    (${HYPER_ROOT}/share/prefix).
+
+:MORSE_INCLUDE_PATH:
+    A list of path separated by ':'. The **hyperc** will search in these
+    different paths to find needed ability description
+
+
 
 Bugs
 ----
