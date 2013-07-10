@@ -48,6 +48,7 @@ Let complete the previously described agent with the following definitions.
                 bool init = false;
                 double simu_pos;
                 hour movement_start;
+                double movement_sign;
             }
         }
 
@@ -63,6 +64,7 @@ Let complete the previously described agent with the following definitions.
                 /* Here, declare your functions */
                 double distance(hour A, hour B);
                 hour now();
+                double sign(double d);
             }
             {
                 /* Here, some logical relations between these functions */
@@ -96,13 +98,13 @@ Defining new types
 A new type can be constructed using three approaches:
 
 - as an alias of an existing type, using the **newtype** word. For example,
-  you define line 33 the type ``speed`` as an alias of native type ``double``.
+  you define line 28 the type ``speed`` as an alias of native type ``double``.
   Contrary to the C keyword **typedef**, you cannot use a double instead of a
   speed (apart the constant case), there are strictly two different types.
   Defining such aliases helps the understanding of the program, and reduce the
   search spaces of the logic solver.
 - as a cartesian product type using the **struct** keyword (more or less in
-  the same way that struct are defined in C). For example, line 32, you define
+  the same way that struct are defined in C). For example, line 27, you define
   the type ``hour`` which contains two int, representing number of seconds and
   number of microseconds since Epoch. This type hour is equivalent to the
   ``struct timeval`` C type.
@@ -117,13 +119,15 @@ In this block, you can declare new functions. At this point, you only declare
 them. Implementation is done at the host level language (C++ in the current
 implementation). See :ref:`implementing_funs` to see how to implement them.
 
-In this agent, you define two functions:
+In this agent, you define three functions:
 
-- line 32: you define the function ``distance`` which takes two ``hour`` in
+- line 33: you define the function ``distance`` which takes two ``hour`` in
   parameters and return a double (how much time elapses between theses two
   times).
-- line 33: you define the function ``now`` which takes no arguments, and
+- line 34: you define the function ``now`` which takes no arguments, and
   returns the current time.
+- line 35: you define the function ``sign`` which takes a double in argument, 
+  and returns 1.0 if it is positive, -1.0 if it is negative.
 
 Define logical relation between these functions
 ***********************************************
@@ -210,10 +214,32 @@ The function ``now`` can be implemented in the following way
         }
     }
 
+The function ``sign`` can be implemeed as
+
+.. code-block:: c++
+
+    #include <demo_loco/funcs.hh>
+
+    namespace hyper {
+        namespace demo_loco {
+            double sign::apply(double v0 )
+            {
+                if (v0 < 0.0) return -1.0;
+                return 1.0;
+            }
+        }
+    }
+
 .. warning::
 
     Do not forget to put under your chosen version control system files from
     ``user_defined/funcs``, they are necessary to build properly the agent.
+
+.. note::
+
+    If you add new functions after first generation, you cannot call again
+    ``hyperc -i``. But you can retrieve the template file in
+    ``.hyper/demo_loco_speed/funcs/``.
 
 Building the agent
 ++++++++++++++++++
@@ -245,15 +271,16 @@ in the recipe **init_r** recipe. The only interesting change is in the
         post = {}
         body = {
             set movement_start now()
-            let move_distance simu_pos - goal
-            let time_needed move_distance / wished_speed
+            let move_distance goal - simu_pos
+            set movement_sign sign(move_distance)
+            let time_needed movement_sign * move_distance / wished_speed
             wait(distance(movement_start, now()) > time_needed)
         }
 
         end = {
             let current_time now()
             let diff distance(current_time, movement_start)
-            let dist diff * wished_speed
+            let dist diff * wished_speed * movement_sign
             set simu_pos simu_pos + dist
         }
     }
@@ -275,4 +302,33 @@ recipe until the condition is reached. In this case, the recipe **move_r**
 waits until a certain delay has elapsed.
 
 
-TODO using it
+Using the agent
++++++++++++++++
+
+The agent has more or less the same interface than the previous one, the main
+difference is the use of double instead of int for ``goal`` and ``pos``.
+
+.. warning::
+
+    hyper does not promote constant int in constant double. In particular 1 is
+    not a valid entry for a double. Use 1.0.
+
+Let's try to send a constraint to our agent::
+
+    hyper_demo_loco_speed_test make "demo_loco_speed::pos == demo_loco_speed::goal where demo_loco_speed::goal == 10.0"
+
+
+Contrary to previous call, it does not return instantaneously. It takes
+approximatively 10 sec. You can verify using the following command::
+
+    time hyper_demo_loco_speed_test make "demo_loco_speed::pos == demo_loco_speed::goal where demo_loco_speed::goal == 0.0"
+
+You can check the position of the agent using the same command than previously.
+Normally, it must be around 0.0 (but not exactly 0.0, due to the method used to
+compute the simulated position).
+
+You can try also to play on the wished_speed::
+
+    time hyper_demo_loco_speed_test make "demo_loco_speed::pos == demo_loco_speed::goal where demo_loco_speed::goal == 20.0 and demo_loco_speed::wished_speed=10.0"
+
+must only takes approximatively 2 seconds.
