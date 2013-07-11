@@ -74,15 +74,11 @@ namespace {
 			std::ostringstream oss;
 			oss << "logic::function_call(\"";
 			if (scope::is_basic_identifier(f.fName) || scope::is_scoped_identifier(f.fName))
-				oss << f.fName << "\", ";
+				oss << f.fName << "\"";
 			else 
-				oss << a.name() << "::" << f.fName << "\", ";
-			for (size_t i = 0; i < f.args.size(); ++i) {
-				oss << boost::apply_visitor(*this, f.args[i].expr);
-				if (i != (f.args.size() - 1)) {
-					oss << ",";
-				}
-			}
+				oss << a.name() << "::" << f.fName << "\"";
+			for (size_t i = 0; i < f.args.size(); ++i) 
+				oss << ", " << boost::apply_visitor(*this, f.args[i].expr);
 			oss << ")";
 			return oss.str();
 		}
