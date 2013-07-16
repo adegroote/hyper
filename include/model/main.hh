@@ -35,6 +35,8 @@ namespace hyper {
 				std::cerr << "Catched exception : " << e.what() << std::endl;
 				exit(-1);
 			}
+
+			return 0;
 		}
 	}
 }
