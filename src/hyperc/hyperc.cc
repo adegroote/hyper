@@ -583,7 +583,7 @@ int main(int argc, char** argv)
 	if (exists(baseUserName) && initial) {
 		if (exists("user_defined/")) {
 			std::cerr << "Won't copy user_defined template, directory already existing!\n";
-			std::cerr << "You can grab additional definition from " << baseUserName << "user_defined\n";
+			std::cerr << "You can grab additional definition from " << baseUserName << "\n";
 		} else {
 			copy_if_different(baseUserName, outputName + "/user_defined", "");
 		}
