@@ -91,6 +91,9 @@ namespace hyper {
 				void dump_ability_import_module_impl(std::ostream& oss, const std::string& name) const;
 				void dump_ability(std::ostream& oss, const std::string& name) const;
 
+				void generate_additional_files_for_extension(const std::string& path, 
+															 const std::string& name) const;
+
 				ability& get_ability(const std::string& name);
 				const ability& get_ability(const std::string& name) const;
 

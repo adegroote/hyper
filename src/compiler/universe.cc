@@ -925,3 +925,12 @@ universe::get_extension(const std::string& name) const
 	assert(it != extensions.end());
 	return *(it->second);
 }
+
+void
+universe::generate_additional_files_for_extension(
+		const std::string& path, const std::string& name) const
+{
+	extensionMap::const_iterator it;	
+	for (it = extensions.begin(); it != extensions.end(); ++it)
+		it->second->generate_additional_files(path, *this, name);
+}

@@ -16,19 +16,19 @@ namespace hyper {
 		struct extension {
 
 			virtual void function_proto(std::ostream& oss, const functionDef& f,
-												   const typeList& tList) const = 0;
+												   const typeList& tList) const {};
 
 			virtual void function_proto_additional_includes(std::ostream& oss, 
-													const std::string& name) const = 0;
+													const std::string& name) const {};
 
 			virtual void function_impl(std::ostream& oss, const functionDef& f,
-												   const typeList& tList) const = 0;
+												   const typeList& tList) const {};
 
 			virtual void output_import(std::ostream& oss, const functionDef& f,
-														  const typeList& tList) const = 0;
+														  const typeList& tList) const  {};
 
 			virtual void recipe_additional_includes(std::ostream& oss,
-												    const std::string& name) const = 0;
+												    const std::string& name) const {};
 
 			virtual void dump_eval_expression(std::ostream& oss, 
 											  const universe& u,
@@ -37,10 +37,10 @@ namespace hyper {
 											  const std::string& local_data_type,
 											  const symbolList& local_symbol,
 											  size_t counter,
-											  const expression_ast& e) const = 0;
+											  const expression_ast& e) const {};
 
 			virtual void generate_expression_caller(std::ostream& oss,
-												    size_t counter) const = 0;
+												    size_t counter) const {};
 
 			virtual std::string generate_abortable_function(const universe&,
 															const ability&,
@@ -48,6 +48,10 @@ namespace hyper {
 															const std::string& type_locals,
 															size_t counter, 
 															const std::string& target_var) const = 0;
+
+			virtual void generate_additional_files(const std::string& path,
+												   const universe &,
+												   const std::string& name) const {};
 
 			virtual ~extension() {}
 		};

@@ -530,6 +530,11 @@ int main(int argc, char** argv)
 	}
 
 	{
+		u.generate_additional_files_for_extension(baseUserName, abilityName);
+	}
+
+
+	{
 		std::string fileName = directoryName + "/ability.hh";
 		std::ofstream oss(fileName.c_str());
 		current_a.dump_include(oss, u);
