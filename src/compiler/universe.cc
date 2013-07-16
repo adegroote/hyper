@@ -691,14 +691,17 @@ struct extract_tags {
 	}
 };
 
-struct match_tag {
+struct match_tag_and_name {
 	std::string tag;
+	std::string search_string;
 
-	match_tag(const std::string& tag) : tag(tag) {}
+	match_tag_and_name(const std::string& tag, const std::string& name) : 
+		tag(tag), search_string(name + "::") {}
 
 	bool operator() (const functionDef& fun)
 	{
-		return (fun.tag() && (*(fun.tag()) == tag));
+		return (fun.tag() && (*(fun.tag()) == tag)
+						  && (fun.name().find(search_string, 0) == 0));
 	}
 };
 
@@ -718,7 +721,7 @@ universe::dump_ability_tagged_functions_proto(const std::string& directoryName, 
 		std::ofstream oss(pathName.c_str());
 		guards g(oss, name,  "_" + upper(tag) + "_FUNC_ABILITY_HH_");
 
-		std::vector<functionDef> funcs = fList.select(match_tag(tag));
+		std::vector<functionDef> funcs = fList.select(match_tag_and_name(tag, name));
 		size+= funcs.size();
 
 		// compute dependances
