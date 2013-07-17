@@ -133,22 +133,9 @@ namespace hyper {
 				if (!t)
 					m_os << "null";
 				else
-					save(*t);
+					*this << *t;
 				return *this;
 			}
-
-			json_oarchive & operator<< (const boost::optional<bool>& b)
-			{
-				if (!b)
-					m_os << "null";
-				else
-					if (*b)
-						m_os << "true";
-					else
-						m_os << "false";
-				return *this;
-			}
-
 
 			template<typename T>
 			json_oarchive & operator<< (const T *t)
