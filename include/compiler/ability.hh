@@ -41,6 +41,17 @@ namespace hyper {
 				std::list<task> tasks;
 				typedef std::list<task>::const_iterator task_const_iterator;
 
+				template <typename Fun>
+				void for_each_variables(Fun f) const
+				{
+					std::for_each(controlable_list.begin(), 
+								  controlable_list.end(), f);
+					std::for_each(readable_list.begin(), 
+								  readable_list.end(), f);
+					std::for_each(private_list.begin(), 
+								  private_list.end(), f);
+				}
+
 			public:
 				ability(const std::string& name, const symbolList& controlables,
 						const symbolList& readables, const symbolList& privates) :

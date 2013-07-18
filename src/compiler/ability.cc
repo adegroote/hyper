@@ -307,17 +307,11 @@ void
 ability::dump_include(std::ostream& oss, const universe& u) const
 {
 	std::set<std::string> type_depends;
-	compute_type_depends type_deps(type_depends, u.types());
-	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
-	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
-	std::for_each(private_list.begin(), private_list.end(), type_deps);
+	for_each_variables(compute_type_depends(type_depends, u.types()));
 
 	guards g(oss, name_, "_ABILITY_HH_");
 
 	oss << "#include <model/ability.hh>\n";
-	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
-	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
-	std::for_each(private_list.begin(), private_list.end(), type_deps);
 	std::for_each(type_depends.begin(), type_depends.end(), dump_depends(oss, "types.hh"));
 	if (u.define_opaque_type(name_))
 		oss << "#include <" << name_ << "/opaque_types.hh>\n";
@@ -326,12 +320,9 @@ ability::dump_include(std::ostream& oss, const universe& u) const
 
 	namespaces n(oss, name_);
 
-	print_symbol print(oss, u.types(), name_);
 	oss << "\t\t\tstruct ability : public model::ability {" << std::endl;
 
-	std::for_each(controlable_list.begin(), controlable_list.end(), print);
-	std::for_each(readable_list.begin(), readable_list.end(), print);
-	std::for_each(private_list.begin(), private_list.end(), print);
+	for_each_variables(print_symbol(oss, u.types(), name_));
 
 	oss << "\t\t\t\tability(int level);\n";
 	oss << "\t\t\t};\n";
@@ -341,10 +332,7 @@ void
 ability::dump(std::ostream& oss, const universe& u) const
 {
 	std::set<std::string> type_depends;
-	compute_type_depends type_deps(type_depends, u.types());
-	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
-	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
-	std::for_each(private_list.begin(), private_list.end(), type_deps);
+	for_each_variables(compute_type_depends(type_depends, u.types()));
 	depends deps = get_function_depends(u);
 
 	oss << "#include <" << name_ << "/ability.hh>\n";
@@ -365,17 +353,11 @@ ability::dump(std::ostream& oss, const universe& u) const
 
 	namespaces n(oss, name_);
 	oss << "\t\t\t\tability::ability(int level) : model::ability(" << quoted_string(name_) << ", level)";
-	initialize_variable initialize(oss);
-	std::for_each(controlable_list.begin(), controlable_list.end(), initialize);
-	std::for_each(readable_list.begin(), readable_list.end(), initialize);
-	std::for_each(private_list.begin(), private_list.end(), initialize);
+	for_each_variables(initialize_variable(oss));
 	oss << "{\n" ;
 
 
-	add_proxy_symbol add_proxy(oss, u.types());
-	std::for_each(controlable_list.begin(), controlable_list.end(), add_proxy);
-	std::for_each(readable_list.begin(), readable_list.end(), add_proxy);
-	std::for_each(private_list.begin(), private_list.end(), add_proxy);
+	for_each_variables(add_proxy_symbol(oss, u.types()));
 	std::for_each(controlable_list.begin(), controlable_list.end(), add_setter_symbol(oss));
 	std::for_each(import_depends.begin(), import_depends.end(), add_import_funcs(oss));
 	std::for_each(tasks.begin(), tasks.end(), add_task_declaration(oss));
@@ -387,12 +369,7 @@ std::set<std::string>
 ability::get_type_depends(const typeList& tList, const universe&) const
 {
 	std::set<std::string> type_depends;
-	compute_type_depends type_deps(type_depends, tList);
-	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
-	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
-	std::for_each(private_list.begin(), private_list.end(), type_deps);
-
-
+	for_each_variables(compute_type_depends(type_depends, tList));
 	return type_depends;
 }
 
@@ -475,10 +452,7 @@ void
 ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 {
 	std::set<std::string> type_depends;
-	compute_type_depends type_deps(type_depends, tList);
-	std::for_each(controlable_list.begin(), controlable_list.end(), type_deps);
-	std::for_each(readable_list.begin(), readable_list.end(), type_deps);
-	std::for_each(private_list.begin(), private_list.end(), type_deps);
+	for_each_variables(compute_type_depends(type_depends, tList));
 
 	guards g(oss, name_, "_ABILITY_TEST_HH_");
 
@@ -489,31 +463,21 @@ ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 
 	namespaces n(oss, name_);
 
-	agent_export_symbol print_variable(oss, tList);
-	
 	oss << "\t\tstruct ability_test : public model::ability_test {\n" ;
 
+	for_each_variables(agent_export_symbol(oss, tList));
 
-	std::for_each(controlable_list.begin(), controlable_list.end(), print_variable);
-	std::for_each(readable_list.begin(), readable_list.end(), print_variable);
-	std::for_each(private_list.begin(), private_list.end(), print_variable);
 	oss << "\t\t\tint dummy;\n\n";
 
 	oss << "\t\t\tability_test() : model::ability_test(" << quoted_string(name_);
 	oss << "),\n";
 
-	agent_export_ctor_symbol print_ctor_variable(oss, tList, name_);
-	std::for_each(controlable_list.begin(), controlable_list.end(), print_ctor_variable);
-	std::for_each(readable_list.begin(), readable_list.end(), print_ctor_variable);
-	std::for_each(private_list.begin(), private_list.end(), print_ctor_variable);
+	for_each_variables(agent_export_ctor_symbol(oss, tList, name_));
 
 	oss << "\t\t\t\t\tdummy(0)\n";
 	oss << "\t\t\t{\n";
 
-	agent_export_getter print_export_getter(oss, tList);
-	std::for_each(controlable_list.begin(), controlable_list.end(), print_export_getter);
-	std::for_each(readable_list.begin(), readable_list.end(), print_export_getter);
-	std::for_each(private_list.begin(), private_list.end(), print_export_getter);
+	for_each_variables(agent_export_getter(oss, tList));
 
 	oss << "\n";
 	std::vector<type> types = tList.select(all_but_opaque());
