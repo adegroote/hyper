@@ -45,7 +45,8 @@ ability_test::ability_test(const std::string& name_) :
 	ability(name_ +  "_test_" + make_random_name<4>(), INFORMATION), 
 	target(name_),
 	proxy(*this),
-	p(u)
+	p(u), 
+	locals(u.types())
 {}
 
 void ability_test::handle_send_constraint(const boost::system::error_code& e,
@@ -256,7 +257,6 @@ int ability_test::main(int argc, char ** argv)
 			r = recipe_op<ENSURE>(decl);
 
 		const hyper::compiler::ability &a = u.get_ability(target);
-		symbolList locals(u.types());
 		res = r.is_valid(a, u, locals);
 
 		if (!res) return -1;
