@@ -306,8 +306,7 @@ struct add_task_declaration
 void 
 ability::dump_include(std::ostream& oss, const universe& u) const
 {
-	std::set<std::string> type_depends;
-	for_each_variables(compute_type_depends(type_depends, u.types()));
+	std::set<std::string> type_depends = get_type_depends(u.types());
 
 	guards g(oss, name_, "_ABILITY_HH_");
 
@@ -331,8 +330,7 @@ ability::dump_include(std::ostream& oss, const universe& u) const
 void
 ability::dump(std::ostream& oss, const universe& u) const
 {
-	std::set<std::string> type_depends;
-	for_each_variables(compute_type_depends(type_depends, u.types()));
+	std::set<std::string> type_depends = get_type_depends(u.types());
 	depends deps = get_function_depends(u);
 
 	oss << "#include <" << name_ << "/ability.hh>\n";
@@ -366,7 +364,7 @@ ability::dump(std::ostream& oss, const universe& u) const
 }
 
 std::set<std::string>
-ability::get_type_depends(const typeList& tList, const universe&) const
+ability::get_type_depends(const typeList& tList) const
 {
 	std::set<std::string> type_depends;
 	for_each_variables(compute_type_depends(type_depends, tList));
@@ -460,8 +458,7 @@ struct print_export_factory_register
 void
 ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 {
-	std::set<std::string> type_depends;
-	for_each_variables(compute_type_depends(type_depends, tList));
+	std::set<std::string> type_depends = get_type_depends(tList);
 
 	guards g(oss, name_, "_ABILITY_TEST_HH_");
 

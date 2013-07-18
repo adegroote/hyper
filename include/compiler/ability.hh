@@ -94,7 +94,7 @@ namespace hyper {
 				void agent_test_declaration(std::ostream& oss, const typeList& tList) const;
 
 				depends get_function_depends(const universe& u) const;
-				std::set<std::string> get_type_depends(const typeList& tList, const universe& u) const;
+				std::set<std::string> get_type_depends(const typeList& tList) const;
 		};
 	}
 }
