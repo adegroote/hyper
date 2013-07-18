@@ -427,11 +427,20 @@ struct agent_export_getter
 	}
 };
 
-struct all_but_opaque
+struct extract_types 
 {
-	bool operator() (const type& t)  const
+	std::set<type>& types;
+	const typeList& tList; 
+
+	extract_types(std::set<type>& types, const typeList& tList):
+		types(types), tList(tList)
+	{}
+
+	void operator () (const std::pair<std::string, symbol>& p) const
 	{
-		return t.t != noType && t.t != opaqueType;
+		type t = tList.get(p.second.t);
+		if (t.t == noType or t.t == opaqueType) return;
+		types.insert(t);
 	}
 };
 
@@ -480,7 +489,9 @@ ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 	for_each_variables(agent_export_getter(oss, tList));
 
 	oss << "\n";
-	std::vector<type> types = tList.select(all_but_opaque());
+
+	std::set<type> types;
+	std::for_each(controlable_list.begin(), controlable_list.end(), extract_types(types, tList));
 	std::for_each(types.begin(), types.end(), print_export_factory_register(oss));
 
 	oss << "\t\t\t} \n" << std::endl;
