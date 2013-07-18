@@ -1,5 +1,7 @@
-#include <compiler/recipe_expression.hh>
 #include <compiler/ability.hh>
+#include <compiler/ability_parser.hh>
+#include <compiler/recipe_expression.hh>
+#include <compiler/scope.hh>
 
 #include <logic/expression.hh>
 
@@ -47,7 +49,12 @@ ability_test::ability_test(const std::string& name_) :
 	proxy(*this),
 	p(u), 
 	locals(u.types())
-{}
+{
+	// reference ourself in the universe
+	hyper::compiler::ability_decl decl;
+	decl.name = this->name;
+	u.add(decl);
+}
 
 void ability_test::handle_send_constraint(const boost::system::error_code& e,
 		network::identifier id,
@@ -131,7 +138,13 @@ struct generate_logic_function_ : public boost::static_visitor<hyper::logic::exp
 		assert(false);
 	}
 
-	hyper::logic::expression operator() (const std::string& s) const { return s; }
+	hyper::logic::expression operator() (const std::string& s) const 
+	{ 
+		if (!hyper::compiler::scope::is_scoped_identifier(s))
+			return a.name() + "::" + s;
+		else
+			return s;
+	}
 
 	hyper::logic::expression operator() (const hyper::compiler::expression_ast& e) const
 	{
@@ -184,9 +197,9 @@ ability_test::send_constraint(const hyper::compiler::recipe_expression& expr, bo
 	network::request_constraint_answer *answer(new network::request_constraint_answer());
 	msg->repeat = repeat;
 	if (repeat) {
-		generate_request<hyper::compiler::ENSURE>(expr, *msg, u, u.get_ability(target));
+		generate_request<hyper::compiler::ENSURE>(expr, *msg, u, u.get_ability(name));
 	} else {
-		generate_request<hyper::compiler::MAKE>(expr, *msg, u, u.get_ability(target));
+		generate_request<hyper::compiler::MAKE>(expr, *msg, u, u.get_ability(name));
 	}
 
 	future_value<bool> res("");
@@ -205,8 +218,8 @@ int usage(const std::string& name)
 	std::string prog_name = "hyper_" + name + "_test";
 	std::cerr << "Usage :\n";
 	std::cerr << prog_name << " get <var_name>\n";
-	std::cerr << prog_name << " make <request>\n";
-	std::cerr << prog_name << " ensure <request>\n";
+	std::cerr << prog_name << "[let var type json_value] make <request>\n";
+	std::cerr << prog_name << "[let var type json_value] ensure <request>\n";
 	return -1;
 }
 
@@ -216,12 +229,14 @@ int ability_test::main(int argc, char ** argv)
 	std::vector<std::string> arguments(argv + 1, argv + argc);
 	boost::function<void ()> to_execute;
 
-	if (argc != 3)
+	if (argc != 3 && argc != 7)
 		return usage(target);
 
 	if (arguments[0] != "get" &&
 		arguments[0] != "make" &&
-		arguments[0] != "ensure")
+		arguments[0] != "ensure" &&
+		(arguments[0] != "let" && argc != 7 && arguments[4] != "make") &&
+		(arguments[0] != "let" && argc !=7 && arguments[4] != "ensure"))
 		return usage(target);
 
 	if (arguments[0] == "get") {
@@ -234,8 +249,33 @@ int ability_test::main(int argc, char ** argv)
 			return -1;
 		}
 	}
+	
+	int cmd_index = 0;
+	if (arguments[0] == "let") {
+		// parse the file to get the definition of all necessary types
+		bool res = p.parse_ability_file(target + ".ability");
+		if (!res) {
+			std::cerr << "Failed to parse properly " << target << ".ability" << std::endl;
+			return -1;
+		}
 
-	if (arguments[0] == "make" || arguments[0] == "ensure") {
+		factory_map::const_iterator it = fmap.find(arguments[2]);
+		if (it == fmap.end()) {
+			std::cerr << "Can't find factory for type " << arguments[2] << std::endl;
+			return -1;
+		}
+
+		res = it->second(arguments[1], arguments[3]);
+		if (!res) {
+			std::cerr << "Unexpected failure in factory of " << arguments[1] << std::endl;
+			return -1;
+		}
+		cmd_index = 4;
+	}
+
+	if (arguments[cmd_index] == "make" or arguments[cmd_index] == "ensure")
+	{
+		// if we have already enter in let, this call will do nothing
 		bool res = p.parse_ability_file(target + ".ability");
 		if (!res) {
 			std::cerr << "Failed to parse properly " << target << ".ability" << std::endl;
@@ -243,26 +283,26 @@ int ability_test::main(int argc, char ** argv)
 		}
 
 		logic_expression_decl decl;
-		res = p.parse_logic_expression(arguments[1], decl);
+		res = p.parse_logic_expression(arguments[cmd_index + 1], decl);
 
 		if (!res) {
-			std::cerr << "Failed to parse properly " << arguments[1] << std::endl;
+			std::cerr << "Failed to parse properly " << arguments[cmd_index + 1] << std::endl;
 			return -1;
 		}
 
 		recipe_expression r;
-		if (arguments[0] == "make")
+		if (arguments[cmd_index] == "make")
 			r = recipe_op<MAKE>(decl);
 		else
 			r = recipe_op<ENSURE>(decl);
 
-		const hyper::compiler::ability &a = u.get_ability(target);
-		res = r.is_valid(a, u, locals);
 
+		const hyper::compiler::ability &a = u.get_ability(this->name);
+		res = r.is_valid(a, u, locals);
 		if (!res) return -1;
 
 		to_execute = boost::bind(&ability_test::send_constraint, this,
-								    r, (arguments[0] == "ensure"));
+								    r, (arguments[cmd_index] == "ensure"));
 	}
 
 	register_name();
