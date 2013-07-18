@@ -110,7 +110,7 @@ A new type can be constructed using three approaches:
   ``struct timeval`` C type.
 - using the keyword **opaquetype** which allows to use a *native type*, not
   representable with the current syntax. See the :doc:`tutorial
-  <demo_loco_genom>` for some example of use.
+  <first_agent_genom>` for some example of use.
 
 Declaring new functions
 ***********************

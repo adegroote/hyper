@@ -15,6 +15,7 @@ Contents:
    installation.rst
    first_agent.rst
    more_realist_first_agent.rst
+   first_agent_genom.rst
 
 
 Indices and tables
