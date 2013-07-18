@@ -450,6 +450,27 @@ struct agent_export_getter
 	}
 };
 
+struct all_but_opaque
+{
+	bool operator() (const type& t)  const
+	{
+		return t.t != noType && t.t != opaqueType;
+	}
+};
+
+struct print_export_factory_register 
+{
+	std::ostream& oss;
+
+	print_export_factory_register(std::ostream& oss) : oss(oss) {}
+
+	void operator() (const type& t) const
+	{
+		oss << "\t\t\t\t\tregister_factory <" << t.type_name();
+		oss << "> (\"" << t.name << "\");\n";
+	}
+};
+
 void
 ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 {
@@ -486,13 +507,17 @@ ability::agent_test_declaration(std::ostream& oss, const typeList& tList) const
 	std::for_each(readable_list.begin(), readable_list.end(), print_ctor_variable);
 	std::for_each(private_list.begin(), private_list.end(), print_ctor_variable);
 
-	oss << "\t\t\t\tdummy(0)\n";
+	oss << "\t\t\t\t\tdummy(0)\n";
 	oss << "\t\t\t{\n";
 
 	agent_export_getter print_export_getter(oss, tList);
 	std::for_each(controlable_list.begin(), controlable_list.end(), print_export_getter);
 	std::for_each(readable_list.begin(), readable_list.end(), print_export_getter);
 	std::for_each(private_list.begin(), private_list.end(), print_export_getter);
+
+	oss << "\n";
+	std::vector<type> types = tList.select(all_but_opaque());
+	std::for_each(types.begin(), types.end(), print_export_factory_register(oss));
 
 	oss << "\t\t\t} \n" << std::endl;
 	oss << "\t\t};" << std::endl;
