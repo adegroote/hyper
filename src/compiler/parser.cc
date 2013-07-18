@@ -397,19 +397,61 @@ struct  grammar_ability: qi::grammar<Iterator, white_space<Iterator> >
 };
 
 
+namespace fs = boost::filesystem;
+typedef boost::optional<fs::path> optional_path;
+
+struct gen_path 
+{
+	std::string filename;
+
+	gen_path(const std::string& filename_) : filename(filename_) {}
+
+	fs::path operator() (const fs::path & path) const {
+		fs::path computed_path = path / filename;
+		return computed_path;
+	}
+};
+
+struct path_exist
+{
+	bool operator() (const fs::path& path) const
+	{
+		return fs::exists(path);
+	}
+};
+
+static inline optional_path 
+search_ability_file(hyper::compiler::parser& p, const std::string& filename)
+{
+	if (fs::exists(filename)) 
+		return fs::path(filename);
+
+	std::vector<fs::path> generated_path;
+	std::transform(p.include_begin(), p.include_end(),
+				   std::back_inserter(generated_path),
+				   gen_path(filename));
+
+	std::vector<fs::path>::const_iterator it;
+	it = std::find_if(generated_path.begin(), generated_path.end(), path_exist());
+
+	if (it != generated_path.end())
+		return *it;
+
+	return boost::none;
+}
 
 bool parser::parse_ability_file(const std::string & filename) 
 {
 	if (u.is_verbose())
 		std::cout << "parsing " << filename << std::endl;
 	// Avoid to parse twice or more the same files
-	using namespace boost::filesystem;
 
-	path base(filename);
-	path full = complete(base);
+	optional_path ability_path = search_ability_file(*this, filename);
+	if (! ability_path ) 
+		throw hyper::compiler::import_exception_not_found(filename);
 
-	std::vector<path>::const_iterator it_parsed;
-	it_parsed = std::find(parsed_files.begin(), parsed_files.end(), full);
+	std::vector<fs::path>::const_iterator it_parsed;
+	it_parsed = std::find(parsed_files.begin(), parsed_files.end(), *ability_path);
 	if (it_parsed != parsed_files.end()) {
 		if (u.is_verbose())
 			std::cout << "already parsed " << filename << " : skip it !!! " << std::endl;
@@ -421,7 +463,7 @@ bool parser::parse_ability_file(const std::string & filename)
 
 	hyper_ability g(u, *this);
 
-	std::string expr = read_from_file(filename);
+	std::string expr = read_from_file(ability_path->string());
 	bool r;
 	try {
 		r = parse(g, expr);
@@ -431,14 +473,12 @@ bool parser::parse_ability_file(const std::string & filename)
 	}
 
 	if (r) 
-		parsed_files.push_back(full);
+		parsed_files.push_back(*ability_path);
 	return r;
 }
 
 void parser::get_include_path_from_env()
 {
-	using namespace boost::filesystem;
-
 	const char* paths_ = std::getenv("HYPER_INCLUDE_PATH");
 	if (paths_ != 0) {
 		std::string paths__(paths_);
@@ -449,8 +489,8 @@ void parser::get_include_path_from_env()
 
 	const char* root_ = std::getenv("HYPER_ROOT");
 	if (root_) {
-		path root(root_);
-		root = root / path("share") / path("hyper");
+		fs::path root(root_);
+		root = root / fs::path("share") / fs::path("hyper");
 		include_path.push_back(root);
 	}
 }
