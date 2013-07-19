@@ -13,10 +13,8 @@ Contents:
 
    what_is_hyper.rst
    installation.rst
-   first_agent.rst
-   more_realist_first_agent.rst
-   first_agent_genom.rst
-
+   tutorials.rst
+   devel.rst
 
 Indices and tables
 ==================
