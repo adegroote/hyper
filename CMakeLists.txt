@@ -161,6 +161,12 @@ ADD_CUSTOM_TARGET(
 
 IF (BUILD_DOC)
 
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/doc/conf.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/doc/conf.py
+)
+
+
 FIND_PROGRAM(SPHINX_BUILD NAMES sphinx-build)
 IF (NOT SPHINX_BUILD)
 	MESSAGE(FATAL_ERROR "Can't find sphinx-build : will not build the documentation")
@@ -174,7 +180,7 @@ ELSE()
 	ADD_CUSTOM_TARGET(
 		doc ALL
 		COMMAND ${SPHINX_BUILD} -b html
-								-c ${SPHINX_SRC}
+                            -c ${CMAKE_DOC_OUT}
 								${SPHINX_SRC}/hyper
 							    ${SPHINX_OUTPUT}
 	)
@@ -184,7 +190,7 @@ ELSE()
 		MESSAGE(STATUS "Can't find gzip : will not build man pages")
 	ELSE()
 		ADD_CUSTOM_TARGET(man ALL COMMAND ${SPHINX_BUILD} -b man
-										   -c ${SPHINX_SRC}
+                                        -c ${CMAKE_DOC_OUT}
 										   ${SPHINX_SRC}/man
         								   ${SPHINX_MAN_OUTPUT} &&
 						  ${GZIP} -f ${SPHINX_MAN_OUTPUT}/*.1)
