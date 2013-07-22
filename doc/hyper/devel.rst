@@ -8,3 +8,4 @@ behaviour of the Hyper framework.
     :maxdepth: 2
 
     devel/grammar
+    devel/semantic
