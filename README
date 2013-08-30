@@ -5,17 +5,17 @@ The Hyper project is an implementation of a supervision framework. It is a
 Installation
 ------------
 
-You need a recent Boost-version to build hyper (boost >= 1.46.1) and cmake.
-
-It has been tested on:
-	- Ubuntu x86-64 
-	- NetBSD x86-64 
+You need a recent Boost-version to build hyper (boost >= 1.46.1) and cmake. if
+you want to build doc too, you need also sphinx and gzip
 
 To build it :
   cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} .
   make 
   make install
   make test (to play the regression test)
+
+If you want to build the doc, you need to pass to cmake the flag
+-DBUILD_DOC=ON.
 
 Warning :
   some files take really long time to compile (in particular
