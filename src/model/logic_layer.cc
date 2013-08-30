@@ -296,7 +296,7 @@ namespace hyper {
 
 				if (! ctx->must_pause) {
 					ctx->deadline_.expires_from_now(boost::posix_time::milliseconds(ctx->ctr.delay));
-					a_.logger(DEBUG) << ctx->ctr << " Sleeping " << ctx->ctr.delay << " ms" ;
+					a_.logger(DEBUG) << ctx->ctr << " Sleeping " << ctx->ctr.delay << " ms ";
 					a_.logger(DEBUG) << "before verifying again the ctr " << std::endl;
 					ctx->deadline_.async_wait(boost::bind(&logic_layer::handle_timeout, this,
 														  boost::asio::placeholders::error,
