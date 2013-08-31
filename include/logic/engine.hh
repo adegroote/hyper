@@ -9,6 +9,7 @@
 #include <logic/rules.hh>
 
 #include <boost/logic/tribool.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace hyper {
 	namespace logic {
@@ -30,9 +31,25 @@ namespace hyper {
 				 * possible expression is defined by the facts database, and the
 				 * rules extracted from rule::symbol_to_fun.
 				 */
-				expressionMM symbol_to_possible_expression;
 
-				facts_ctx(const funcDefList& fun) : ctx_rules_update(false), f(fun)
+				/*
+				 * XXX
+				 * You must be really careful when manipulating this stuff.
+				 * In the current situation, it is modified once, in
+				 * compute_possible_expression, but copied a lot in
+				 * proof_tree::compute_node_state(), without any change on it.
+				 * Considering this situation, it is correct to share
+				 * symbol_to_possible_expression between the difference
+				 * instances. But it may be incorrect if the implementation
+				 * changes. In this case, we need to deal more smartly with
+				 * this data structure, using some kind of 'persistant
+				 * structure', using shared_ptr in the data structure, and
+				 * replacing only part of the changed structure.
+				 */
+				boost::shared_ptr<expressionMM> symbol_to_possible_expression;
+
+				facts_ctx(const funcDefList& fun) : ctx_rules_update(false), f(fun),
+					symbol_to_possible_expression(new expressionMM())
 				{}
 
 				bool add(const std::string& fact) { 

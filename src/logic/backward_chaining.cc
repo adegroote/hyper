@@ -381,7 +381,7 @@ namespace hyper { namespace logic {
 				unifyM m(unify_vect[i]);
 				try {
 					unifyM_candidate candidates(unbounded_symbols[i], 
-												ctx.symbol_to_possible_expression[r.identifier]);
+												(*ctx.symbol_to_possible_expression)[r.identifier]);
 					bool has_next = true;
 					while (has_next)
 					{

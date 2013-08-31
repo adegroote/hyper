@@ -243,7 +243,7 @@ namespace {
 				++it_id;
 			}
 
-			ctx.symbol_to_possible_expression[r.identifier][s] = res;
+			(*ctx.symbol_to_possible_expression)[r.identifier][s] = res;
 		}
 	};
 
