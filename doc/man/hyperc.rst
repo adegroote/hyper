@@ -69,7 +69,7 @@ Environment
     It is also used to compute the default place to search for ability
     (${HYPER_ROOT}/share/prefix).
 
-:MORSE_INCLUDE_PATH:
+:HYPER_INCLUDE_PATH:
     A list of path separated by ':'. The **hyperc** will search in these
     different paths to find needed ability description
 
