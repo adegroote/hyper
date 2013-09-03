@@ -121,6 +121,12 @@ environment::
         mkdir -p ~/.hyper/
         echo "localhost 4242" > ~/.hyper/config
 
+.. warning::
+
+    It seems that the IPV6 protocol is not yet handled correctly by hyper. If
+    a ``broken pipe`` error message appears, please replace ``localhost`` by
+    ``127.0.0.1`` to force the IPV4 protocol.
+
 Then, starting ``hyper_demo_loco`` must produce::
 
     discover localhost 4242
