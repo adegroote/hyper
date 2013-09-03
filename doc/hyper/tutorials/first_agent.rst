@@ -16,8 +16,8 @@ second part is optional.
 The ``demo_loco`` interface
 +++++++++++++++++++++++++++
 
-First, create a directory ``demo_loco`` and create a file
-``demo_loco.ability`` containing:
+First, create a root directory ``hyper_demo_loco`` (or whatever you want) and
+create a file ``demo_loco.ability`` inside, containing:
 
 .. code-block:: c
     :linenos:
@@ -148,10 +148,11 @@ of these behaviour on the agent state.
 Tasks description of ``demo_loco``
 ++++++++++++++++++++++++++++++++++
 
-First, create a subdirectory ``demo_loco`` (**the name is important here**).
-In this directory, you can create one or more files with ``task`` extension
-which describes the task of your agent. Let's create ``loco.task`` with the
-following content
+First, from the root ``hyper_demo_loco`` (or whatever you chose), besides the
+``demo_loco.ability`` file, create a subdirectory ``demo_loco`` (**the name is
+important here**). In this directory, you can create one or more files with
+``task`` extension which describes the task of your agent. Let's create
+``loco.task`` with the following content :
 
 .. code-block:: c
     :linenos:
@@ -221,7 +222,7 @@ one recipe for each task.
 Implementing recipes
 ++++++++++++++++++++
 
-First, you need to move in subdirectory ``demo_loco``, and create one
+First, you need to move into the subdirectory ``demo_loco``, and create one
 subdirectory for each **task**, so::
 
     mkdir init
@@ -298,7 +299,7 @@ We now restart the ``demo_loco`` agent::
 
 and then try to access the ``init`` value of it::
 
-    hyper_demo_loco_test init
+    hyper_demo_loco_test get init
 
 It normally answers::
 
@@ -306,7 +307,7 @@ It normally answers::
 
 We can now try to get the value of ``pos`` using::
 
-    hyper_demo_loco_test pos
+    hyper_demo_loco_test get pos
 
 It normally answers 0. But lot of things happen in fact. If you check the
 value of the variable ``init`` again, you will discover that it is now true,
@@ -315,6 +316,12 @@ meaning that the recipe ``init_r`` has been called (and ``get_pos_r`` too).
 Let's try to give some goal to the agent::
 
     hyper_demo_loco_test make "demo_loco::pos == demo_loco::goal where demo_loco::goal == 5"
+
+.. note::
+
+    You must run this command from the root directory (``hyper_demo_loco/``) for
+    parsing reasons. An alternative is to **use the environment variable
+    ``HYPER_INCLUDE_PATH``** instead (see ``man hyperc``).
 
 Basically, we ask the agent to make ``pos`` equivalent to ``goal`` after
 assigning to ``goal`` the value 5. The contrary is not possible because of the
