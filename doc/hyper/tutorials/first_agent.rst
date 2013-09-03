@@ -104,7 +104,24 @@ In another terminal, you can start::
 
     hyperruntime
 
-and then, starting ``hyper_demo_loco`` must produce::
+Hyper runtime maser communicates with the other hyper agents through sockets.
+The default port is ``4242``, but you may specify another using the ``-p``
+option.
+In order to join the master, we have to specify to hyper agents like
+``hyper_demo_loco`` what are the host and port to use. One way is to use the
+environment::
+
+    export HYPER_ROOT_ADDR="localhost:4242"
+
+.. note::
+
+    You probably want to integrate this into your .bashrc directly. Another way
+    to configure hyper is to use the ``~/.hyper/config`` file::
+    
+        mkdir -p ~/.hyper/
+        echo "localhost 4242" > ~/.hyper/config
+
+Then, starting ``hyper_demo_loco`` must produce::
 
     discover localhost 4242
     Succesfully registring demo_loco on 127.0.0.1:50147 140.93.65.74:50147 
