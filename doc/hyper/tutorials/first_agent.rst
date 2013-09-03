@@ -179,15 +179,15 @@ Understanding ``demo_loco`` tasks
 
 The file ``loco.task`` contains the definition of three tasks. On line 1, you
 start the definition of task **init**, definition  which ends line 4. A task
-defines a contract, i.e. a set of precondition, postconditions, which must
+defines a contract, i.e. a set of preconditions, postconditions, which must
 respectively be true before the execution, and after the execution.
 Preconditions are block starting prefixed by **pre**, while postconditions
 start with **post**. These blocks can be empty (for example, line 16).
 
-A condition can be any expression returning a boolean value, i.e. it can
-includes function call, access to variables, use of standard operators. 
+A condition can be any expression returning a boolean value. It can thus include
+function call, access to variables, use of standard operators and so forth.
 
-You can show here that the previously used ``get_pos()`` is not a function in
+You can see here that the previously used ``get_pos()`` is not a function in
 fact, but a task. 
 
 Rebuilding the agent
