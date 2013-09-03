@@ -320,8 +320,8 @@ Let's try to give some goal to the agent::
 .. note::
 
     You must run this command from the root directory (``hyper_demo_loco/``) for
-    parsing reasons. An alternative is to **use the environment variable
-    ``HYPER_INCLUDE_PATH``** instead (see ``man hyperc``).
+    parsing reasons. An alternative is to use the environment variable
+    ``HYPER_INCLUDE_PATH`` instead (see ``man hyperc``).
 
 Basically, we ask the agent to make ``pos`` equivalent to ``goal`` after
 assigning to ``goal`` the value 5. The contrary is not possible because of the
