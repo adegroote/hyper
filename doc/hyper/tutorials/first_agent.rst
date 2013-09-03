@@ -46,7 +46,7 @@ Understanding the ``demo_loco`` interface
 +++++++++++++++++++++++++++++++++++++++++
 
 Line 1 begins the description of the **agent** (or **ability**) ``demo_loco``.
-The definition ends line 18, with the closing curly bracket. Inside, it is
+The definition ends line 19, with the closing curly bracket. Inside, it is
 possible to add some comments between ``/*``  and ``*/``. Line 3, the
 description of context starts. A context must be composed of three blocks,
 containing respectively the read-write variables (or controllable variables),
