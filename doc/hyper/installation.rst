@@ -72,5 +72,9 @@ The target ``make test`` runs the regression test of Hyper. They must all
 pass. If it is not the case, generated code probably won't work as expected,
 so start a bug report if the detected regression.
 
+Setting your environment
+++++++++++++++++++++++++
 
+You should set the ``HYPER_ROOT`` environment variable (basically to the same
+value as ``-DCMAKE_INSTALL_PREFIX``).
 
