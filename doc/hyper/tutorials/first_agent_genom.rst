@@ -1,7 +1,10 @@
 Controlling the demo GeNoM module through hyper
 ===============================================
 
-In the previous tutorials, the movement of the 'robot' is simulated by the
+In the previous tutorials (your :doc:`first agent <first_agent>` and a
+:doc:`more realistic agent <more_realist_first_agent>`), the movement of the
+'robot' is simulated by the
+
 agent, in two different ways. Now, you will see a more "natural" use of
 hyper: the control of a functional module, which basically the same kind of
 things that the previous agent.
