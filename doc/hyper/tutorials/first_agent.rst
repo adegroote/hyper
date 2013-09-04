@@ -312,6 +312,9 @@ We can now try to get the value of ``pos`` using::
 It normally answers 0. But lot of things happen in fact. If you check the
 value of the variable ``init`` again, you will discover that it is now true,
 meaning that the recipe ``init_r`` has been called (and ``get_pos_r`` too).
+This behaviour is the result of the logical inference made by the internal
+logical engine, which used recipes to perform task (through considerations on
+pre- and post-conditions).
 
 Let's try to give some goal to the agent::
 
