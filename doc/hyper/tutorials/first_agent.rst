@@ -276,9 +276,10 @@ preconditions, some postconditions (in the same way than for tasks). Moreover,
 you must define a block **body** which contains the real behaviour of the recipe.
 
 The body must be implemented with the **ROAR language** which is described, in a
-comprehensive way in this page (TODO). Here, you are just using the keyword **set**
-which takes a variable name in parameter and an expression, and affects the
-result of this expression to this variable.
+comprehensive way in :doc:`these <../devel/semantic>` :doc:`pages
+<../devel/grammar>`. Here, you are just using the keyword **set** which takes a
+variable name in parameter and an expression, and affects the result of this
+expression to this variable.
 
 The recipe **init_r** just sets the variable ``init`` to true, and ``simu_pos`` to 0.
 The recipe **get_pos_r** copies the value of ``simu_pos`` in ``pos``. Last, the
