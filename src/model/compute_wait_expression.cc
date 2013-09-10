@@ -52,6 +52,7 @@ namespace hyper {
 				return;
 
 			waiting = true;
+			running = false;
 			deadline_.expires_from_now(delay_);
 			deadline_.async_wait(boost::bind(&compute_wait_expression::handle_timeout, 
 						this,
