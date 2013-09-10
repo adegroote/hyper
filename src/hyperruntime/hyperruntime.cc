@@ -330,13 +330,18 @@ int main(int argc, char** argv)
 								  details::output_msg, 
 								  details::runtime_visitor
 								> tcp_runtime_impl;
-	tcp_runtime_impl runtime(port, runtime_vis, actor.io_s);
-	root_endpoints = runtime.local_endpoints();
+    try { 
+        tcp_runtime_impl runtime(port, runtime_vis, actor.io_s);
+        root_endpoints = runtime.local_endpoints();
 
-	details::periodic_check check( actor.io_s, 
-								   boost::posix_time::milliseconds(AGENT_TIMEOUT), 
-								   map, db);
-						 
-	check.run();
-	actor.io_s.run();
+        details::periodic_check check( actor.io_s, 
+                                       boost::posix_time::milliseconds(AGENT_TIMEOUT), 
+                                       map, db);
+                             
+        check.run();
+        actor.io_s.run();
+	} catch(const boost::system::system_error& e) {
+		std::cerr << "Error detected : " << e.what() << "\nExiting ..." << std::endl;
+		return -1;
+	}
 }
