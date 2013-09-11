@@ -125,7 +125,7 @@ struct test_async_client
 					boost::bind(&test_async_client::handle_timeout_register_name,
 								this,
 								boost::asio::placeholders::error),
-					boost::posix_time::milliseconds(100),
+					boost::posix_time::milliseconds(200),
 					boost::bind(&test_async_client::handle_timeout,
 								this,
 								boost::asio::placeholders::error)
