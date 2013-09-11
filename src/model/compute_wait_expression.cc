@@ -75,7 +75,7 @@ namespace hyper {
 
 		bool compute_wait_expression::abort()
 		{
-			if (!running)
+			if (!(running or waiting))
 				return false;
 
 			user_ask_abort = true;
