@@ -12,5 +12,5 @@ script:
   - cmake .. -DCMAKE_INSTALL_PREFIX=../_install
   - make
 #  - gdb -batch -ex run -ex bt -ex quit --args /home/travis/build/adegroote/hyper/_build/hyper_test_network_nameserver
-  - env HYPER_ROOT_ADDR="localhost:4242" ctest -V .
+  - ctest -V .
 
