@@ -213,7 +213,23 @@ ability_test::send_constraint(const hyper::compiler::recipe_expression& expr, bo
 	return res;
 }
 
-int usage(const std::string& name)
+bool
+ability_test::correct_usage(int argc, char** argv) 
+{
+    if (argc != 3 && argc != 7)
+        return false;
+
+	std::vector<std::string> arguments(argv + 1, argv + argc);
+
+	return (arguments[0] == "get" or
+            arguments[0] == "make" or
+		    arguments[0] == "ensure" or
+		    (arguments[0] == "let" and argc == 7  and
+                    (arguments[4] != "make" or arguments[4] == "ensure")));
+}
+
+int 
+ability_test::usage(const std::string& name) 
 {
 	std::string prog_name = "hyper_" + name + "_test";
 	std::cerr << "Usage :\n";
@@ -228,16 +244,6 @@ int ability_test::main(int argc, char ** argv)
 	using namespace hyper::compiler;
 	std::vector<std::string> arguments(argv + 1, argv + argc);
 	boost::function<void ()> to_execute;
-
-	if (argc != 3 && argc != 7)
-		return usage(target);
-
-	if (arguments[0] != "get" &&
-		arguments[0] != "make" &&
-		arguments[0] != "ensure" &&
-		(arguments[0] != "let" && argc != 7 && arguments[4] != "make") &&
-		(arguments[0] != "let" && argc !=7 && arguments[4] != "ensure"))
-		return usage(target);
 
 	if (arguments[0] == "get") {
 		getter_map::const_iterator it;

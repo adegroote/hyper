@@ -130,6 +130,9 @@ namespace hyper {
 			}
 
 			int main(int argc, char** argv);
+
+            static bool correct_usage(int argc, char **argv);
+            static int usage(const std::string&);
 		};
 	}
 }

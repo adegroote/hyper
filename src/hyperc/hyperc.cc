@@ -54,12 +54,12 @@ void build_main_test(std::ostream& oss, const std::string& name)
 {
 	std::string main = 
 		"#include <iostream>\n"
+        "#include <model/main_test.hh>\n"
 		"#include <@NAME@/ability_test.hh>\n"
 		"\n"
 		"int main(int argc, char** argv)\n"
 		"{\n"
-		"    hyper::@NAME@::ability_test a;\n"
-		"    return a.main(argc, argv);\n"
+		"	return hyper::model::main_test<hyper::@NAME@::ability_test>(argc, argv, \"@NAME@\");\n"
 		"}\n"
 	;
 	oss << hyper::compiler::replace_by(main, "@NAME@", name);
