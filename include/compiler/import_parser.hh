@@ -1,48 +1,10 @@
 #include <compiler/parser.hh>
 #include <compiler/base_parser.hh>
+#include <compiler/import_exception.hh>
 
 #include <boost/optional/optional.hpp>
 
 
-
-namespace hyper {
-	namespace compiler {
-		struct import_exception {
-			std::string filename;
-
-			import_exception(const std::string& filename_) : filename(filename_) {}
-
-			virtual const char* what() = 0;
-		};
-
-		struct import_exception_not_found : public import_exception
-		{
-			import_exception_not_found(const std::string& filename) :
-				import_exception(filename)
-			{}
-
-			virtual const char* what() {
-				std::ostringstream oss;
-				oss << "Can't find the file " << filename;
-				oss << " : please fix the include path " << std::endl;
-				return oss.str().c_str();
-			}
-		};
-
-		struct import_exception_parse_error : public import_exception
-		{
-			import_exception_parse_error(const std::string& filename) :
-				import_exception(filename)
-			{}
-
-			virtual const char* what() {
-				std::ostringstream oss;
-				oss << "Parse error in file " << filename << std::endl;
-				return oss.str().c_str();
-			}
-		};
-	}
-}
 
 struct parse_import {
 
