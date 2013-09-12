@@ -8,6 +8,8 @@
 
 #include <boost/system/system_error.hpp>
 
+#include <model/discover_root.hh>
+
 namespace hyper {
 	namespace model {
 
@@ -31,9 +33,27 @@ namespace hyper {
 				}
 				Agent agent(level);
 				agent.run();
-			} catch (boost::system::system_error& e) {
-				std::cerr << "Catched exception : " << e.what() << std::endl;
-				exit(-1);
+			} 
+            catch (const hyper::model::root_not_found_error&) 
+            {
+                std::cerr << "Can't find hyperruntime address, "
+                              "please set HYPER_ROOT_ADDR or "
+                              "configure ${HOME}/.hyper/config" << std::endl;
+                return -1;
+            }
+            catch (const boost::system::system_error& e) {
+                if (e.code() == boost::system::errc::connection_refused)
+                {
+                    std::cerr << "Failed to connect to hyperruntime!\n"
+                                 "Check that it is started, and that "
+                                 "your configuration (HYPER_ROOT_ADDR,"
+                                 " or ${HOME}/.hyper/config) matches your"
+                                 " real hyperruntime setting" << std::endl;
+                } else {
+                    std::cerr << "Fatal error: " << e.what() << " Exiting!" << std::endl;
+                }
+
+                return -1;
 			}
 
 			return 0;
