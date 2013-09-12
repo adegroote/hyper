@@ -93,10 +93,9 @@ namespace {
 
 		expression operator() (const function_call& f) const
 		{
-			function_call res = f;
-			std::vector<expression>::iterator it;
-			for (it = res.args.begin(); it != res.args.end(); ++it)
-				*it = boost::apply_visitor(do_unification(m), it->expr);
+			function_call res(f, true);
+            for (size_t i = 0; i < f.args.size(); ++i)
+                res.args[i] = boost::apply_visitor(do_unification(m), f.args[i].expr);
 			return res;
 		}
 	};
@@ -112,10 +111,9 @@ namespace {
 
 		function_call operator() (const unifyM& m) const
 		{
-			function_call res = f;
-			std::vector<expression>::iterator it;
-			for (it = res.args.begin(); it != res.args.end(); ++it)
-				*it = boost::apply_visitor(do_unification(m), it->expr);
+			function_call res(f, true);
+            for (size_t i = 0; i < f.args.size(); ++i)
+                res.args[i] = boost::apply_visitor(do_unification(m), f.args[i].expr);
 			return res;
 		}
 	};

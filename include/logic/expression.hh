@@ -93,6 +93,11 @@ namespace hyper {
 
 			function_call() {}
 
+            // keep the classic copy ctor, but provide a 'almost copy' ctor
+            function_call(const function_call& f, bool /* dont_copy_vector */):
+                name(f.name), id(f.id), args(f.args.size())
+            {}
+
 			BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_ARGS), NEW_CTR_DECL, _)
 		};
 

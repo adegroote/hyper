@@ -329,13 +329,13 @@ struct adapt_local_funcs_vis : public boost::static_visitor<expression>
 
 function_call adapt_local_funcs(const funcDefList& funcs, const function_call& f)
 {
-	function_call f_res(f);
+	function_call f_res(f, true);
 	boost::optional<functionId> id = funcs.getId(f.name);
 	if (!id) 
 		throw unknow_func_exception(f.name);
 
 	f_res.id = *id;
-	for (size_t i = 0; i < f_res.args.size(); ++i)
+	for (size_t i = 0; i < f.args.size(); ++i)
 		f_res.args[i] = boost::apply_visitor(adapt_local_funcs_vis(funcs), f.args[i].expr);
 
 	return f_res;

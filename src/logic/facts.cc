@@ -116,7 +116,7 @@ namespace {
 
 	function_call apply_permutation_f(const function_call& f, const adapt_res::permutationSeq& seq)
 	{
-		function_call f_res(f);
+		function_call f_res(f, true);
 		for (size_t i = 0; i < f.args.size(); ++i)
 			f_res.args[i] = boost::apply_visitor(apply_permutation_helper(seq), f.args[i].expr);
 
@@ -199,8 +199,8 @@ namespace {
 	/* Prepare function to exec, replacing bouding symbol by their value */
 	function_call prepare_function_to_exec(const function_call& f, logic_var_db& db)
 	{
-		function_call res(f);
-		for (size_t i = 0; i < res.args.size(); ++i)
+		function_call res(f, true);
+		for (size_t i = 0; i < f.args.size(); ++i)
 			res.args[i] = boost::apply_visitor(prepare_exec_helper(db), f.args[i].expr);
 
 		return res;
