@@ -198,6 +198,7 @@ ability_test::send_constraint(const hyper::compiler::recipe_expression& expr, bo
 	msg->repeat = repeat;
 	if (repeat) {
 		generate_request<hyper::compiler::ENSURE>(expr, *msg, u, u.get_ability(name));
+        msg->delay = 50.0;
 	} else {
 		generate_request<hyper::compiler::MAKE>(expr, *msg, u, u.get_ability(name));
 	}
