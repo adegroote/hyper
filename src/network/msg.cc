@@ -234,7 +234,7 @@ namespace hyper {
 		void variable_value::serialize(Archive& ar, const unsigned int version)
 		{
 			(void) version;
-			ar & id & src & var_name & success & value ;
+			ar & id & src & var_name & success & value & err_ctx;
 		}
 
 		REGISTER_SERIALIZE(variable_value)

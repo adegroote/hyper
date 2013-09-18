@@ -4,6 +4,7 @@
 #include <string>
 
 #include <network/types.hh>
+#include <network/runtime_error.hh>
 
 namespace hyper {
 	namespace network {
@@ -27,6 +28,7 @@ namespace hyper {
 			std::string var_name;
 			bool success;
 			std::string value;
+			error_context err_ctx;
 		};
 
 	}
