@@ -1,6 +1,8 @@
 #ifndef HYPER_MODEL_UPDATE_IMPL_HH
 #define HYPER_MODEL_UPDATE_IMPL_HH
 
+#include <network/runtime_error.hh>
+
 #include <compiler/scope.hh>
 #include <model/ability.hh>
 #include <model/proxy.hh>
@@ -89,7 +91,12 @@ namespace hyper {
 				template <typename Handler>
 				void async_update(Handler handler)
 				{
-					return handler(boost::system::error_code());
+					return handler(boost::system::error_code(), error());
+				}
+
+				network::error_context error() const
+				{
+					return network::empty_error_context;
 				}
 		};
 
@@ -109,6 +116,11 @@ namespace hyper {
 				{
 					a.updater.async_update(update_status, 0, a.name, handler);
 				}
+
+				network::error_context error() const
+				{
+					return update_status.error();
+				}
 		};
 
 		template <typename A, typename vectorT>
@@ -123,6 +135,13 @@ namespace hyper {
 				remote_proxy proxy;
 				remote_values remote;
 
+				template <typename Handler>
+				void handle_update(const boost::system::error_code& e,
+							boost::tuple<Handler> handler)
+				{
+					boost::get<0>(handler)(e, error());
+				}
+
 			public:
 				update_variables(A& a, const typename remote_values::remote_vars_conf& vars):
 					proxy(a), remote(vars)
@@ -131,7 +150,12 @@ namespace hyper {
 				template <typename Handler>
 				void async_update(Handler handler)
 				{
-					proxy.async_get(remote, handler);
+					void (update_variables::*f) (const boost::system::error_code& e, 
+												 boost::tuple<Handler>)
+						= &update_variables::template handle_update<Handler>;
+					proxy.async_get(remote, 
+						boost::bind(f, this, boost::asio::placeholders::error,
+											 boost::make_tuple(handler)));
 				}
 
 				template<size_t i>
@@ -139,6 +163,11 @@ namespace hyper {
 				at_c() const
 				{
 					return remote.template at_c<i>();
+				}
+
+				network::error_context error() const
+				{
+					return remote.error();
 				}
 		};
 
@@ -163,12 +192,21 @@ namespace hyper {
 					if (local_update_status.is_terminated() && 
 						remote_update_status.is_terminated()) {
 						if (remote_update_status.is_valid()) 
-							boost::get<0>(handler)(e);
+							boost::get<0>(handler)(e, error());
 						else
 							boost::get<0>(handler)(
-								make_error_code(boost::system::errc::invalid_argument));
+								make_error_code(boost::system::errc::invalid_argument), error());
 					}
 				}
+
+				template <typename Handler>
+				void handle_update2(const boost::system::error_code& e,
+									const hyper::network::error_context&,
+									boost::tuple<Handler> handler)
+				{
+					return handle_update(e, handler);
+				}
+								   
 
 			public:
 				update_variables(A& a, const boost::array<std::string, N>& update,
@@ -184,15 +222,19 @@ namespace hyper {
 												 boost::tuple<Handler>)
 						= &update_variables::template handle_update<Handler>;
 
-					boost::function<void (const boost::system::error_code&)> 
-					local_handler  =
-						boost::bind(f, this, boost::asio::placeholders::error,
-											 boost::make_tuple(handler));
+					void (update_variables::*f2) (const boost::system::error_code& e, 
+												  const hyper::network::error_context&,
+												 boost::tuple<Handler>)
+						= &update_variables::template handle_update2<Handler>;
 
 					local_update_status.reset();
 					remote_update_status.reset();
-					a.updater.async_update(local_update_status, 0, a.name, local_handler);
-					proxy.async_get(remote_update_status, local_handler);
+					a.updater.async_update(local_update_status, 0, a.name, 
+						boost::bind(f2, this, boost::asio::placeholders::error, _2,
+											 boost::make_tuple(handler)));
+					proxy.async_get(remote_update_status, 
+						boost::bind(f, this, boost::asio::placeholders::error,
+											 boost::make_tuple(handler)));
 				}
 
 				template<size_t i>
@@ -200,6 +242,15 @@ namespace hyper {
 				at_c() const
 				{
 					return remote_update_status.template at_c<i>();
+				}
+
+				network::error_context error() const
+				{
+					network::error_context err1, err2;
+					err1 = local_update_status.error();
+					err2 = remote_update_status.error();
+					err1.insert(err2.begin(), err2.end(), err1.end());
+					return err1;
 				}
 		};
 	}

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <network/types.hh>
+#include <network/runtime_error.hh>
 
 #include <boost/array.hpp>
 #include <boost/function/function1.hpp>
@@ -48,6 +49,22 @@ namespace hyper {
 				for (size_t i = 0; i < vars.size(); ++i)
 					vars[i].is_updated = false;
 			}
+
+			network::error_context error() const
+			{
+				network::error_context err;
+				std::vector<local_var>::const_iterator it;
+				for (it = vars.begin(); it != vars.end(); ++it)
+				{
+					if (!it->is_updated) {
+						network::runtime_failure fail(
+								network::read_failure(it->var));
+
+						err.push_back(fail);
+					}
+				}
+				return err;
+			}
 		};
 
 		class updater {
@@ -78,6 +95,7 @@ namespace hyper {
 
 				void async_update(local_vars& vars, network::identifier id,
 								  const std::string& str, cb_type cb);
+
 		};
 
 		template <typename A, size_t N, typename vectorT>

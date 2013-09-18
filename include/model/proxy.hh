@@ -3,6 +3,7 @@
 
 #include <network/msg_proxy.hh>
 #include <network/proxy_container.hh>
+#include <network/runtime_error.hh>
 #include <network/utils.hh>
 #include <network/log_level.hh>
 
@@ -134,6 +135,30 @@ namespace hyper {
 					}
 				};
 
+				template <typename tupleT>
+				struct remote_values_fill_err_ctx
+				{
+					const tupleT& t;
+					network::error_context& err_ctx;
+
+					remote_values_fill_err_ctx(const tupleT& t, network::error_context& err_ctx):
+						t(t), err_ctx(err_ctx)
+					{}
+
+					template <typename U>
+					void operator() (U)
+					{
+						const network::variable_value& ans = boost::get<U::value>(t).ans;
+						const std::string& src = boost::get<U::value>(t).src;
+						if (! ans.success ) {
+							network::runtime_failure fail(
+									network::read_failure(src + "::" + ans.var_name));
+							fail.error_cause = ans.err_ctx;
+							err_ctx.push_back(fail);
+						}
+					}
+				};
+
 				template <typename tupleT, typename Handler>
 				struct remote_value_async_get;
 			}
@@ -189,6 +214,14 @@ namespace hyper {
 				typename boost::mpl::at<seqReturn, boost::mpl::int_<i> >::type at_c() const
 				{
 					return (boost::get<i>(values)).value;
+				}
+
+				network::error_context error() const
+				{
+					network::error_context err;
+					details::remote_values_fill_err_ctx<tupleT> fill_err(values, err);
+					boost::mpl::for_each<range> (fill_err);
+					return err;
 				}
 			};
 
