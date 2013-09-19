@@ -179,8 +179,11 @@ namespace {
 			oss << next_indent << "boost::bind(&hyper::model::compute_expression<expression_" << counter << ">::async_eval<\n";
 			oss << next_indent << "hyper::model::abortable_computation::cb_type,\n";
 			oss << next_indent << "hyper::" << a.name() << "::ability, local_context>,\n";
-			oss << next_indent << "&expression_exec" << counter++ << ", _1, boost::cref(a), boost::cref(local_vars),\n";
-			oss << next_indent << "boost::ref(" << identifier << ")))\n";
+			oss << next_indent << "&expression_exec" << counter << ", _1, boost::cref(a), boost::cref(local_vars),\n";
+			oss << next_indent << "boost::ref(" << identifier << ")),\n";
+			oss << next_indent << "hyper::model::none_function,\n";
+			oss << next_indent << "boost::bind(&hyper::model::compute_expression<expression_" << counter << ">::error,\n";
+			oss << next_indent << "&expression_exec" << counter++ << "))\n";
 
 			return oss.str();
 		}
