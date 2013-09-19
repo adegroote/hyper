@@ -250,6 +250,11 @@ struct dump_eval_expression {
 		oss << next_indent << "{\n";
 		oss << next_indent << "\treturn " << expression_ast_output(e, syms.remote, local_symbol) << ";\n";
 		oss << next_indent << "}\n";
+
+		oss << next_indent << "static logic::expression logic_expression() {\n";
+		oss << next_indent << "\treturn " << hyper::compiler::generate_logic_expression(e, a, u) << ";\n";
+		oss << next_indent << "}\n";
+
 		oss << indent << "};" << std::endl;
 	}
 };
