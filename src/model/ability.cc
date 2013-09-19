@@ -116,6 +116,7 @@ namespace {
 		{}
 
 		void handle_update_value(const boost::system::error_code& e,
+				const hyper::network::error_context& err_ctx,
 				const network::request_variable_value& m) const
 		{
 			a.logger(DEBUG) << "[" << m.src << ", " << m.id << "]";
@@ -126,6 +127,7 @@ namespace {
 				ans->src = m.src;
 				ans->var_name = m.var_name;
 				ans->success = false;
+				ans->err_ctx = err_ctx;
 				return a.actor->client_db[m.src].async_write(*ans, 
 						boost::bind(&handle_write_value,
 							boost::asio::placeholders::error,
@@ -147,7 +149,7 @@ namespace {
 			model::updater::cb_type f = boost::bind(
 					&ability_visitor::handle_update_value, this,
 					boost::asio::placeholders::error,
-					m);
+					_2, m);
 			a.updater.async_update(m.var_name, m.id, m.src, f);
 			return boost::mpl::void_();
 		}

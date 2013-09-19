@@ -30,18 +30,18 @@ namespace hyper {
 			{
 				if (e) {
 					delete args;
-					return cb(e);
+					return cb(e, hyper::network::empty_error_context); // XXX
 				}
 
 				if (args->tmp) {
 					args->value_to_bind = *(args->tmp);
 					delete args;
-					return cb(boost::system::error_code());
+					return cb(boost::system::error_code(), hyper::network::empty_error_context); // XXX
 				}
 
 				delete args;
 				// XXX need better error handling
-				return cb(boost::asio::error::invalid_argument); 
+				return cb(boost::asio::error::invalid_argument, hyper::network::empty_error_context); //XXX 
 			}
 
 			template <typename T>
@@ -60,11 +60,8 @@ namespace hyper {
 				std::pair<std::string, std::string> p =
 							compiler::scope::decompose(var);
 
-				updater::cb_type local_cb = 
-					boost::bind(f, boost::asio::placeholders::error, 
-								args, cb);
-
-				return args->proxy.async_get(p.first, p.second, args->tmp, local_cb);
+				return args->proxy.async_get(p.first, p.second, args->tmp, 
+						boost::bind(f, boost::asio::placeholders::error, args, cb));
 			}
 		}
 
