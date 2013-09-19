@@ -69,7 +69,8 @@ namespace hyper {
 
 		class updater {
 			public:
-			typedef boost::function<void (const boost::system::error_code&)> cb_type;
+			typedef boost::function<void (const boost::system::error_code&,
+										  const hyper::network::error_context&)> cb_type;
 
 			private:
 			typedef boost::function<void (network::identifier, const std::string&, cb_type)> 

@@ -8,10 +8,11 @@ namespace {
 			  hyper::model::updater::cb_type cb)
 	{
 		(void) id; (void) src;
-		return cb(boost::system::error_code());
+		return cb(boost::system::error_code(), hyper::network::empty_error_context);
 	}
 
 	void handle_call_task_terminaison(hyper::network::request_constraint_answer::state_ s,
+								 const hyper::network::error_context& err_ctx,
 								 hyper::model::updater::cb_type cb)
 	{
 		switch (s) {
@@ -21,13 +22,13 @@ namespace {
 			case hyper::network::request_constraint_answer::TEMP_FAILURE:
 				break;
 			case hyper::network::request_constraint_answer::SUCCESS:
-				cb(boost::system::error_code());
+				cb(boost::system::error_code(), err_ctx);
 				break;
 			case hyper::network::request_constraint_answer::FAILURE:
-				cb(make_error_code(boost::system::errc::invalid_argument)); // XXX
+				cb(make_error_code(boost::system::errc::invalid_argument), err_ctx); // XXX
 				break;
 			case hyper::network::request_constraint_answer::INTERRUPTED:
-				cb(make_error_code(boost::system::errc::interrupted));
+				cb(make_error_code(boost::system::errc::interrupted), err_ctx);
 				break;
 		}
 	}
@@ -37,7 +38,7 @@ namespace {
 				   hyper::model::updater::cb_type cb)
 	{
 		a.logic().async_exec(var, id, src, 
-				boost::bind(&handle_call_task_terminaison, _1, cb));
+				boost::bind(&handle_call_task_terminaison, _1, _2, cb));
 	}
 
 	void handle_update_var(const boost::system::error_code& e,
@@ -46,7 +47,7 @@ namespace {
 	{
 		vars.vars[i].is_updated = true;
 		if (vars.is_terminated())
-			cb(e);
+			cb(e, vars.error());
 	}
 }
 
@@ -88,7 +89,8 @@ namespace hyper {
 		{
 			map_type::const_iterator it = map.find(var);
 			if (it == map.end())
-				return cb(boost::asio::error::invalid_argument);
+				return cb(boost::asio::error::invalid_argument, 
+						  hyper::network::empty_error_context);
 
 			return it->second(id, src, cb);
 		}

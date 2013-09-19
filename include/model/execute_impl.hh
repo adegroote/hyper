@@ -56,7 +56,9 @@ namespace hyper {
 			}
 
 			template <typename T>
-			void handle_local_update(const boost::system::error_code& e, model::ability& a, T& res, std::string s, fun_cb cb)
+			void handle_local_update(const boost::system::error_code& e, 
+					const hyper::network::error_context&, // XXX do something useful  with it
+					model::ability& a, T& res, std::string s, fun_cb cb)
 			{
 				if (e)
 					return cb(e);
@@ -92,9 +94,10 @@ namespace hyper {
 				{
 					if (!compiler::scope::is_scoped_identifier(s)) {
 
-						fun_cb local_cb = boost::bind(
+						updater::cb_type local_cb = boost::bind(
 								&handle_local_update<T>,
 								boost::asio::placeholders::error, 
+								_2,
 								boost::ref(a),
 								boost::ref(res), s, cb);
 						a.updater.async_update(s, 0, a.name, local_cb);
@@ -103,9 +106,10 @@ namespace hyper {
 							compiler::scope::decompose(s);
 						if (p.first == a.name) {
 
-							fun_cb local_cb = boost::bind(
+							updater::cb_type local_cb = boost::bind(
 									&handle_local_update<T>,
 									boost::asio::placeholders::error, 
+									_2,
 									boost::ref(a), boost::ref(res), p.second, cb);
 
 							a.updater.async_update(p.second, 0, a.name, local_cb);
