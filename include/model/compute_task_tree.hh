@@ -62,6 +62,7 @@ namespace hyper {
 			bool any_true; /**< check if any hypothesis is true */
 			logic::engine::plausible_hypothesis hyps; /**< all the hypothesis */
 			boost::optional<bool> res_exec; /**< evaluation of one hypothesis */
+			hyper::network::error_context err_ctx; /** < error_context related */
 
 			hypothesis_evaluation(const logic::engine::plausible_hypothesis& h) :
 				any_true(false), hyps(h), res_exec(boost::none)

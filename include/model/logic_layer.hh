@@ -37,6 +37,7 @@ namespace hyper {
 			/* Context for executing remote rqst */
 			logic::function_call call_exec;
 			boost::optional<bool> exec_res;
+			hyper::network::error_context exec_err_ctx;
 
 			/* Logic layer evaluation */
 			compute_task_tree logic_tree;

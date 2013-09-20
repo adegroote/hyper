@@ -255,6 +255,7 @@ namespace hyper {
 			layer.a_.logger(DEBUG) << ctx.ctr << " Evaluating hypothesis " << hyp_eval[i].hyps.hyps[j] << std::endl;
 			return async_eval_expression(layer.a_.io_s, hyp_eval[i].hyps.hyps[j],
 										  layer.a_, hyp_eval[i].res_exec,
+										  hyp_eval[i].err_ctx,
 										  boost::bind(&compute_task_tree::handle_evaluate_hypothesis, this, i, j, 
 													   boost::ref(cond), handler));
 		}

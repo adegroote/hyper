@@ -44,6 +44,7 @@ namespace hyper {
 					boost::asio::io_service& io_s, 
 					const logic::function_call& f, ability &a,
 					boost::optional<T>& res,
+					hyper::network::error_context&,
 					Handler handler);
 
 			static
@@ -57,9 +58,14 @@ namespace hyper {
 
 			template <typename T>
 			void handle_local_update(const boost::system::error_code& e, 
-					const hyper::network::error_context&, // XXX do something useful  with it
-					model::ability& a, T& res, std::string s, fun_cb cb)
+					const hyper::network::error_context& err_ctx, 
+					model::ability& a,
+					T& res, 
+					hyper::network::error_context& current_err_ctx,
+					std::string s, fun_cb cb)
 			{
+				current_err_ctx.insert(current_err_ctx.end(),
+									   err_ctx.begin(), err_ctx.end());
 				if (e)
 					return cb(e);
 				res = a.proxy.eval<typename T::value_type>(s);
@@ -75,11 +81,14 @@ namespace hyper {
 				boost::asio::io_service& io_s; 
 				model::ability& a;
 				T& res;
+				hyper::network::error_context& err_ctx;
 				fun_cb cb;
 				
 				evaluate_logic_expression(boost::asio::io_service& io_s_, 
-										  model::ability & a_, T& res_, fun_cb cb_) : 
-					io_s(io_s_), a(a_), res(res_), cb(cb_) {}
+										  model::ability & a_, T& res_, 
+										  hyper::network::error_context& err_ctx_,
+										  fun_cb cb_) : 
+					io_s(io_s_), a(a_), res(res_), err_ctx(err_ctx_), cb(cb_) {}
 
 				template <typename U> 
 				void operator() (const U&) const { cb(boost::asio::error::invalid_argument);}
@@ -99,7 +108,9 @@ namespace hyper {
 								boost::asio::placeholders::error, 
 								_2,
 								boost::ref(a),
-								boost::ref(res), s, cb);
+								boost::ref(res), 
+								boost::ref(err_ctx),
+								s, cb);
 						a.updater.async_update(s, 0, a.name, local_cb);
 					} else {
 						std::pair<std::string, std::string> p =
@@ -110,7 +121,10 @@ namespace hyper {
 									&handle_local_update<T>,
 									boost::asio::placeholders::error, 
 									_2,
-									boost::ref(a), boost::ref(res), p.second, cb);
+									boost::ref(a), 
+									boost::ref(res), 
+									boost::ref(err_ctx),
+									p.second, cb);
 
 							a.updater.async_update(p.second, 0, a.name, local_cb);
 						} else {
@@ -128,7 +142,7 @@ namespace hyper {
 
 				void operator() (const logic::function_call& f) const
 				{
-					return _evaluate_expression<typename T::value_type>(io_s, f, a, res, cb);
+					return _evaluate_expression<typename T::value_type>(io_s, f, a, res, err_ctx, cb);
 				}
 			};
 
@@ -136,9 +150,10 @@ namespace hyper {
 			template <typename T>
 			void evaluate(boost::asio::io_service& io_s, 
 					   const logic::expression &e, ability& a,
+					   hyper::network::error_context & err_ctx,
 					   T& res, fun_cb cb)
 			{
-				return boost::apply_visitor(evaluate_logic_expression<T>(io_s, a, res, cb), e.expr);
+				return boost::apply_visitor(evaluate_logic_expression<T>(io_s, a, res, err_ctx, cb), e.expr);
 			}
 
 			template <typename T>
@@ -170,12 +185,14 @@ namespace hyper {
 				boost::asio::io_service& io_s;
 				const std::vector<logic::expression>& e;
 				ability &a;
+				hyper::network::error_context& err_ctx;
 				fun_cb cb;
 
 				compute(T* func_, boost::asio::io_service& io_s_, 
 						const std::vector<logic::expression> & e_, ability & a_,
+						hyper::network::error_context& err_ctx_,
 						fun_cb cb_) : 
-					func(func_), io_s(io_s_), e(e_), a(a_), cb(cb_) {}
+					func(func_), io_s(io_s_), e(e_), a(a_), err_ctx(err_ctx_), cb(cb_) {}
 
 				template <typename U>
 				void operator() (U unused)
@@ -205,6 +222,7 @@ namespace hyper {
 										  boost::ref(io_s),
 										  boost::cref(e[U::value]),
 										  boost::ref(a),
+										  boost::ref(err_ctx),
 										  boost::ref(boost::get<U::value>(func->args)),
 										  local_cb));
 				}
@@ -294,6 +312,7 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 					boost::asio::io_service& io_s,
 					const logic::function_call& f, ability &a,
 					boost::optional<T>& res,
+					hyper::network::error_context& err_ctx,
 					Handler handler
 					)
 			{
@@ -307,13 +326,12 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 				handle_evalutate_expression<T, Handler>;
 				
 
-				func->async_compute(io_s, f.args, a, 
+				func->async_compute(io_s, f.args, a, err_ctx,
 						boost::bind(cb, boost::asio::placeholders::error, 
 										func, boost::ref(res), boost::make_tuple(handler)));
 			}
 
 		}
-
 
 		template <typename T>
 		struct function_execution : public function_execution_base {
@@ -349,12 +367,13 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 			void async_compute(
 				boost::asio::io_service& io_s,
 				const std::vector<logic::expression> &e, ability& a,
+				hyper::network::error_context& err_ctx,
 				fun_cb cb)
 			{
 				// compiler normally already has checked that, but ...
 				assert(e.size() == args_size);
 
-				details::compute<function_execution<T> > compute_(this, io_s, e, a, cb);
+				details::compute<function_execution<T> > compute_(this, io_s, e, a, err_ctx, cb);
 				boost::mpl::for_each<range> (compute_);
 			}	
 
@@ -416,7 +435,8 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 				const logic::function_call& f, ability &a)
 		{
 			boost::optional<T> res;
-			details::_evaluate_expression<T>(io_s, f, a, res, &details::handle_nothing);
+			hyper::network::error_context err_ctx;
+			details::_evaluate_expression<T>(io_s, f, a, res, err_ctx, &details::handle_nothing);
 			io_s.run();
 			io_s.reset();
 			return res;
@@ -428,9 +448,10 @@ BOOST_PP_REPEAT(BOOST_PP_INC(EVAL_MAX_PARAMS), NEW_EVAL_DECL, _)
 			 const logic::function_call& f,
 			 ability& a,
 			 boost::optional<T> & res,
+			 hyper::network::error_context& err_ctx,
 			 Handler handler)
 		{
-			return details::_evaluate_expression(io_s, f, a, res, handler);
+			return details::_evaluate_expression(io_s, f, a, res, err_ctx, handler);
 		}
 	}
 }

@@ -69,6 +69,7 @@ namespace hyper {
 								);
 					if (is_updating) 
 						f.error_cause = updater.error();
+
 					return f;
 				}
         };
