@@ -88,6 +88,8 @@ namespace hyper {
 		typedef std::vector<network::runtime_failure>::iterator error_context_iterator;
 		typedef std::vector<network::runtime_failure>::const_iterator error_context_const_iterator;
 		static const error_context empty_error_context = std::vector<network::runtime_failure>();
+
+		std::ostream& operator<< (std::ostream& os, const error_context& err);
 	}
 }
 

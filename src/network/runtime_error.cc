@@ -62,6 +62,13 @@ namespace hyper {
 			return oss;
 		}
 
+		std::ostream& operator << (std::ostream& oss, const error_context& err)
+		{
+			std::copy(err.begin(), err.end(), 
+					std::ostream_iterator<runtime_failure>(oss, ","));
+			return oss;
+		}
+
 		void
 		runtime_failure::pretty_print(std::ostream& oss, int indent) const
 		{
