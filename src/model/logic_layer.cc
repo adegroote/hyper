@@ -198,8 +198,10 @@ namespace hyper {
 			ctx->s_ = logic_context::EXEC;
 
 			a_.logger(DEBUG) << ctx->ctr << " Computation of the state " << std::endl;
+			ctx->exec_err_ctx.clear();
 			return async_eval_expression(a_.io_s, ctx->call_exec,
 										  a_, ctx->exec_res,
+											  ctx->exec_err_ctx,
 				boost::bind(&logic_layer::handle_exec_computation, this,
 							boost::asio::placeholders::error,
 							ctx));
@@ -270,6 +272,9 @@ namespace hyper {
 
 			if (e  || !ctx->exec_res) {
 				a_.logger(DEBUG) << ctx->ctr << " Failed to evaluate" << std::endl;
+				hyper::network::runtime_failure f = hyper::network::execution_failure(ctx->call_exec);
+				f.error_cause = ctx->exec_err_ctx;
+				ctx->err_ctx.push_back(f);
 				return handle_failure(ctx, make_error_code(logic_layer_error::evaluation_error));
 			}
 
@@ -325,8 +330,10 @@ namespace hyper {
 			CHECK_INTERRUPT
 
 			a_.logger(DEBUG) << ctx->ctr << " Computation of the state " << std::endl;
+			ctx->exec_err_ctx.clear();
 			return async_eval_expression(a_.io_s, ctx->call_exec,
 										  a_, ctx->exec_res,
+										  ctx->exec_err_ctx, 
 				boost::bind(&logic_layer::handle_exec_computation, this,
 							boost::asio::placeholders::error,
 							ctx));

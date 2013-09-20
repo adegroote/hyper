@@ -6,6 +6,7 @@
 #include <string>
 
 #include <logic/expression.hh>
+#include <network/runtime_error.hh>
 
 #include <boost/any.hpp>
 #include <boost/asio/io_service.hpp>
@@ -21,6 +22,7 @@ namespace hyper {
 					boost::asio::io_service& io_s,
 					const std::vector<logic::expression> &e,
 					ability &a,
+					hyper::network::error_context& err_ctx,
 					boost::function<void (const boost::system::error_code&)> cb) = 0;
 
 			virtual function_execution_base* clone() = 0;
@@ -40,6 +42,7 @@ namespace hyper {
 			 const logic::function_call& f,
 			 ability& a,
 			 boost::optional<T> & res,
+			 hyper::network::error_context& err_ctx,
 			 Handler handler
 		);
 
