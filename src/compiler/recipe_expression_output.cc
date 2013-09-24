@@ -107,15 +107,19 @@ namespace {
 		const symbolList& syms;
 		size_t& counter;
 		size_t& inner_var_counter;
+		size_t& computation_counter;
 		mutable boost::optional<std::string> target;
 		std::string ptr_object;
 
 		dump_recipe_visitor(const universe & u_, const ability& a_, const task& t_, 
 						   const symbolList& syms_, size_t& counter, 
-						   size_t& inner_var_counter, std::string ptr_object, 
+						   size_t& inner_var_counter, 
+						   size_t& computation_counter,
+						   std::string ptr_object, 
 						   boost::optional<std::string> target = boost::none) : 
 			u(u_), a(a_), t(t_), syms(syms_), counter(counter), 
 			inner_var_counter(inner_var_counter),
+			computation_counter(computation_counter),
 			target(target),
 			ptr_object(ptr_object) {}
 
@@ -216,7 +220,7 @@ namespace {
 			expression_ast predicate = boost::get<expression_ast>(w.content.back().expr);
 			std::string identifier = compute_target(predicate);
 			std::ostringstream oss_name;
-			oss_name << "__hyper_wait_computation_" << counter;
+			oss_name << "__hyper_wait_computation_" << computation_counter++;
 
 			std::ostringstream oss;
 
@@ -231,7 +235,7 @@ namespace {
 
 			target = boost::none;
 
-			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, oss_name.str());
+			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, computation_counter, oss_name.str());
 			for (size_t i = 0; i < w.content.size(); ++i)
 				oss << boost::apply_visitor(vis, w.content[i].expr);
 
@@ -248,7 +252,7 @@ namespace {
 			inner_var_ << "__hyper_assert_" << inner_var_counter++;
 			std::string inner_var = local_symbol(inner_var_.str());
 			std::ostringstream oss_name;
-			oss_name << "__hyper_assert_computation_" << counter;
+			oss_name << "__hyper_assert_computation_" << computation_counter++;
 
 			// guaranted by compiler process
 			expression_ast e = boost::get<expression_ast>(w.content.back().expr);
@@ -266,11 +270,12 @@ namespace {
 
 			target = boost::none;
 
-			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, oss_name.str());
+			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, computation_counter, oss_name.str());
 			for (size_t i = 0; i < w.content.size() - 1; ++i)
 				oss << boost::apply_visitor(vis, w.content[i].expr);
 
-			dump_recipe_visitor vis2(u, a, t, syms, counter, inner_var_counter, oss_name.str(), inner_var_.str());
+			dump_recipe_visitor vis2(u, a, t, syms, counter, inner_var_counter, computation_counter, 
+									 oss_name.str(), inner_var_.str());
 			oss << boost::apply_visitor(vis2, w.content.back().expr);
 
 			return oss.str();
@@ -372,7 +377,7 @@ namespace hyper {
 
 		void dump_recipe_expression::operator() (const recipe_expression& r) const
 		{
-			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, "this");
+			dump_recipe_visitor vis(u, a, t, syms, counter, inner_var_counter, computation_counter, "this");
 			oss << boost::apply_visitor(vis, r.expr);
 		}
 	}
