@@ -226,7 +226,7 @@ ability_test::correct_usage(int argc, char** argv)
             arguments[0] == "make" or
 		    arguments[0] == "ensure" or
 		    (arguments[0] == "let" and argc == 7  and
-                    (arguments[4] != "make" or arguments[4] == "ensure")));
+                    (arguments[4] == "make" or arguments[4] == "ensure")));
 }
 
 int 
