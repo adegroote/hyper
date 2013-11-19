@@ -209,6 +209,23 @@ struct valid_unification
 			std::cerr << p << std::endl;
 			return;
 		}
+
+
+		/* The symbol we want to unify must be one of controllable list */
+		std::pair<bool, symbolACL> sym;
+		if (b1) {
+			sym = u.get_symbol(*s1, a);
+			assert(sym.first);
+		} else {
+			sym = u.get_symbol(*s2, a);
+			assert(sym.first);
+		}
+
+		b = b && (sym.second.acl == CONTROLABLE);
+		if (!b) {
+			std::cerr << "Invalid unification_expression: " << (b1 ? *s1 : *s2) << " is not controlable";
+			std::cerr << std::endl;
+		}
 	}
 };
 
